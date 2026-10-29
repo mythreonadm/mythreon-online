@@ -14,7 +14,8 @@ export function rollRarity(bonus = 0): Rarity {
   if (r < 0.01) return "LENDARIO"; if (r < 0.05) return "EPICO"; if (r < 0.15) return "RARO"; if (r < 0.40) return "INCOMUM"; return "COMUM";
 }
 
-function generateRandomAffixes(category: string, rarity: Rarity, tier: number): Affix[] {
+// ESSA É A FUNÇÃO QUE ESTAVA FALTANDO O EXPORT
+export function generateRandomAffixes(category: string, rarity: Rarity, tier: number): Affix[] {
   const pool = getPoolForCategory(category as any);
   if (!pool || pool.length === 0) return [];
   
@@ -45,11 +46,11 @@ function generateRandomAffixes(category: string, rarity: Rarity, tier: number): 
     const tierMult = 1 + (tier - 1) * 0.5;
     const rawValue = (selected.minBase + Math.random() * (selected.maxBase - selected.minBase)) * tierMult;
     
-    // Arredonda dependendo do tipo
+    // Arredonda dependendo do tipo (percentual ou número inteiro)
     const value = selected.isPercent ? Math.round(rawValue * 100) / 100 : Math.round(rawValue);
 
     chosen.push({
-      law: "PRIME", // Podemos sortear uma lei no futuro, por enquanto PRIME
+      law: "PRIME", 
       stat: selected.stat,
       value
     });
