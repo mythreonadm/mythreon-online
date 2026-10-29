@@ -1,4 +1,4 @@
-import { Character, Race, SaveFile, CharacterSkills } from "../types";
+import { Character, Race, SaveFile, CharacterSkills, CardInstance } from "../types";
 import { DEFAULT_BACKPACK } from "../data/backpacks";
 import { getBaseStats, xpToNextLevel } from "./stats";
 
@@ -24,6 +24,7 @@ export function createNewCharacter(name: string): Character {
     autoMpPotionId: "POCAO_MANA_1",
     autoMpPotionPercent: 30,
     activeVials: {},
+    cards: [],   // ── NOVO ──
   };
 }
 
@@ -52,6 +53,9 @@ export function loadGame(): SaveFile | null {
       if (!data.character.autoMpPotionId) data.character.autoMpPotionId = "POCAO_MANA_1";
       if (data.character.autoMpPotionPercent === undefined) data.character.autoMpPotionPercent = 30;
       if (!data.character.activeVials) data.character.activeVials = {};
+      
+      // Migração para cartas
+      if (!data.character.cards) data.character.cards = [];
     }
     return data; 
   } catch (e) { 

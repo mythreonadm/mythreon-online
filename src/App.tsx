@@ -10,12 +10,13 @@ import { Shop } from "./ui/Shop";
 import { Quests } from "./ui/Quests";
 import { Attributes } from "./ui/Attributes";
 import { Wiki } from "./ui/Wiki";
+import { Duelos } from "./ui/Duelos";
 import { AudioManager } from "./ui/AudioManager";
 import { OfflineModal } from "./ui/OfflineModal";
 import { DeathScreen } from "./ui/DeathScreen";
 import { isDebug, setDebug } from "./config";
 
-type Tab = "zona" | "atributos" | "inventario" | "equipamento" | "matriz" | "loja" | "missoes" | "wiki";
+type Tab = "zona" | "atributos" | "inventario" | "equipamento" | "matriz" | "loja" | "missoes" | "wiki" | "duelos";
 
 export default function App() {
   const [tab, setTab] = useState<Tab>("zona");
@@ -73,7 +74,7 @@ export default function App() {
       
       <nav className="bg-arcane-panel/80 backdrop-blur border-b border-arcane-border sticky top-[73px] z-40">
         <div className="max-w-6xl mx-auto flex overflow-x-auto">
-          {(["zona", "atributos", "inventario", "equipamento", "matriz", "loja", "missoes", "wiki"] as Tab[]).map((t) => (
+          {(["zona", "atributos", "inventario", "equipamento", "matriz", "loja", "missoes", "duelos", "wiki"] as Tab[]).map((t) => (
             <button key={t} onClick={() => setTab(t)} className={`px-4 py-4 capitalize font-bold text-sm whitespace-nowrap transition-colors ${tab === t ? "text-arcane-gold border-b-2 border-arcane-gold bg-arcane-border/30" : "text-gray-400 hover:text-white"}`}>{t}</button>
           ))}
         </div>
@@ -87,6 +88,7 @@ export default function App() {
         {tab === "matriz" && <MatrixView />}
         {tab === "loja" && <Shop />}
         {tab === "missoes" && <Quests />}
+        {tab === "duelos" && <Duelos />}
         {tab === "wiki" && <Wiki />}
         <div className="mt-6">
           <CombatLog />

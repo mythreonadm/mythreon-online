@@ -1,4 +1,4 @@
-import { Character, Enemy, Item, TickResult, Zone } from "../types";
+import { Character, Enemy, Item, TickResult, Zone, CardInstance } from "../types";
 import { addItem, removeItem } from "./inventory";
 import { rollDrops, rollAmbient, RARITY_ORDER } from "./drops";
 import { recalcStats, xpToNextLevel } from "./stats";
@@ -6,6 +6,7 @@ import { sellValue } from "./shop";
 import { salvageItem } from "./salvage";
 import { isDebug, TICK_MS, OFFLINE_MAX_HOURS } from "../config";
 import { ATTACK_SKILLS, ATTACK_SKILL_COOLDOWN, SUPPORT_EFFECTS, PASSIVE_EFFECTS } from "../data/skills";
+import { rollCardDrop, CARD_TEMPLATES } from "../data/cards";
 
 interface Profile { xpPct: number; goldPct: number; dropPct: number; rarePct: number; healPct: number; skillDmgPct: number; cdReduce: number; lifesteal: number; }
 
@@ -37,7 +38,7 @@ function pickPotion(char: Character, missing: number): Item | null {
 const EQUIP_CATEGORIES = ["ARMA", "ARMADURA", "JOIA", "ESCUDO"];
 
 export function processTick(char: Character, zone: Zone, isOffline: boolean): TickResult {
-  const result: TickResult = { kills: 0, gold: 0, xp: 0, drops: [], levelsGained: 0, death: false, log: [], enemyHp: 0, enemyMaxHp: 0, zoneId: zone.id, killed: {}, bossKills: {}, dropCounts: {}, potionsUsed: 0, soldGold: 0, salvagedItems: 0, attacked: false, usedMp: false };
+  const result: TickResult = { kills: 0, gold: 0, xp: 0, drops: [], levelsGained: 0, death: false, log: [], enemyHp: 0, enemyMaxHp: 0, zoneId: zone.id, killed: {}, bossKills: {}, dropCounts: {}, potionsUsed: 0, soldGold: 0, salvagedItems: 0, attacked: false, usedMp: false, cardsDropped: [] };
   const debug = isDebug();
   const ticks = isOffline ? Math.min(Math.floor((Date.now() - char.lastTick) / TICK_MS), (OFFLINE_MAX_HOURS * 3600) / (TICK_MS / 1000)) : 1;
   const baseEnemy: Enemy | undefined = zone.enemies.find((e) => e.id === char.activeEnemyId) || zone.enemies[0];
@@ -67,8 +68,8 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
 
   let bagFullWarned = false;
 
-  // VERIFICA BUFF DE ATAQUE DUPLO
   const hasDoubleAtkBuff = char.doubleAtkUntil && char.doubleAtkUntil > Date.now();
+  const buffMultiplier = hasDoubleAtkBuff ? 2 : 1;
 
   const heal = (amount: number) => { playerHp = Math.min(char.hpMax, playerHp + Math.round(amount * (1 + prof.healPct))); };
 
@@ -91,13 +92,11 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
       break;
     }
 
-    // POÇÃO DE HP
     if (hpPotId && (playerHp / hpMax) * 100 <= hpPotPct) {
       const potion = char.inventory.items.find(i => i.templateId === hpPotId && i.quantity > 0);
       if (potion) { heal(potion.stats.hp ?? 0); removeItem(char.inventory, potion.uid, 1); result.potionsUsed!++; result.log.push(`🧪 Usou ${potion.name}.`); }
     }
 
-    // POÇÃO DE MP
     if (mpPotId && (playerMp / mpMax) * 100 <= mpPotPct) {
       const potion = char.inventory.items.find(i => i.templateId === mpPotId && i.quantity > 0);
       if (potion) { playerMp = Math.min(mpMax, playerMp + (potion.stats.mp ?? 0)); removeItem(char.inventory, potion.uid, 1); result.potionsUsed!++; result.log.push(`🔮 Usou ${potion.name}.`); }
@@ -110,7 +109,6 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
     const armMult = 1 + (buffOn ? support?.armPct ?? 0 : 0);
     const ignoreArmor = buffOn ? support?.ignoreArmor ?? 0 : 0;
 
-    // FUNÇÃO DE STRIKE (Sem o multiplicador de buff, agora ele é aplicado pela quantidade de chamadas)
     const strike = (multiplier = 1): number => {
       result.attacked = true;
       if (debug) { result.lastDamage = 99999; return 99999; }
@@ -125,30 +123,20 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
     };
 
     let dealt = strike();
-    
-    // AQUI ESTÁ A CORREÇÃO: Se o buff estiver ativo, ele bate uma segunda vez.
-    if (hasDoubleAtkBuff) {
-      dealt += strike();
-      result.log.push(`⚡ Ataque Duplo ativado!`);
-    }
-
+    if (hasDoubleAtkBuff) { dealt += strike(); result.log.push(`⚡ Ataque Duplo!`); }
     if (triggered && support?.doubleStrike) dealt += strike();
     if (Math.random() < (s.spd ?? 0)) dealt += strike();
 
-    // HABILIDADE DE ATAQUE (Gasta Mana)
     if (skill && t % skillCd === 0 && !debug) {
       const manaCost = skill.manaCost + (char.level * 2);
       if (playerMp >= manaCost) {
         playerMp -= manaCost;
         result.usedMp = true;
-        
-        // Habilidade não recebe o buff de hit duplo (apenas o ataque básico)
         const raw = ((s.matk ?? 0) + (s.atk ?? 0) * 0.5) * skill.mult * (1 + prof.skillDmgPct);
         const armor = enemy.arm * (1 - skill.pierce) * (1 - ignoreArmor);
         const sd = Math.max(Math.ceil(raw * 0.1), Math.round(raw - armor));
         dealt += sd; result.lastDamage = (result.lastDamage ?? 0) + sd;
         if (skill.lifesteal) heal(sd * skill.lifesteal);
-        
         result.log.push(`✨ ${skill.desc.split(':')[0]} causou ${sd} de dano mágico!`);
       } else {
         result.log.push(`⚠️ Mana insuficiente!`);
@@ -169,6 +157,17 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
       const xpGained = Math.floor(enemy.xp * (1 + prof.xpPct)) * (debug ? 10 : 1);
       result.gold += g; char.gold += g; result.xp += xpGained; char.xp += xpGained;
       heal(hpMax * 0.1);
+
+      // ─── DROP DE CARTA (NOVO) ───
+      const cardDrop = rollCardDrop(enemy.id, zone.tier, enemy.isBoss);
+      if (cardDrop) {
+        if (!char.cards) char.cards = [];
+        char.cards.push(cardDrop);
+        result.cardsDropped!.push(cardDrop);
+        const template = CARD_TEMPLATES[cardDrop.templateId];
+        result.log.push(`🃏 CARTA DROPADA: ${template?.emoji} ${template?.name}!`);
+      }
+      // ─── FIM DO DROP DE CARTA ───
       
       const drops = rollDrops(enemy, zone, char, { dropBonus: prof.dropPct, rareBonus: prof.rarePct, force: debug });
       if (debug || char.killsInZone % 10 === 0 || enemy.isBoss) drops.push(rollAmbient(zone));

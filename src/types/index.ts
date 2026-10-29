@@ -5,16 +5,47 @@ export type ComponentType = "ATAQUE" | "SUPORTE" | "PASSIVA";
 export type Law = "PRIME" | "VORO" | "LOGHIS" | "EMOHNA" | "RAAN" | "SYNTHES" | "CHRONOS" | "LYSS" | "DHOR" | "KAELOR" | "NOCTHAR" | "VEYRA" | "ASTER";
 export type Element = "FOGO" | "GELO" | "TROVAO" | "TERRA" | "SAGRADO" | "SOMBRIO";
 
+// ── TIPOS DE CARTAS (NOVO) ──
+export type CardTrait = 
+  | "FURIA" | "VENENO" | "ESPINHOS" | "PRECISAO" | "INVESTIDA"
+  | "REGENERACAO" | "ESCUDO" | "SANGRAMENTO" | "MEDO" | "SILENCIO";
+
+export type CardRarity = "COMUM" | "INCOMUM" | "RARO" | "EPICO" | "LENDARIO";
+
+export interface CardStats {
+  hp: number;
+  atk: number;
+  def: number;
+  spd: number;
+}
+
+export interface CardTemplate {
+  monsterId: string;
+  name: string;
+  region: string;
+  rarity: CardRarity;
+  trait: CardTrait;
+  baseStats: CardStats;
+  ability: string;
+  abilityDesc: string;
+  emoji: string;
+  sprite?: string;
+}
+
+export interface CardInstance {
+  uid: string;
+  templateId: string;
+  level: number;
+  obtainedAt: number;
+}
+// ── FIM TIPOS DE CARTAS ──
+
 export interface ItemStats {
   atk?: number; matk?: number; def?: number; arm?: number;
   hp?: number; mp?: number; spd?: number; crit?: number;
   hit?: number; dge?: number; blk?: number;
   resFisico?: number; resMagico?: number;
-  // NOVOS ATRIBUTOS
-  hpRegen?: number;
-  mpRegen?: number;
-  luck?: number;
-  critDmg?: number;
+  hpRegen?: number; mpRegen?: number; luck?: number; critDmg?: number;
 }
 
 export interface Affix { law: Law; stat: keyof ItemStats; value: number; }
@@ -22,7 +53,7 @@ export interface Affix { law: Law; stat: keyof ItemStats; value: number; }
 export interface Item {
   uid: string; templateId: string; name: string; category: ItemCategory; slot?: SlotType;
   tier: 1 | 2 | 3 | 4 | 5; rarity: Rarity; stats: ItemStats; affixes: Affix[];
-  upgradeLevel: number; // NOVO: +0, +1, +2...
+  upgradeLevel: number;
   uniqueEffect?: string; stackable: boolean; maxStack: number; quantity: number;
   componentType?: ComponentType; law?: Law; element?: Element; icon: string;
   slots?: number; dropBonus?: number; rareDropBonus?: number; xpBonus?: number;
@@ -119,10 +150,12 @@ export interface Character {
   doubleAtkUntil?: number;
   
   activeVials: Record<string, number>;
-
+  
   skills: CharacterSkills;
   skillXp: CharacterSkills;
   trainingSkill?: keyof CharacterSkills | null;
+  
+  cards: CardInstance[];   // ── NOVO ──
 }
 
 export interface SaveFile {
@@ -144,4 +177,5 @@ export interface TickResult {
   skillLevelUp?: string;
   usedMp?: boolean;
   deathData?: DeathReportData;
+  cardsDropped?: CardInstance[];   // ── NOVO ──
 }
