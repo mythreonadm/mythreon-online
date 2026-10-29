@@ -1,10 +1,14 @@
 import React, { useState } from "react";
 import { useGameStore } from "../store/gameStore";
 import { getUsedSlots, removeItem } from "../engine/inventory";
+import { ItemModal } from "./ItemModal";
+import { Item } from "../types";
 
 export function Inventory() {
   const { character, equip, save } = useGameStore();
   const [filter, setFilter] = useState<string>("all");
+  const [selectedItem, setSelectedItem] = useState<Item | null>(null);
+  
   if (!character) return null;
 
   const used = getUsedSlots(character.inventory);
@@ -19,13 +23,6 @@ export function Inventory() {
     return "border-arcane-border";
   };
 
-  const handleEquip = (uid: string) => {
-    const res = equip(uid);
-    if (!res.success) {
-      alert(res.error); // Mostra o erro se a bolsa estiver cheia!
-    }
-  };
-
   const handleDiscard = (e: React.MouseEvent, uid: string) => {
     e.stopPropagation();
     if (window.confirm("Tem certeza que deseja jogar este item fora?")) {
@@ -36,8 +33,32 @@ export function Inventory() {
     }
   };
 
+  const handleConfirmEquip = () => {
+    if (!selectedItem) return;
+    const res = equip(selectedItem.uid);
+    if (res.success) {
+      setSelectedItem(null);
+    } else {
+      alert(res.error);
+    }
+  };
+
+  // Descobre qual item está equipado no slot do item selecionado
+  const equippedItem = selectedItem?.slot ? character.equipped[selectedItem.slot] : undefined;
+
   return (
-    <div className="bg-arcane-panel border border-arcane-border rounded-xl p-6 shadow-lg">
+    <div className="bg-arcane-panel border border-arcane-border rounded-xl p-6 shadow-lg relative">
+      
+      {/* Modal de Comparação */}
+      {selectedItem && (
+        <ItemModal 
+          item={selectedItem} 
+          equipped={equippedItem} 
+          onEquip={handleConfirmEquip} 
+          onClose={() => setSelectedItem(null)} 
+        />
+      )}
+
       <div className="flex justify-between items-center mb-6 border-b border-arcane-border pb-4">
         <h2 className="text-xl font-bold text-arcane-gold">Inventário</h2>
         <div className="flex items-center gap-2 text-sm">
@@ -48,7 +69,7 @@ export function Inventory() {
       </div>
       
       <div className="flex gap-2 mb-6 flex-wrap">
-        {["all", "ARMA", "ARMADURA", "JOIA", "ESCUDO", "COMPONENTE", "BACKPACK"].map((f) => (
+        {["all", "ARMA", "ARMADURA", "JOIA", "ESCUDO", "COMPONENTE", "FRAGMENTO", "BACKPACK"].map((f) => (
           <button key={f} onClick={() => setFilter(f)} className={`px-3 py-1 text-xs rounded-full font-bold transition-colors ${filter === f ? "bg-arcane-purple text-white" : "bg-arcane-bg text-gray-400 hover:text-white border border-arcane-border"}`}>{f}</button>
         ))}
       </div>
@@ -64,12 +85,13 @@ export function Inventory() {
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-7 gap-3">
           {items.map((item) => (
-            <div key={item.uid} onClick={() => item.slot && handleEquip(item.uid)} className={`bg-arcane-bg border rounded-lg p-2 flex flex-col items-center justify-center transition-all relative group ${getRarityColor(item.rarity)} ${item.slot ? "cursor-pointer hover:-translate-y-1 hover:border-arcane-gold" : ""}`}>
+            <div key={item.uid} onClick={() => setSelectedItem(item)} className={`bg-arcane-bg border rounded-lg p-2 flex flex-col items-center justify-center transition-all relative group ${getRarityColor(item.rarity)} hover:-translate-y-1 hover:border-arcane-gold cursor-pointer`}>
               
               <button onClick={(e) => handleDiscard(e, item.uid)} className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 bg-red-600 hover:bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] transition-opacity z-10" title="Jogar Fora">🗑️</button>
               
               <div className="text-3xl mb-1">{item.icon}</div>
               <div className="text-xs text-center truncate w-full font-bold" title={item.name}>{item.name}</div>
+              {item.upgradeLevel > 0 && <div className="text-[10px] text-orange-400 font-bold">+{item.upgradeLevel}</div>}
               {item.slot && <div className="text-[9px] text-arcane-cyan mt-1 bg-arcane-cyan/10 px-1 rounded uppercase">{item.slot.replace("_", " ")}</div>}
               {item.quantity > 1 && <div className="text-xs font-bold text-arcane-gold mt-1">x{item.quantity}</div>}
             </div>
