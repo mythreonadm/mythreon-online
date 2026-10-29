@@ -20,7 +20,7 @@ export function RaceModal({ race, isEquipped, onEquip, onClose }: Props) {
   const supEffect = SUPPORT_EFFECTS[race.suporteId];
   const pasEffect = PASSIVE_EFFECTS[race.passivaId];
 
-  const formatBonus = (val: number) => val < 1 ? `${(val * 100).toFixed(1)}%` : val;
+  const formatBonus = (val: number) => val < 1 && val > 0 ? `${(val * 100).toFixed(1)}%` : val;
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 animate-fade-in" onClick={onClose}>
@@ -34,7 +34,6 @@ export function RaceModal({ race, isEquipped, onEquip, onClose }: Props) {
           {race.tier === "NOMEADA" && <p className="text-sm italic text-gray-400 mt-2">"{RACE_LORE[race.id]}"</p>}
         </div>
 
-        {/* Habilidades */}
         <div className="space-y-3 mb-6">
           <div className="bg-red-900/20 border border-red-900/50 p-3 rounded-lg">
             <div className="flex items-center gap-2 mb-1">
@@ -59,7 +58,6 @@ export function RaceModal({ race, isEquipped, onEquip, onClose }: Props) {
           </div>
         </div>
 
-        {/* Bônus Únicos */}
         <div className="mb-6">
           <h3 className="text-sm font-bold text-gray-400 mb-2 uppercase">Bônus Exclusivos da Raça:</h3>
           <div className="flex flex-wrap gap-2">
