@@ -6,7 +6,6 @@ import { CharacterSkills } from "../types";
 import { skillXpToNextLevel } from "../engine/stats";
 import { VIALS } from "../data/vials";
 import { ATTACK_SKILLS } from "../data/skills";
-import { CombatLogCompact } from "./CombatLogCompact";
 
 export function ZoneView() {
   const { character, currentZoneId, startHunting, stopHunting, startTraining, stopTraining, isTickRunning, isTraining, lastTickResult, setActiveEnemy, activateBuff, updateSettings, buyBless, healFull, startHealing, cancelHealing, healingUntil } = useGameStore();
@@ -28,7 +27,6 @@ export function ZoneView() {
   const currentZone = ZONES[currentZoneId];
   const currentMob = currentZone.enemies.find(e => e.id === character.activeEnemyId) || currentZone.enemies[0];
 
-  // ─── TIMER DO BUFF DE ATAQUE DUPLO ───
   useEffect(() => {
     const interval = setInterval(() => {
       if (character.doubleAtkUntil && character.doubleAtkUntil > Date.now()) {
@@ -40,18 +38,16 @@ export function ZoneView() {
     return () => clearInterval(interval);
   }, [character.doubleAtkUntil]);
 
-  // ─── TIMER DO COOLDOWN DA MAGIA (atualiza a cada 1s) ───
   useEffect(() => {
     const interval = setInterval(() => {
       const tick = character.tickCount || 0;
       const lastCast = Math.floor(tick / 3) * 3;
-      const progress = tick - lastCast; // 0, 1, 2
+      const progress = tick - lastCast;
       setMagicCooldown(progress);
     }, 1000);
     return () => clearInterval(interval);
   }, [character.tickCount]);
 
-  // ─── TIMER DA MEDITAÇÃO ───
   useEffect(() => {
     if (healingUntil) {
       const interval = setInterval(() => {
@@ -67,7 +63,6 @@ export function ZoneView() {
     }
   }, [healingUntil, healFull]);
 
-  // ─── SPAWN DO BALÃO ───
   useEffect(() => {
     if (!isTickRunning) {
       setBalloon(null);
@@ -86,7 +81,6 @@ export function ZoneView() {
     activateBuff();
   };
 
-  // ─── ANIMAÇÃO DE COMBATE ───
   useEffect(() => {
     if (isTickRunning && lastTickResult && lastTickResult.attacked) {
       setIsAttacking(true); setShowProjectile(true);
@@ -99,9 +93,7 @@ export function ZoneView() {
     }
   }, [lastTickResult, isTickRunning]);
 
-  // ═══════════════════════════════════════════════════════════════
   // TELA DA CASA
-  // ═══════════════════════════════════════════════════════════════
   if (!isTickRunning && !isTraining) {
     const skillsList: { key: keyof CharacterSkills, name: string, icon: string, desc: string }[] = [
       { key: "melee", name: "Melee", icon: "⚔️", desc: "Aumenta Ataque Físico" },
@@ -186,9 +178,7 @@ export function ZoneView() {
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════
   // TELA DE TREINO ATIVO
-  // ═══════════════════════════════════════════════════════════════
   if (isTraining) {
     const skillKey = character.trainingSkill as keyof CharacterSkills;
     const skillName = skillKey ? skillKey.toUpperCase() : "";
@@ -221,20 +211,18 @@ export function ZoneView() {
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════
   // TELA DE CAÇADA (ARENA + PAINEL)
-  // ═══════════════════════════════════════════════════════════════
   const enemyHp = character.enemyHp || 0;
   const enemyMaxHp = currentMob.hp * currentMob.difficulty;
   const enemyHpPct = Math.max(0, (enemyHp / enemyMaxHp) * 100);
 
   const getBackgroundImage = (theme: string) => {
     switch (theme) {
-      case "forest": return "/assets/backgrounds/floresta.png";
-      case "mountain": return "/assets/backgrounds/montanha.png";
-      case "ocean": return "/assets/backgrounds/oceano.png";
-      case "ruins": return "/assets/backgrounds/ruinas.png";
-      case "abyss": return "/assets/backgrounds/abismo.png";
+      case "forest": return "/assets/backgrounds/forest.png"; // Ajustado para o nome que você salvou
+      case "mountain": return "/assets/backgrounds/mountain.png";
+      case "ocean": return "/assets/backgrounds/ocean.png";
+      case "ruins": return "/assets/backgrounds/ruins.png";
+      case "abyss": return "/assets/backgrounds/abyss.png";
       default: return "";
     }
   };
@@ -256,7 +244,6 @@ export function ZoneView() {
   const weaponAnimClass = isAttacking ? getWeaponAnimation(character.equipped.ARMA_PRINCIPAL?.templateId) : "animate-run";
   const spellEmoji = getSpellEffect(character.activeRace?.ataqueId || "A1");
   
-  // ─── STATUS DA MAGIA ───
   const raceSkill = character.activeRace ? ATTACK_SKILLS[character.activeRace.ataqueId] : null;
   const magicReady = magicCooldown === 0;
   const magicPct = (magicCooldown / 3) * 100;
@@ -267,8 +254,6 @@ export function ZoneView() {
 
   return (
     <div className="space-y-3 md:space-y-6">
-      
-      {/* ─── HEADER DE CONTROLE ─── */}
       <div className="flex flex-wrap justify-between items-center gap-2 relative z-50">
         <div className="flex gap-2 items-center flex-wrap">
           {buffTimeLeft > 0 && (
@@ -285,18 +270,14 @@ export function ZoneView() {
         </button>
       </div>
 
-      {/* ─── GRID PRINCIPAL: ARENA + PAINEL ─── */}
       <div className="grid grid-cols-1 md:grid-cols-[1fr_320px] gap-3 md:gap-4">
-        
-        {/* ═══════════ ARENA ═══════════ */}
+        {/* ARENA */}
         <div className={`relative rounded-xl border-2 border-arcane-border shadow-2xl overflow-hidden bg-${currentZone.theme} min-h-[300px] md:min-h-[500px]`}>
-          
           <div className="absolute inset-0 z-0">
             <img src={getBackgroundImage(currentZone.theme)} alt={currentZone.name} className="w-full h-full object-cover" style={{ imageRendering: "pixelated" }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
             <div className="absolute inset-0 bg-black/40 pointer-events-none"></div>
           </div>
 
-          {/* BALÃO */}
           {balloon && (
             <div onClick={handleBalloonClick} className="absolute z-50 cursor-pointer animate-idle hover:scale-125 transition-transform" style={{ left: `${balloon.x}%`, top: `${balloon.y}%` }}>
               <div className="text-4xl md:text-5xl drop-shadow-[0_0_15px_rgba(234,179,8,0.8)] relative">
@@ -306,13 +287,9 @@ export function ZoneView() {
             </div>
           )}
 
-          {/* CHÃO */}
           <div className="absolute bottom-0 w-full h-12 md:h-16 bg-black/70 border-t-2 border-white/10 z-10 pointer-events-none"></div>
 
-          {/* COMBATENTES */}
           <div className="relative z-20 flex justify-between items-end px-4 md:px-20 pb-8 md:pb-12 h-[300px] md:h-[500px]">
-            
-            {/* JOGADOR */}
             <div className="flex flex-col items-center relative translate-y-2 md:translate-y-4">
               <div className={`w-20 h-20 md:w-32 md:h-32 flex items-center justify-center transition-transform ${weaponAnimClass}`}>
                 <img src={getPlayerVisual()} alt="Jogador" className="w-full h-full object-contain drop-shadow-[0_10px_10px_rgba(0,0,0,0.8)]" style={{ imageRendering: "pixelated" }} onError={(e) => { e.currentTarget.style.display = 'none'; if(e.currentTarget.nextElementSibling) { (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'block'; } }} />
@@ -327,12 +304,10 @@ export function ZoneView() {
               </div>
             </div>
 
-            {/* PROJÉTIL */}
             {showProjectile && (
               <div className="absolute left-[30%] top-1/2 -translate-y-1/2 text-4xl md:text-6xl projectile z-30">{spellEmoji}</div>
             )}
 
-            {/* MONSTRO */}
             {currentMob && (
               <div className="flex flex-col items-center relative translate-y-2 md:translate-y-4">
                 {floatingDamage !== null && <div className="damage-number text-red-500 text-3xl md:text-5xl z-50 font-black drop-shadow-[0_2px_2px_rgba(0,0,0,1)]">-{floatingDamage}</div>}
@@ -364,25 +339,17 @@ export function ZoneView() {
             )}
           </div>
           
-          {/* INFO DO MAPA */}
           <div className="absolute top-0 w-full p-2 md:p-4 flex justify-between items-start z-30 pointer-events-none">
             <div className="bg-black/60 px-2 md:px-4 py-1 md:py-2 rounded-lg border border-white/10 backdrop-blur-sm">
               <h2 className="text-sm md:text-xl font-bold text-arcane-gold drop-shadow-md">{currentZone.name}</h2>
             </div>
             <div className="bg-green-900/80 px-2 md:px-4 py-1 md:py-2 rounded-full font-bold text-[10px] md:text-sm text-green-400 animate-pulse border border-green-500/30 backdrop-blur-sm">⚔️ Caçando</div>
           </div>
-
-          {/* LOG COMPACTO (só desktop) */}
-          <div className="hidden md:block absolute bottom-2 right-2 w-72 z-30">
-            <CombatLogCompact />
-          </div>
         </div>
 
-        {/* ═══════════ PAINEL ARCANO (Mobile: toggle / Desktop: sempre visível) ═══════════ */}
+        {/* PAINEL */}
         <div className={`${mobilePanelOpen ? "block" : "hidden"} md:block`}>
           <div className="bg-gradient-to-b from-arcane-panel to-black/60 border-2 border-arcane-purple/40 rounded-xl p-3 md:p-4 shadow-[0_0_30px_rgba(124,58,237,0.2)] relative overflow-hidden h-full">
-            
-            {/* DECORAÇÃO DE CANTO */}
             <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-arcane-gold rounded-tl-lg opacity-50"></div>
             <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-arcane-gold rounded-tr-lg opacity-50"></div>
             <div className="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-arcane-gold rounded-bl-lg opacity-50"></div>
@@ -392,7 +359,6 @@ export function ZoneView() {
               ✦ Controle Arcano ✦
             </h3>
 
-            {/* ─── MAGIA DA CLASSE (COOLDOWN) ─── */}
             {raceSkill && character.activeRace && (
               <div className="mb-3 md:mb-4">
                 <div className="text-[9px] md:text-[10px] text-gray-500 uppercase font-bold mb-1 flex items-center justify-between">
@@ -416,7 +382,6 @@ export function ZoneView() {
               </div>
             )}
 
-            {/* ─── CONFIG DE POÇÃO HP ─── */}
             <div className="mb-3 md:mb-4">
               <div className="text-[9px] md:text-[10px] text-gray-500 uppercase font-bold mb-1">❤️ Poção de Vida</div>
               <div className="space-y-1.5 bg-black/30 p-2 rounded-lg border border-arcane-border/50">
@@ -444,7 +409,6 @@ export function ZoneView() {
               </div>
             </div>
 
-            {/* ─── CONFIG DE POÇÃO MP ─── */}
             <div className="mb-3 md:mb-4">
               <div className="text-[9px] md:text-[10px] text-gray-500 uppercase font-bold mb-1">🔵 Poção de Mana</div>
               <div className="space-y-1.5 bg-black/30 p-2 rounded-lg border border-arcane-border/50">
@@ -470,7 +434,6 @@ export function ZoneView() {
               </div>
             </div>
 
-            {/* ─── STATUS ─── */}
             <div className="bg-black/30 p-2 rounded-lg border border-arcane-border/50 mb-2">
               <div className="text-[9px] text-gray-500 uppercase font-bold mb-1">Status Rápido</div>
               <div className="grid grid-cols-2 gap-1 text-[9px] md:text-[10px]">
@@ -490,16 +453,10 @@ export function ZoneView() {
                 )}
               </div>
             </div>
-
-            {/* ─── LOG (só mobile) ─── */}
-            <div className="md:hidden mt-2">
-              <CombatLogCompact />
-            </div>
           </div>
         </div>
       </div>
 
-      {/* ─── SELEÇÃO DE ALVO ─── */}
       <div className="flex flex-col items-center z-10 border-t border-arcane-border pt-3">
         <span className="text-[10px] md:text-xs text-gray-400 font-bold uppercase mb-2">Alvos Disponíveis</span>
         <div className="flex gap-2 md:gap-4 flex-wrap justify-center">
