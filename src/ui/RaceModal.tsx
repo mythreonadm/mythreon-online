@@ -1,17 +1,19 @@
 import React from "react";
-import { Race } from "../types";
+import { Race, ItemStats } from "../types";
 import { ATAQUES, SUPORTES, PASSIVAS } from "../data/components";
 import { ATTACK_SKILLS, SUPPORT_EFFECTS, PASSIVE_EFFECTS } from "../data/skills";
 import { RACE_LORE } from "../data/races";
+import { STAT_NAMES } from "../data/affixes";
 
 interface Props {
   race: Race;
+  equippedRace?: Race;
   isEquipped: boolean;
   onEquip: () => void;
   onClose: () => void;
 }
 
-export function RaceModal({ race, isEquipped, onEquip, onClose }: Props) {
+export function RaceModal({ race, equippedRace, isEquipped, onEquip, onClose }: Props) {
   const atkComp = ATAQUES[race.ataqueId];
   const supComp = SUPORTES[race.suporteId];
   const pasComp = PASSIVAS[race.passivaId];
@@ -20,7 +22,44 @@ export function RaceModal({ race, isEquipped, onEquip, onClose }: Props) {
   const supEffect = SUPPORT_EFFECTS[race.suporteId];
   const pasEffect = PASSIVE_EFFECTS[race.passivaId];
 
-  const formatBonus = (val: number) => val < 1 && val > 0 ? `${(val * 100).toFixed(1)}%` : val;
+  const renderBonusComparison = (statKey: keyof ItemStats) => {
+    const newVal = race.bonus[statKey] || 0;
+    const oldVal = equippedRace?.bonus[statKey] || 0;
+    
+    if (newVal === 0 && oldVal === 0) return null;
+
+    const diff = newVal - oldVal;
+    let diffColor = "text-gray-400";
+    if (diff > 0) diffColor = "text-green-400";
+    if (diff < 0) diffColor = "text-red-400";
+
+    const isPercent = ["crit", "hit", "dge", "blk", "spd", "resFisico", "resMagico", "luck", "critDmg"].includes(statKey);
+
+    const format = (v: number) => {
+      if (v === 0) return "0";
+      return isPercent ? `${(v * 100).toFixed(1)}%` : Math.round(v).toString();
+    };
+
+    return (
+      <div key={statKey} className="flex justify-between items-center py-1 border-b border-arcane-border/30 text-sm">
+        <span className="text-gray-400 uppercase text-xs">{STAT_NAMES[statKey] || statKey}</span>
+        <div className="flex items-center gap-2 font-mono">
+          <span className="text-white font-bold">{format(newVal)}</span>
+          {equippedRace && diff !== 0 && (
+            <span className={`text-xs ${diffColor}`}>
+              ({diff > 0 ? "+" : ""}{format(diff)})
+            </span>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // Pega todas as chaves de stats possíveis para iterar
+  const allStatKeys = Array.from(new Set([
+    ...Object.keys(race.bonus),
+    ...(equippedRace ? Object.keys(equippedRace.bonus) : [])
+  ])) as (keyof ItemStats)[];
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 animate-fade-in" onClick={onClose}>
@@ -59,17 +98,10 @@ export function RaceModal({ race, isEquipped, onEquip, onClose }: Props) {
         </div>
 
         <div className="mb-6">
-          <h3 className="text-sm font-bold text-gray-400 mb-2 uppercase">Bônus Exclusivos da Raça:</h3>
-          <div className="flex flex-wrap gap-2">
-            {Object.entries(race.bonus).map(([stat, value]) => {
-              if (!value) return null;
-              return (
-                <span key={stat} className="bg-arcane-bg border border-arcane-border px-3 py-1 rounded-full text-sm">
-                  <span className="text-gray-500 uppercase text-xs mr-1">{stat}:</span>
-                  <span className="text-green-400 font-bold">+{formatBonus(value as number)}</span>
-                </span>
-              );
-            })}
+          <h3 className="text-sm font-bold text-gray-400 mb-2 uppercase">Bônus da Raça (Comparação):</h3>
+          <div className="space-y-1 bg-arcane-bg p-3 rounded-lg border border-arcane-border">
+            {allStatKeys.map(key => renderBonusComparison(key))}
+            {allStatKeys.length === 0 && <div className="text-xs text-gray-500 italic text-center">Nenhum bônus.</div>}
           </div>
         </div>
 

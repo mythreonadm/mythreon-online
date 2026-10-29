@@ -16,6 +16,7 @@ export function Shop() {
   const [actionRarity, setActionRarity] = useState<Rarity>("COMUM");
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   
+  // Estado do Modal de Quantidade
   const [qtyModal, setQtyModal] = useState<{ open: boolean, item: any, action: "BUY" | "SELL", max: number } | null>(null);
 
   if (!character) return null;
@@ -23,7 +24,9 @@ export function Shop() {
   const stock = getShopStock().filter(s => filter === "all" || s.kind === filter);
   const inventory = character.inventory.items.filter(i => i.category !== "COMPONENTE" && i.category !== "POCAO" && i.category !== "FRAGMENTO");
 
+  // ─── HANDLERS COMPRAR ───
   const handleBuyClick = (entry: any) => {
+    // Se for poção, abre o modal de quantidade. Senão, compra 1.
     if (entry.kind === "POCAO") {
       setQtyModal({ open: true, item: entry, action: "BUY", max: 99 });
     } else {
@@ -32,6 +35,7 @@ export function Shop() {
     }
   };
 
+  // ─── HANDLERS VENDER ───
   const handleSellClick = (item: Item) => {
     if (item.quantity > 1) {
       setQtyModal({ open: true, item, action: "SELL", max: item.quantity });
@@ -41,6 +45,7 @@ export function Shop() {
     }
   };
 
+  // ─── CONFIRMAR AÇÃO DO MODAL ───
   const confirmQtyAction = (qty: number) => {
     if (!qtyModal) return;
     
@@ -54,6 +59,7 @@ export function Shop() {
     setQtyModal(null);
   };
 
+  // ─── FORJA ───
   const handleUpgrade = () => {
     if (!selectedItem) return;
     const res = upgradeItem(selectedItem.uid);
@@ -77,6 +83,7 @@ export function Shop() {
   return (
     <div className="bg-arcane-panel border border-arcane-border rounded-xl p-6 shadow-lg relative">
       
+      {/* MODAL DE QUANTIDADE */}
       {qtyModal && (
         <QuantityModal 
           title={qtyModal.action === "BUY" ? `Comprar ${qtyModal.item.name}` : `Vender ${qtyModal.item.name}`}
@@ -86,6 +93,7 @@ export function Shop() {
         />
       )}
 
+      {/* HEADER */}
       <div className="flex justify-between items-center mb-6 border-b border-arcane-border pb-4">
         <h2 className="text-xl font-bold text-arcane-gold">Mercador Bolk & Forja</h2>
         <div className="flex bg-arcane-bg rounded-lg p-1 border border-arcane-border flex-wrap gap-1">
@@ -97,6 +105,7 @@ export function Shop() {
         </div>
       </div>
 
+      {/* ─── ABA COMPRAR ─── */}
       {tab === "COMPRAR" && (
         <>
           <div className="flex gap-2 mb-4 flex-wrap">
@@ -121,6 +130,7 @@ export function Shop() {
         </>
       )}
 
+      {/* ─── ABA VIALS ─── */}
       {tab === "VIALS" && (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
            {Object.values(VIALS).map(v => {
@@ -152,6 +162,7 @@ export function Shop() {
         </div>
       )}
 
+      {/* ─── ABA VENDER ─── */}
       {tab === "VENDER" && (
         <>
           <div className="flex items-end gap-4 mb-4 bg-arcane-bg p-3 rounded-lg border border-arcane-border">
@@ -170,6 +181,7 @@ export function Shop() {
                 <div className="text-3xl mb-1">{item.icon}</div>
                 <div className="text-xs font-bold text-center w-full truncate">{item.name}</div>
                 <div className="text-[10px] text-gray-400 uppercase">{item.rarity}</div>
+                {item.quantity > 1 && <div className="text-[10px] text-arcane-gold font-bold">x{item.quantity}</div>}
                 <button onClick={() => handleSellClick(item)} className="mt-2 w-full bg-arcane-purple hover:bg-arcane-purple/80 text-white py-1 rounded text-xs font-bold transition-colors">Vender</button>
               </div>
             ))}
@@ -177,6 +189,7 @@ export function Shop() {
         </>
       )}
 
+      {/* ─── ABA DESMANCHAR ─── */}
       {tab === "DESMANCHAR" && (
         <div className="space-y-4">
           <p className="text-gray-400 text-sm">Transforme equipamentos indesejados em Fragmentos de Essência. Eles são usados para aprimorar (Forja) e encantar seus itens.</p>
@@ -202,6 +215,7 @@ export function Shop() {
         </div>
       )}
 
+      {/* ─── ABA FORJA ─── */}
       {tab === "FORJA" && (
         <div className="grid md:grid-cols-2 gap-6">
           <div className="bg-arcane-bg border border-arcane-border rounded-lg p-4 max-h-[500px] overflow-y-auto">
@@ -240,6 +254,11 @@ export function Shop() {
                 </div>
 
                 <div className="space-y-3 mt-6 border-t border-arcane-border pt-4">
+                  {/* AVISO IMPORTANTE */}
+                  <div className="text-[10px] text-yellow-500 text-center mb-2 bg-yellow-900/20 p-1.5 rounded border border-yellow-900/30">
+                    ⚠️ Os stats do personagem só mudam se o item estiver EQUIPADO.
+                  </div>
+
                   <button onClick={handleUpgrade} disabled={selectedItem.upgradeLevel >= 10} className="w-full bg-orange-700 hover:bg-orange-600 disabled:bg-gray-800 disabled:text-gray-500 text-white font-bold py-2.5 rounded flex justify-between items-center px-4 transition-colors">
                     <span>⬆️ Aprimorar Nível (+1)</span>
                     <span className="text-[10px] bg-black/40 px-2 py-1 rounded">{getUpgradeCost(selectedItem).gold}g + {getUpgradeCost(selectedItem).fragments} Frags</span>
