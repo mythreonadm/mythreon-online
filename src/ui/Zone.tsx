@@ -20,12 +20,18 @@ export function ZoneView() {
   const [healTimer, setHealTimer] = useState(0);
   const [magicCooldown, setMagicCooldown] = useState(0);
   const [mobilePanelOpen, setMobilePanelOpen] = useState(false);
+  const [imageError, setImageError] = useState(false); // NOVO ESTADO
   
   const balloonTimeout = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   if (!character) return null;
   const currentZone = ZONES[currentZoneId];
   const currentMob = currentZone.enemies.find(e => e.id === character.activeEnemyId) || currentZone.enemies[0];
+
+  // Reseta o erro de imagem quando o monstro muda
+  useEffect(() => {
+    setImageError(false);
+  }, [currentMob?.id]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -93,7 +99,6 @@ export function ZoneView() {
     }
   }, [lastTickResult, isTickRunning]);
 
-  // TELA DA CASA
   if (!isTickRunning && !isTraining) {
     const skillsList: { key: keyof CharacterSkills, name: string, icon: string, desc: string }[] = [
       { key: "melee", name: "Melee", icon: "⚔️", desc: "Aumenta Ataque Físico" },
@@ -178,7 +183,6 @@ export function ZoneView() {
     );
   }
 
-  // TELA DE TREINO ATIVO
   if (isTraining) {
     const skillKey = character.trainingSkill as keyof CharacterSkills;
     const skillName = skillKey ? skillKey.toUpperCase() : "";
@@ -211,14 +215,13 @@ export function ZoneView() {
     );
   }
 
-  // TELA DE CAÇADA (ARENA + PAINEL)
   const enemyHp = character.enemyHp || 0;
   const enemyMaxHp = currentMob.hp * currentMob.difficulty;
   const enemyHpPct = Math.max(0, (enemyHp / enemyMaxHp) * 100);
 
   const getBackgroundImage = (theme: string) => {
     switch (theme) {
-      case "forest": return "/assets/backgrounds/forest.png"; // Ajustado para o nome que você salvou
+      case "forest": return "/assets/backgrounds/forest.png";
       case "mountain": return "/assets/backgrounds/mountain.png";
       case "ocean": return "/assets/backgrounds/ocean.png";
       case "ruins": return "/assets/backgrounds/ruins.png";
@@ -271,10 +274,20 @@ export function ZoneView() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-[1fr_320px] gap-3 md:gap-4">
-        {/* ARENA */}
         <div className={`relative rounded-xl border-2 border-arcane-border shadow-2xl overflow-hidden bg-${currentZone.theme} min-h-[300px] md:min-h-[500px]`}>
+          
           <div className="absolute inset-0 z-0">
-            <img src={getBackgroundImage(currentZone.theme)} alt={currentZone.name} className="w-full h-full object-cover" style={{ imageRendering: "pixelated" }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+            <img 
+              src={getBackgroundImage(currentZone.theme)} 
+              alt={currentZone.name} 
+              className="w-full h-full object-cover" 
+              style={{ imageRendering: "pixelated" }} 
+              onError={(e) => { 
+                if (e.currentTarget.src.endsWith(".png")) { e.currentTarget.src = e.currentTarget.src.replace(".png", ".jpg"); }
+                else if (e.currentTarget.src.endsWith(".jpg")) { e.currentTarget.src = e.currentTarget.src.replace(".jpg", ".webp"); }
+                else { e.currentTarget.style.display = 'none'; }
+              }} 
+            />
             <div className="absolute inset-0 bg-black/40 pointer-events-none"></div>
           </div>
 
@@ -313,10 +326,16 @@ export function ZoneView() {
                 {floatingDamage !== null && <div className="damage-number text-red-500 text-3xl md:text-5xl z-50 font-black drop-shadow-[0_2px_2px_rgba(0,0,0,1)]">-{floatingDamage}</div>}
                 
                 <div className={`w-24 h-24 md:w-40 md:h-40 flex items-center justify-center relative transition-transform ${isHurt ? 'animate-shake filter drop-shadow-[0_0_20px_rgba(220,38,38,1)]' : 'animate-idle'}`}>
-                  {currentMob?.sprite ? (
+                  {currentMob?.sprite && !imageError ? (
                     <>
-                      <img src={currentMob.sprite} alt={currentMob.name} className="w-full h-full object-contain drop-shadow-[0_10px_10px_rgba(0,0,0,0.8)]" style={{ imageRendering: "pixelated" }} onError={(e) => { e.currentTarget.style.display = 'none'; if(e.currentTarget.nextElementSibling) { (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'block'; } }} />
-                      <span className="text-[80px] md:text-[120px] leading-none select-none hidden absolute drop-shadow-lg">{currentMob?.emoji || "👾"}</span>
+                      <img 
+                        key={currentMob.id} // <- AQUI, a chave força o React a recriar
+                        src={currentMob.sprite} 
+                        alt={currentMob.name} 
+                        className="w-full h-full object-contain drop-shadow-[0_10px_10px_rgba(0,0,0,0.8)]" 
+                        style={{ imageRendering: "pixelated" }} 
+                        onError={() => setImageError(true)} // <- Usa o estado do React
+                      />
                     </>
                   ) : (
                     <span className="text-[80px] md:text-[120px] leading-none select-none drop-shadow-lg">{currentMob?.emoji || "👾"}</span>
@@ -347,7 +366,6 @@ export function ZoneView() {
           </div>
         </div>
 
-        {/* PAINEL */}
         <div className={`${mobilePanelOpen ? "block" : "hidden"} md:block`}>
           <div className="bg-gradient-to-b from-arcane-panel to-black/60 border-2 border-arcane-purple/40 rounded-xl p-3 md:p-4 shadow-[0_0_30px_rgba(124,58,237,0.2)] relative overflow-hidden h-full">
             <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-arcane-gold rounded-tl-lg opacity-50"></div>
