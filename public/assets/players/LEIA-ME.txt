@@ -1,0 +1,1 @@
+"Coloque aqui as imagens do Jogador (ex: guerreiro.png, arqueiro.png, mago.png)"  

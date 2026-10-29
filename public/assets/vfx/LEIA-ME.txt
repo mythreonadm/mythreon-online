@@ -1,0 +1,1 @@
+"Coloque aqui as Magias e Efeitos (ex: fogo.png, gelo.png, raio.png, veneno.png)"  

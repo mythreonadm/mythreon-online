@@ -1,0 +1,137 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ESTILOS BASE */
+body {
+  background: #0a0612;
+  color: #e5e5e5;
+  font-family: "Georgia", serif;
+  margin: 0;
+  padding: 0;
+}
+
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: #140a1f; }
+::-webkit-scrollbar-thumb { background: #2a1a3e; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #7c3aed; }
+
+/* ANIMAÇÕES DE COMBATE (TOMAR DANO / FLUTUAR) */
+@keyframes shake {
+  0% { transform: translate(1px, 1px) rotate(0deg); }
+  10% { transform: translate(-1px, -2px) rotate(-1deg); }
+  20% { transform: translate(-3px, 0px) rotate(1deg); }
+  30% { transform: translate(3px, 2px) rotate(0deg); }
+  40% { transform: translate(1px, -1px) rotate(1deg); }
+  50% { transform: translate(-1px, 2px) rotate(-1deg); }
+  60% { transform: translate(-3px, 1px) rotate(0deg); }
+  70% { transform: translate(3px, 1px) rotate(-1deg); }
+  80% { transform: translate(-1px, -1px) rotate(1deg); }
+  90% { transform: translate(1px, 2px) rotate(0deg); }
+  100% { transform: translate(1px, -2px) rotate(-1deg); }
+}
+
+@keyframes floatUp {
+  0% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-50px) scale(1.5); }
+}
+
+@keyframes idleBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.animate-shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+.animate-idle { animation: idleBounce 2s infinite ease-in-out; }
+.damage-number { animation: floatUp 1s ease-out forwards; position: absolute; font-weight: bold; font-family: monospace; pointer-events: none; text-shadow: 2px 2px 0 #000; }
+
+/* ANIMAÇÕES DO JOGADOR (ATAQUE) */
+@keyframes attackSwing {
+  0% { transform: rotate(0deg) translateX(0); }
+  50% { transform: rotate(-45deg) translateX(20px); }
+  100% { transform: rotate(0deg) translateX(0); }
+}
+
+@keyframes attackShoot {
+  0% { transform: translateX(0); }
+  50% { transform: translateX(-20px); }
+  100% { transform: translateX(0); }
+}
+
+@keyframes attackCast {
+  0% { transform: scale(1); filter: brightness(1); }
+  50% { transform: scale(1.1); filter: brightness(2) drop-shadow(0 0 10px #7c3aed); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+
+@keyframes projectileFly {
+  0% { transform: translateX(0) scale(0.5); opacity: 1; }
+  100% { transform: translateX(200px) scale(1.5); opacity: 0; }
+}
+
+.animate-swing { animation: attackSwing 0.4s ease-in-out; }
+.animate-shoot { animation: attackShoot 0.4s ease-in-out; }
+.animate-cast { animation: attackCast 0.4s ease-in-out; }
+.projectile { animation: projectileFly 0.5s ease-in forwards; }
+
+/* ANIMAÇÕES DO MUNDO (SUBWAY SURFERS / PARALLAX) */
+@keyframes scrollBg {
+  0% { background-position: 0 0; }
+  100% { background-position: -1000px 0; }
+}
+
+@keyframes runBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.animate-run { animation: runBounce 0.3s infinite alternate ease-in-out; }
+
+/* CENÁRIOS DOS MAPAS (INSPIRAÇÃO N64 PIXEL ART) */
+.bg-forest {
+  background: linear-gradient(to bottom, #1a2a1a 0%, #2d4a2d 60%, #111 100%);
+  background-image: 
+    radial-gradient(circle at 50% 0%, #4ade80 0%, transparent 40%),
+    repeating-linear-gradient(90deg, transparent 0, transparent 50px, rgba(0,0,0,0.2) 50px, rgba(0,0,0,0.2) 55px);
+  background-size: 1000px 100%;
+  animation: scrollBg 10s linear infinite;
+  image-rendering: pixelated;
+}
+
+.bg-mountain {
+  background: linear-gradient(to bottom, #2a2a35 0%, #3a3a4a 60%, #111 100%);
+  background-image: 
+    linear-gradient(135deg, transparent 75%, #444 75%),
+    linear-gradient(225deg, transparent 75%, #444 75%);
+  background-position: 0 0, 50px 0;
+  background-size: 100px 100px, 100px 100px;
+  animation: scrollBg 8s linear infinite;
+  image-rendering: pixelated;
+}
+
+.bg-ocean {
+  background: linear-gradient(to bottom, #0f172a 0%, #1e3a8a 60%, #111 100%);
+  background-image: 
+    repeating-linear-gradient(0deg, transparent, transparent 20px, rgba(255,255,255,0.05) 20px, rgba(255,255,255,0.05) 25px);
+  background-size: 1000px 100%;
+  animation: scrollBg 12s linear infinite;
+  image-rendering: pixelated;
+}
+
+.bg-ruins {
+  background: linear-gradient(to bottom, #2d1b36 0%, #4c1d95 60%, #111 100%);
+  background-image: 
+    repeating-linear-gradient(90deg, transparent, transparent 80px, rgba(255,255,255,0.05) 80px, rgba(255,255,255,0.05) 90px);
+  background-size: 1000px 100%;
+  animation: scrollBg 15s linear infinite;
+  image-rendering: pixelated;
+}
+
+.bg-abyss {
+  background: linear-gradient(to bottom, #450a0a 0%, #7f1d1d 60%, #111 100%);
+  background-image: 
+    radial-gradient(circle, rgba(255,0,0,0.2) 1px, transparent 1px);
+  background-size: 20px 20px;
+  animation: scrollBg 5s linear infinite;
+  image-rendering: pixelated;
+}
