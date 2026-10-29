@@ -10,6 +10,11 @@ export interface ItemStats {
   hp?: number; mp?: number; spd?: number; crit?: number;
   hit?: number; dge?: number; blk?: number;
   resFisico?: number; resMagico?: number;
+  // NOVOS ATRIBUTOS
+  hpRegen?: number;
+  mpRegen?: number;
+  luck?: number;
+  critDmg?: number;
 }
 
 export interface Affix { law: Law; stat: keyof ItemStats; value: number; }
@@ -17,6 +22,7 @@ export interface Affix { law: Law; stat: keyof ItemStats; value: number; }
 export interface Item {
   uid: string; templateId: string; name: string; category: ItemCategory; slot?: SlotType;
   tier: 1 | 2 | 3 | 4 | 5; rarity: Rarity; stats: ItemStats; affixes: Affix[];
+  upgradeLevel: number; // NOVO: +0, +1, +2...
   uniqueEffect?: string; stackable: boolean; maxStack: number; quantity: number;
   componentType?: ComponentType; law?: Law; element?: Element; icon: string;
   slots?: number; dropBonus?: number; rareDropBonus?: number; xpBonus?: number;
@@ -64,7 +70,6 @@ export interface CharacterSkills {
   melee: number; defense: number; magic: number; distance: number; soul: number;
 }
 
-// NOVOS TIPOS DE QUEST (DISCOVER_TOTAL e DISCOVER_NAMED)
 export type QuestObjectiveType = "KILL" | "KILL_BOSS" | "COLLECT" | "REACH_LEVEL" | "EARN_GOLD" | "SYNTHESIZE" | "SELL" | "SALVAGE" | "DISCOVER_TOTAL" | "DISCOVER_NAMED";
 export type QuestCategory = "TUTORIAL" | "HISTORIA" | "CACA" | "COLETA" | "DESAFIO" | "REPETIVEL" | "COMPENDIO";
 
