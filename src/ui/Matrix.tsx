@@ -65,7 +65,6 @@ export function MatrixView() {
   return (
     <div className="space-y-6">
       
-      {/* MODAL DE DETALHES DA RAÇA */}
       {selectedRace && (
         <RaceModal 
           race={selectedRace} 
@@ -76,7 +75,6 @@ export function MatrixView() {
         />
       )}
 
-      {/* HEADER */}
       <div className="bg-gradient-to-r from-arcane-panel via-purple-900/20 to-arcane-panel border-2 border-arcane-purple/30 rounded-xl p-6 shadow-[0_0_30px_rgba(124,58,237,0.2)]">
         <div className="flex flex-wrap justify-between items-center gap-4">
           <div>
@@ -121,7 +119,6 @@ export function MatrixView() {
         </div>
       </div>
 
-      {/* TABS */}
       <div className="flex bg-arcane-panel border border-arcane-border rounded-lg p-1 flex-wrap">
         <button onClick={() => setTab("synthesis")} className={`flex-1 min-w-[120px] py-3 rounded font-bold transition-all text-sm ${tab === "synthesis" ? "bg-arcane-purple text-white shadow-lg" : "text-gray-400 hover:text-white"}`}>🔮 Síntese</button>
         <button onClick={() => setTab("mine")} className={`flex-1 min-w-[120px] py-3 rounded font-bold transition-all text-sm ${tab === "mine" ? "bg-arcane-purple text-white shadow-lg" : "text-gray-400 hover:text-white"}`}>🎭 Minhas ({races.length})</button>
@@ -132,7 +129,6 @@ export function MatrixView() {
         </button>
       </div>
 
-      {/* ─── ABA SÍNTESE ─── */}
       {tab === "synthesis" && (
         <div className="bg-arcane-panel border border-arcane-border rounded-xl p-6 shadow-lg">
           <div className="text-center mb-6">
@@ -176,7 +172,6 @@ export function MatrixView() {
         </div>
       )}
 
-      {/* ─── ABA MINHAS RAÇAS ─── */}
       {tab === "mine" && (
         <div className="space-y-6">
           {races.length === 0 ? (
@@ -217,7 +212,6 @@ export function MatrixView() {
         </div>
       )}
 
-      {/* ─── ABA COMPÊNDIO ─── */}
       {tab === "compendium" && (
         <div className="space-y-4">
           <div className="bg-arcane-panel border border-arcane-border rounded-xl p-6">
@@ -261,7 +255,6 @@ export function MatrixView() {
         </div>
       )}
 
-      {/* ─── ABA RECOMPENSAS ─── */}
       {tab === "milestones" && (
         <div className="space-y-4">
           <div className="bg-arcane-panel border border-arcane-border rounded-xl p-6">
