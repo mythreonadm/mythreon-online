@@ -28,6 +28,12 @@ export function buildProfile(char: Character): Profile {
   return p;
 }
 
+function pickPotion(char: Character, missing: number): Item | null {
+  const potions = char.inventory.items.filter((i) => i.category === "POCAO" && i.quantity > 0).sort((a, b) => (a.stats.hp ?? 0) - (b.stats.hp ?? 0));
+  if (potions.length === 0) return null;
+  return potions.find((p) => (p.stats.hp ?? 0) >= missing * 0.8) ?? potions[potions.length - 1];
+}
+
 const EQUIP_CATEGORIES = ["ARMA", "ARMADURA", "JOIA", "ESCUDO"];
 
 export function processTick(char: Character, zone: Zone, isOffline: boolean): TickResult {
@@ -61,8 +67,8 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
 
   let bagFullWarned = false;
 
+  // VERIFICA BUFF DE ATAQUE DUPLO
   const hasDoubleAtkBuff = char.doubleAtkUntil && char.doubleAtkUntil > Date.now();
-  const buffMultiplier = hasDoubleAtkBuff ? 2 : 1;
 
   const heal = (amount: number) => { playerHp = Math.min(char.hpMax, playerHp + Math.round(amount * (1 + prof.healPct))); };
 
@@ -76,16 +82,10 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
 
     if (playerHp <= 0) {
       result.death = true;
-      
-      // PENALIDADE DE MORTE
-      const xpLossPct = (char.blesses && char.blesses > 0) ? 0.05 : 0.15; // 5% com Bless, 15% sem
+      const xpLossPct = (char.blesses && char.blesses > 0) ? 0.05 : 0.15;
       const xpLost = Math.floor(char.xp * xpLossPct);
-      const goldLost = Math.floor(char.gold * 0.10); // Perde 10% do ouro
-      
-      char.xp -= xpLost;
-      char.gold -= goldLost;
-      char.hp = 0; // Fica com 0 de HP até curar na cidade
-      
+      const goldLost = Math.floor(char.gold * 0.10);
+      char.xp -= xpLost; char.gold -= goldLost; char.hp = 0;
       result.deathData = { xpLost, goldLost };
       result.log.push(`☠️ Você morreu! Perdeu ${xpLost} XP e ${goldLost} de Ouro.`);
       break;
@@ -94,23 +94,13 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
     // POÇÃO DE HP
     if (hpPotId && (playerHp / hpMax) * 100 <= hpPotPct) {
       const potion = char.inventory.items.find(i => i.templateId === hpPotId && i.quantity > 0);
-      if (potion) { 
-        heal(potion.stats.hp ?? 0); 
-        removeItem(char.inventory, potion.uid, 1); 
-        result.potionsUsed!++; 
-        result.log.push(`🧪 Usou ${potion.name}.`); 
-      }
+      if (potion) { heal(potion.stats.hp ?? 0); removeItem(char.inventory, potion.uid, 1); result.potionsUsed!++; result.log.push(`🧪 Usou ${potion.name}.`); }
     }
 
     // POÇÃO DE MP
     if (mpPotId && (playerMp / mpMax) * 100 <= mpPotPct) {
       const potion = char.inventory.items.find(i => i.templateId === mpPotId && i.quantity > 0);
-      if (potion) { 
-        playerMp = Math.min(mpMax, playerMp + (potion.stats.mp ?? 0)); 
-        removeItem(char.inventory, potion.uid, 1); 
-        result.potionsUsed!++; 
-        result.log.push(`🔮 Usou ${potion.name}.`); 
-      }
+      if (potion) { playerMp = Math.min(mpMax, playerMp + (potion.stats.mp ?? 0)); removeItem(char.inventory, potion.uid, 1); result.potionsUsed!++; result.log.push(`🔮 Usou ${potion.name}.`); }
     }
 
     const triggered = !!support && t % support.cd === 0;
@@ -120,12 +110,12 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
     const armMult = 1 + (buffOn ? support?.armPct ?? 0 : 0);
     const ignoreArmor = buffOn ? support?.ignoreArmor ?? 0 : 0;
 
-    // 1. ATAQUE FÍSICO BÁSICO
+    // FUNÇÃO DE STRIKE (Sem o multiplicador de buff, agora ele é aplicado pela quantidade de chamadas)
     const strike = (multiplier = 1): number => {
       result.attacked = true;
       if (debug) { result.lastDamage = 99999; return 99999; }
       if (Math.random() > (s.hit ?? 1)) { result.lastMiss = true; return 0; }
-      const base = (s.atk ?? 0) * atkMult * multiplier * buffMultiplier;
+      const base = (s.atk ?? 0) * atkMult * multiplier;
       let dmg = Math.max(Math.ceil(base * 0.1), base - enemy.arm * (1 - ignoreArmor));
       if (Math.random() < (s.crit ?? 0)) { dmg *= 1.5; result.lastCrit = true; }
       if (support?.executeBonus && enemyHp < enemy.hp * 0.4) dmg *= 1 + support.executeBonus;
@@ -135,22 +125,28 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
     };
 
     let dealt = strike();
+    
+    // AQUI ESTÁ A CORREÇÃO: Se o buff estiver ativo, ele bate uma segunda vez.
+    if (hasDoubleAtkBuff) {
+      dealt += strike();
+      result.log.push(`⚡ Ataque Duplo ativado!`);
+    }
+
     if (triggered && support?.doubleStrike) dealt += strike();
     if (Math.random() < (s.spd ?? 0)) dealt += strike();
 
-    // 2. ATAQUE MÁGICO (HABILIDADE DA RAÇA)
+    // HABILIDADE DE ATAQUE (Gasta Mana)
     if (skill && t % skillCd === 0 && !debug) {
       const manaCost = skill.manaCost + (char.level * 2);
       if (playerMp >= manaCost) {
         playerMp -= manaCost;
         result.usedMp = true;
         
-        // Dano Mágico usa MATK + 50% do ATK * Multiplicador da Skill
-        const raw = ((s.matk ?? 0) + (s.atk ?? 0) * 0.5) * skill.mult * (1 + prof.skillDmgPct) * buffMultiplier;
+        // Habilidade não recebe o buff de hit duplo (apenas o ataque básico)
+        const raw = ((s.matk ?? 0) + (s.atk ?? 0) * 0.5) * skill.mult * (1 + prof.skillDmgPct);
         const armor = enemy.arm * (1 - skill.pierce) * (1 - ignoreArmor);
         const sd = Math.max(Math.ceil(raw * 0.1), Math.round(raw - armor));
-        dealt += sd; 
-        result.lastDamage = (result.lastDamage ?? 0) + sd;
+        dealt += sd; result.lastDamage = (result.lastDamage ?? 0) + sd;
         if (skill.lifesteal) heal(sd * skill.lifesteal);
         
         result.log.push(`✨ ${skill.desc.split(':')[0]} causou ${sd} de dano mágico!`);
@@ -160,7 +156,7 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
     }
 
     if (debug) result.log.push(`[TESTE] Você obliterou o ${enemy.name} (${diff}⭐).`);
-    else if (dealt > 0) result.log.push(`Você causou ${dealt} de dano físico no ${enemy.name}.${result.lastCrit ? " 💥 CRÍTICO!" : ""}${hasDoubleAtkBuff ? " ⚡" : ""}`);
+    else if (dealt > 0) result.log.push(`Você causou ${dealt} de dano físico no ${enemy.name}.${result.lastCrit ? " 💥 CRÍTICO!" : ""}`);
     
     enemyHp -= dealt;
     if (prof.lifesteal > 0 && !debug) heal(dealt * prof.lifesteal);
@@ -202,7 +198,7 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
     } else {
       const e = support;
       const dodgedBySkill = !!e?.dodgeEvery && t % e.dodgeEvery === 0;
-      if (dodgedBySkill || Math.random() < (s.dge ?? 0)) { result.log.push(`Você esquivou.`); }
+      if (dodgedBySkill || Math.random() < (s.dge ?? 0)) { result.log.push(`Você esquivou do ataque de ${enemy.name}.`); }
       else {
         const armor = (s.arm ?? 0) * armMult;
         const reduction = armor + (s.def ?? 0) * 0.5;
@@ -212,7 +208,7 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
         if (Math.random() < (s.blk ?? 0)) mult *= 0.5;
         const eDmg = debug ? 0 : Math.max(1, Math.round(raw * Math.max(0.2, mult)));
         playerHp -= eDmg;
-        if (eDmg > 0) result.log.push(`${enemy.name} causou ${eDmg} de dano.`);
+        if (eDmg > 0) result.log.push(`${enemy.name} causou ${eDmg} de dano em você.`);
       }
       if (playerHp > 0) heal(hpMax * 0.015);
       else {
