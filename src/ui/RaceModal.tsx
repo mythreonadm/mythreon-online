@@ -4,6 +4,7 @@ import { ATAQUES, SUPORTES, PASSIVAS } from "../data/components";
 import { ATTACK_SKILLS, SUPPORT_EFFECTS, PASSIVE_EFFECTS } from "../data/skills";
 import { RACE_LORE } from "../data/races";
 import { STAT_NAMES } from "../data/affixes";
+import { getLineageByAttack } from "../data/lineages"; // NOVO IMPORT
 
 interface Props {
   race: Race;
@@ -21,6 +22,9 @@ export function RaceModal({ race, equippedRace, isEquipped, onEquip, onClose }: 
   const atkEffect = ATTACK_SKILLS[race.ataqueId];
   const supEffect = SUPPORT_EFFECTS[race.suporteId];
   const pasEffect = PASSIVE_EFFECTS[race.passivaId];
+
+  // Pega a linhagem visual desta raça
+  const lineage = getLineageByAttack(race.ataqueId);
 
   const renderBonusComparison = (statKey: keyof ItemStats) => {
     const newVal = race.bonus[statKey] || 0;
@@ -55,7 +59,6 @@ export function RaceModal({ race, equippedRace, isEquipped, onEquip, onClose }: 
     );
   };
 
-  // Pega todas as chaves de stats possíveis para iterar
   const allStatKeys = Array.from(new Set([
     ...Object.keys(race.bonus),
     ...(equippedRace ? Object.keys(equippedRace.bonus) : [])
@@ -63,14 +66,23 @@ export function RaceModal({ race, equippedRace, isEquipped, onEquip, onClose }: 
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 animate-fade-in" onClick={onClose}>
-      <div className="bg-arcane-panel border-2 border-arcane-purple rounded-2xl p-6 max-w-xl w-full shadow-[0_0_40px_rgba(124,58,237,0.3)] relative" onClick={e => e.stopPropagation()}>
+      <div className="bg-arcane-panel border-2 border-arcane-purple rounded-2xl p-6 max-w-xl w-full shadow-[0_0_40px_rgba(124,58,237,0.3)] relative max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         
-        <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-white font-bold text-xl">✕</button>
+        <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-white font-bold text-xl z-10">✕</button>
 
-        <div className="text-center mb-6 border-b border-arcane-border pb-4">
+        <div className="text-center mb-4 border-b border-arcane-border pb-4">
           <h2 className={`text-2xl font-bold ${race.tier === "NOMEADA" ? "text-arcane-gold" : "text-white"}`}>{race.name}</h2>
           <p className="text-xs text-arcane-cyan uppercase tracking-widest">{race.tier}</p>
-          {race.tier === "NOMEADA" && <p className="text-sm italic text-gray-400 mt-2">"{RACE_LORE[race.id]}"</p>}
+        </div>
+
+        {/* PREVIEW VISUAL DA LINHAGEM */}
+        <div className="flex items-center justify-center gap-4 mb-6 bg-arcane-bg p-3 rounded-xl border border-arcane-border">
+          <div className="text-6xl drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">{lineage.emoji}</div>
+          <div>
+            <div className="text-[10px] text-gray-500 uppercase tracking-wider">Linhagem Visual</div>
+            <div className={`text-lg font-bold ${lineage.color}`}>{lineage.name}</div>
+            <div className="text-xs text-gray-400">{lineage.description}</div>
+          </div>
         </div>
 
         <div className="space-y-3 mb-6">

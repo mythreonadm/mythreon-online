@@ -6,6 +6,7 @@ import { CharacterSkills } from "../types";
 import { skillXpToNextLevel } from "../engine/stats";
 import { VIALS } from "../data/vials";
 import { ATTACK_SKILLS } from "../data/skills";
+import { getLineageByAttack } from "../data/lineages"; // NOVO IMPORT
 
 export function ZoneView() {
   const { character, currentZoneId, startHunting, stopHunting, startTraining, stopTraining, isTickRunning, isTraining, lastTickResult, setActiveEnemy, activateBuff, updateSettings, buyBless, healFull, startHealing, cancelHealing, healingUntil } = useGameStore();
@@ -20,7 +21,7 @@ export function ZoneView() {
   const [healTimer, setHealTimer] = useState(0);
   const [magicCooldown, setMagicCooldown] = useState(0);
   const [mobilePanelOpen, setMobilePanelOpen] = useState(false);
-  const [imageError, setImageError] = useState(false); // NOVO ESTADO
+  const [imageError, setImageError] = useState(false);
   
   const balloonTimeout = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -28,10 +29,12 @@ export function ZoneView() {
   const currentZone = ZONES[currentZoneId];
   const currentMob = currentZone.enemies.find(e => e.id === character.activeEnemyId) || currentZone.enemies[0];
 
-  // Reseta o erro de imagem quando o monstro muda
+  // Encontra a linhagem baseada na raça equipada (ou humano se não tiver)
+  const playerLineage = getLineageByAttack(character.activeRace?.ataqueId);
+
   useEffect(() => {
     setImageError(false);
-  }, [currentMob?.id]);
+  }, [currentMob?.id, playerLineage.id]); // Reseta erro se o mob ou a raça mudar
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -230,20 +233,17 @@ export function ZoneView() {
     }
   };
 
+  // AQUI ESTÁ A GRANDE MUDANÇA VISUAL
+  // O sprite agora vem da linhagem da raça, não da arma
   const getPlayerVisual = () => {
-    const weaponId = character.equipped.ARMA_PRINCIPAL?.templateId || "";
-    if (weaponId.includes("ARCO")) return "/assets/players/arqueiro.gif";
-    if (weaponId.includes("CAJADO") || weaponId.includes("VARINHA")) return "/assets/players/mago.gif";
-    return "/assets/players/guerreiro.gif"; 
+    return playerLineage.sprite;
   };
 
   const getPlayerFallbackEmoji = () => {
-    const weaponId = character.equipped.ARMA_PRINCIPAL?.templateId || "";
-    if (weaponId.includes("ARCO")) return "🧝‍♂️";
-    if (weaponId.includes("CAJADO") || weaponId.includes("VARINHA")) return "🧙‍♂️";
-    return "🤺";
+    return playerLineage.emoji;
   };
 
+  // A arma ainda dita a ANIMAÇÃO (espada = swing, arco = shoot)
   const weaponAnimClass = isAttacking ? getWeaponAnimation(character.equipped.ARMA_PRINCIPAL?.templateId) : "animate-run";
   const spellEmoji = getSpellEffect(character.activeRace?.ataqueId || "A1");
   
@@ -304,10 +304,23 @@ export function ZoneView() {
 
           <div className="relative z-20 flex justify-between items-end px-4 md:px-20 pb-8 md:pb-12 h-[300px] md:h-[500px]">
             <div className="flex flex-col items-center relative translate-y-2 md:translate-y-4">
-              <div className={`w-20 h-20 md:w-32 md:h-32 flex items-center justify-center transition-transform ${weaponAnimClass}`}>
-                <img src={getPlayerVisual()} alt="Jogador" className="w-full h-full object-contain drop-shadow-[0_10px_10px_rgba(0,0,0,0.8)]" style={{ imageRendering: "pixelated" }} onError={(e) => { e.currentTarget.style.display = 'none'; if(e.currentTarget.nextElementSibling) { (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'block'; } }} />
-                <span className="text-[60px] md:text-[100px] leading-none select-none hidden drop-shadow-lg">{getPlayerFallbackEmoji()}</span>
+              
+              {/* SPRITE DO JOGADOR (Agora baseado na Linhagem) */}
+              <div className={`w-24 h-24 md:w-40 md:h-40 flex items-center justify-center transition-transform ${weaponAnimClass}`}>
+                {!imageError ? (
+                  <img 
+                    key={playerLineage.id} // Força recarregar se a classe mudar
+                    src={getPlayerVisual()} 
+                    alt={playerLineage.name} 
+                    className="w-full h-full object-contain drop-shadow-[0_10px_10px_rgba(0,0,0,0.8)]" 
+                    style={{ imageRendering: "pixelated" }} 
+                    onError={() => setImageError(true)} 
+                  />
+                ) : (
+                  <span className="text-[60px] md:text-[100px] leading-none select-none drop-shadow-lg">{getPlayerFallbackEmoji()}</span>
+                )}
               </div>
+
               <div className="mt-1 md:mt-2 text-center w-32 md:w-48 bg-black/80 p-1.5 md:p-2 rounded-lg border-2 border-arcane-cyan shadow-[0_0_10px_rgba(6,182,212,0.5)]">
                 <h3 className="text-[10px] md:text-sm font-bold text-arcane-cyan truncate">{character.name}</h3>
                 <div className="h-1.5 md:h-2 bg-gray-900 rounded-full mt-1 overflow-hidden">
@@ -327,16 +340,14 @@ export function ZoneView() {
                 
                 <div className={`w-24 h-24 md:w-40 md:h-40 flex items-center justify-center relative transition-transform ${isHurt ? 'animate-shake filter drop-shadow-[0_0_20px_rgba(220,38,38,1)]' : 'animate-idle'}`}>
                   {currentMob?.sprite && !imageError ? (
-                    <>
-                      <img 
-                        key={currentMob.id} // <- AQUI, a chave força o React a recriar
-                        src={currentMob.sprite} 
-                        alt={currentMob.name} 
-                        className="w-full h-full object-contain drop-shadow-[0_10px_10px_rgba(0,0,0,0.8)]" 
-                        style={{ imageRendering: "pixelated" }} 
-                        onError={() => setImageError(true)} // <- Usa o estado do React
-                      />
-                    </>
+                    <img 
+                      key={currentMob.id}
+                      src={currentMob.sprite} 
+                      alt={currentMob.name} 
+                      className="w-full h-full object-contain drop-shadow-[0_10px_10px_rgba(0,0,0,0.8)]" 
+                      style={{ imageRendering: "pixelated" }} 
+                      onError={() => setImageError(true)} 
+                    />
                   ) : (
                     <span className="text-[80px] md:text-[120px] leading-none select-none drop-shadow-lg">{currentMob?.emoji || "👾"}</span>
                   )}
