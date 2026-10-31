@@ -16,6 +16,9 @@ import { OfflineModal } from "./ui/OfflineModal";
 import { DeathScreen } from "./ui/DeathScreen";
 import { isDebug, setDebug } from "./config";
 import { AccessIcon, type AccessIconName } from "./ui/AccessIcon";
+import { LandingPage } from "./ui/LandingPage";
+import { closeLocalAccountSession, getLocalAccountSession, type LocalAccount } from "./utils/localAccounts";
+import { activateSaveAccount } from "./engine/save";
 
 type Tab = "zona" | "personagem" | "backpack" | "depot" | "matriz" | "loja" | "missoes" | "duelos" | "wiki";
 
@@ -35,13 +38,19 @@ export default function App() {
   const [name, setName] = useState("");
   const [debug, setDebugState] = useState(isDebug());
   const [focusQuestId, setFocusQuestId] = useState<string | null>(null);
+  const [account, setAccount] = useState<LocalAccount | null>(() => getLocalAccountSession());
 
-  useEffect(() => {
-    if (loadFromSave()) {
+useEffect(() => {
+    if (!account) return;
+    activateSaveAccount(account.id);
+    const loaded = loadFromSave();
+    if (loaded) {
       const state = useGameStore.getState();
       if (state.character && state.character.hp > 0) startHunting(state.character.currentZoneId || "BOSQUE_LYSS");
+    } else {
+      useGameStore.setState({ character: null, races: [], currentZoneId: "BOSQUE_LYSS", offlineReport: null });
     }
-  }, []);
+  }, [account?.id]);
 
   useEffect(() => { return () => stopHunting(); }, []);
 
@@ -54,6 +63,15 @@ export default function App() {
     setTab("missoes");
   };
   const clearQuestFocus = useCallback(() => setFocusQuestId(null), []);
+  const logout = () => {
+    stopHunting();
+    closeLocalAccountSession();
+    activateSaveAccount();
+    useGameStore.setState({ character: null, races: [], currentZoneId: "BOSQUE_LYSS", offlineReport: null });
+    setAccount(null);
+  };
+
+  if (!account) return <LandingPage onAuthenticated={setAccount} />;
 
   if (!character) {
     return (
@@ -66,7 +84,8 @@ export default function App() {
               className="brand-logo brand-logo-entry"
             />
           </div>
-          <p className="text-arcane-cyan text-center mb-8 text-sm italic">“A Essência registra tudo.”</p>
+          <p className="text-arcane-cyan text-center mb-2 text-sm italic">“A Essência registra tudo.”</p>
+          <div className="text-center text-xs text-gray-500 mb-6">Conta: {account.email} · <button className="text-arcane-gold hover:underline" onClick={logout}>Sair</button></div>
           <input
             type="text"
             value={name}
@@ -112,6 +131,7 @@ export default function App() {
             </div>
           </div>
           <CharacterPanel />
+          <button onClick={logout} className="rounded-lg border border-arcane-border px-3 py-2 text-xs text-gray-300 hover:border-arcane-gold hover:text-arcane-gold">Sair da conta</button>
         </div>
       </header>
 

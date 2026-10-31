@@ -102,7 +102,7 @@ export function Wiki() {
 // ═══════════════════════════════════════════════════════════════
 // HISTÓRIA — O LIVRO DA CRIAÇÃO
 // ═══════════════════════════════════════════════════════════════
-function HistorySection() {
+export function HistorySection() {
   const [chapter, setChapter] = useState<number>(1);
 
   const chapters = [

@@ -2,7 +2,20 @@ import { Character, Race, SaveFile, CharacterSkills, CardInstance } from "../typ
 import { DEFAULT_BACKPACK } from "../data/backpacks";
 import { getBaseStats, xpToNextLevel } from "./stats";
 
-const SAVE_KEY = "mythreon_save_v1";
+const LEGACY_SAVE_KEY = "mythreon_save_v1";
+const MIGRATION_KEY = "mythreon_save_account_migrated_v1";
+let SAVE_KEY = LEGACY_SAVE_KEY;
+
+export function activateSaveAccount(accountId?: string) {
+  if (!accountId) { SAVE_KEY = LEGACY_SAVE_KEY; return; }
+  const accountKey = `${LEGACY_SAVE_KEY}_account_${accountId}`;
+  if (localStorage.getItem(MIGRATION_KEY) !== "1") {
+    const legacySave = localStorage.getItem(LEGACY_SAVE_KEY);
+    if (legacySave && !localStorage.getItem(accountKey)) localStorage.setItem(accountKey, legacySave);
+    localStorage.setItem(MIGRATION_KEY, "1");
+  }
+  SAVE_KEY = accountKey;
+}
 
 export function createNewCharacter(name: string): Character {
   const base = getBaseStats(1);
