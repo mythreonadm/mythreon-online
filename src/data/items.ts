@@ -55,6 +55,14 @@ function buildTemplates(): Record<string, Item> {
 
 export const ALL_EQUIPMENT_TEMPLATES: Record<string, Item> = buildTemplates();
 
+// Munição de T1 a T5. As flechas são equipáveis e ficam como preparação de build;
+// ainda não são consumidas pela caça automática.
+export const ARROW_TEMPLATES: Record<string, Item> = Object.fromEntries(TIERS.map(tier => {
+  const names = ["Flecha de Madeira", "Flecha de Pedra", "Flecha de Aço", "Flecha Estelar", "Flecha do Eclipse"];
+  const item = createItem({ templateId: `FLECHA_T${tier}`, name: names[tier - 1], category: "FLECHA", slot: "MUNICAO", tier, rarity: "COMUM", stats: {}, stackable: true, maxStack: 999, icon: "🏹" });
+  return [item.templateId, item];
+}));
+
 // ─── POÇÕES ───
 const POTION_DATA: { heal: number; name: string; icon: string }[] = [
   { heal: 100, name: "Poção de Vida Pequena", icon: "🧪" }, { heal: 300, name: "Poção de Vida Média", icon: "🍷" },
@@ -84,6 +92,7 @@ export const UNIQUE_TEMPLATES: Record<string, Item> = {
   UNICO_ESCAMA_LEVIATA: createItem({ templateId: "UNICO_ESCAMA_LEVIATA", name: "Escama do Leviatã", category: "ESCUDO", slot: "OFF_HAND", tier: 3, rarity: "LENDARIO", stats: { def: 50, arm: 40, blk: 0.15, resMagico: 0.15 }, goldBonus: 0.15, icon: "🐚", uniqueEffect: "+15% de ouro" }),
   UNICO_OLHO_ASTERION: createItem({ templateId: "UNICO_OLHO_ASTERION", name: "Olho de Asterion", category: "ARMADURA", slot: "CAPACETE", tier: 4, rarity: "LENDARIO", stats: { arm: 100, hp: 1500, crit: 0.10, hit: 0.10 }, rareDropBonus: 0.15, dropBonus: 0.05, icon: "👁️", uniqueEffect: "+15% de raridade alta" }),
   UNICO_PRESA_DEVORADOR: createItem({ templateId: "UNICO_PRESA_DEVORADOR", name: "Presa do Devorador", category: "ARMA", slot: "ARMA_PRINCIPAL", tier: 5, rarity: "LENDARIO", stats: { atk: 500, def: 80 }, lifesteal: 0.08, icon: "🦷", uniqueEffect: "Rouba 8% do dano como vida" }),
+  UNICO_ANEL_GUARDIA: createItem({ templateId: "UNICO_ANEL_GUARDIA", name: "Anel da Guarda Eterna", category: "JOIA", slot: "ANEL_I", tier: 5, rarity: "LENDARIO", stats: { hp: 250, arm: 20 }, preventsDeathDrop: true, icon: "💍", uniqueEffect: "Impede 100% das perdas de itens ao morrer" }),
 };
 
 // ─── FRAGMENTOS ───
@@ -93,4 +102,4 @@ export const FRAGMENT_TEMPLATES: Record<string, Item> = {
   FRAGMENTO_EPICO: createItem({ templateId: "FRAGMENTO_EPICO", name: "Fragmento Épico", category: "FRAGMENTO", tier: 1, rarity: "EPICO", icon: "🔮", stackable: true, maxStack: 999, quantity: 1, stats: {} }),
 };
 
-export const ALL_ITEM_TEMPLATES: Record<string, Item> = { ...ALL_EQUIPMENT_TEMPLATES, ...POTION_TEMPLATES, ...UNIQUE_TEMPLATES, ...FRAGMENT_TEMPLATES };
+export const ALL_ITEM_TEMPLATES: Record<string, Item> = { ...ALL_EQUIPMENT_TEMPLATES, ...ARROW_TEMPLATES, ...POTION_TEMPLATES, ...UNIQUE_TEMPLATES, ...FRAGMENT_TEMPLATES };

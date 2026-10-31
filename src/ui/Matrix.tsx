@@ -6,6 +6,8 @@ import { ATTACK_SKILLS, SUPPORT_EFFECTS, PASSIVE_EFFECTS } from "../data/skills"
 import { QUESTS } from "../data/quests";
 import { Race } from "../types";
 import { RaceModal } from "./RaceModal";
+import { getLineageByAttack } from "../data/lineages";
+import { AssetImage } from "./AssetImage";
 
 type Tab = "synthesis" | "mine" | "compendium" | "milestones";
 
@@ -369,11 +371,21 @@ function ComponentSelector({ type, components, onSelect, onCancel }: any) {
           {Object.entries(grouped).map(([templateId, qty]) => {
             const t = templates[templateId];
             if (!t) return null;
+            const lineage = type === "A" ? getLineageByAttack(templateId) : null;
+            const effect = type === "A" ? ATTACK_SKILLS[templateId] : type === "S" ? SUPPORT_EFFECTS[templateId] : PASSIVE_EFFECTS[templateId];
+            const effectStats = effect ? Object.entries(effect).filter(([key, value]) => key !== "desc" && typeof value === "number") : [];
             return (
-              <button key={templateId} onClick={() => onSelect(templateId)} className="bg-arcane-panel border border-arcane-border hover:border-arcane-gold p-2 rounded-lg flex flex-col items-center transition-all hover:scale-105 group" title={t.skillDescription}>
+              <button key={templateId} onClick={() => onSelect(templateId)} className="relative bg-arcane-panel border border-arcane-border hover:border-arcane-gold p-2 rounded-lg flex flex-col items-center transition-all hover:scale-105 group" title={t.skillDescription}>
                 <span className="text-2xl mb-1">{t.icon}</span>
                 <span className="text-[9px] text-center text-white truncate w-full">{t.name.split(" ")[0]}</span>
                 <span className="text-[9px] text-arcane-cyan font-bold">x{qty}</span>
+                <span className="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 z-40 hidden w-64 -translate-x-1/2 rounded-lg border border-arcane-gold/50 bg-[#080d10]/[.98] p-3 text-left text-[10px] shadow-2xl group-hover:block group-focus-visible:block">
+                  {lineage && <span className="mb-2 flex items-center gap-2 border-b border-white/10 pb-2"><AssetImage src={lineage.sprite} alt="" className="h-10 w-10 object-contain" /><span><strong className="block text-arcane-gold">Humano → {lineage.name}</strong><span className="text-gray-400">{lineage.description}</span></span></span>}
+                  <strong className="block text-white">{t.name}</strong><span className="mt-1 block leading-relaxed text-gray-300">{t.skillDescription}</span>
+                  {effectStats.length > 0 && <span className="mt-2 flex flex-wrap gap-1">{effectStats.map(([key, value]) => <span key={key} className="rounded bg-white/10 px-1.5 py-1 text-arcane-cyan">{key}: {String(value)}</span>)}</span>}
+                  {effect?.desc && <span className="mt-2 block text-gray-400">{effect.desc}</span>}
+                  <span className="mt-2 block font-bold text-arcane-gold">Clique para inserir no cubo</span>
+                </span>
               </button>
             );
           })}

@@ -1,5 +1,6 @@
 import { Character, Inventory, Item, SlotType } from "../types";
 import { recalcStats } from "./stats";
+import { getItemScore } from "./itemCompare";
 import { DEFAULT_BACKPACK } from "../data/backpacks";
 
 export function getUsedSlots(inv: Inventory): number { return inv.items.length; }
@@ -57,7 +58,11 @@ export function equipItem(char: Character, itemUid: string): { success: boolean;
   if (!item || !item.slot) return { success: false, error: "Item inválido" };
   if (item.slot === "BACKPACK") return equipBackpack(char, item);
   let slot: SlotType = item.slot;
-  if (slot === "ANEL_I" && char.equipped.ANEL_I && !char.equipped.ANEL_II) slot = "ANEL_II";
+  if (slot === "ANEL_I") {
+    if (!char.equipped.ANEL_I) slot = "ANEL_I";
+    else if (!char.equipped.ANEL_II) slot = "ANEL_II";
+    else slot = getItemScore(char.equipped.ANEL_I) <= getItemScore(char.equipped.ANEL_II) ? "ANEL_I" : "ANEL_II";
+  }
   const current = char.equipped[slot];
   if (current) {
     if (!canAddItem(char.inventory, current)) return { success: false, error: "Bolsa cheia! Jogue algo fora antes de trocar." };

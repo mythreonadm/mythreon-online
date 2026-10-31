@@ -8,6 +8,7 @@ import { getUpgradeCost } from "../engine/forge";
 import { STAT_NAMES } from "../data/affixes";
 import { QuantityModal } from "./QuantityModal";
 import { ItemIcon } from "./ItemIcon";
+import { ALL_EQUIPMENT_TEMPLATES } from "../data/items";
 
 export function Shop() {
   const { character, sellItem, salvageAll, salvageSelected, updateSettings, useVial, upgradeItem, rerollItem } = useGameStore();
@@ -138,6 +139,7 @@ export function Shop() {
             <button onClick={() => { updateSettings({ autoSell: actionRarity }); alert("Auto-venda ativado! Itens que caírem com essa raridade ou menor serão vendidos automaticamente."); }} className="bg-blue-700 hover:bg-blue-600 text-white px-4 py-1.5 rounded text-sm font-bold transition-colors">Auto-Vender Ativado</button>
             <span className="text-xs text-gray-500 italic ml-auto">Lendários nunca são vendidos.</span>
           </div>
+          <AutoItemRules title="Vender automaticamente estes itens" items={Object.values(ALL_EQUIPMENT_TEMPLATES)} selectedIds={character.autoSellTemplateIds ?? []} onChange={autoSellTemplateIds => updateSettings({ autoSellTemplateIds })} />
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-3 max-h-[400px] overflow-y-auto pr-2">
             {inventory.map(item => (
               <div key={item.uid} className="bg-arcane-bg border border-arcane-border p-2 rounded-lg flex flex-col items-center">
@@ -203,6 +205,7 @@ export function Shop() {
               <label htmlFor="auto-salvage" className="text-sm text-gray-300 cursor-pointer">Desmanchar automaticamente itens que caírem da caça.</label>
             </div>
             <p className="text-xs text-gray-500">Se ativado, itens de raridade até <strong>{actionRarity}</strong> serão quebrados em fragmentos automaticamente. Lendários nunca são desmanchados.</p>
+            <AutoItemRules title="Desmanchar automaticamente estes itens" items={Object.values(ALL_EQUIPMENT_TEMPLATES)} selectedIds={character.autoSalvageTemplateIds ?? []} onChange={autoSalvageTemplateIds => updateSettings({ autoSalvageTemplateIds })} />
           </div>
         </div>
       )}
@@ -273,4 +276,14 @@ export function Shop() {
       )}
     </div>
   );
+}
+
+function AutoItemRules({ title, items, selectedIds, onChange }: { title: string; items: Item[]; selectedIds: string[]; onChange: (ids: string[]) => void }) {
+  const [search, setSearch] = useState("");
+  const filtered = items.filter(item => item.name.toLocaleLowerCase().includes(search.toLocaleLowerCase()));
+  return <section className="my-3 rounded-lg border border-arcane-border bg-black/20 p-3">
+    <div className="mb-2 flex flex-wrap items-center justify-between gap-2"><div><h4 className="text-sm font-bold text-white">{title}</h4><p className="text-[10px] text-gray-500">Regras por item se somam à regra geral por raridade.</p></div><input value={search} onChange={event => setSearch(event.target.value)} placeholder="Buscar equipamento" className="rounded border border-arcane-border bg-arcane-bg px-2 py-1 text-xs text-white" /></div>
+    <div className="grid max-h-44 grid-cols-2 gap-1 overflow-y-auto sm:grid-cols-3">{filtered.map(item => <label key={item.templateId} title={`${item.name} · ${item.rarity}`} className="flex cursor-pointer items-center gap-1.5 rounded border border-white/5 bg-arcane-bg/70 p-1.5 hover:border-arcane-gold/40"><input type="checkbox" checked={selectedIds.includes(item.templateId)} onChange={event => onChange(event.target.checked ? [...new Set([...selectedIds, item.templateId])] : selectedIds.filter(id => id !== item.templateId))} className="accent-arcane-gold" /><ItemIcon item={item} className="h-7 w-7 shrink-0" /><span className="truncate text-[10px] text-gray-200">{item.name}</span></label>)}</div>
+    <p className="mt-2 text-[10px] text-arcane-cyan">{selectedIds.length} regra(s) de item ativa(s)</p>
+  </section>;
 }

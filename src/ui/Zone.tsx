@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useGameStore } from "../store/gameStore";
 import { ZONES } from "../data/zones";
 import { getSpellEffect, getWeaponAnimation } from "../utils/combatVisuals";
-import { CharacterSkills } from "../types";
+import { CharacterSkills, HuntEncounterRecord, DamageBreakdown, Element } from "../types";
 import { skillXpToNextLevel } from "../engine/stats";
 import { VIALS } from "../data/vials";
 import { ATTACK_SKILLS } from "../data/skills";
@@ -11,10 +11,29 @@ import { AccessIcon } from "./AccessIcon";
 import { getHuntQuestSignal } from "../utils/questSignals";
 import { POTION_TEMPLATES } from "../data/items";
 import { getPotionUsePrice } from "../data/potionEconomy";
+import { AssetImage } from "./AssetImage";
+import { ItemIcon } from "./ItemIcon";
+import { QUESTS } from "../data/quests";
 
-interface ZoneViewProps { onOpenQuest: (questId: string) => void; }
+interface ZoneViewProps { onOpenQuest: (questId: string) => void; trackedQuestId?: string | null; }
 
 const metricNumber = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 0 });
+function describeDamageBreakdown(records: HuntEncounterRecord[], received = false) {
+  const summary: DamageBreakdown = { physical: 0, elemental: {}, lifestealHealing: 0 };
+  for (const record of records) {
+    const breakdown = received ? record.damageTakenBreakdown : record.damageBreakdown;
+    if (!breakdown) continue;
+    summary.physical += breakdown.physical;
+    summary.lifestealHealing += breakdown.lifestealHealing;
+    for (const [element, value] of Object.entries(breakdown.elemental)) summary.elemental[element as Element] = (summary.elemental[element as Element] ?? 0) + (value ?? 0);
+  }
+  const total = summary.physical + Object.values(summary.elemental).reduce((sum, value) => sum + (value ?? 0), 0);
+  const lines = [`Físico: ${metricNumber.format(summary.physical)} (${total ? Math.round(summary.physical / total * 100) : 0}%)`];
+  for (const [element, value] of Object.entries(summary.elemental)) lines.push(`${element}: ${metricNumber.format(value ?? 0)} (${total ? Math.round((value ?? 0) / total * 100) : 0}%)`);
+  if (!received && summary.lifestealHealing) lines.push(`Vida recuperada por roubo de vida: ${metricNumber.format(summary.lifestealHealing)} HP`);
+  if (!total) lines.push("Sem detalhamento para esses registros antigos.");
+  return lines.join("\n");
+}
 function formatHuntDuration(ms: number) {
   const seconds = Math.floor(ms / 1000);
   const hours = Math.floor(seconds / 3600);
@@ -23,7 +42,7 @@ function formatHuntDuration(ms: number) {
   return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${rest.toString().padStart(2, "0")}`;
 }
 
-export function ZoneView({ onOpenQuest }: ZoneViewProps) {
+export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
   const { character, currentZoneId, startHunting, stopHunting, startTraining, stopTraining, isTickRunning, isTraining, lastTickResult, setActiveEnemy, activateBuff, updateSettings, buyBless, healFull, startHealing, cancelHealing, healingUntil } = useGameStore();
   
   const [isHurt, setIsHurt] = useState(false);
@@ -168,10 +187,13 @@ export function ZoneView({ onOpenQuest }: ZoneViewProps) {
                 <div className="grid grid-cols-1 md:flex md:flex-wrap gap-3 justify-center w-full max-w-2xl">
                   {Object.values(ZONES).map(z => {
                       const isLocked = character.level < z.minLevel;
+                      const trackedQuest = QUESTS.find(q => q.id === trackedQuestId);
+                      const highlightsZone = !!trackedQuest?.zoneId && trackedQuest.zoneId === z.id && trackedQuest.objectives.some(obj => ["KILL", "KILL_BOSS", "COLLECT"].includes(obj.type));
                       return (
-                        <button key={z.id} disabled={isLocked} onClick={() => startHunting(z.id)} className={`px-4 md:px-6 py-3 md:py-4 rounded-xl font-bold flex flex-col items-center transition-all ${isLocked ? "bg-gray-900 text-gray-600 cursor-not-allowed" : "bg-arcane-purple hover:bg-arcane-purple/80 text-white shadow-lg hover:scale-105"}`}>
+                        <button key={z.id} disabled={isLocked} onClick={() => startHunting(z.id)} className={`px-4 md:px-6 py-3 md:py-4 rounded-xl font-bold flex flex-col items-center transition-all ${highlightsZone && !isLocked ? "border-2 border-arcane-gold ring-2 ring-arcane-gold/50 shadow-[0_0_24px_rgba(201,160,77,.45)]" : ""} ${isLocked ? "bg-gray-900 text-gray-600 cursor-not-allowed" : "bg-arcane-purple hover:bg-arcane-purple/80 text-white shadow-lg hover:scale-105"}`}>
                           <span className="text-2xl mb-1">⚔️</span>
                           <span className="text-sm md:text-base">Caçar em {z.name}</span>
+                          {highlightsZone && <span className="mt-1 text-[9px] font-black uppercase tracking-wider text-arcane-gold">◆ Objetivo da missão</span>}
                           {isLocked && <span className="text-[10px] font-normal mt-1">Requer Nível {z.minLevel}</span>}
                         </button>
                       )
@@ -315,15 +337,10 @@ export function ZoneView({ onOpenQuest }: ZoneViewProps) {
         <div className={`combat-scene relative rounded-xl border-2 border-arcane-border shadow-2xl overflow-hidden bg-${currentZone.theme} min-h-[300px] md:min-h-[500px]`}>
           
           <div className="absolute inset-0 z-0">
-            <img 
+            <AssetImage
               src={getBackgroundImage(currentZone.theme)} 
               alt={currentZone.name} 
               className="scene-backdrop w-full h-full object-cover" 
-              onError={(e) => { 
-                if (e.currentTarget.src.endsWith(".png")) { e.currentTarget.src = e.currentTarget.src.replace(".png", ".jpg"); }
-                else if (e.currentTarget.src.endsWith(".jpg")) { e.currentTarget.src = e.currentTarget.src.replace(".jpg", ".webp"); }
-                else { e.currentTarget.style.display = 'none'; }
-              }} 
             />
             <div className="scene-vignette absolute inset-0 pointer-events-none"></div>
           </div>
@@ -345,13 +362,13 @@ export function ZoneView({ onOpenQuest }: ZoneViewProps) {
               {/* SPRITE DO JOGADOR (Agora baseado na Linhagem) */}
               <div className={`combat-sprite combat-sprite-player relative w-24 h-24 md:w-40 md:h-40 flex items-center justify-center transition-transform ${weaponAnimClass}`}>
                 {!imageError ? (
-                  <img 
+                  <AssetImage
                     key={playerLineage.id} // Força recarregar se a classe mudar
                     src={getPlayerVisual()} 
                     alt={playerLineage.name} 
                     className="w-full h-full object-contain drop-shadow-[0_10px_10px_rgba(0,0,0,0.8)]" 
                     style={{ imageRendering: "pixelated" }} 
-                    onError={() => setImageError(true)} 
+                    onAllSourcesFail={() => setImageError(true)}
                   />
                 ) : (
                   <span className="text-[60px] md:text-[100px] leading-none select-none drop-shadow-lg">{getPlayerFallbackEmoji()}</span>
@@ -377,13 +394,13 @@ export function ZoneView({ onOpenQuest }: ZoneViewProps) {
                 
               <div className={`combat-sprite combat-sprite-enemy w-24 h-24 md:w-40 md:h-40 flex items-center justify-center relative transition-transform ${isHurt ? 'animate-shake filter drop-shadow-[0_0_20px_rgba(220,38,38,1)]' : 'animate-idle'}`}>
                   {currentMob?.sprite && !imageError ? (
-                    <img 
+                    <AssetImage
                       key={currentMob.id}
                       src={currentMob.sprite} 
                       alt={currentMob.name} 
                       className="w-full h-full object-contain drop-shadow-[0_10px_10px_rgba(0,0,0,0.8)]" 
                       style={{ imageRendering: "pixelated" }} 
-                      onError={() => setImageError(true)} 
+                      onAllSourcesFail={() => setImageError(true)}
                     />
                   ) : (
                     <span className="text-[80px] md:text-[120px] leading-none select-none drop-shadow-lg">{currentMob?.emoji || "👾"}</span>
@@ -466,6 +483,7 @@ export function ZoneView({ onOpenQuest }: ZoneViewProps) {
                   <option value="POCAO_VIDA_4">Poção Superior</option>
                   <option value="POCAO_VIDA_5">Poção Suprema</option>
                 </select>
+                {selectedHpPotion && <div className="flex items-center gap-2 rounded-md border border-red-900/40 bg-red-950/20 px-2 py-1.5"><ItemIcon item={selectedHpPotion} className="h-9 w-9 shrink-0" /><span className="text-[10px] leading-tight text-gray-300"><strong className="block text-red-200">{selectedHpPotion.name}</strong>Recupera {selectedHpPotion.stats.hp?.toLocaleString("pt-BR")} HP por ativação</span></div>}
                 <div className="flex justify-between text-[9px] md:text-[10px]"><span className="text-gray-500">Cura {selectedHpPotion?.stats.hp?.toLocaleString("pt-BR") ?? 0} HP por uso</span><strong className="text-arcane-gold">💰 {getPotionUsePrice(character.autoHpPotionId).toLocaleString("pt-BR")} gold/uso</strong></div>
                 <div className="flex items-center gap-2">
                   <input 
@@ -495,6 +513,7 @@ export function ZoneView({ onOpenQuest }: ZoneViewProps) {
                   <option value="POCAO_MANA_2">Mana Média</option>
                   <option value="POCAO_MANA_3">Mana Grande</option>
                 </select>
+                {selectedMpPotion && <div className="flex items-center gap-2 rounded-md border border-blue-900/40 bg-blue-950/20 px-2 py-1.5"><ItemIcon item={selectedMpPotion} className="h-9 w-9 shrink-0" /><span className="text-[10px] leading-tight text-gray-300"><strong className="block text-blue-200">{selectedMpPotion.name}</strong>Recupera {selectedMpPotion.stats.mp?.toLocaleString("pt-BR")} MP por ativação</span></div>}
                 <div className="flex justify-between text-[9px] md:text-[10px]"><span className="text-gray-500">Restaura {selectedMpPotion?.stats.mp?.toLocaleString("pt-BR") ?? 0} MP por uso</span><strong className="text-arcane-gold">💰 {getPotionUsePrice(character.autoMpPotionId).toLocaleString("pt-BR")} gold/uso</strong></div>
                 <div className="flex items-center gap-2">
                   <input 
@@ -533,13 +552,19 @@ export function ZoneView({ onOpenQuest }: ZoneViewProps) {
                 <div className="text-[9px] text-cyan-300 uppercase font-black tracking-wider">📊 Rendimento da Hunt</div>
                 <div className="font-mono text-[9px] text-gray-500">{formatHuntDuration(huntStats?.activeMs ?? 0)}</div>
               </div>
+              <div className="mb-2 space-y-1.5">
+                {[{ label: "Stamina online", value: character.staminaOnline ?? 120, max: 120, color: "bg-emerald-400", hint: "Caça durante a sessão" }, { label: "Stamina offline", value: character.staminaOffline ?? 480, max: 480, color: "bg-violet-400", hint: "Progresso ao retornar" }].map(pool => <div key={pool.label} title={pool.hint}>
+                  <div className="mb-0.5 flex justify-between text-[8px] text-gray-400"><span>{pool.label}</span><b className="font-mono text-gray-200">{Math.floor(pool.value)} / {pool.max} min</b></div>
+                  <div className="h-1.5 overflow-hidden rounded-full bg-black/50"><div className={`h-full ${pool.color} transition-all`} style={{ width: `${Math.max(0, Math.min(100, pool.value / pool.max * 100))}%` }} /></div>
+                </div>)}
+              </div>
               <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-[9px] md:text-[10px]">
                 <div><div className="text-gray-500">EXP/h</div><div className="font-bold text-cyan-300">{metricNumber.format(huntHours ? (huntStats?.xp ?? 0) / huntHours : 0)}</div></div>
                 <div><div className="text-gray-500">GOLD/h líquido</div><div className="font-bold text-arcane-gold">{metricNumber.format(actualGoldPerHour)}</div></div>
                 <div><div className="text-gray-500">GOLD/h com venda</div><div className="font-bold text-emerald-300">{metricNumber.format(sellLootGoldPerHour)}</div></div>
                 <div><div className="text-gray-500">Abates</div><div className="font-bold text-white">{metricNumber.format(huntStats?.kills ?? 0)}</div></div>
-                <div><div className="text-gray-500">Dano causado</div><div className="font-bold text-orange-300">{metricNumber.format(huntStats?.damageDealt ?? 0)}</div></div>
-                <div><div className="text-gray-500">Dano recebido</div><div className="font-bold text-rose-300">{metricNumber.format(huntStats?.damageTaken ?? 0)}</div></div>
+                <div title={describeDamageBreakdown(huntStats?.history ?? [])} className="cursor-help"><div className="text-gray-500">Dano causado ⓘ</div><div className="font-bold text-orange-300">{metricNumber.format(huntStats?.damageDealt ?? 0)}</div></div>
+                <div title={describeDamageBreakdown(huntStats?.history ?? [], true)} className="cursor-help"><div className="text-gray-500">Dano recebido ⓘ</div><div className="font-bold text-rose-300">{metricNumber.format(huntStats?.damageTaken ?? 0)}</div></div>
               </div>
               <div className="mt-2 border-t border-white/5 pt-1.5 text-[8px] leading-relaxed text-gray-500">
                 GOLD/h líquido desconta o gold gasto em poções. GOLD/h com venda projeta o valor dos drops equipáveis.
@@ -550,7 +575,7 @@ export function ZoneView({ onOpenQuest }: ZoneViewProps) {
                   <div className="mt-2 max-h-52 space-y-1.5 overflow-y-auto pr-1">
                     {recentEncounters.map(record => <div key={record.id} className="rounded-md border border-white/5 bg-black/30 p-2 text-[9px]">
                       <div className="flex items-start justify-between gap-2"><span className="font-bold text-white">{record.outcome === "death" ? "☠️ " : "⚔️ "}{record.enemyName}</span><time className="shrink-0 text-gray-600">{new Date(record.timestamp).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</time></div>
-                      <div className="mt-1 grid grid-cols-2 gap-x-2 text-gray-400"><span>⚔️ Causado: <b className="text-orange-300">{metricNumber.format(record.damageDealt)}</b></span><span>🩸 Recebido: <b className="text-rose-300">{metricNumber.format(record.damageTaken)}</b></span><span>✨ {metricNumber.format(record.xp)} EXP</span><span>🪙 {metricNumber.format(record.gold + record.soldGold)} gold</span>{!!record.goldSpentPotions && <span>🧪 Poções: <b className="text-arcane-gold">−{metricNumber.format(record.goldSpentPotions)} gold</b></span>}</div>
+                      <div className="mt-1 grid grid-cols-2 gap-x-2 text-gray-400"><span title={describeDamageBreakdown([record])}>⚔️ Causado: <b className="text-orange-300">{metricNumber.format(record.damageDealt)}</b></span><span title={describeDamageBreakdown([record], true)}>🩸 Recebido: <b className="text-rose-300">{metricNumber.format(record.damageTaken)}</b></span><span>✨ {metricNumber.format(record.xp)} EXP</span><span>🪙 {metricNumber.format(record.gold + record.soldGold)} gold</span>{!!record.goldSpentPotions && <span>🧪 Poções: <b className="text-arcane-gold">−{metricNumber.format(record.goldSpentPotions)} gold</b></span>}</div>
                       {record.loot.length > 0 && <div className="mt-1 border-t border-white/5 pt-1 text-gray-400">Loot: {record.loot.map((item, index) => <span key={`${record.id}-${index}`} className="mr-1">{item.icon} {item.name}{item.quantity > 1 ? ` ×${item.quantity}` : ""}</span>)}<div className="mt-0.5 text-emerald-400/80">Valor potencial de venda: {metricNumber.format(record.lootValue)} gold</div></div>}
                     </div>)}
                   </div>}
@@ -565,9 +590,12 @@ export function ZoneView({ onOpenQuest }: ZoneViewProps) {
         <div className="flex gap-2 md:gap-4 flex-wrap justify-center">
           {currentZone.enemies.map((e) => {
              const locked = character.level < (e.minLevel || 1);
+             const quest = QUESTS.find(q => q.id === trackedQuestId && q.zoneId === currentZone.id);
+             const isQuestTarget = !!quest?.objectives.some(obj => obj.target === e.id || obj.target === e.componentId || obj.target === e.essenceId);
              return (
-               <button key={e.id} disabled={locked} onClick={() => setActiveEnemy(e.id)} className={`p-1.5 md:p-2 rounded-lg border flex flex-col items-center transition-all ${locked ? "opacity-30 border-gray-800 bg-gray-900 cursor-not-allowed" : currentMob?.id === e.id ? "border-arcane-gold bg-arcane-gold/10 scale-105 shadow-lg" : "border-arcane-border opacity-50 hover:opacity-100"}`}>
+               <button key={e.id} disabled={locked} onClick={() => setActiveEnemy(e.id)} title={isQuestTarget ? "Alvo da missão rastreada" : e.name} className={`p-1.5 md:p-2 rounded-lg border flex flex-col items-center transition-all ${isQuestTarget && !locked ? "border-2 border-arcane-gold ring-2 ring-arcane-gold/40 shadow-[0_0_20px_rgba(201,160,77,.45)] opacity-100" : locked ? "opacity-30 border-gray-800 bg-gray-900 cursor-not-allowed" : currentMob?.id === e.id ? "border-arcane-gold bg-arcane-gold/10 scale-105 shadow-lg" : "border-arcane-border opacity-50 hover:opacity-100"}`}>
                   <span className="text-xl md:text-2xl">{e.emoji}</span>
+                  {isQuestTarget && <span className="text-[8px] font-black text-arcane-gold">QUEST</span>}
                   <span className="text-[8px] md:text-[10px] text-yellow-400">{'⭐'.repeat(e.difficulty)}</span>
                   {locked && <span className="text-[8px] text-red-500 font-bold">Nv {e.minLevel}</span>}
                </button>

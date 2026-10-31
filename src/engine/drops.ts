@@ -1,9 +1,10 @@
 import { Affix, Character, Enemy, Item, ItemStats, Rarity, Zone, Law } from "../types";
 import { ALL_COMPONENTS } from "../data/components";
-import { ALL_EQUIPMENT_TEMPLATES, ALL_ITEM_TEMPLATES, UNIQUE_TEMPLATES, createItem } from "../data/items";
+import { ALL_EQUIPMENT_TEMPLATES, ALL_ITEM_TEMPLATES, ARROW_TEMPLATES, UNIQUE_TEMPLATES, createItem } from "../data/items";
 import { BACKPACKS } from "../data/backpacks";
 import { generateId } from "../utils/id";
 import { getPoolForCategory, AffixPoolDef } from "../data/affixes";
+import { ELEMENTS } from "../data/elementalChart";
 
 export const RARITY_ORDER: Rarity[] = ["COMUM", "INCOMUM", "RARO", "EPICO", "LENDARIO"];
 export const RARITY_MULT: Record<Rarity, number> = { COMUM: 1.0, INCOMUM: 1.3, RARO: 1.7, EPICO: 2.2, LENDARIO: 3.0 };
@@ -73,7 +74,11 @@ export function makeEquipment(templateId: string, rarity: Rarity = "COMUM"): Ite
   
   const affixes = generateRandomAffixes(base.category, rarity, base.tier);
 
-  return { ...base, uid: generateId(), rarity, stats, affixes, upgradeLevel: 0 };
+  const elementalChance: Partial<Record<Rarity, number>> = { COMUM: 0, INCOMUM: 0.35, RARO: 0.60, EPICO: 0.80, LENDARIO: 1 };
+  const getsElement = base.category === "ARMA" && Math.random() < (elementalChance[rarity] ?? 0);
+  const element = getsElement ? ELEMENTS.filter(item => item.id !== "BASE")[Math.floor(Math.random() * 11)].id : undefined;
+  const elementalDamagePct = getsElement ? ({ INCOMUM: 0.08, RARO: 0.12, EPICO: 0.16, LENDARIO: 0.20 } as Partial<Record<Rarity, number>>)[rarity] : undefined;
+  return { ...base, uid: generateId(), rarity, stats, affixes, upgradeLevel: 0, element, elementalDamagePct };
 }
 
 export function makeComponent(templateId: string): Item {
@@ -101,6 +106,11 @@ export function rollDrops(enemy: Enemy, zone: Zone, _char: Character, mods: Drop
   if (chance(enemy.componentChance)) drops.push(makeComponent(enemy.componentId));
   if (enemy.essenceId && chance(enemy.essenceChance ?? 0)) drops.push(makeComponent(enemy.essenceId));
 
+  if (chance(enemy.isBoss ? 0.25 : 0.08)) {
+    const arrow = ARROW_TEMPLATES[`FLECHA_T${zone.tier}`];
+    if (arrow) drops.push({ ...arrow, uid: generateId(), quantity: enemy.isBoss ? 25 : 5 + Math.floor(Math.random() * 6) });
+  }
+
   if (chance(enemy.isBoss ? 0.6 : 0.15)) {
     const pool = Object.values(ALL_EQUIPMENT_TEMPLATES).filter((t) => t.tier === zone.tier);
     if (pool.length > 0) {
@@ -118,6 +128,10 @@ export function rollDrops(enemy: Enemy, zone: Zone, _char: Character, mods: Drop
   if (enemy.uniqueDropId && chance(enemy.uniqueDropChance ?? 0)) {
     const u = makeEquipment(enemy.uniqueDropId);
     if (u) drops.push(u);
+  }
+  if (enemy.protectionRingChance && chance(enemy.protectionRingChance)) {
+    const ring = makeEquipment("UNICO_ANEL_GUARDIA");
+    if (ring) drops.push(ring);
   }
   return drops;
 }

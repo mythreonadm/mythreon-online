@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { AssetImage } from "./AssetImage";
 import { DIVINE_BEASTS, DIVINE_BEAST_ORDER } from "../data/divineBeasts";
 import { useGameStore } from "../store/gameStore";
 import { DivineBeastTemplate, ItemStats } from "../types";
@@ -59,7 +60,7 @@ function BeastCard({ beast, owned, active, onEquip, onUnequip }: { beast: Divine
   return <article className={`overflow-hidden rounded-xl border bg-[#0c1115] transition ${active ? "border-arcane-gold/70 shadow-[0_0_22px_rgba(201,160,77,.12)]" : owned ? "border-emerald-700/30" : "border-white/10 opacity-[.82]"}`}>
     <div className="flex min-h-36 items-center gap-4 border-b border-white/5 bg-[radial-gradient(ellipse_at_center,rgba(201,160,77,.10),transparent_65%)] px-4 py-3">
       <div className="grid h-28 w-28 shrink-0 place-items-center overflow-hidden rounded-lg border border-white/10 bg-black/30">
-        {owned && !imageFailed ? <img src={beast.sprite} alt={beast.name} className="h-full w-full object-contain [image-rendering:pixelated]" onError={() => setImageFailed(true)} /> : <span className={`text-6xl ${owned ? "" : "grayscale opacity-40"}`}>{beast.emoji}</span>}
+        {owned && !imageFailed ? <AssetImage src={beast.sprite} alt={beast.name} className="h-full w-full object-contain [image-rendering:pixelated]" onError={() => setImageFailed(true)} /> : <span className={`text-6xl ${owned ? "" : "grayscale opacity-40"}`}>{beast.emoji}</span>}
       </div>
       <div className="min-w-0"><div className={`text-[9px] font-black uppercase tracking-[.2em] ${owned ? "text-emerald-400" : "text-slate-600"}`}>{owned ? active ? "Vínculo ativo" : "Vínculo formado" : "Eco não descoberto"}</div><h2 className={`mt-1 truncate text-lg font-black ${beast.rarity === "LENDARIO" ? "text-arcane-gold" : owned ? "text-white" : "text-slate-500"}`}>{owned ? beast.name : "???"}</h2><div className="truncate text-[10px] text-slate-500">{owned ? beast.title : "Guardião desconhecido"}</div><div className="mt-2 text-[10px] text-slate-500">{beast.region} · {beast.rarity}</div></div>
     </div>

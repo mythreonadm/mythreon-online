@@ -1,4 +1,5 @@
 import { Character, ItemStats } from "../types";
+import { ELEMENTS } from "../data/elementalChart";
 import { PASSIVE_EFFECTS, SUPPORT_EFFECTS } from "../data/skills";
 import { VIALS } from "../data/vials";
 import { DIVINE_BEASTS } from "../data/divineBeasts";
@@ -26,6 +27,7 @@ export function recalcStats(char: Character): void {
   const fromRace: any = {};
   const fromVials: any = {};
   const fromBeast: any = {};
+  const elementalResistances: Character["elementalResistances"] = {};
 
   // 1. Soma os stats de Equipamentos e Afixos
   for (const slot of Object.keys(char.equipped)) {
@@ -33,6 +35,7 @@ export function recalcStats(char: Character): void {
     if (!item?.stats) continue;
     for (const [k, v] of Object.entries(item.stats)) fromGear[k] = (fromGear[k] || 0) + v;
     for (const affix of item.affixes ?? []) fromGear[affix.stat] = (fromGear[affix.stat] || 0) + affix.value;
+    for (const [element, value] of Object.entries(item.elementalResistances ?? {})) elementalResistances[element as keyof typeof elementalResistances] = (elementalResistances[element as keyof typeof elementalResistances] ?? 0) + (value ?? 0);
   }
 
   // 2. Soma os stats da Raça Equipada
@@ -102,6 +105,8 @@ export function recalcStats(char: Character): void {
     luck: Math.min((base.luck ?? 0) + sum("luck"), 0.5),
     critDmg: (base.critDmg ?? 0.5) + sum("critDmg"),
   };
+  for (const element of ELEMENTS) elementalResistances[element.id] = Math.min(0.8, elementalResistances[element.id] ?? 0);
+  char.elementalResistances = elementalResistances;
   
   char.hpMax = char.baseStats.hp!; 
   char.mpMax = char.baseStats.mp!;

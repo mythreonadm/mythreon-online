@@ -1,4 +1,5 @@
 import React, { FormEvent, useState } from "react";
+import { AssetImage } from "./AssetImage";
 import { HistorySection } from "./Wiki";
 import { createLocalAccount, LocalAccount, signInLocalAccount } from "../utils/localAccounts";
 
@@ -20,7 +21,7 @@ export function LandingPage({ onAuthenticated }: LandingPageProps) {
     <div className="landing-page">
       <header className="landing-header">
         <a className="landing-brand" href="#inicio" aria-label="Mythreon Online, início">
-          <img src="/assets/branding/mythreon-logo-horizontal.png" alt="Mythreon Online" />
+          <AssetImage src="/assets/branding/mythreon-logo-horizontal.png" alt="Mythreon Online" />
         </a>
         <nav className="landing-nav" aria-label="Navegação principal">
           <a href="#universo">O universo</a>
@@ -49,9 +50,9 @@ export function LandingPage({ onAuthenticated }: LandingPageProps) {
             <div className="landing-proof"><span>✦</span> Progresso salvo no seu navegador <i /> Uma aventura para jogar no seu ritmo</div>
           </div>
           <div className="landing-world-card">
-            <div className="landing-world-image" />
+            <div className="landing-world-image"><AssetImage src="/assets/backgrounds/ocean.png" alt="" className="absolute inset-0 h-full w-full object-cover" /></div>
             <div className="landing-world-caption"><span className="landing-status-dot" /> O mundo continua em movimento</div>
-            <div className="landing-world-stamp"><img src="/assets/branding/mythreon-logo-mark.png" alt="" /><span>MYTHREON<br /><small>ONLINE</small></span></div>
+            <div className="landing-world-stamp"><AssetImage src="/assets/branding/mythreon-logo-mark.png" alt="" /><span>MYTHREON<br /><small>ONLINE</small></span></div>
           </div>
           <a className="landing-scroll-cue" href="#universo">DESCUBRA O MUNDO <span>⌄</span></a>
         </section>
@@ -66,7 +67,7 @@ export function LandingPage({ onAuthenticated }: LandingPageProps) {
         </section>
 
         <figure className="landing-brand-art">
-          <img src={brandBannerUrl} alt="Mythreon Online em um vale suspenso iluminado por cristais" />
+          <AssetImage src={brandBannerUrl} alt="Mythreon Online em um vale suspenso iluminado por cristais" />
           <figcaption>Um mundo antigo. Uma Essência que ainda guarda segredos.</figcaption>
         </figure>
 
@@ -87,7 +88,7 @@ export function LandingPage({ onAuthenticated }: LandingPageProps) {
           </div>
           <p className="landing-build-footnote">Os 33 arquétipos nomeados já registrados no jogo são combinações especiais. O catálogo cresce com o desenvolvimento de Mythreon.</p>
         </section>        <section className="landing-journey" id="jornada">
-          <div className="landing-journey-art" aria-hidden="true" />
+          <div className="landing-journey-art" aria-hidden="true"><AssetImage src="/assets/backgrounds/ruins.png" alt="" className="h-full w-full object-cover" /></div>
           <div><span className="landing-eyebrow">SUA HISTÓRIA COMEÇA AGORA</span><h2>Escolha um nome.<br />O resto, Mythreon lembrará.</h2><p>Crie sua conta neste navegador, dê vida ao seu personagem e parta para sua primeira caçada. Seu progresso fica guardado para quando você voltar.</p><button className="landing-button" onClick={() => openAccess("register")}>Criar minha conta <span aria-hidden="true">→</span></button></div>
           <div className="landing-journey-seal"><span>✦</span><small>A ESSÊNCIA<br />REGISTRA TUDO</small></div>
         </section>
@@ -106,7 +107,7 @@ export function LandingPage({ onAuthenticated }: LandingPageProps) {
         </section>
       </main>
 
-      <footer className="landing-footer"><a href="#inicio"><img src="/assets/branding/mythreon-logo-horizontal.png" alt="Mythreon Online" /></a><span>“A Essência registra tudo.”</span><button onClick={() => openAccess("register")}>Sua aventura espera por você <span aria-hidden="true">→</span></button></footer>
+      <footer className="landing-footer"><a href="#inicio"><AssetImage src="/assets/branding/mythreon-logo-horizontal.png" alt="Mythreon Online" /></a><span>“A Essência registra tudo.”</span><button onClick={() => openAccess("register")}>Sua aventura espera por você <span aria-hidden="true">→</span></button></footer>
       {accessMode && <AccountDialog mode={accessMode} onModeChange={setAccessMode} onClose={closeAccess} onAuthenticated={onAuthenticated} />}
     </div>
   );
@@ -139,7 +140,7 @@ function AccountDialog({ mode, onModeChange, onClose, onAuthenticated }: { mode:
     <div className="account-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) onClose(); }}>
       <section className="account-dialog" role="dialog" aria-modal="true" aria-labelledby="account-title">
         <button className="account-close" onClick={onClose} aria-label="Fechar">×</button>
-        <img className="account-logo" src="/assets/branding/mythreon-logo-horizontal.png" alt="Mythreon Online" />
+        <AssetImage className="account-logo" src="/assets/branding/mythreon-logo-horizontal.png" alt="Mythreon Online" />
         <span className="landing-eyebrow">SUA JORNADA COMEÇA AQUI</span>
         <h2 id="account-title">{registering ? "Criar conta" : "Bem-vindo de volta"}</h2>
         <p>{registering ? "Guarde seu progresso e prepare-se para explorar." : "Entre com a conta criada neste navegador."}</p>

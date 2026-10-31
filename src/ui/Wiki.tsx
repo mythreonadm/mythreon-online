@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { AssetImage } from "./AssetImage";
 import { ZONES } from "../data/zones";
-import { ALL_EQUIPMENT_TEMPLATES, POTION_TEMPLATES, FRAGMENT_TEMPLATES, UNIQUE_TEMPLATES } from "../data/items";
+import { ALL_EQUIPMENT_TEMPLATES, ARROW_TEMPLATES, POTION_TEMPLATES, FRAGMENT_TEMPLATES, UNIQUE_TEMPLATES } from "../data/items";
 import { ATAQUES, SUPORTES, PASSIVAS } from "../data/components";
 import { NAMED_RACES, RACE_LORE } from "../data/races";
 import { VIALS } from "../data/vials";
@@ -10,13 +11,14 @@ import { DIVINE_BEASTS, DIVINE_BEAST_ORDER } from "../data/divineBeasts";
 import { HUMAN_LINEAGE, LINEAGES } from "../data/lineages";
 import { Item } from "../types";
 import { getPotionUsePrice } from "../data/potionEconomy";
+import { ELEMENTS, elementMultiplier } from "../data/elementalChart";
 
 const PERCENT_STATS = new Set(["crit", "hit", "dge", "spd", "blk", "resFisico", "resMagico", "critDmg", "lifesteal"]);
 function formatWikiStat(stat: string, value: number) {
   return PERCENT_STATS.has(stat) && Math.abs(value) <= 1 ? `${(value * 100).toFixed(0)}%` : value.toLocaleString("pt-BR");
 }
 
-type Section = "history" | "beasts" | "monsters" | "zones" | "equipment" | "consumables" | "components" | "races" | "bosses" | "backpacks" | "fragments";
+type Section = "history" | "beasts" | "monsters" | "zones" | "equipment" | "elements" | "consumables" | "components" | "races" | "bosses" | "backpacks" | "fragments";
 
 const SECTION_META: { id: Section; label: string; icon: string; color: string }[] = [
   { id: "history", label: "História", icon: "📜", color: "text-arcane-gold" },
@@ -24,6 +26,7 @@ const SECTION_META: { id: Section; label: string; icon: string; color: string }[
   { id: "monsters", label: "Monstros", icon: "👹", color: "text-red-400" },
   { id: "zones", label: "Zonas", icon: "🗺️", color: "text-green-400" },
   { id: "equipment", label: "Equipamentos", icon: "⚔️", color: "text-arcane-cyan" },
+  { id: "elements", label: "Elementos", icon: "🌈", color: "text-arcane-gold" },
   { id: "consumables", label: "Poções & Vials", icon: "🧪", color: "text-blue-400" },
   { id: "components", label: "Componentes", icon: "🔮", color: "text-purple-400" },
   { id: "races", label: "Raças", icon: "🎭", color: "text-arcane-gold" },
@@ -99,6 +102,7 @@ export function Wiki() {
         {section === "monsters" && <MonstersSection search={search} />}
         {section === "zones" && <ZonesSection search={search} />}
         {section === "equipment" && <EquipmentSection search={search} />}
+        {section === "elements" && <ElementalChartSection />}
         {section === "consumables" && <ConsumablesSection search={search} />}
         {section === "components" && <ComponentsSection search={search} />}
         {section === "races" && <RacesSection search={search} />}
@@ -115,7 +119,7 @@ function WikiItemIcon({ item, size = "h-10 w-10" }: { item: Pick<Item, "template
   useEffect(() => setFailed(false), [item.templateId]);
   return failed
     ? <span className={`${size} grid shrink-0 place-items-center text-2xl`}>{item.icon}</span>
-    : <img src={`/assets/items/${item.templateId}.png`} alt={item.name} className={`${size} shrink-0 object-contain [image-rendering:pixelated]`} onError={() => setFailed(true)} />;
+    : <AssetImage src={`/assets/items/${item.templateId}.png`} alt={item.name} className={`${size} shrink-0 object-contain [image-rendering:pixelated]`} onError={() => setFailed(true)} />;
 }
 
 function WikiAssetIcon({ templateId, name, emoji = "🎒", size = "h-12 w-12" }: { templateId: string; name: string; emoji?: string; size?: string }) {
@@ -123,7 +127,7 @@ function WikiAssetIcon({ templateId, name, emoji = "🎒", size = "h-12 w-12" }:
   useEffect(() => setFailed(false), [templateId]);
   return failed
     ? <span className={`${size} grid shrink-0 place-items-center text-3xl`}>{emoji}</span>
-    : <img src={`/assets/items/${templateId}.png`} alt={name} className={`${size} shrink-0 object-contain [image-rendering:pixelated]`} onError={() => setFailed(true)} />;
+    : <AssetImage src={`/assets/items/${templateId}.png`} alt={name} className={`${size} shrink-0 object-contain [image-rendering:pixelated]`} onError={() => setFailed(true)} />;
 }
 
 function DivineBeastsWikiSection({ search }: { search: string }) {
@@ -160,7 +164,7 @@ function DivineBeastsWikiSection({ search }: { search: string }) {
 function BeastWikiImage({ sprite, name, emoji }: { sprite: string; name: string; emoji: string }) {
   const [failed, setFailed] = useState(false);
   return <div className="grid h-24 w-24 shrink-0 place-items-center rounded-lg border border-white/10 bg-black/30">
-    {failed ? <span className="text-4xl">{emoji}</span> : <img src={sprite} alt={name} className="h-full w-full object-contain [image-rendering:pixelated]" onError={() => setFailed(true)} />}
+    {failed ? <span className="text-4xl">{emoji}</span> : <AssetImage src={sprite} alt={name} className="h-full w-full object-contain [image-rendering:pixelated]" onError={() => setFailed(true)} />}
   </div>;
 }
 
@@ -675,7 +679,7 @@ function MonstersSection({ search }: { search: string }) {
           <div key={m.id} className={`bg-arcane-panel border-2 rounded-lg p-3 ${m.isBoss ? "border-red-900/70" : "border-arcane-border"}`}>
             <div className="flex justify-between items-start mb-2">
               <div className="flex items-center gap-2">
-                {m.sprite ? <img src={m.sprite} alt="" className="h-12 w-12 object-contain [image-rendering:pixelated]" /> : <span className="text-2xl">{m.emoji}</span>}
+                {m.sprite ? <AssetImage src={m.sprite} alt="" className="h-12 w-12 object-contain [image-rendering:pixelated]" /> : <span className="text-2xl">{m.emoji}</span>}
                 <div>
                 <h3 className="font-bold text-white text-sm flex items-center gap-1">
                   {m.name}
@@ -694,6 +698,8 @@ function MonstersSection({ search }: { search: string }) {
             </div>
             <div className="text-[10px] text-gray-400 space-y-0.5">
               <div>💰 Ouro: {m.goldMin}–{m.goldMax}</div>
+              {m.element && <div className="text-orange-200">{ELEMENTS.find(element => element.id === m.element)?.icon} Afinidade: {ELEMENTS.find(element => element.id === m.element)?.name} · dano elemental</div>}
+              {m.elementalResistances && Object.entries(m.elementalResistances).map(([element, resistance]) => <div key={element} className="text-cyan-200">Resistência: {ELEMENTS.find(entry => entry.id === element)?.name ?? element} {Math.round((resistance ?? 0) * 100)}%</div>)}
               <div>⚔️ Equipamento: {m.isBoss ? "60%" : "15%"} de chance base · Tier da zona</div>
               <div>🔮 Drop: <span className="text-arcane-cyan">{ATAQUES[m.componentId]?.name || m.componentId}</span> ({(m.componentChance * 100).toFixed(0)}%)</div>
               {m.essenceId && <div>💎 Essência: <span className="text-arcane-cyan">{SUPORTES[m.essenceId]?.name || m.essenceId}</span> ({((m.essenceChance || 0) * 100).toFixed(0)}%)</div>}
@@ -717,7 +723,7 @@ function ZonesSection({ search }: { search: string }) {
     <div className="space-y-3">
       {zones.map(z => (
         <div key={z.id} className="relative isolate overflow-hidden bg-arcane-panel border border-arcane-border rounded-lg p-4">
-          <div aria-hidden="true" className="absolute inset-0 -z-10 bg-cover bg-center opacity-20" style={{ backgroundImage: `linear-gradient(90deg, rgba(9,14,18,.9), rgba(9,14,18,.55)), url('/assets/backgrounds/${z.theme}.png')` }} />
+          <div aria-hidden="true" className="absolute inset-0 -z-10 overflow-hidden opacity-20"><AssetImage src={`/assets/backgrounds/${z.theme}.png`} alt="" className="h-full w-full object-cover" /><div className="absolute inset-0 bg-gradient-to-r from-[#090e12]/90 to-[#090e12]/55" /></div>
           <div className="flex justify-between items-start mb-3">
             <div>
               <h3 className="font-bold text-arcane-gold text-lg">🗺️ {z.name}</h3>
@@ -731,7 +737,7 @@ function ZonesSection({ search }: { search: string }) {
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
             {z.enemies.map(e => (
               <div key={e.id} className="flex items-center gap-2 rounded-lg border border-white/5 bg-black/35 px-2 py-1.5 text-xs">
-                {e.sprite ? <img src={e.sprite} alt="" className="h-10 w-10 object-contain [image-rendering:pixelated]" /> : <span className="text-xl">{e.emoji}</span>}
+                {e.sprite ? <AssetImage src={e.sprite} alt="" className="h-10 w-10 object-contain [image-rendering:pixelated]" /> : <span className="text-xl">{e.emoji}</span>}
                 <span className="min-w-0"><strong className="block truncate text-gray-200">{e.name}</strong><span className="text-yellow-400">{'⭐'.repeat(e.difficulty)}</span>{e.isBoss && <span className="ml-1 text-red-300">Chefe</span>}</span>
               </div>
             ))}
@@ -745,12 +751,20 @@ function ZonesSection({ search }: { search: string }) {
 // ═══════════════════════════════════════════════════════════════
 // EQUIPAMENTOS
 // ═══════════════════════════════════════════════════════════════
+function ElementalChartSection() {
+  return <div className="space-y-4">
+    <section className="rounded-xl border border-arcane-gold/25 bg-arcane-panel p-4"><h2 className="text-lg font-black text-arcane-gold">Relações elementais</h2><p className="mt-1 text-xs text-gray-400">Vantagem causa 1,25×; resistência reduz para 0,75×. As resistências próprias da criatura ou do personagem também se aplicam depois da relação. Base é neutro.</p><div className="mt-3 flex flex-wrap gap-2">{ELEMENTS.map(element => <span key={element.id} className="rounded-full border border-white/10 bg-black/20 px-2 py-1 text-xs text-gray-200">{element.icon} {element.name}</span>)}</div></section>
+    <div className="overflow-x-auto rounded-xl border border-arcane-border bg-arcane-panel"><table className="min-w-[840px] border-collapse text-center text-[10px]"><thead><tr><th className="sticky left-0 bg-arcane-panel p-2 text-gray-400">Ataque ↓ / Defesa →</th>{ELEMENTS.map(def => <th key={def.id} className="p-2 text-gray-300">{def.icon}<br />{def.name}</th>)}</tr></thead><tbody>{ELEMENTS.map(atk => <tr key={atk.id} className="border-t border-white/5"><th className="sticky left-0 bg-arcane-panel p-2 text-left text-gray-200">{atk.icon} {atk.name}</th>{ELEMENTS.map(def => { const mult = elementMultiplier(atk.id, def.id); return <td key={def.id} className={`p-2 font-bold ${mult > 1 ? "text-emerald-300" : mult < 1 ? "text-rose-300" : "text-gray-600"}`}>{mult.toFixed(2)}×</td>; })}</tr>)}</tbody></table></div>
+    <p className="text-[10px] text-gray-500">Armas Incomuns ou superiores podem receber elemento e bônus aleatório de dano elemental. O valor fica gravado no item e não muda ao recarregar.</p>
+  </div>;
+}
+
 function EquipmentSection({ search }: { search: string }) {
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [tierFilter, setTierFilter] = useState<number>(0);
-  const categories = ["all", "ARMA", "ARMADURA", "JOIA", "ESCUDO"];
+  const categories = ["all", "ARMA", "ARMADURA", "JOIA", "ESCUDO", "FLECHA"];
 
-  const items = Object.values(ALL_EQUIPMENT_TEMPLATES).filter(i => {
+  const items = [...Object.values(ALL_EQUIPMENT_TEMPLATES), ...Object.values(ARROW_TEMPLATES)].filter(i => {
     const matchSearch = i.name.toLowerCase().includes(search.toLowerCase());
     const matchCategory = categoryFilter === "all" || i.category === categoryFilter;
     const matchTier = tierFilter === 0 || i.tier === tierFilter;
@@ -759,6 +773,7 @@ function EquipmentSection({ search }: { search: string }) {
 
   return (
     <div className="space-y-4">
+      <p className="rounded-lg border border-arcane-cyan/20 bg-arcane-cyan/5 p-3 text-xs text-gray-400">Flechas T1–T5 são munição equipável e podem cair durante a caça. No momento, não são consumidas pelo combate automático.</p>
       <div className="flex flex-wrap gap-2 bg-arcane-panel border border-arcane-border rounded-lg p-3">
         <div className="text-xs text-gray-400 mr-2 self-center">Categoria:</div>
         {categories.map(c => (
@@ -782,7 +797,7 @@ function EquipmentSection({ search }: { search: string }) {
               <td className="px-4 py-2"><div className="flex items-center gap-3"><WikiItemIcon item={item} size="h-10 w-10" /><span className="font-bold text-white">{item.name}</span></div></td>
               <td className="px-4 py-2"><span className="rounded-full border border-arcane-cyan/30 bg-arcane-cyan/10 px-2 py-1 font-bold text-arcane-cyan">T{item.tier}</span></td>
               <td className="px-4 py-2 text-gray-300">{item.category}</td>
-              <td className="px-4 py-2"><div className="flex flex-wrap gap-1">{Object.entries(item.stats).map(([k, v]) => <span key={k} className="rounded bg-black/30 px-2 py-1 text-[10px]"><span className="text-gray-500 uppercase">{k}:</span> <strong className="text-white">{formatWikiStat(k, v as number)}</strong></span>)}</div></td>
+              <td className="px-4 py-2"><div className="flex flex-wrap gap-1">{item.element && <span className="rounded border border-orange-900/40 bg-orange-950/20 px-2 py-1 text-[10px] text-orange-200">{ELEMENTS.find(e => e.id === item.element)?.icon} {ELEMENTS.find(e => e.id === item.element)?.name} · até {Math.round((item.elementalDamagePct ?? 0) * 100)}% bônus nos drops</span>}{Object.entries(item.stats).map(([k, v]) => <span key={k} className="rounded bg-black/30 px-2 py-1 text-[10px]"><span className="text-gray-500 uppercase">{k}:</span> <strong className="text-white">{formatWikiStat(k, v as number)}</strong></span>)}</div></td>
             </tr>)}</tbody>
           </table>
         </div>
@@ -893,7 +908,7 @@ function RacesSection({ search }: { search: string }) {
       <section className="rounded-xl border border-arcane-cyan/25 bg-gradient-to-br from-arcane-panel via-slate-950 to-arcane-panel p-4 shadow-lg">
         <div className="mb-3"><h3 className="text-lg font-black text-arcane-cyan">Linhagens de combate</h3><p className="text-xs text-gray-400">As artes abaixo identificam a linhagem humana inicial e as 15 linhagens associadas aos componentes de Ataque. A combinação com Suporte e Passiva forma uma raça/build.</p></div>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">{lineages.map(lineage => <article key={lineage.id} className="flex min-w-0 items-center gap-2 rounded-lg border border-white/5 bg-black/25 p-2 transition hover:border-arcane-cyan/30">
-          <img src={lineage.sprite} alt={lineage.name} className="h-12 w-12 shrink-0 object-contain [image-rendering:pixelated]" onError={e => { e.currentTarget.style.visibility = "hidden"; }} />
+          <AssetImage src={lineage.sprite} alt={lineage.name} className="h-12 w-12 shrink-0 object-contain [image-rendering:pixelated]" onError={e => { e.currentTarget.style.visibility = "hidden"; }} />
           <div className="min-w-0"><h4 className="truncate text-[11px] font-bold text-white">{lineage.name}</h4><p className="line-clamp-2 text-[9px] leading-tight text-gray-500">{lineage.description}</p></div>
         </article>)}</div>
       </section>
@@ -918,7 +933,7 @@ function RacesSection({ search }: { search: string }) {
           const pasEffect = PASSIVE_EFFECTS[r.passivaId];
           return (
             <div key={r.id} className="bg-arcane-panel border-2 border-arcane-gold/30 rounded-lg p-4">
-              <div className="mb-2 flex items-center gap-3"><img src={LINEAGES[r.ataqueId]?.sprite} alt="" className="h-14 w-14 object-contain [image-rendering:pixelated]" /><div><h3 className="font-bold text-arcane-gold text-base">{r.name}</h3><p className="text-[10px] text-gray-500">Linhagem {LINEAGES[r.ataqueId]?.name ?? ""}</p></div></div>
+              <div className="mb-2 flex items-center gap-3"><AssetImage src={LINEAGES[r.ataqueId]?.sprite} alt="" className="h-14 w-14 object-contain [image-rendering:pixelated]" /><div><h3 className="font-bold text-arcane-gold text-base">{r.name}</h3><p className="text-[10px] text-gray-500">Linhagem {LINEAGES[r.ataqueId]?.name ?? ""}</p></div></div>
               <p className="text-[10px] text-gray-500 mb-2">ID: {r.id} · ★ Nomeada</p>
               <p className="text-[11px] italic text-gray-400 mb-3">"{RACE_LORE[r.id]}"</p>
               <div className="grid grid-cols-2 gap-1 text-[10px] mb-3">
@@ -976,7 +991,7 @@ function BossesSection({ search }: { search: string }) {
               <div key={b.id} className="bg-arcane-panel border-2 border-red-900/50 rounded-lg p-4">
                 <div className="flex items-center justify-between gap-3 mb-2">
                   <div>
-                    <div className="flex items-center gap-2">{b.sprite ? <img src={b.sprite} alt="" className="h-14 w-14 object-contain [image-rendering:pixelated]" /> : <span className="text-2xl">{b.emoji}</span>}<h4 className="font-bold text-white text-base">{b.name} <span className="text-red-500">👑</span></h4></div>
+                    <div className="flex items-center gap-2">{b.sprite ? <AssetImage src={b.sprite} alt="" className="h-14 w-14 object-contain [image-rendering:pixelated]" /> : <span className="text-2xl">{b.emoji}</span>}<h4 className="font-bold text-white text-base">{b.name} <span className="text-red-500">👑</span></h4></div>
                     <p className="text-[10px] text-gray-500">{b.zoneName} · Nv {b.minLevel}</p>
                   </div>
                   <span className="text-yellow-400">{'⭐'.repeat(b.difficulty)}</span>

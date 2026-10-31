@@ -41,6 +41,7 @@ interface GameState {
   startTraining: (skill: keyof CharacterSkills) => void;
   stopTraining: () => void;
   setActiveEnemy: (enemyId: string) => void;
+  setCurrentZone: (zoneId: string) => void;
   equip: (uid: string) => { success: boolean; error?: string };
   unequip: (slot: any) => { success: boolean; error?: string };
   synthesize: (a: string, s: string, p: string) => { success: boolean; error?: string };
@@ -213,6 +214,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     recalcStats(character);
     set({ character: { ...character }, lastTickResult: result });
     get().save();
+    if (result.staminaDepleted && !isOffline) get().stopHunting();
   },
 
   startHunting: (zoneId) => {
@@ -220,6 +222,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (!character) return;
     if (healingUntil) return alert("Você está meditando! Termine antes de caçar.");
     if (character.hp <= 0) return alert("Você precisa se curar na Casa antes de caçar!");
+    if ((character.staminaOnline ?? 120) <= 0) return alert("Sua stamina online acabou. Continue sua jornada offline para recuperar essa reserva.");
 
     const zone = ZONES[zoneId];
     if (character.level < zone.minLevel) return;
@@ -270,6 +273,13 @@ export const useGameStore = create<GameState>((set, get) => ({
     character.enemyHp = (enemy?.hp || 0) * (enemy?.difficulty || 1);
     character.enemyHpId = enemyId;
     set({ character: { ...character } }); get().save();
+  },
+
+  setCurrentZone: (zoneId) => {
+    if (!ZONES[zoneId]) return;
+    set({ currentZoneId: zoneId });
+    const { character } = get();
+    if (character) { character.currentZoneId = zoneId; character.activeEnemyId = ZONES[zoneId].enemies[0]?.id; character.enemyHp = undefined; character.enemyHpId = undefined; set({ character: { ...character } }); get().save(); }
   },
 
   equip: (uid) => {
@@ -338,6 +348,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     const { character } = get(); if (!character) return;
     const newCharacter = JSON.parse(JSON.stringify(character));
     newCharacter.raceId = race.id; newCharacter.activeRace = race; newCharacter.activeDivineBeastId = undefined;
+    trackQuestAction(newCharacter, "EQUIP_RACE");
     recalcStats(newCharacter); set({ character: newCharacter }); get().save();
   },
 
@@ -410,12 +421,23 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (settings.autoPotion !== undefined) newCharacter.autoPotion = settings.autoPotion;
     if (settings.autoSell !== undefined) newCharacter.autoSell = settings.autoSell;
     if (settings.autoSalvage !== undefined) newCharacter.autoSalvage = settings.autoSalvage;
+    if (settings.autoSellTemplateIds !== undefined) {
+      newCharacter.autoSellTemplateIds = settings.autoSellTemplateIds;
+      newCharacter.autoSalvageTemplateIds = (newCharacter.autoSalvageTemplateIds ?? []).filter((id: string) => !settings.autoSellTemplateIds.includes(id));
+    }
+    if (settings.autoSalvageTemplateIds !== undefined) {
+      newCharacter.autoSalvageTemplateIds = settings.autoSalvageTemplateIds;
+      newCharacter.autoSellTemplateIds = (newCharacter.autoSellTemplateIds ?? []).filter((id: string) => !settings.autoSalvageTemplateIds.includes(id));
+    }
     if (settings.autoHpPotionId !== undefined) newCharacter.autoHpPotionId = settings.autoHpPotionId;
     if (settings.autoHpPotionPercent !== undefined) newCharacter.autoHpPotionPercent = settings.autoHpPotionPercent;
     if (settings.autoHpPotionEnabled !== undefined) newCharacter.autoHpPotionEnabled = settings.autoHpPotionEnabled;
     if (settings.autoMpPotionId !== undefined) newCharacter.autoMpPotionId = settings.autoMpPotionId;
     if (settings.autoMpPotionPercent !== undefined) newCharacter.autoMpPotionPercent = settings.autoMpPotionPercent;
     if (settings.autoMpPotionEnabled !== undefined) newCharacter.autoMpPotionEnabled = settings.autoMpPotionEnabled;
+    if (["autoHpPotionId", "autoHpPotionPercent", "autoHpPotionEnabled", "autoMpPotionId", "autoMpPotionPercent", "autoMpPotionEnabled"].some(key => settings[key] !== undefined)) {
+      trackQuestAction(newCharacter, "CONFIGURE_POTIONS");
+    }
     set({ character: newCharacter }); get().save();
   },
 

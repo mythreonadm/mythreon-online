@@ -2,7 +2,7 @@ import React from "react";
 import { useGameStore } from "../store/gameStore";
 
 export function OfflineModal() {
-  const { offlineReport, clearOfflineReport } = useGameStore();
+  const { offlineReport, clearOfflineReport, character } = useGameStore();
   if (!offlineReport) return null;
 
   const hours = Math.floor(offlineReport.timeAwaySeconds / 3600);
@@ -32,6 +32,12 @@ export function OfflineModal() {
             <span className="text-gray-300">📦 Itens:</span>
             <span className="font-bold text-green-400">+{offlineReport.itemsDropped}</span>
           </div>
+          {character && <div className="space-y-2 border-t border-white/10 pt-3 text-left">
+            {[{ label: "Stamina online", value: character.staminaOnline ?? 120, max: 120, color: "bg-emerald-400" }, { label: "Stamina offline", value: character.staminaOffline ?? 480, max: 480, color: "bg-violet-400" }].map(pool => <div key={pool.label}>
+              <div className="mb-1 flex justify-between text-[10px] text-gray-400"><span>{pool.label}</span><b>{Math.floor(pool.value)} / {pool.max} min</b></div>
+              <div className="h-2 overflow-hidden rounded-full bg-black/50"><div className={`h-full ${pool.color}`} style={{ width: `${Math.max(0, Math.min(100, pool.value / pool.max * 100))}%` }} /></div>
+            </div>)}
+          </div>}
         </div>
         
         <button onClick={clearOfflineReport} className="w-full bg-arcane-gold hover:bg-yellow-500 text-black font-bold py-3 rounded-lg transition-colors text-lg shadow-[0_0_15px_rgba(201,160,77,0.5)]">

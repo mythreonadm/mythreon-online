@@ -43,7 +43,7 @@ export function Quests({ focusQuestId, onFocusHandled }: QuestsProps) {
 
   const renderQuest = (template: any, isActive: boolean) => {
     const isCompletedQuest = completedIds.includes(template.id);
-    const progressData = character.quests.active[template.id]?.progress || [];
+    const progressData = isCompletedQuest ? template.objectives.map((objective: any) => objective.count) : character.quests.active[template.id]?.progress || [];
     const isReadyToClaim = isActive && checkQuestCompletion(character, template.id);
 
     return (
@@ -112,6 +112,14 @@ export function Quests({ focusQuestId, onFocusHandled }: QuestsProps) {
         <h2 className="text-2xl font-bold text-arcane-cyan mb-6">Disponíveis</h2>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
            {otherAvailable.map(q => renderQuest(q, false))}
+        </div>
+      </div>
+
+      <div className="bg-arcane-panel border border-arcane-border rounded-xl p-6 shadow-lg">
+        <h2 className="mb-4 text-xl font-bold text-emerald-300">Concluídas ({completedIds.length})</h2>
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+          {completedIds.slice().reverse().map(id => { const quest = QUESTS.find(item => item.id === id); return quest ? renderQuest(quest, false) : null; })}
+          {!completedIds.length && <p className="text-sm italic text-gray-500">As missões concluídas aparecerão aqui.</p>}
         </div>
       </div>
     </div>

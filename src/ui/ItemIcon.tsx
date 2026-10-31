@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Item } from "../types";
+import { AssetImage } from "./AssetImage";
 
 interface Props {
   item: Item;
@@ -23,12 +24,12 @@ export function ItemIcon({ item, className = "text-3xl mb-1", style }: Props) {
   }
 
   return (
-    <img
+    <AssetImage
       src={imagePath}
       alt={item.name}
       className={`${className} object-contain`}
-      style={{ imageRendering: "pixelated", ...style }}
-      onError={() => setHasError(true)}
+      style={style}
+      onAllSourcesFail={() => setHasError(true)}
     />
   );
 }

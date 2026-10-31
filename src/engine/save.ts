@@ -33,6 +33,8 @@ export function createNewCharacter(name: string): Character {
     trainingSkill: null,
     autoSalvage: null,
     autoSell: null,
+    autoSellTemplateIds: [],
+    autoSalvageTemplateIds: [],
     autoHpPotionId: "POCAO_VIDA_1",
     autoHpPotionPercent: 50,
     autoHpPotionEnabled: false,
@@ -40,6 +42,9 @@ export function createNewCharacter(name: string): Character {
     autoMpPotionPercent: 30,
     autoMpPotionEnabled: false,
     tutorialCompleted: false,
+    staminaOnline: 120,
+    staminaOffline: 480,
+    staminaUpdatedAt: Date.now(),
     activeVials: {},
     cards: [],
     divineBeasts: [],
@@ -68,6 +73,8 @@ export function loadGame(): SaveFile | null {
       
       if (data.character.autoSalvage === undefined) data.character.autoSalvage = null;
       if (data.character.autoSell === undefined) data.character.autoSell = null;
+      if (!Array.isArray(data.character.autoSellTemplateIds)) data.character.autoSellTemplateIds = [];
+      if (!Array.isArray(data.character.autoSalvageTemplateIds)) data.character.autoSalvageTemplateIds = [];
       
       if (!data.character.autoHpPotionId) data.character.autoHpPotionId = "POCAO_VIDA_1";
       if (data.character.autoHpPotionPercent === undefined) data.character.autoHpPotionPercent = 50;
@@ -79,6 +86,9 @@ export function loadGame(): SaveFile | null {
         data.character.tutorialCompleted = (data.character.level ?? 1) > 1;
       }
       if (!data.character.activeVials) data.character.activeVials = {};
+      if (!Number.isFinite(data.character.staminaOnline)) data.character.staminaOnline = 120;
+      if (!Number.isFinite(data.character.staminaOffline)) data.character.staminaOffline = 480;
+      if (!Number.isFinite(data.character.staminaUpdatedAt)) data.character.staminaUpdatedAt = Date.now();
       
       // Migração para cartas
       if (!data.character.cards) data.character.cards = [];

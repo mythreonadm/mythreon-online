@@ -90,6 +90,27 @@ export function Backpack() {
     }
   };
 
+  const equipBestPowerItems = () => {
+    if (!window.confirm("Equipar automaticamente os itens com maior potência estimada por slot? Essa escolha considera uma pontuação geral e pode não combinar com os atributos da sua build.")) return;
+    const candidates = [...character.inventory.items].filter(item => item.slot).sort((a, b) => getItemScore(b) - getItemScore(a));
+    let equippedCount = 0;
+    for (const item of candidates) {
+      const current = useGameStore.getState().character;
+      if (!current || !item.slot) continue;
+      if (item.slot === "BACKPACK") {
+        if ((item.slots ?? 0) > current.inventory.backpack.slots && useGameStore.getState().equip(item.uid).success) equippedCount++;
+        continue;
+      }
+      const slot = item.slot === "ANEL_I"
+        ? (!current.equipped.ANEL_I ? "ANEL_I" : !current.equipped.ANEL_II ? "ANEL_II" : getItemScore(current.equipped.ANEL_I) <= getItemScore(current.equipped.ANEL_II) ? "ANEL_I" : "ANEL_II")
+        : item.slot;
+      if (getItemScore(item) > getItemScore(current.equipped[slot])) {
+        if (useGameStore.getState().equip(item.uid).success) equippedCount++;
+      }
+    }
+    alert(equippedCount ? `${equippedCount} item(ns) equipado(s) por maior potência estimada. Revise a sinergia dos atributos da sua build.` : "Nenhum item da mochila superou o equipamento atual por potência estimada.");
+  };
+
   const equippedItem = selectedItem ? getEquippedForTarget(character, selectedItem) : undefined;
 
   return (
@@ -108,6 +129,7 @@ export function Backpack() {
         <div className="flex items-center gap-4">
           <h2 className="text-xl font-bold text-arcane-gold">🎒 Backpack</h2>
           <button onClick={selectAll} className="text-xs bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 rounded">Selecionar Tudo</button>
+          <button onClick={equipBestPowerItems} title="A pontuação geral pode ignorar a sinergia dos atributos da sua build." className="text-xs bg-emerald-800 hover:bg-emerald-700 border border-emerald-500/40 text-white px-3 py-1.5 rounded font-bold">⚡ Equipar maior potência</button>
         </div>
         <div className="flex items-center gap-2 text-sm flex-wrap">
           <span className="text-gray-400">Bolsa:</span>

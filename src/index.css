@@ -253,7 +253,8 @@ html { scroll-behavior: smooth; scroll-padding-top: 92px; }
 .landing-proof > span { color: var(--site-gold); }
 .landing-proof i { width: 3px; height: 3px; border-radius: 50%; background: #7c7e89; }
 .landing-world-card { position: relative; width: 100%; min-height: 365px; overflow: hidden; align-self: center; border: 1px solid rgba(230,181,79,.48); border-radius: 22px; background: #10131b; box-shadow: 0 35px 90px rgba(0,0,0,.56), 0 0 45px rgba(15, 118, 133, .11); transform: perspective(1200px) rotateY(-3deg); }
-.landing-world-image { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(5,8,13,.05) 22%, rgba(5,8,13,.16) 50%, #090b12 100%), url('/assets/backgrounds/ocean.png') center/cover; image-rendering: pixelated; transform: scale(1.02); }
+.landing-world-image { position: absolute; inset: 0; overflow: hidden; background: #090b12; image-rendering: pixelated; transform: scale(1.02); }
+.landing-world-image::after { content: ""; position: absolute; inset: 0; z-index: 1; background: linear-gradient(180deg, rgba(5,8,13,.05) 22%, rgba(5,8,13,.16) 50%, #090b12 100%); }
 .landing-world-caption { position: absolute; right: 18px; bottom: 17px; left: 18px; display: flex; align-items: center; gap: 9px; color: #d7d5d0; font-size: 12px; font-weight: 700; }
 .landing-status-dot { width: 8px; height: 8px; border-radius: 50%; background: #69c792; box-shadow: 0 0 13px #69c792; }
 .landing-world-stamp { position: absolute; top: 20px; left: 20px; display: flex; align-items: center; gap: 9px; color: #fff0c9; font-family: Georgia,serif; font-size: 13px; font-weight: 800; letter-spacing: .08em; text-shadow: 0 2px 7px #000; }
@@ -271,7 +272,8 @@ html { scroll-behavior: smooth; scroll-padding-top: 92px; }
 .landing-feature-icon { display: grid; width: 43px; height: 43px; place-items: center; border: 1px solid rgba(230,181,79,.34); border-radius: 12px; background: rgba(230,181,79,.08); color: var(--site-gold-light); font-size: 23px; }
 .landing-feature h3 { margin: 20px 0 8px; color: #f0e8d7; font-family: Georgia,serif; font-size: 20px; }
 .landing-feature p { margin: 0; color: #a6a9b6; font-size: 13px; line-height: 1.75; }
-.landing-journey { position: relative; display: flex; min-height: 340px; align-items: center; justify-content: space-between; gap: 40px; width: min(1200px, calc(100% - 48px)); margin: 0 auto 120px; padding: 52px clamp(28px, 7vw, 90px); overflow: hidden; border: 1px solid rgba(230,181,79,.27); border-radius: 20px; background: linear-gradient(90deg, rgba(13,14,21,.98), rgba(13,14,21,.84) 56%, rgba(13,14,21,.42)), url('/assets/backgrounds/ruins.png') center 48%/cover; box-shadow: 0 22px 70px rgba(0,0,0,.28); }
+.landing-journey { position: relative; isolation: isolate; display: flex; min-height: 340px; align-items: center; justify-content: space-between; gap: 40px; width: min(1200px, calc(100% - 48px)); margin: 0 auto 120px; padding: 52px clamp(28px, 7vw, 90px); overflow: hidden; border: 1px solid rgba(230,181,79,.27); border-radius: 20px; background: linear-gradient(90deg, rgba(13,14,21,.98), rgba(13,14,21,.84) 56%, rgba(13,14,21,.42)); box-shadow: 0 22px 70px rgba(0,0,0,.28); }
+.landing-journey-art { position: absolute; inset: 0; z-index: -1; opacity: .36; pointer-events: none; }
 .landing-journey > div:first-of-type { position: relative; max-width: 650px; z-index: 1; }
 .landing-journey h2 { margin-top: 16px; font-size: clamp(34px, 4.5vw, 52px); }
 .landing-journey p { margin-bottom: 22px; }

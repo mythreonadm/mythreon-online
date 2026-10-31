@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { AssetImage } from "./ui/AssetImage";
 import { useGameStore } from "./store/gameStore";
 import { Backpack } from "./ui/Backpack";
 import { Depot } from "./ui/Depot"; // NOVO
@@ -21,6 +22,10 @@ import { LandingPage } from "./ui/LandingPage";
 import { closeLocalAccountSession, getLocalAccountSession, type LocalAccount } from "./utils/localAccounts";
 import { activateSaveAccount } from "./engine/save";
 import { getTutorialQuestSignal } from "./utils/questSignals";
+import { QuestTracker } from "./ui/QuestTracker";
+import { QUESTS } from "./data/quests";
+import { checkQuestCompletion } from "./engine/questEngine";
+import { ZONES } from "./data/zones";
 
 type Tab = "zona" | "personagem" | "backpack" | "depot" | "matriz" | "pets" | "loja" | "missoes" | "duelos" | "wiki";
 
@@ -37,10 +42,11 @@ const TAB_ICONS: Record<Tab, AccessIconName> = {
 
 export default function App() {
   const [tab, setTab] = useState<Tab>("zona");
-  const { character, loadFromSave, newGame, startHunting, stopHunting, recordQuestAction } = useGameStore();
+  const { character, loadFromSave, newGame, startHunting, stopHunting, recordQuestAction, isTickRunning, setCurrentZone } = useGameStore();
   const [name, setName] = useState("");
   const [debug, setDebugState] = useState(isDebug());
   const [focusQuestId, setFocusQuestId] = useState<string | null>(null);
+  const [trackedQuestId, setTrackedQuestId] = useState<string | null>(null);
   const [account, setAccount] = useState<LocalAccount | null>(() => getLocalAccountSession());
   const tutorialSignal = character ? getTutorialQuestSignal(character) : null;
 
@@ -72,6 +78,37 @@ useEffect(() => {
     setFocusQuestId(questId);
     setTab("missoes");
   };
+
+  const trackQuest = (questId: string) => {
+    const quest = QUESTS.find(item => item.id === questId);
+    if (!quest || !character) return;
+    setTrackedQuestId(questId);
+    if (character.quests.completed.includes(questId)) { openQuest(questId); return; }
+    if (character.quests.active[questId] && checkQuestCompletion(character, questId)) { openQuest(questId); return; }
+    const progress = character.quests.active[questId]?.progress ?? [];
+    const objective = quest.objectives.find((_, index) => (progress[index] ?? 0) < quest.objectives[index].count);
+    const objectiveType = objective?.type;
+    const targetTabs: Record<string, Tab> = {
+      VISIT_WIKI: "wiki", VISIT_MATRIX: "matriz", SYNTHESIZE: "matriz", EQUIP_RACE: "matriz",
+      VISIT_FORGE: "loja", FORGE: "loja", SELL: "loja", SALVAGE: "loja", VISIT_BACKPACK: "backpack", CONFIGURE_POTIONS: "zona",
+    };
+    const destinationTab = objectiveType ? targetTabs[objectiveType] : undefined;
+    if (destinationTab) {
+      if (destinationTab === "loja" && isTickRunning) stopHunting();
+      setTab(destinationTab);
+      return;
+    }
+    if (quest.zoneId) {
+      if (isTickRunning && useGameStore.getState().currentZoneId !== quest.zoneId) stopHunting();
+      setCurrentZone(quest.zoneId);
+      const target = quest.objectives.find(obj => ["KILL", "KILL_BOSS", "COLLECT"].includes(obj.type))?.target;
+      const targetEnemy = ZONES[quest.zoneId]?.enemies.find(enemy => enemy.id === target || enemy.componentId === target || enemy.essenceId === target);
+      if (targetEnemy) useGameStore.getState().setActiveEnemy(targetEnemy.id);
+      setTab("zona");
+      return;
+    }
+    openQuest(questId);
+  };
   const clearQuestFocus = useCallback(() => setFocusQuestId(null), []);
   const logout = () => {
     stopHunting();
@@ -88,7 +125,7 @@ useEffect(() => {
       <div className="min-h-screen bg-arcane-bg flex items-center justify-center p-4">
         <div className="bg-arcane-panel border border-arcane-border rounded-2xl p-8 max-w-md w-full shadow-2xl entry-card">
           <div className="brand-lockup brand-lockup-centered">
-            <img
+            <AssetImage
               src="/assets/branding/mythreon-logo-horizontal.png"
               alt="Mythreon Online"
               className="brand-logo brand-logo-entry"
@@ -123,7 +160,7 @@ useEffect(() => {
       <header className="game-header bg-arcane-panel border-b border-arcane-border px-4 py-3 sticky top-0 z-50 shadow-lg">
         <div className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4">
           <div className="brand-lockup game-brand-lockup">
-            <img
+            <AssetImage
               src="/assets/branding/mythreon-logo-horizontal.png"
               alt="Mythreon Online"
               className="brand-logo"
@@ -150,10 +187,16 @@ useEffect(() => {
           {(["zona", "personagem", "backpack", "depot", "matriz", "pets", "loja", "missoes", "duelos", "wiki"] as Tab[]).map((t) => (
             <button
               key={t}
-              onClick={() => setTab(t)}
+              onClick={() => {
+                if (t === "loja" && isTickRunning) return;
+                setTab(t);
+              }}
+              disabled={t === "loja" && isTickRunning}
+              title={t === "loja" && isTickRunning ? "Saia da caça para acessar o Ferreiro" : undefined}
+              aria-disabled={t === "loja" && isTickRunning}
               aria-current={tab === t ? "page" : undefined}
               className={`nav-tab relative flex items-center gap-2 px-4 py-4 font-bold text-sm whitespace-nowrap transition-colors ${
-                tab === t
+                t === "loja" && isTickRunning ? "cursor-not-allowed text-gray-600 opacity-50" : tab === t
                   ? "text-arcane-gold border-b-2 border-arcane-gold bg-arcane-border/30"
                   : "text-gray-400 hover:text-white"
               }`}
@@ -165,8 +208,10 @@ useEffect(() => {
         </div>
       </nav>
 
+      <QuestTracker onSelect={trackQuest} />
+
       <main className="game-main max-w-7xl mx-auto p-4 mt-4">
-        {tab === "zona" && <ZoneView onOpenQuest={openQuest} />}
+        {tab === "zona" && <ZoneView onOpenQuest={openQuest} trackedQuestId={trackedQuestId} />}
         {tab === "personagem" && <Personagem />}
         {tab === "backpack" && <Backpack />}
         {tab === "depot" && <Depot />} {/* NOVO */}

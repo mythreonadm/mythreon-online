@@ -3,7 +3,7 @@ export type SlotType = "CAPACETE" | "ARMADURA" | "LUVAS" | "CALCAS" | "BOTAS" | 
 export type ItemCategory = "ARMA" | "ARMADURA" | "JOIA" | "ESCUDO" | "BACKPACK" | "FLECHA" | "COMPONENTE" | "POCAO" | "MATERIAL" | "FRAGMENTO";
 export type ComponentType = "ATAQUE" | "SUPORTE" | "PASSIVA";
 export type Law = "PRIME" | "VORO" | "LOGHIS" | "EMOHNA" | "RAAN" | "SYNTHES" | "CHRONOS" | "LYSS" | "DHOR" | "KAELOR" | "NOCTHAR" | "VEYRA" | "ASTER";
-export type Element = "FOGO" | "GELO" | "TROVAO" | "TERRA" | "SAGRADO" | "SOMBRIO";
+export type Element = "FOGO" | "ELETRICIDADE" | "VENTO" | "TERRA" | "AGUA" | "GELO" | "MORTE" | "SAGRADO" | "PSIQUICO" | "VENENO" | "METAL" | "BASE";
 
 // ── TIPOS DE CARTAS ──
 export type CardTrait = 
@@ -56,6 +56,8 @@ export interface Item {
   upgradeLevel: number;
   uniqueEffect?: string; stackable: boolean; maxStack: number; quantity: number;
   componentType?: ComponentType; law?: Law; element?: Element; icon: string;
+  elementalDamagePct?: number; preventsDeathDrop?: boolean;
+  elementalResistances?: Partial<Record<Element, number>>;
   slots?: number; dropBonus?: number; rareDropBonus?: number; xpBonus?: number;
   goldBonus?: number; lifesteal?: number;
 }
@@ -107,6 +109,9 @@ export interface Enemy {
   uniqueDropId?: string; uniqueDropChance?: number;
   minLevel?: number;
   damageType?: "FISICO" | "MAGICO";
+  element?: Element;
+  elementalResistances?: Partial<Record<Element, number>>;
+  protectionRingChance?: number;
   sprite?: string; emoji?: string;
   difficulty: 1 | 2 | 3 | 4 | 5;
 }
@@ -124,7 +129,7 @@ export interface CharacterSkills {
   melee: number; defense: number; magic: number; distance: number; soul: number;
 }
 
-export type QuestObjectiveType = "KILL" | "KILL_BOSS" | "COLLECT" | "REACH_LEVEL" | "EARN_GOLD" | "SYNTHESIZE" | "SELL" | "SALVAGE" | "FORGE" | "VISIT_WIKI" | "VISIT_MATRIX" | "VISIT_FORGE" | "VISIT_BACKPACK" | "DISCOVER_TOTAL" | "DISCOVER_NAMED";
+export type QuestObjectiveType = "KILL" | "KILL_BOSS" | "COLLECT" | "REACH_LEVEL" | "EARN_GOLD" | "SYNTHESIZE" | "EQUIP_RACE" | "CONFIGURE_POTIONS" | "SELL" | "SALVAGE" | "FORGE" | "VISIT_WIKI" | "VISIT_MATRIX" | "VISIT_FORGE" | "VISIT_BACKPACK" | "DISCOVER_TOTAL" | "DISCOVER_NAMED";
 export type QuestCategory = "TUTORIAL" | "HISTORIA" | "CACA" | "COLETA" | "DESAFIO" | "REPETIVEL" | "COMPENDIO";
 
 export interface QuestObjective { type: QuestObjectiveType; target?: string; count: number; description: string; }
@@ -144,6 +149,10 @@ export interface BuffVialTemplate {
 export interface DeathReportData {
   xpLost: number;
   goldLost: number;
+  blessed?: boolean;
+  protectedByRing?: boolean;
+  lostBackpack?: string;
+  lostItems?: string[];
 }
 
 export interface Character {
@@ -152,6 +161,10 @@ export interface Character {
   equipped: Partial<Record<SlotType, Item>>; inventory: Inventory;
   raceId?: string; activeRace?: Race; killsInZone: number; currentZoneId?: string;
   activeEnemyId?: string;
+  elementalResistances?: Partial<Record<Element, number>>;
+  staminaOnline?: number;
+  staminaOffline?: number;
+  staminaUpdatedAt?: number;
   premium: boolean; lastTick: number;
   
   quests: QuestState;
@@ -169,6 +182,8 @@ export interface Character {
   
   autoSell?: Rarity | null;
   autoSalvage?: Rarity | null;
+  autoSellTemplateIds?: string[];
+  autoSalvageTemplateIds?: string[];
   
   tickCount?: number;
   totalKills?: number;
@@ -194,6 +209,8 @@ export interface Character {
   fightDamageDealt?: number;
   fightDamageTaken?: number;
   fightPotionGoldSpent?: number;
+  fightDamageBreakdown?: DamageBreakdown;
+  fightDamageTakenBreakdown?: DamageBreakdown;
   
   depot: Item[];       // NOVO
   depotMax: number;    // NOVO
@@ -215,6 +232,8 @@ export interface HuntEncounterRecord {
   enemyName: string;
   damageDealt: number;
   damageTaken: number;
+  damageBreakdown?: DamageBreakdown;
+  damageTakenBreakdown?: DamageBreakdown;
   xp: number;
   gold: number;
   goldSpentPotions?: number;
@@ -235,6 +254,12 @@ export interface HuntZoneStats {
   soldGold: number;
   lootValue: number;
   history: HuntEncounterRecord[];
+}
+
+export interface DamageBreakdown {
+  physical: number;
+  elemental: Partial<Record<Element, number>>;
+  lifestealHealing: number;
 }
 
 export interface SaveFile {
@@ -259,7 +284,10 @@ export interface TickResult {
   cardsDropped?: CardInstance[];
   damageDealt?: number;
   damageTaken?: number;
+  damageBreakdown?: DamageBreakdown;
+  damageTakenBreakdown?: DamageBreakdown;
   combatDurationMs?: number;
   encounters?: HuntEncounterRecord[];
   divineBeastsDropped?: DivineBeastId[];
+  staminaDepleted?: boolean;
 }
