@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { useGameStore } from "../store/gameStore";
 import { getItemScore } from "../engine/itemCompare";
-import { Item, Rarity } from "../types";
+import { ItemIcon } from "./ItemIcon"; // NOVO
+import { Rarity } from "../types";
 
 const RARITY_GLOW: Record<Rarity, string> = {
   COMUM: "border-gray-600",
@@ -22,13 +23,10 @@ export function Depot() {
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortBy>("rarity");
-  
-  // NOVO: Seleção Múltipla
   const [selectedUids, setSelectedUids] = useState<string[]>([]);
 
   if (!character) return null;
 
-  // REGRA: Só pode acessar se não estiver caçando
   if (isTickRunning) {
     return (
       <div className="bg-arcane-panel border border-arcane-border rounded-xl p-12 text-center shadow-lg">
@@ -62,7 +60,6 @@ export function Depot() {
     if (!res.success) alert(res.error);
   };
 
-  // NOVO: Handlers de Seleção
   const toggleSelect = (uid: string) => {
     setSelectedUids(prev => prev.includes(uid) ? prev.filter(id => id !== uid) : [...prev, uid]);
   };
@@ -142,7 +139,6 @@ export function Depot() {
                 key={item.uid}
                 className={`relative bg-arcane-bg border-2 rounded-lg p-2 flex flex-col items-center justify-center transition-all group ${RARITY_GLOW[item.rarity]} ${isSelected ? "ring-2 ring-blue-500 bg-blue-900/30" : ""}`}
               >
-                {/* Checkbox de Seleção */}
                 <button
                   onClick={() => toggleSelect(item.uid)}
                   className={`absolute top-1 left-1 w-5 h-5 rounded border flex items-center justify-center text-xs z-20 transition-colors ${isSelected ? "bg-blue-500 border-blue-400 text-white" : "bg-black/50 border-gray-500 text-transparent hover:border-white"}`}
@@ -158,7 +154,9 @@ export function Depot() {
                   📤
                 </button>
                 
-                <div className="text-3xl mb-1">{item.icon}</div>
+                <div className="mb-1 flex justify-center">
+                  <ItemIcon item={item} className="w-12 h-12 drop-shadow-md" />
+                </div>
                 <div className="text-xs text-center truncate w-full font-bold" title={item.name}>{item.name}</div>
                 {item.upgradeLevel > 0 && <div className="text-[10px] text-orange-400 font-bold">+{item.upgradeLevel}</div>}
                 {item.quantity > 1 && <div className="text-xs font-bold text-arcane-gold mt-1">x{item.quantity}</div>}
@@ -169,7 +167,6 @@ export function Depot() {
         </div>
       )}
 
-      {/* Barra Flutuante de Ações em Lote */}
       {selectedUids.length > 0 && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-arcane-panel border-2 border-blue-500 rounded-xl shadow-[0_0_20px_rgba(59,130,246,0.5)] p-3 flex items-center gap-4 z-50">
           <span className="text-white font-bold whitespace-nowrap">{selectedUids.length} itens selecionados</span>

@@ -3,6 +3,7 @@ import { useGameStore } from "../store/gameStore";
 import { VIALS } from "../data/vials";
 import { getLineageByAttack } from "../data/lineages";
 import { SlotType } from "../types";
+import { ItemIcon } from "./ItemIcon";
 
 const SLOTS: { key: SlotType; label: string; icon: string }[] = [
   { key: "CAPACETE", label: "Capacete", icon: "🎩" },
@@ -106,7 +107,9 @@ export function Personagem() {
                   title={item ? `Clique para desequipar: ${item.name}` : `${slot.label} (vazio)`}
                 >
                   <div className="text-[9px] text-gray-400 uppercase tracking-wider mb-0.5">{slot.label}</div>
-                  <div className="text-2xl mb-1">{item?.icon ?? slot.icon}</div>
+                  <div className="text-2xl mb-1 flex justify-center">
+                    {item ? <ItemIcon item={item} className="w-10 h-10" /> : slot.icon}
+                  </div>
                   <div className="text-[10px] text-center truncate w-full font-bold" title={item?.name}>
                     {item?.name ?? "Vazio"}
                   </div>

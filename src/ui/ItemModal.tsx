@@ -2,13 +2,14 @@ import React from "react";
 import { Item, ItemStats } from "../types";
 import { STAT_NAMES } from "../data/affixes";
 import { getItemScore } from "../engine/itemCompare";
+import { ItemIcon } from "./ItemIcon"; // NOVO
 
 interface Props {
   item: Item;
   equipped?: Item;
   onEquip: () => void;
   onClose: () => void;
-  onDeposit?: () => void; // NOVO
+  onDeposit?: () => void;
 }
 
 export function ItemModal({ item, equipped, onEquip, onClose, onDeposit }: Props) {
@@ -64,7 +65,9 @@ export function ItemModal({ item, equipped, onEquip, onClose, onDeposit }: Props
 
         <div className="flex-1 bg-arcane-bg rounded-xl p-4 border border-arcane-border">
           <div className="text-center mb-4 border-b border-arcane-border pb-4">
-            <div className="text-6xl mb-2">{item.icon}</div>
+            <div className="text-6xl mb-2 flex justify-center">
+              <ItemIcon item={item} className="w-20 h-20 drop-shadow-md" />
+            </div>
             <h2 className={`text-xl font-bold ${item.rarity === "LENDARIO" ? "text-arcane-gold" : item.rarity === "EPICO" ? "text-purple-400" : "text-white"}`}>
               {item.name} {item.upgradeLevel > 0 && <span className="text-orange-400">+{item.upgradeLevel}</span>}
             </h2>
@@ -102,7 +105,9 @@ export function ItemModal({ item, equipped, onEquip, onClose, onDeposit }: Props
         {equipped && (
           <div className="flex-1 bg-black/40 rounded-xl p-4 border border-arcane-border/50 opacity-80">
             <div className="text-center mb-4 border-b border-arcane-border/50 pb-4">
-              <div className="text-6xl mb-2 grayscale">{equipped.icon}</div>
+              <div className="text-6xl mb-2 flex justify-center opacity-70 grayscale">
+                <ItemIcon item={equipped} className="w-20 h-20" />
+              </div>
               <h2 className="text-xl font-bold text-gray-400">
                 {equipped.name} {equipped.upgradeLevel > 0 && <span>+{equipped.upgradeLevel}</span>}
               </h2>
