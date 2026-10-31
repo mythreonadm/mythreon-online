@@ -20,11 +20,14 @@ const RARITY_ORDER: Record<Rarity, number> = {
 type SortBy = "rarity" | "score" | "name";
 
 export function Backpack() {
-  const { character, equip, save, depositItem } = useGameStore(); // NOVO: depositItem
+  const { character, equip, save, depositItem, depositMany } = useGameStore();
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortBy>("rarity");
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
+  
+  // NOVO: Seleção Múltipla
+  const [selectedUids, setSelectedUids] = useState<string[]>([]);
 
   if (!character) return null;
 
@@ -70,22 +73,44 @@ export function Backpack() {
     else alert(res.error);
   };
 
+  // NOVO: Handlers de Seleção
+  const toggleSelect = (uid: string) => {
+    setSelectedUids(prev => prev.includes(uid) ? prev.filter(id => id !== uid) : [...prev, uid]);
+  };
+
+  const selectAll = () => setSelectedUids(filtered.map(i => i.uid));
+  const clearSelection = () => setSelectedUids([]);
+
+  const handleBulkDeposit = () => {
+    if (selectedUids.length === 0) return;
+    const res = depositMany(selectedUids);
+    if (res.moved > 0) {
+      setSelectedUids([]);
+      if (res.error) alert(res.error);
+    } else {
+      alert(res.error || "Nenhum item movido.");
+    }
+  };
+
   const equippedItem = selectedItem ? getEquippedForTarget(character, selectedItem) : undefined;
 
   return (
-    <div className="bg-arcane-panel border border-arcane-border rounded-xl p-4 md:p-6 shadow-lg">
+    <div className="bg-arcane-panel border border-arcane-border rounded-xl p-4 md:p-6 shadow-lg relative pb-20">
       {selectedItem && (
         <ItemModal
           item={selectedItem}
           equipped={equippedItem}
           onEquip={handleConfirmEquip}
-          onDeposit={handleDeposit} // NOVO
+          onDeposit={handleDeposit}
           onClose={() => setSelectedItem(null)}
         />
       )}
 
       <div className="flex justify-between items-center mb-6 border-b border-arcane-border pb-4 flex-wrap gap-2">
-        <h2 className="text-xl font-bold text-arcane-gold">🎒 Backpack</h2>
+        <div className="flex items-center gap-4">
+          <h2 className="text-xl font-bold text-arcane-gold">🎒 Backpack</h2>
+          <button onClick={selectAll} className="text-xs bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 rounded">Selecionar Tudo</button>
+        </div>
         <div className="flex items-center gap-2 text-sm flex-wrap">
           <span className="text-gray-400">Bolsa:</span>
           <span className="font-bold text-white">{character.inventory.backpack.name}</span>
@@ -142,21 +167,31 @@ export function Backpack() {
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-7 gap-3">
           {filtered.map(item => {
             const better = isUpgrade(item, character);
+            const isSelected = selectedUids.includes(item.uid);
+            
             return (
               <div
                 key={item.uid}
                 onClick={() => setSelectedItem(item)}
-                className={`relative bg-arcane-bg border-2 rounded-lg p-2 flex flex-col items-center justify-center transition-all cursor-pointer hover:-translate-y-1 hover:border-arcane-gold group ${RARITY_GLOW[item.rarity]}`}
+                className={`relative bg-arcane-bg border-2 rounded-lg p-2 flex flex-col items-center justify-center transition-all cursor-pointer hover:-translate-y-1 group ${RARITY_GLOW[item.rarity]} ${isSelected ? "ring-2 ring-blue-500 bg-blue-900/30" : "hover:border-arcane-gold"}`}
               >
+                {/* Checkbox de Seleção */}
+                <button
+                  onClick={(e) => { e.stopPropagation(); toggleSelect(item.uid); }}
+                  className={`absolute top-1 left-1 w-5 h-5 rounded border flex items-center justify-center text-xs z-20 transition-colors ${isSelected ? "bg-blue-500 border-blue-400 text-white" : "bg-black/50 border-gray-500 text-transparent hover:border-white"}`}
+                >
+                  ✓
+                </button>
+
                 {better && (
-                  <div className="absolute -top-1.5 -left-1.5 bg-green-500 text-black text-[9px] font-black px-1.5 py-0.5 rounded-full shadow-lg z-10 whitespace-nowrap">
-                    ⬆ MELHOR
+                  <div className="absolute -top-1.5 right-1 bg-green-500 text-black text-[9px] font-black px-1.5 py-0.5 rounded-full shadow-lg z-10 whitespace-nowrap">
+                    ⬆ TOP
                   </div>
                 )}
 
                 <button
                   onClick={e => handleDiscard(e, item.uid)}
-                  className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 bg-red-600 hover:bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] transition-opacity z-10"
+                  className="absolute bottom-1 right-1 opacity-0 group-hover:opacity-100 bg-red-600 hover:bg-red-500 text-white rounded w-5 h-5 flex items-center justify-center text-[10px] transition-opacity z-10"
                   title="Jogar Fora"
                 >
                   🗑️
@@ -165,12 +200,25 @@ export function Backpack() {
                 <div className="text-3xl mb-1">{item.icon}</div>
                 <div className="text-xs text-center truncate w-full font-bold" title={item.name}>{item.name}</div>
                 {item.upgradeLevel > 0 && <div className="text-[10px] text-orange-400 font-bold">+{item.upgradeLevel}</div>}
-                {item.slot && <div className="text-[9px] text-arcane-cyan mt-1 bg-arcane-cyan/10 px-1 rounded uppercase">{item.slot.replace(/_/g, " ")}</div>}
                 {item.quantity > 1 && <div className="text-xs font-bold text-arcane-gold mt-1">x{item.quantity}</div>}
-                <div className="text-[9px] text-gray-500 uppercase mt-1">{item.rarity}</div>
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Barra Flutuante de Ações em Lote */}
+      {selectedUids.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-arcane-panel border-2 border-blue-500 rounded-xl shadow-[0_0_20px_rgba(59,130,246,0.5)] p-3 flex items-center gap-4 z-50">
+          <span className="text-white font-bold whitespace-nowrap">{selectedUids.length} itens selecionados</span>
+          <div className="flex gap-2">
+            <button onClick={handleBulkDeposit} className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-bold text-sm shadow">
+              📥 Enviar ao Depot
+            </button>
+            <button onClick={clearSelection} className="bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 rounded-lg font-bold text-sm">
+              Cancelar
+            </button>
+          </div>
         </div>
       )}
     </div>

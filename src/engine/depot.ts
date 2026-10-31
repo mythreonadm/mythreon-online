@@ -17,7 +17,6 @@ export function depositItem(char: Character, uid: string): { success: boolean; e
   removeItem(char.inventory, uid, item.quantity);
   char.depot.push({ ...item });
   
-  // Se o item estava equipado (por segurança), desequipa
   for (const [slot, eq] of Object.entries(char.equipped)) {
     if (eq && eq.uid === uid) {
       delete char.equipped[slot as keyof typeof char.equipped];
@@ -29,6 +28,7 @@ export function depositItem(char: Character, uid: string): { success: boolean; e
 }
 
 export function withdrawItem(char: Character, uid: string): { success: boolean; error?: string } {
+  if (!char.depot) return { success: false, error: "Depot vazio." };
   const item = char.depot.find(i => i.uid === uid);
   if (!item) return { success: false, error: "Item não encontrado no Depot." };
   if (getUsedSlots(char.inventory) >= char.inventory.backpack.slots) {
@@ -39,4 +39,35 @@ export function withdrawItem(char: Character, uid: string): { success: boolean; 
   addItem(char.inventory, item);
   recalcStats(char);
   return { success: true };
+}
+
+// ─── NOVAS FUNÇÕES EM LOTE ───
+export function depositMany(char: Character, uids: string[]): { moved: number; error?: string } {
+  let moved = 0;
+  let error: string | undefined = undefined;
+  
+  for (const uid of uids) {
+    const res = depositItem(char, uid);
+    if (res.success) moved++;
+    else {
+      error = res.error;
+      break; // Para se o Depot encher
+    }
+  }
+  return { moved, error };
+}
+
+export function withdrawMany(char: Character, uids: string[]): { moved: number; error?: string } {
+  let moved = 0;
+  let error: string | undefined = undefined;
+  
+  for (const uid of uids) {
+    const res = withdrawItem(char, uid);
+    if (res.success) moved++;
+    else {
+      error = res.error;
+      break; // Para se a Backpack encher
+    }
+  }
+  return { moved, error };
 }

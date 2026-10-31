@@ -18,10 +18,13 @@ const RARITY_ORDER: Record<Rarity, number> = {
 type SortBy = "rarity" | "score" | "name";
 
 export function Depot() {
-  const { character, isTickRunning, withdrawItem } = useGameStore();
+  const { character, isTickRunning, withdrawItem, withdrawMany } = useGameStore();
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortBy>("rarity");
+  
+  // NOVO: Seleção Múltipla
+  const [selectedUids, setSelectedUids] = useState<string[]>([]);
 
   if (!character) return null;
 
@@ -32,7 +35,7 @@ export function Depot() {
         <div className="text-6xl mb-4">🔒</div>
         <h2 className="text-2xl font-bold text-red-500 mb-2">Depósito Trancado</h2>
         <p className="text-gray-400 max-w-md mx-auto">
-          Você não pode acessar o Depot enquanto estiver caçando. Saia da zona de caça (clique em "Sair" na aba Zona) para organizar seus itens valiosos.
+          Você não pode acessar o Depot enquanto estiver caçando. Saia da zona de caça (clique em "Sair" na aba Zona) para organizar seus itens.
         </p>
       </div>
     );
@@ -59,12 +62,31 @@ export function Depot() {
     if (!res.success) alert(res.error);
   };
 
+  // NOVO: Handlers de Seleção
+  const toggleSelect = (uid: string) => {
+    setSelectedUids(prev => prev.includes(uid) ? prev.filter(id => id !== uid) : [...prev, uid]);
+  };
+
+  const selectAll = () => setSelectedUids(filtered.map(i => i.uid));
+  const clearSelection = () => setSelectedUids([]);
+
+  const handleBulkWithdraw = () => {
+    if (selectedUids.length === 0) return;
+    const res = withdrawMany(selectedUids);
+    if (res.moved > 0) {
+      setSelectedUids([]);
+      if (res.error) alert(res.error);
+    } else {
+      alert(res.error || "Nenhum item movido.");
+    }
+  };
+
   return (
-    <div className="bg-arcane-panel border border-arcane-border rounded-xl p-4 md:p-6 shadow-lg">
+    <div className="bg-arcane-panel border border-arcane-border rounded-xl p-4 md:p-6 shadow-lg relative pb-20">
       <div className="flex justify-between items-center mb-6 border-b border-arcane-border pb-4 flex-wrap gap-2">
-        <div>
+        <div className="flex items-center gap-4">
           <h2 className="text-xl font-bold text-arcane-gold flex items-center gap-2">🏦 Depot</h2>
-          <p className="text-xs text-gray-400">Armazene itens valiosos para o futuro Mercado.</p>
+          <button onClick={selectAll} className="text-xs bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 rounded">Selecionar Tudo</button>
         </div>
         <div className="flex items-center gap-2 text-sm flex-wrap">
           <span className="text-gray-400">Capacidade:</span>
@@ -113,26 +135,52 @@ export function Depot() {
         <div className="text-center text-gray-500 py-10 italic">O Depot está vazio.</div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-7 gap-3">
-          {filtered.map(item => (
-            <div
-              key={item.uid}
-              className={`relative bg-arcane-bg border-2 rounded-lg p-2 flex flex-col items-center justify-center transition-all group ${RARITY_GLOW[item.rarity]}`}
-            >
-              <button
-                onClick={() => handleWithdraw(item.uid)}
-                className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 bg-blue-600 hover:bg-blue-500 text-white rounded-full px-2 py-0.5 text-[9px] font-bold transition-opacity z-10"
-                title="Retirar para Backpack"
+          {filtered.map(item => {
+            const isSelected = selectedUids.includes(item.uid);
+            return (
+              <div
+                key={item.uid}
+                className={`relative bg-arcane-bg border-2 rounded-lg p-2 flex flex-col items-center justify-center transition-all group ${RARITY_GLOW[item.rarity]} ${isSelected ? "ring-2 ring-blue-500 bg-blue-900/30" : ""}`}
               >
-                📤 Retirar
-              </button>
-              <div className="text-3xl mb-1">{item.icon}</div>
-              <div className="text-xs text-center truncate w-full font-bold" title={item.name}>{item.name}</div>
-              {item.upgradeLevel > 0 && <div className="text-[10px] text-orange-400 font-bold">+{item.upgradeLevel}</div>}
-              {item.slot && <div className="text-[9px] text-arcane-cyan mt-1 bg-arcane-cyan/10 px-1 rounded uppercase">{item.slot.replace(/_/g, " ")}</div>}
-              {item.quantity > 1 && <div className="text-xs font-bold text-arcane-gold mt-1">x{item.quantity}</div>}
-              <div className="text-[9px] text-gray-500 uppercase mt-1">{item.rarity}</div>
-            </div>
-          ))}
+                {/* Checkbox de Seleção */}
+                <button
+                  onClick={() => toggleSelect(item.uid)}
+                  className={`absolute top-1 left-1 w-5 h-5 rounded border flex items-center justify-center text-xs z-20 transition-colors ${isSelected ? "bg-blue-500 border-blue-400 text-white" : "bg-black/50 border-gray-500 text-transparent hover:border-white"}`}
+                >
+                  ✓
+                </button>
+
+                <button
+                  onClick={() => handleWithdraw(item.uid)}
+                  className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 bg-blue-600 hover:bg-blue-500 text-white rounded px-1.5 py-0.5 text-[9px] font-bold transition-opacity z-10"
+                  title="Retirar para Backpack"
+                >
+                  📤
+                </button>
+                
+                <div className="text-3xl mb-1">{item.icon}</div>
+                <div className="text-xs text-center truncate w-full font-bold" title={item.name}>{item.name}</div>
+                {item.upgradeLevel > 0 && <div className="text-[10px] text-orange-400 font-bold">+{item.upgradeLevel}</div>}
+                {item.quantity > 1 && <div className="text-xs font-bold text-arcane-gold mt-1">x{item.quantity}</div>}
+                <div className="text-[9px] text-gray-500 uppercase mt-1">{item.rarity}</div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Barra Flutuante de Ações em Lote */}
+      {selectedUids.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-arcane-panel border-2 border-blue-500 rounded-xl shadow-[0_0_20px_rgba(59,130,246,0.5)] p-3 flex items-center gap-4 z-50">
+          <span className="text-white font-bold whitespace-nowrap">{selectedUids.length} itens selecionados</span>
+          <div className="flex gap-2">
+            <button onClick={handleBulkWithdraw} className="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg font-bold text-sm shadow">
+              📤 Retirar p/ Backpack
+            </button>
+            <button onClick={clearSelection} className="bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 rounded-lg font-bold text-sm">
+              Cancelar
+            </button>
+          </div>
         </div>
       )}
     </div>
