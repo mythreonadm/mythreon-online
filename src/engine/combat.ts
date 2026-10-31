@@ -1,4 +1,4 @@
-import { Character, Enemy, Item, TickResult, Zone, CardInstance } from "../types";
+import { Character, Enemy, Item, TickResult, Zone, CardInstance, HuntEncounterRecord, HuntLootEntry } from "../types";
 import { addItem, removeItem } from "./inventory";
 import { rollDrops, rollAmbient, RARITY_ORDER } from "./drops";
 import { recalcStats, xpToNextLevel } from "./stats";
@@ -38,12 +38,33 @@ function pickPotion(char: Character, missing: number): Item | null {
 const EQUIP_CATEGORIES = ["ARMA", "ARMADURA", "JOIA", "ESCUDO"];
 
 export function processTick(char: Character, zone: Zone, isOffline: boolean): TickResult {
-  const result: TickResult = { kills: 0, gold: 0, xp: 0, drops: [], levelsGained: 0, death: false, log: [], enemyHp: 0, enemyMaxHp: 0, zoneId: zone.id, killed: {}, bossKills: {}, dropCounts: {}, potionsUsed: 0, soldGold: 0, salvagedItems: 0, attacked: false, usedMp: false, cardsDropped: [] };
+  const result: TickResult = { kills: 0, gold: 0, xp: 0, drops: [], levelsGained: 0, death: false, log: [], enemyHp: 0, enemyMaxHp: 0, zoneId: zone.id, killed: {}, bossKills: {}, dropCounts: {}, potionsUsed: 0, soldGold: 0, salvagedItems: 0, attacked: false, usedMp: false, cardsDropped: [], damageDealt: 0, damageTaken: 0, combatDurationMs: 0, encounters: [] };
   const debug = isDebug();
   const offlineLimitSeconds = OFFLINE_MAX_HOURS * 3600 + Math.max(0, char.skills?.soul ?? 0) * 15 * 60;
   const ticks = isOffline ? Math.min(Math.floor((Date.now() - char.lastTick) / TICK_MS), offlineLimitSeconds / (TICK_MS / 1000)) : 1;
   const baseEnemy: Enemy | undefined = zone.enemies.find((e) => e.id === char.activeEnemyId) || zone.enemies[0];
   if (!baseEnemy) return result;
+
+  const fightId = `${zone.id}:${baseEnemy.id}`;
+  if (char.fightEnemyId !== fightId) {
+    char.fightEnemyId = fightId;
+    char.fightDamageDealt = 0;
+    char.fightDamageTaken = 0;
+  }
+  let encounterDamageDealt = char.fightDamageDealt ?? 0;
+  let encounterDamageTaken = char.fightDamageTaken ?? 0;
+  let simulatedTicks = 0;
+  const recordDeathEncounter = () => {
+    if (encounterDamageDealt <= 0 && encounterDamageTaken <= 0) return;
+    result.encounters!.push({
+      id: `${Date.now()}-${result.encounters!.length}-${baseEnemy.id}`,
+      timestamp: Date.now(), zoneId: zone.id, enemyId: baseEnemy.id, enemyName: baseEnemy.name,
+      damageDealt: encounterDamageDealt, damageTaken: encounterDamageTaken, xp: 0, gold: 0, soldGold: 0,
+      lootValue: 0, loot: [], outcome: "death",
+    });
+    char.fightDamageDealt = 0;
+    char.fightDamageTaken = 0;
+  };
 
   const diff = baseEnemy.difficulty || 1;
   const enemy = { ...baseEnemy, hp: baseEnemy.hp * diff, atk: baseEnemy.atk * diff, arm: baseEnemy.arm * diff, xp: baseEnemy.xp * diff, goldMin: baseEnemy.goldMin * diff, goldMax: baseEnemy.goldMax * diff };
@@ -76,6 +97,7 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
 
   for (let i = 0; i < ticks; i++) {
     tickCount++;
+    simulatedTicks++;
     const t = tickCount;
     const s = char.baseStats;
     const hpMax = char.hpMax;
@@ -83,6 +105,7 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
     result.attacked = false; result.lastDamage = 0; result.lastCrit = false; result.lastMiss = false; result.usedMp = false;
 
     if (playerHp <= 0) {
+      recordDeathEncounter();
       result.death = true;
       const xpLossPct = (char.blesses && char.blesses > 0) ? 0.05 : 0.15;
       const xpLost = Math.floor(char.xp * xpLossPct);
@@ -146,6 +169,10 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
 
     if (debug) result.log.push(`[TESTE] Você obliterou o ${enemy.name} (${diff}⭐).`);
     else if (dealt > 0) result.log.push(`Você causou ${dealt} de dano físico no ${enemy.name}.${result.lastCrit ? " 💥 CRÍTICO!" : ""}`);
+
+    result.damageDealt! += dealt;
+    encounterDamageDealt += dealt;
+    char.fightDamageDealt = encounterDamageDealt;
     
     enemyHp -= dealt;
     if (prof.lifesteal > 0 && !debug) heal(dealt * prof.lifesteal);
@@ -157,6 +184,8 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
       const g = Math.floor((enemy.goldMin + Math.floor(Math.random() * (enemy.goldMax - enemy.goldMin + 1))) * (1 + prof.goldPct));
       const xpGained = Math.floor(enemy.xp * (1 + prof.xpPct)) * (debug ? 10 : 1);
       result.gold += g; char.gold += g; result.xp += xpGained; char.xp += xpGained;
+      const loot: HuntLootEntry[] = [];
+      const soldGoldBefore = result.soldGold ?? 0;
       heal(hpMax * 0.1);
 
       // ─── DROP DE CARTA (NOVO) ───
@@ -167,6 +196,7 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
         result.cardsDropped!.push(cardDrop);
         const template = CARD_TEMPLATES[cardDrop.templateId];
         result.log.push(`🃏 CARTA DROPADA: ${template?.emoji} ${template?.name}!`);
+        if (template) loot.push({ name: template.name, icon: template.emoji, quantity: 1, sellValue: 0, kind: "card" });
       }
       // ─── FIM DO DROP DE CARTA ───
       
@@ -177,6 +207,7 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
       const autoSalvage = char.autoSalvage ?? null;
 
       for (const d of drops) {
+        loot.push({ name: d.name, icon: d.icon, quantity: d.quantity, sellValue: sellValue(d), kind: "item" });
         const isEquip = EQUIP_CATEGORIES.includes(d.category);
         if (autoSell && isEquip && d.rarity !== "LENDARIO" && RARITY_ORDER.indexOf(d.rarity) <= RARITY_ORDER.indexOf(autoSell)) {
           const v = sellValue(d); char.gold += v; result.gold += v; result.soldGold! += v; continue;
@@ -187,6 +218,19 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
         if (addItem(char.inventory, d)) { result.drops.push(d); result.dropCounts![d.templateId] = (result.dropCounts![d.templateId] ?? 0) + d.quantity; }
         else if (!bagFullWarned) { bagFullWarned = true; result.log.push("🎒 Bolsa cheia!"); }
       }
+
+      const encounter: HuntEncounterRecord = {
+        id: `${Date.now()}-${result.encounters!.length}-${enemy.id}`,
+        timestamp: Date.now(), zoneId: zone.id, enemyId: enemy.id, enemyName: enemy.name,
+        damageDealt: encounterDamageDealt, damageTaken: encounterDamageTaken, xp: xpGained, gold: g,
+        soldGold: (result.soldGold ?? 0) - soldGoldBefore,
+        lootValue: loot.reduce((total, item) => total + item.sellValue * item.quantity, 0), loot, outcome: "victory",
+      };
+      result.encounters!.push(encounter);
+      encounterDamageDealt = 0;
+      encounterDamageTaken = 0;
+      char.fightDamageDealt = 0;
+      char.fightDamageTaken = 0;
       
       while (char.xp >= char.xpToNext) {
         char.xp -= char.xpToNext; char.level++; char.xpToNext = xpToNextLevel(char.level); result.levelsGained++;
@@ -210,10 +254,14 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
         if (Math.random() < (s.blk ?? 0)) mult *= 0.5;
         const eDmg = debug ? 0 : Math.max(1, Math.round(raw * Math.max(0.2, mult)));
         playerHp -= eDmg;
+        result.damageTaken! += eDmg;
+        encounterDamageTaken += eDmg;
+        char.fightDamageTaken = encounterDamageTaken;
         if (eDmg > 0) result.log.push(`${enemy.name} causou ${eDmg} de dano em você.`);
       }
       if (playerHp > 0) heal(hpMax * 0.015);
       else {
+        recordDeathEncounter();
         result.death = true;
         const xpLossPct = (char.blesses && char.blesses > 0) ? 0.05 : 0.15;
         const xpLost = Math.floor(char.xp * xpLossPct);
@@ -232,6 +280,7 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
   char.enemyHp = enemyHp; char.enemyHpId = baseEnemy.id;
   char.lastTick = Date.now();
   result.log = result.log.slice(-10);
+  result.combatDurationMs = simulatedTicks * TICK_MS;
   result.enemyHp = Math.max(0, Math.round(enemyHp));
   result.enemyMaxHp = enemy.hp;
   return result;

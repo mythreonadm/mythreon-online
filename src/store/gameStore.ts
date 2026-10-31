@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { Character, Race, TickResult, CharacterSkills, OfflineReportData, BuffVialTemplate, DeathReportData } from "../types";
+import { Character, Race, TickResult, CharacterSkills, OfflineReportData, BuffVialTemplate, DeathReportData, HuntZoneStats } from "../types";
 import { ZONES } from "../data/zones";
 import { createNewCharacter, loadGame, saveGame } from "../engine/save";
 import { processTick } from "../engine/combat";
@@ -65,6 +65,25 @@ interface GameState {
 }
 
 let tickInterval: ReturnType<typeof setInterval> | null = null;
+
+function recordHuntMetrics(character: Character, zoneId: string, result: TickResult) {
+  const previous = character.huntStatsByZone?.[zoneId] ?? {
+    activeMs: 0, kills: 0, damageDealt: 0, damageTaken: 0, xp: 0, gold: 0, soldGold: 0, lootValue: 0, history: [],
+  } satisfies HuntZoneStats;
+  const encounters = result.encounters ?? [];
+  const updated: HuntZoneStats = {
+    activeMs: previous.activeMs + (result.combatDurationMs ?? 0),
+    kills: previous.kills + result.kills,
+    damageDealt: previous.damageDealt + (result.damageDealt ?? 0),
+    damageTaken: previous.damageTaken + (result.damageTaken ?? 0),
+    xp: previous.xp + result.xp,
+    gold: previous.gold + result.gold,
+    soldGold: previous.soldGold + (result.soldGold ?? 0),
+    lootValue: previous.lootValue + encounters.reduce((sum, encounter) => sum + encounter.lootValue, 0),
+    history: [...previous.history, ...encounters].slice(-100),
+  };
+  character.huntStatsByZone = { ...(character.huntStatsByZone ?? {}), [zoneId]: updated };
+}
 
 export const useGameStore = create<GameState>((set, get) => ({
   character: null, races: [], currentZoneId: "BOSQUE_LYSS", lastTickResult: null, isTickRunning: false, isTraining: false, offlineReport: null, deathReport: null, healingUntil: null,
@@ -175,6 +194,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (!zone || character.level < zone.minLevel) { get().stopHunting(); return; }
 
     const result = processTick(character, zone, Date.now() - character.lastTick > 15000);
+    recordHuntMetrics(character, zone.id, result);
 
     if (result.death && result.deathData) {
       get().stopHunting();

@@ -12,6 +12,15 @@ import { getHuntQuestSignal } from "../utils/questSignals";
 
 interface ZoneViewProps { onOpenQuest: (questId: string) => void; }
 
+const metricNumber = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 0 });
+function formatHuntDuration(ms: number) {
+  const seconds = Math.floor(ms / 1000);
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const rest = seconds % 60;
+  return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${rest.toString().padStart(2, "0")}`;
+}
+
 export function ZoneView({ onOpenQuest }: ZoneViewProps) {
   const { character, currentZoneId, startHunting, stopHunting, startTraining, stopTraining, isTickRunning, isTraining, lastTickResult, setActiveEnemy, activateBuff, updateSettings, buyBless, healFull, startHealing, cancelHealing, healingUntil } = useGameStore();
   
@@ -259,6 +268,13 @@ export function ZoneView({ onOpenQuest }: ZoneViewProps) {
   const hasEnoughMana = character.mp >= magicManaCost;
 
   const activeVialCount = Object.keys(character.activeVials).filter(id => character.activeVials[id] > Date.now()).length;
+  const huntStats = character.huntStatsByZone?.[currentZoneId];
+  const huntHours = (huntStats?.activeMs ?? 0) / 3600000;
+  const actualGoldPerHour = huntHours > 0 ? (huntStats?.gold ?? 0) / huntHours : 0;
+  const sellLootGoldPerHour = huntHours > 0
+    ? Math.max(0, (huntStats?.gold ?? 0) - (huntStats?.soldGold ?? 0) + (huntStats?.lootValue ?? 0)) / huntHours
+    : 0;
+  const recentEncounters = (huntStats?.history ?? []).slice(-8).reverse();
 
   return (
     <div className="space-y-3 md:space-y-6">
@@ -498,6 +514,35 @@ export function ZoneView({ onOpenQuest }: ZoneViewProps) {
                   </div>
                 )}
               </div>
+            </div>
+
+            <div className="bg-gradient-to-br from-cyan-950/35 to-black/40 p-2.5 rounded-lg border border-cyan-900/50 mb-2">
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-[9px] text-cyan-300 uppercase font-black tracking-wider">📊 Rendimento da Hunt</div>
+                <div className="font-mono text-[9px] text-gray-500">{formatHuntDuration(huntStats?.activeMs ?? 0)}</div>
+              </div>
+              <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-[9px] md:text-[10px]">
+                <div><div className="text-gray-500">EXP/h</div><div className="font-bold text-cyan-300">{metricNumber.format(huntHours ? (huntStats?.xp ?? 0) / huntHours : 0)}</div></div>
+                <div><div className="text-gray-500">GOLD/h recebido</div><div className="font-bold text-arcane-gold">{metricNumber.format(actualGoldPerHour)}</div></div>
+                <div><div className="text-gray-500">GOLD/h com venda</div><div className="font-bold text-emerald-300">{metricNumber.format(sellLootGoldPerHour)}</div></div>
+                <div><div className="text-gray-500">Abates</div><div className="font-bold text-white">{metricNumber.format(huntStats?.kills ?? 0)}</div></div>
+                <div><div className="text-gray-500">Dano causado</div><div className="font-bold text-orange-300">{metricNumber.format(huntStats?.damageDealt ?? 0)}</div></div>
+                <div><div className="text-gray-500">Dano recebido</div><div className="font-bold text-rose-300">{metricNumber.format(huntStats?.damageTaken ?? 0)}</div></div>
+              </div>
+              <div className="mt-2 border-t border-white/5 pt-1.5 text-[8px] leading-relaxed text-gray-500">
+                GOLD/h com venda é uma projeção: ouro recebido + valor de venda dos drops. Nada é vendido automaticamente.
+              </div>
+              <details className="group mt-2 border-t border-white/5 pt-1.5">
+                <summary className="cursor-pointer list-none text-[9px] font-bold text-gray-400 hover:text-white">📜 Registro de combate ({huntStats?.history.length ?? 0}) <span className="float-right group-open:rotate-180">⌄</span></summary>
+                {recentEncounters.length === 0 ? <div className="py-2 text-[9px] text-gray-600">Os combates concluídos aparecerão aqui.</div> :
+                  <div className="mt-2 max-h-52 space-y-1.5 overflow-y-auto pr-1">
+                    {recentEncounters.map(record => <div key={record.id} className="rounded-md border border-white/5 bg-black/30 p-2 text-[9px]">
+                      <div className="flex items-start justify-between gap-2"><span className="font-bold text-white">{record.outcome === "death" ? "☠️ " : "⚔️ "}{record.enemyName}</span><time className="shrink-0 text-gray-600">{new Date(record.timestamp).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</time></div>
+                      <div className="mt-1 grid grid-cols-2 gap-x-2 text-gray-400"><span>⚔️ Causado: <b className="text-orange-300">{metricNumber.format(record.damageDealt)}</b></span><span>🩸 Recebido: <b className="text-rose-300">{metricNumber.format(record.damageTaken)}</b></span><span>✨ {metricNumber.format(record.xp)} EXP</span><span>🪙 {metricNumber.format(record.gold + record.soldGold)} gold</span></div>
+                      {record.loot.length > 0 && <div className="mt-1 border-t border-white/5 pt-1 text-gray-400">Loot: {record.loot.map((item, index) => <span key={`${record.id}-${index}`} className="mr-1">{item.icon} {item.name}{item.quantity > 1 ? ` ×${item.quantity}` : ""}</span>)}<div className="mt-0.5 text-emerald-400/80">Valor potencial de venda: {metricNumber.format(record.lootValue)} gold</div></div>}
+                    </div>)}
+                  </div>}
+              </details>
             </div>
           </div>
         </div>

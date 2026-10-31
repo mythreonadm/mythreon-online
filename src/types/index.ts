@@ -160,9 +160,49 @@ export interface Character {
   arenaRewardDay?: string;
   arenaRewardsToday?: number;
   arenaRareRewardDay?: string;
+  huntStatsByZone?: Record<string, HuntZoneStats>;
+  fightEnemyId?: string;
+  fightDamageDealt?: number;
+  fightDamageTaken?: number;
   
   depot: Item[];       // NOVO
   depotMax: number;    // NOVO
+}
+
+export interface HuntLootEntry {
+  name: string;
+  icon: string;
+  quantity: number;
+  sellValue: number;
+  kind: "item" | "card";
+}
+
+export interface HuntEncounterRecord {
+  id: string;
+  timestamp: number;
+  zoneId: string;
+  enemyId: string;
+  enemyName: string;
+  damageDealt: number;
+  damageTaken: number;
+  xp: number;
+  gold: number;
+  soldGold: number;
+  lootValue: number;
+  loot: HuntLootEntry[];
+  outcome?: "victory" | "death";
+}
+
+export interface HuntZoneStats {
+  activeMs: number;
+  kills: number;
+  damageDealt: number;
+  damageTaken: number;
+  xp: number;
+  gold: number;
+  soldGold: number;
+  lootValue: number;
+  history: HuntEncounterRecord[];
 }
 
 export interface SaveFile {
@@ -185,4 +225,8 @@ export interface TickResult {
   usedMp?: boolean;
   deathData?: DeathReportData;
   cardsDropped?: CardInstance[];
+  damageDealt?: number;
+  damageTaken?: number;
+  combatDurationMs?: number;
+  encounters?: HuntEncounterRecord[];
 }
