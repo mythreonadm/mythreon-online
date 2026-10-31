@@ -46,7 +46,13 @@ export default function App() {
     return (
       <div className="min-h-screen bg-arcane-bg flex items-center justify-center p-4">
         <div className="bg-arcane-panel border border-arcane-border rounded-2xl p-8 max-w-md w-full shadow-2xl entry-card">
-          <div className="brand-lockup brand-lockup-centered"><span className="brand-sigil" aria-hidden="true">✦</span><div><span className="brand-kicker">UM MUNDO DE LENDA</span><h1 className="brand-title">Mythreon <span>Online</span></h1></div></div>
+          <div className="brand-lockup brand-lockup-centered">
+            <img
+              src="/assets/branding/mythreon-logo-horizontal.svg"
+              alt="Mythreon Online"
+              className="brand-logo brand-logo-entry"
+            />
+          </div>
           <p className="text-arcane-cyan text-center mb-8 text-sm italic">“A Essência registra tudo.”</p>
           <input
             type="text"
@@ -74,21 +80,23 @@ export default function App() {
 
       <header className="game-header bg-arcane-panel border-b border-arcane-border px-4 py-3 sticky top-0 z-50 shadow-lg">
         <div className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4">
-          <div className="brand-lockup">
-            <span className="brand-sigil" aria-hidden="true">✦</span>
-            <div>
-            <h1 className="brand-title text-2xl font-bold text-arcane-gold flex items-center gap-4">
-              Mythreon <span>Online</span>
+          <div className="brand-lockup game-brand-lockup">
+            <img
+              src="/assets/branding/mythreon-logo-horizontal.svg"
+              alt="Mythreon Online"
+              className="brand-logo"
+            />
+            <div className="brand-player-info">
+              <p className="text-xs text-arcane-cyan brand-subtitle">
+                {character.name} — Nível {character.level} {character.activeRace ? `(${character.activeRace.name})` : ""}
+              </p>
               <button
                 onClick={toggleDebug}
                 className={`text-[10px] px-2 py-1 rounded border ${debug ? "bg-red-900 border-red-500 text-red-200" : "bg-gray-800 border-gray-600 text-gray-400"}`}
               >
                 {debug ? "DEBUG ON" : "DEBUG OFF"}
               </button>
-            </h1>
-            <p className="text-xs text-arcane-cyan brand-subtitle">
-              {character.name} — Nível {character.level} {character.activeRace ? `(${character.activeRace.name})` : ""}
-            </p></div>
+            </div>
           </div>
           <CharacterPanel />
         </div>

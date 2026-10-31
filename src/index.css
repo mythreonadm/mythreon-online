@@ -146,6 +146,11 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 }
 .brand-lockup { display: flex; align-items: center; gap: 12px; min-width: 230px; }
 .brand-lockup-centered { justify-content: center; margin-bottom: 22px; }
+.game-brand-lockup { min-width: 0; gap: 14px; }
+.brand-logo { display: block; height: 56px; width: auto; max-width: min(38vw, 224px); object-fit: contain; image-rendering: pixelated; }
+.brand-logo-entry { height: 92px; max-width: 100%; }
+.brand-player-info { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.brand-player-info .brand-subtitle { margin-top: 0; }
 .brand-sigil {
   display: grid; place-items: center; width: 42px; height: 42px; flex: 0 0 42px;
   color: #e0c27b; font-size: 25px; border: 1px solid rgba(214, 180, 106, .52);
@@ -190,6 +195,9 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 
 @media (max-width: 700px) {
   .brand-lockup { min-width: 0; }
+  .game-brand-lockup { gap: 8px; }
+  .brand-logo { height: 44px; max-width: 45vw; }
+  .brand-logo-entry { height: 80px; max-width: 100%; }
   .brand-sigil { width: 36px; height: 36px; flex-basis: 36px; }
   .character-vitals { width: 100%; gap: 7px; }
   .character-vitals > div:not(.character-gold) { flex: 1 1 120px; width: auto; }
