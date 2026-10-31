@@ -1,14 +1,38 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useGameStore } from "../store/gameStore";
 import { QUESTS } from "../data/quests";
 import { checkQuestCompletion } from "../engine/questEngine";
+import { getAvailableQuests } from "../utils/questSignals";
 
-export function Quests() {
+interface QuestsProps {
+  focusQuestId?: string | null;
+  onFocusHandled?: () => void;
+}
+
+export function Quests({ focusQuestId, onFocusHandled }: QuestsProps) {
   const { character, acceptQuest, claimQuest } = useGameStore();
+  const [highlightedQuestId, setHighlightedQuestId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!focusQuestId || !character) return;
+    const card = document.getElementById(`quest-card-${focusQuestId}`);
+    if (!card) return;
+    card.scrollIntoView({ behavior: "smooth", block: "center" });
+    setHighlightedQuestId(focusQuestId);
+    onFocusHandled?.();
+  }, [character, focusQuestId, onFocusHandled]);
+
+  useEffect(() => {
+    if (!highlightedQuestId) return;
+    const timer = window.setTimeout(() => setHighlightedQuestId(null), 1800);
+    return () => window.clearTimeout(timer);
+  }, [highlightedQuestId]);
+
   if (!character) return null;
 
   const activeIds = Object.keys(character.quests?.active || {});
   const completedIds = character.quests?.completed || [];
+  const availableQuests = getAvailableQuests(character);
 
   const renderQuest = (template: any, isActive: boolean) => {
     const isCompletedQuest = completedIds.includes(template.id);
@@ -16,7 +40,7 @@ export function Quests() {
     const isReadyToClaim = isActive && checkQuestCompletion(character, template.id);
 
     return (
-      <div key={template.id} className={`bg-arcane-panel border p-4 rounded-lg flex flex-col h-full ${isReadyToClaim ? 'border-green-500 shadow-[0_0_10px_rgba(34,197,94,0.3)]' : 'border-arcane-border'}`}>
+      <div id={`quest-card-${template.id}`} key={template.id} className={`quest-card bg-arcane-panel border p-4 rounded-lg flex flex-col h-full ${isReadyToClaim ? 'border-green-500 shadow-[0_0_10px_rgba(34,197,94,0.3)]' : 'border-arcane-border'} ${highlightedQuestId === template.id ? 'quest-card-focus' : ''}`}>
         <div className="flex justify-between items-start mb-2">
            <div>
              <h3 className="font-bold text-lg text-white">{template.name}</h3>
@@ -72,7 +96,7 @@ export function Quests() {
       <div className="bg-arcane-panel border border-arcane-border rounded-xl p-6 shadow-lg">
         <h2 className="text-2xl font-bold text-arcane-cyan mb-6">Disponíveis</h2>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-           {QUESTS.filter(q => !activeIds.includes(q.id) && !completedIds.includes(q.id) && character.level >= q.minLevel && (!q.requires || q.requires.every(req => completedIds.includes(req)))).map(q => renderQuest(q, false))}
+           {availableQuests.map(q => renderQuest(q, false))}
         </div>
       </div>
     </div>

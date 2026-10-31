@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useGameStore } from "./store/gameStore";
 import { Backpack } from "./ui/Backpack";
 import { Depot } from "./ui/Depot"; // NOVO
@@ -15,6 +15,7 @@ import { AudioManager } from "./ui/AudioManager";
 import { OfflineModal } from "./ui/OfflineModal";
 import { DeathScreen } from "./ui/DeathScreen";
 import { isDebug, setDebug } from "./config";
+import { AccessIcon, type AccessIconName } from "./ui/AccessIcon";
 
 type Tab = "zona" | "personagem" | "backpack" | "depot" | "matriz" | "loja" | "missoes" | "duelos" | "wiki";
 
@@ -23,11 +24,17 @@ const TAB_LABELS: Record<Tab, string> = {
   matriz: "Matriz", loja: "Mercado", missoes: "Jornadas", duelos: "Duelo", wiki: "Arquivo",
 };
 
+const TAB_ICONS: Record<Tab, AccessIconName> = {
+  zona: "explore", personagem: "character", backpack: "backpack", depot: "depot",
+  matriz: "matrix", loja: "shop", missoes: "quest", duelos: "duel", wiki: "archive",
+};
+
 export default function App() {
   const [tab, setTab] = useState<Tab>("zona");
   const { character, loadFromSave, newGame, startHunting, stopHunting } = useGameStore();
   const [name, setName] = useState("");
   const [debug, setDebugState] = useState(isDebug());
+  const [focusQuestId, setFocusQuestId] = useState<string | null>(null);
 
   useEffect(() => {
     if (loadFromSave()) {
@@ -41,6 +48,12 @@ export default function App() {
   const toggleDebug = () => {
     setDebug(!debug); setDebugState(!debug); window.location.reload();
   };
+
+  const openQuest = (questId: string) => {
+    setFocusQuestId(questId);
+    setTab("missoes");
+  };
+  const clearQuestFocus = useCallback(() => setFocusQuestId(null), []);
 
   if (!character) {
     return (
@@ -115,6 +128,7 @@ export default function App() {
                   : "text-gray-400 hover:text-white"
               }`}
             >
+              <AccessIcon name={TAB_ICONS[t]} className="nav-tab-icon" />
               {TAB_LABELS[t]}
             </button>
           ))}
@@ -122,13 +136,13 @@ export default function App() {
       </nav>
 
       <main className="game-main max-w-7xl mx-auto p-4 mt-4">
-        {tab === "zona" && <ZoneView />}
+        {tab === "zona" && <ZoneView onOpenQuest={openQuest} />}
         {tab === "personagem" && <Personagem />}
         {tab === "backpack" && <Backpack />}
         {tab === "depot" && <Depot />} {/* NOVO */}
         {tab === "matriz" && <MatrixView />}
         {tab === "loja" && <Shop />}
-        {tab === "missoes" && <Quests />}
+        {tab === "missoes" && <Quests focusQuestId={focusQuestId} onFocusHandled={clearQuestFocus} />}
         {tab === "duelos" && <Duelos />}
         {tab === "wiki" && <Wiki />}
         <div className="mt-6">

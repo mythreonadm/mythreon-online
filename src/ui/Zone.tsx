@@ -7,8 +7,12 @@ import { skillXpToNextLevel } from "../engine/stats";
 import { VIALS } from "../data/vials";
 import { ATTACK_SKILLS } from "../data/skills";
 import { getLineageByAttack } from "../data/lineages"; // NOVO IMPORT
+import { AccessIcon } from "./AccessIcon";
+import { getHuntQuestSignal } from "../utils/questSignals";
 
-export function ZoneView() {
+interface ZoneViewProps { onOpenQuest: (questId: string) => void; }
+
+export function ZoneView({ onOpenQuest }: ZoneViewProps) {
   const { character, currentZoneId, startHunting, stopHunting, startTraining, stopTraining, isTickRunning, isTraining, lastTickResult, setActiveEnemy, activateBuff, updateSettings, buyBless, healFull, startHealing, cancelHealing, healingUntil } = useGameStore();
   
   const [isHurt, setIsHurt] = useState(false);
@@ -28,6 +32,7 @@ export function ZoneView() {
   if (!character) return null;
   const currentZone = ZONES[currentZoneId];
   const currentMob = currentZone.enemies.find(e => e.id === character.activeEnemyId) || currentZone.enemies[0];
+  const questSignal = getHuntQuestSignal(character, currentZoneId || currentZone.id);
 
   // Encontra a linhagem baseada na raça equipada (ou humano se não tiver)
   const playerLineage = getLineageByAttack(character.activeRace?.ataqueId);
@@ -259,6 +264,19 @@ export function ZoneView() {
     <div className="space-y-3 md:space-y-6">
       <div className="flex flex-wrap justify-between items-center gap-2 relative z-50">
         <div className="flex gap-2 items-center flex-wrap">
+          {questSignal && (
+            <button
+              type="button"
+              onClick={() => onOpenQuest(questSignal.quest.id)}
+              className={`quest-hunt-alert ${questSignal.type === "claim" ? "quest-hunt-alert-claim" : "quest-hunt-alert-accept"}`}
+              aria-label={`${questSignal.type === "claim" ? "Resgatar" : "Aceitar"} missão: ${questSignal.quest.name}`}
+              title={`${questSignal.type === "claim" ? "Missão concluída" : "Nova missão disponível"}: ${questSignal.quest.name}`}
+            >
+              <span className="quest-hunt-mark" aria-hidden="true">{questSignal.type === "claim" ? "!" : "?"}</span>
+              <AccessIcon name="quest" className="quest-hunt-icon" />
+              <span className="quest-hunt-label">Quest</span>
+            </button>
+          )}
           {buffTimeLeft > 0 && (
             <div className="bg-yellow-900/90 border border-yellow-600 px-3 py-1.5 rounded-lg text-yellow-300 font-bold text-xs md:text-sm animate-pulse flex items-center gap-1.5">
               <span>⚡</span> Duplo: {Math.floor(buffTimeLeft / 60)}:{(buffTimeLeft % 60).toString().padStart(2, '0')}
