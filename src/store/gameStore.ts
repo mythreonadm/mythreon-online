@@ -21,7 +21,7 @@ interface GameState {
   offlineReport: OfflineReportData | null;
   deathReport: DeathReportData | null;
   healingUntil: number | null;
-  
+
   newGame: (name: string) => void;
   loadFromSave: () => boolean;
   save: () => void;
@@ -40,6 +40,7 @@ interface GameState {
   unequip: (slot: any) => { success: boolean; error?: string };
   synthesize: (a: string, s: string, p: string) => { success: boolean; error?: string };
   equipRace: (race: Race) => void;
+  unequipRace: () => void;
   buyItem: (entry: ShopEntry, qty?: number) => { success: boolean; error?: string };
   sellItem: (uid: string, qty?: number) => void;
   salvageAll: (maxRarity: any) => void;
@@ -59,26 +60,26 @@ let tickInterval: ReturnType<typeof setInterval> | null = null;
 export const useGameStore = create<GameState>((set, get) => ({
   character: null, races: [], currentZoneId: "BOSQUE_LYSS", lastTickResult: null, isTickRunning: false, isTraining: false, offlineReport: null, deathReport: null, healingUntil: null,
 
-  newGame: (name) => { 
-    const char = createNewCharacter(name); 
+  newGame: (name) => {
+    const char = createNewCharacter(name);
     const races: Race[] = [];
     trackRaceDiscovery(char, races);
-    set({ character: char, races, currentZoneId: "BOSQUE_LYSS" }); 
-    get().save(); 
+    set({ character: char, races, currentZoneId: "BOSQUE_LYSS" });
+    get().save();
   },
-  
+
   loadFromSave: () => {
     const save = loadGame();
     if (!save) return false;
     const timeAway = (Date.now() - save.character.lastTick) / 1000;
     let report = null;
     if (timeAway > 60) {
-       report = { timeAwaySeconds: timeAway, xpGained: Math.floor(timeAway * 10), goldGained: Math.floor(timeAway * 2), itemsDropped: Math.floor(timeAway / 60), levelsGained: 0 };
+      report = { timeAwaySeconds: timeAway, xpGained: Math.floor(timeAway * 10), goldGained: Math.floor(timeAway * 2), itemsDropped: Math.floor(timeAway / 60), levelsGained: 0 };
     }
-    
+
     const races = save.races || [];
     trackRaceDiscovery(save.character, races);
-    
+
     set({ character: save.character, races, currentZoneId: save.character.currentZoneId ?? "BOSQUE_LYSS", offlineReport: report });
     get().save();
     return true;
@@ -91,15 +92,15 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({ character: { ...character } });
     get().save();
   },
-  
+
   clearOfflineReport: () => set({ offlineReport: null }),
-  
+
   clearDeathReport: () => {
     const { character } = get();
-    if (character) { 
-      character.hp = 1; 
-      set({ character: { ...character }, deathReport: null }); 
-      get().save(); 
+    if (character) {
+      character.hp = 1;
+      set({ character: { ...character }, deathReport: null });
+      get().save();
     }
   },
 
@@ -109,7 +110,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     const newChar = JSON.parse(JSON.stringify(character));
     newChar.hp = newChar.hpMax;
     newChar.mp = newChar.mpMax;
-    set({ character: newChar, healingUntil: null }); 
+    set({ character: newChar, healingUntil: null });
     get().save();
   },
 
@@ -122,13 +123,13 @@ export const useGameStore = create<GameState>((set, get) => ({
   cancelHealing: () => {
     set({ healingUntil: null });
   },
-  
+
   save: () => { const { character, races } = get(); if (character) saveGame(character, races); },
-  
+
   tick: () => {
     const { character, currentZoneId, isTickRunning, isTraining } = get();
     if (!character || (!isTickRunning && !isTraining)) return;
-    
+
     if (isTraining) {
       const newCharacter = JSON.parse(JSON.stringify(character));
       const skill = newCharacter.trainingSkill;
@@ -150,9 +151,9 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     const zone = ZONES[currentZoneId];
     if (!zone || character.level < zone.minLevel) { get().stopHunting(); return; }
-    
+
     const result = processTick(character, zone, Date.now() - character.lastTick > 15000);
-    
+
     if (result.death && result.deathData) {
       get().stopHunting();
       set({ deathReport: result.deathData, lastTickResult: result, character: { ...character } });
@@ -165,20 +166,20 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({ character: { ...character }, lastTickResult: result });
     get().save();
   },
-  
+
   startHunting: (zoneId) => {
     const { character, healingUntil } = get();
     if (!character) return;
     if (healingUntil) return alert("Você está meditando! Termine antes de caçar.");
     if (character.hp <= 0) return alert("Você precisa se curar na Casa antes de caçar!");
-    
+
     const zone = ZONES[zoneId];
     if (character.level < zone.minLevel) return;
 
     if (tickInterval) clearInterval(tickInterval);
     character.currentZoneId = zoneId;
     character.trainingSkill = null;
-    
+
     if (!character.activeEnemyId || !zone.enemies.find(e => e.id === character.activeEnemyId)) {
       character.activeEnemyId = zone.enemies[0].id;
       character.enemyHp = zone.enemies[0].hp * zone.enemies[0].difficulty;
@@ -192,7 +193,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     const { character, healingUntil } = get();
     if (!character) return;
     if (healingUntil) return alert("Termine sua meditação primeiro!");
-    
+
     if (tickInterval) clearInterval(tickInterval);
     character.trainingSkill = skill;
     set({ isTickRunning: false, isTraining: true, character: { ...character } });
@@ -240,28 +241,28 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   synthesize: (a, s, p) => {
-    const { character, races } = get(); 
+    const { character, races } = get();
     if (!character) return { success: false, error: "Sem personagem" };
-    
+
     const namedRace = findNamedRace(a, s, p);
     const raceId = namedRace ? namedRace.id : generateRaceId(a, s, p);
-    
+
     const alreadyExists = races.find(r => r.id === raceId);
     if (alreadyExists) {
       return { success: false, error: `Você já descobriu "${alreadyExists.name}"! Escolha uma combinação diferente.` };
     }
-    
+
     const newCharacter = JSON.parse(JSON.stringify(character));
     const hasA = newCharacter.inventory.items.find((i: any) => i.componentType === "ATAQUE" && i.templateId === a);
     const hasS = newCharacter.inventory.items.find((i: any) => i.componentType === "SUPORTE" && i.templateId === s);
     const hasP = newCharacter.inventory.items.find((i: any) => i.componentType === "PASSIVA" && i.templateId === p);
-    
+
     if (!hasA || !hasS || !hasP) return { success: false, error: "Faltam componentes no inventário." };
-    
+
     removeItem(newCharacter.inventory, hasA.uid, 1);
     removeItem(newCharacter.inventory, hasS.uid, 1);
     removeItem(newCharacter.inventory, hasP.uid, 1);
-    
+
     let newRace: Race;
     if (namedRace) {
       newRace = { ...namedRace };
@@ -275,12 +276,12 @@ export const useGameStore = create<GameState>((set, get) => ({
         bonus: generateRaceBonus(a, s, p),
       };
     }
-    
+
     const newRaces = [...races, newRace];
     trackRaceDiscovery(newCharacter, newRaces);
-    
-    set({ character: newCharacter, races: newRaces }); 
-    get().save(); 
+
+    set({ character: newCharacter, races: newRaces });
+    get().save();
     return { success: true };
   },
 
@@ -289,6 +290,16 @@ export const useGameStore = create<GameState>((set, get) => ({
     const newCharacter = JSON.parse(JSON.stringify(character));
     newCharacter.raceId = race.id; newCharacter.activeRace = race;
     recalcStats(newCharacter); set({ character: newCharacter }); get().save();
+  },
+
+  unequipRace: () => {
+    const { character } = get(); if (!character) return;
+    const newCharacter = JSON.parse(JSON.stringify(character));
+    newCharacter.raceId = undefined;
+    newCharacter.activeRace = undefined;
+    recalcStats(newCharacter);
+    set({ character: newCharacter });
+    get().save();
   },
 
   buyItem: (entry, qty = 1) => {
@@ -330,28 +341,28 @@ export const useGameStore = create<GameState>((set, get) => ({
   activateBuff: () => {
     const { character } = get(); if (!character) return;
     const newCharacter = JSON.parse(JSON.stringify(character));
-    const durationMs = newCharacter.premium ? 30 * 60 * 1000 : 5 * 60 * 1000; 
+    const durationMs = newCharacter.premium ? 30 * 60 * 1000 : 5 * 60 * 1000;
     const currentBuff = newCharacter.doubleAtkUntil && newCharacter.doubleAtkUntil > Date.now() ? newCharacter.doubleAtkUntil : Date.now();
     newCharacter.doubleAtkUntil = currentBuff + durationMs;
     set({ character: newCharacter }); get().save();
   },
 
   acceptQuest: (id) => {
-     const { character, races } = get(); if (!character) return;
-     const newChar = JSON.parse(JSON.stringify(character));
-     if (!newChar.quests) newChar.quests = { active: {}, completed: [] };
-     if (!newChar.quests.active[id]) {
-       newChar.quests.active[id] = { progress: [] };
-       trackRaceDiscovery(newChar, races);
-       set({ character: newChar }); get().save();
-     }
+    const { character, races } = get(); if (!character) return;
+    const newChar = JSON.parse(JSON.stringify(character));
+    if (!newChar.quests) newChar.quests = { active: {}, completed: [] };
+    if (!newChar.quests.active[id]) {
+      newChar.quests.active[id] = { progress: [] };
+      trackRaceDiscovery(newChar, races);
+      set({ character: newChar }); get().save();
+    }
   },
 
   claimQuest: (id) => {
-     const { character } = get(); if (!character) return;
-     const newChar = JSON.parse(JSON.stringify(character));
-     const res = claimQuestReward(newChar, id);
-     if (res.success) { set({ character: newChar }); get().save(); alert(res.msg); }
+    const { character } = get(); if (!character) return;
+    const newChar = JSON.parse(JSON.stringify(character));
+    const res = claimQuestReward(newChar, id);
+    if (res.success) { set({ character: newChar }); get().save(); alert(res.msg); }
   },
 
   useVial: (vial) => {
