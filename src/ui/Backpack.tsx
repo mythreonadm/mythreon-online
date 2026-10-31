@@ -20,7 +20,7 @@ const RARITY_ORDER: Record<Rarity, number> = {
 type SortBy = "rarity" | "score" | "name";
 
 export function Backpack() {
-  const { character, equip, save } = useGameStore();
+  const { character, equip, save, depositItem } = useGameStore(); // NOVO: depositItem
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortBy>("rarity");
@@ -63,6 +63,13 @@ export function Backpack() {
     else alert(res.error);
   };
 
+  const handleDeposit = () => {
+    if (!selectedItem) return;
+    const res = depositItem(selectedItem.uid);
+    if (res.success) setSelectedItem(null);
+    else alert(res.error);
+  };
+
   const equippedItem = selectedItem ? getEquippedForTarget(character, selectedItem) : undefined;
 
   return (
@@ -72,6 +79,7 @@ export function Backpack() {
           item={selectedItem}
           equipped={equippedItem}
           onEquip={handleConfirmEquip}
+          onDeposit={handleDeposit} // NOVO
           onClose={() => setSelectedItem(null)}
         />
       )}

@@ -5,7 +5,7 @@ export type ComponentType = "ATAQUE" | "SUPORTE" | "PASSIVA";
 export type Law = "PRIME" | "VORO" | "LOGHIS" | "EMOHNA" | "RAAN" | "SYNTHES" | "CHRONOS" | "LYSS" | "DHOR" | "KAELOR" | "NOCTHAR" | "VEYRA" | "ASTER";
 export type Element = "FOGO" | "GELO" | "TROVAO" | "TERRA" | "SAGRADO" | "SOMBRIO";
 
-// ── TIPOS DE CARTAS (NOVO) ──
+// ── TIPOS DE CARTAS ──
 export type CardTrait = 
   | "FURIA" | "VENENO" | "ESPINHOS" | "PRECISAO" | "INVESTIDA"
   | "REGENERACAO" | "ESCUDO" | "SANGRAMENTO" | "MEDO" | "SILENCIO";
@@ -155,7 +155,10 @@ export interface Character {
   skillXp: CharacterSkills;
   trainingSkill?: keyof CharacterSkills | null;
   
-  cards: CardInstance[];   // ── NOVO ──
+  cards: CardInstance[];
+  
+  depot: Item[];       // NOVO
+  depotMax: number;    // NOVO
 }
 
 export interface SaveFile {
@@ -177,5 +180,5 @@ export interface TickResult {
   skillLevelUp?: string;
   usedMp?: boolean;
   deathData?: DeathReportData;
-  cardsDropped?: CardInstance[];   // ── NOVO ──
+  cardsDropped?: CardInstance[];
 }

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useGameStore } from "./store/gameStore";
 import { Backpack } from "./ui/Backpack";
+import { Depot } from "./ui/Depot"; // NOVO
 import { Personagem } from "./ui/Personagem";
 import { ZoneView } from "./ui/Zone";
 import { MatrixView } from "./ui/Matrix";
@@ -15,7 +16,7 @@ import { OfflineModal } from "./ui/OfflineModal";
 import { DeathScreen } from "./ui/DeathScreen";
 import { isDebug, setDebug } from "./config";
 
-type Tab = "zona" | "personagem" | "backpack" | "matriz" | "loja" | "missoes" | "duelos" | "wiki";
+type Tab = "zona" | "personagem" | "backpack" | "depot" | "matriz" | "loja" | "missoes" | "duelos" | "wiki";
 
 export default function App() {
   const [tab, setTab] = useState<Tab>("zona");
@@ -88,7 +89,7 @@ export default function App() {
 
       <nav className="bg-arcane-panel/80 backdrop-blur border-b border-arcane-border sticky top-[73px] z-40">
         <div className="max-w-6xl mx-auto flex overflow-x-auto">
-          {(["zona", "personagem", "backpack", "matriz", "loja", "missoes", "duelos", "wiki"] as Tab[]).map((t) => (
+          {(["zona", "personagem", "backpack", "depot", "matriz", "loja", "missoes", "duelos", "wiki"] as Tab[]).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -108,6 +109,7 @@ export default function App() {
         {tab === "zona" && <ZoneView />}
         {tab === "personagem" && <Personagem />}
         {tab === "backpack" && <Backpack />}
+        {tab === "depot" && <Depot />} {/* NOVO */}
         {tab === "matriz" && <MatrixView />}
         {tab === "loja" && <Shop />}
         {tab === "missoes" && <Quests />}

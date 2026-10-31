@@ -10,6 +10,7 @@ import { ShopEntry, buyEntry, sellItem, sellAllEquipment } from "../engine/shop"
 import { salvageAllEquipment } from "../engine/salvage";
 import { updateQuestProgress, claimQuestReward, trackRaceDiscovery } from "../engine/questEngine";
 import { upgradeItemLevel, rerollItemAffixes } from "../engine/forge";
+import { depositItem as engineDeposit, withdrawItem as engineWithdraw } from "../engine/depot";
 
 interface GameState {
   character: Character | null;
@@ -53,6 +54,8 @@ interface GameState {
   refreshCompendium: () => void;
   upgradeItem: (uid: string) => { success: boolean; error?: string };
   rerollItem: (uid: string) => { success: boolean; error?: string };
+  depositItem: (uid: string) => { success: boolean; error?: string };  // NOVO
+  withdrawItem: (uid: string) => { success: boolean; error?: string }; // NOVO
 }
 
 let tickInterval: ReturnType<typeof setInterval> | null = null;
@@ -404,6 +407,24 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (!character) return { success: false, error: "Sem personagem" };
     const newCharacter = JSON.parse(JSON.stringify(character));
     const res = rerollItemAffixes(newCharacter, uid);
+    if (res.success) { set({ character: newCharacter }); get().save(); }
+    return res;
+  },
+
+  depositItem: (uid) => {
+    const { character } = get(); 
+    if (!character) return { success: false, error: "Sem personagem" };
+    const newCharacter = JSON.parse(JSON.stringify(character));
+    const res = engineDeposit(newCharacter, uid);
+    if (res.success) { set({ character: newCharacter }); get().save(); }
+    return res;
+  },
+
+  withdrawItem: (uid) => {
+    const { character } = get(); 
+    if (!character) return { success: false, error: "Sem personagem" };
+    const newCharacter = JSON.parse(JSON.stringify(character));
+    const res = engineWithdraw(newCharacter, uid);
     if (res.success) { set({ character: newCharacter }); get().save(); }
     return res;
   },
