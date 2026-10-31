@@ -48,7 +48,7 @@ export default function App() {
         <div className="bg-arcane-panel border border-arcane-border rounded-2xl p-8 max-w-md w-full shadow-2xl entry-card">
           <div className="brand-lockup brand-lockup-centered">
             <img
-              src="/assets/branding/mythreon-logo-horizontal.svg"
+              src="/assets/branding/mythreon-logo-horizontal.png"
               alt="Mythreon Online"
               className="brand-logo brand-logo-entry"
             />
@@ -82,7 +82,7 @@ export default function App() {
         <div className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4">
           <div className="brand-lockup game-brand-lockup">
             <img
-              src="/assets/branding/mythreon-logo-horizontal.svg"
+              src="/assets/branding/mythreon-logo-horizontal.png"
               alt="Mythreon Online"
               className="brand-logo"
             />
