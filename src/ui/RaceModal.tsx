@@ -4,7 +4,8 @@ import { ATAQUES, SUPORTES, PASSIVAS } from "../data/components";
 import { ATTACK_SKILLS, SUPPORT_EFFECTS, PASSIVE_EFFECTS } from "../data/skills";
 import { RACE_LORE } from "../data/races";
 import { STAT_NAMES } from "../data/affixes";
-import { getLineageByAttack } from "../data/lineages"; // NOVO IMPORT
+import { getLineageByAttack } from "../data/lineages";
+import { useGameStore } from "../store/gameStore";
 
 interface Props {
   race: Race;
@@ -15,6 +16,8 @@ interface Props {
 }
 
 export function RaceModal({ race, equippedRace, isEquipped, onEquip, onClose }: Props) {
+  const { unequipRace } = useGameStore(); // NOVO: Puxando a função de desequipar
+
   const atkComp = ATAQUES[race.ataqueId];
   const supComp = SUPORTES[race.suporteId];
   const pasComp = PASSIVAS[race.passivaId];
@@ -23,7 +26,6 @@ export function RaceModal({ race, equippedRace, isEquipped, onEquip, onClose }: 
   const supEffect = SUPPORT_EFFECTS[race.suporteId];
   const pasEffect = PASSIVE_EFFECTS[race.passivaId];
 
-  // Pega a linhagem visual desta raça
   const lineage = getLineageByAttack(race.ataqueId);
 
   const renderBonusComparison = (statKey: keyof ItemStats) => {
@@ -63,6 +65,13 @@ export function RaceModal({ race, equippedRace, isEquipped, onEquip, onClose }: 
     ...Object.keys(race.bonus),
     ...(equippedRace ? Object.keys(equippedRace.bonus) : [])
   ])) as (keyof ItemStats)[];
+
+  const handleUnequip = () => {
+    if (confirm("Desequipar a Matriz? Você perderá todos os bônus de raça. Isso libera o slot para usar Pets.")) {
+      unequipRace();
+      onClose();
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 animate-fade-in" onClick={onClose}>
@@ -119,7 +128,12 @@ export function RaceModal({ race, equippedRace, isEquipped, onEquip, onClose }: 
 
         <div className="flex gap-2">
           <button onClick={onClose} className="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 rounded-lg">Fechar</button>
-          {!isEquipped && (
+          
+          {isEquipped ? (
+            <button onClick={handleUnequip} className="flex-1 bg-red-900 hover:bg-red-800 text-white font-bold py-3 rounded-lg shadow-lg border border-red-500/50">
+              ❌ Desequipar
+            </button>
+          ) : (
             <button onClick={onEquip} className="flex-1 bg-arcane-purple hover:bg-arcane-purple/80 text-white font-bold py-3 rounded-lg shadow-lg">
               Equipar Raça
             </button>
