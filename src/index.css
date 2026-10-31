@@ -3,17 +3,24 @@
 @tailwind utilities;
 
 body {
-  background: #0a0612;
-  color: #e5e5e5;
-  font-family: "Georgia", serif;
+  background: #0b1114;
+  color: #e8e9df;
+  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
   margin: 0;
   padding: 0;
+  background-image: radial-gradient(ellipse at 50% -20%, rgba(72, 113, 99, .18), transparent 58%), linear-gradient(180deg, #0d1517 0%, #0b1114 58%, #0a1012 100%);
+  background-attachment: fixed;
 }
 
+::selection { background: rgba(104, 200, 189, .32); color: #fff; }
+button, input, select { font: inherit; }
+button { -webkit-tap-highlight-color: transparent; }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid #68c8bd; outline-offset: 2px; }
+
 ::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-track { background: #140a1f; }
-::-webkit-scrollbar-thumb { background: #2a1a3e; border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: #7c3aed; }
+::-webkit-scrollbar-track { background: #0e1719; }
+::-webkit-scrollbar-thumb { background: #344846; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #68a99e; }
 
 @keyframes shake {
   0% { transform: translate(1px, 1px) rotate(0deg); }
@@ -129,4 +136,67 @@ body {
   background-size: 20px 20px;
   animation: scrollBg 5s linear infinite;
   image-rendering: pixelated;
+}
+
+/* Mythreon visual system: night stone, muted jade and aged gold. */
+.game-header {
+  background: linear-gradient(105deg, rgba(19, 30, 32, .98), rgba(15, 24, 27, .96)) !important;
+  border-color: rgba(104, 200, 189, .17) !important;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, .3) !important;
+}
+.brand-lockup { display: flex; align-items: center; gap: 12px; min-width: 230px; }
+.brand-lockup-centered { justify-content: center; margin-bottom: 22px; }
+.brand-sigil {
+  display: grid; place-items: center; width: 42px; height: 42px; flex: 0 0 42px;
+  color: #e0c27b; font-size: 25px; border: 1px solid rgba(214, 180, 106, .52);
+  border-radius: 13px 13px 13px 4px; background: linear-gradient(145deg, rgba(214,180,106,.16), rgba(104,200,189,.06));
+  box-shadow: inset 0 0 18px rgba(214,180,106,.08), 0 0 22px rgba(214,180,106,.08);
+}
+.brand-title { margin: 0; line-height: 1; letter-spacing: .045em; font-family: Georgia, "Times New Roman", serif; }
+.brand-title span { color: #9dbab1; font-size: .52em; font-weight: 500; letter-spacing: .22em; text-transform: uppercase; }
+.brand-subtitle { margin-top: 5px; letter-spacing: .035em; color: #9bb2ab !important; }
+.brand-kicker { color: #91b7aa; font-size: 9px; letter-spacing: .25em; font-weight: 700; }
+.game-nav { background: rgba(12, 19, 21, .93) !important; border-color: rgba(104, 200, 189, .13) !important; backdrop-filter: blur(18px); }
+.nav-tab { position: relative; color: #94a5a0 !important; letter-spacing: .015em; }
+.nav-tab:hover { color: #f1ead5 !important; background: rgba(104, 200, 189, .055); }
+.nav-tab[aria-current="page"] { color: #e0c27b !important; background: linear-gradient(180deg, rgba(214,180,106,.09), rgba(214,180,106,.015)) !important; border-color: #d6b46a !important; }
+.game-main { max-width: 1320px; }
+.entry-card { background: radial-gradient(ellipse at 50% 0%, rgba(104,200,189,.12), transparent 60%), #121c20 !important; box-shadow: 0 26px 80px rgba(0,0,0,.42) !important; }
+
+.bg-arcane-panel { background-color: #121c20; }
+.bg-arcane-bg { background-color: #0b1114; }
+.border-arcane-border { border-color: #28383a; }
+.bg-arcane-panel.border, .bg-arcane-panel.border-2 {
+  background-image: linear-gradient(145deg, rgba(255,255,255,.018), transparent 45%);
+  border-color: rgba(111, 148, 137, .28);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, .17);
+}
+.rounded-xl, .rounded-2xl { border-radius: 14px; }
+.rounded-lg { border-radius: 10px; }
+
+.character-vitals { align-items: center; }
+.character-vitals > div:not(.character-gold) { width: 145px; padding: 9px 10px; border: 1px solid rgba(111,148,137,.19); border-radius: 11px; background: rgba(7,13,15,.42); }
+.character-vitals > div > .h-2\.5 { height: 7px; background: #273336; }
+.character-gold { align-self: stretch; padding: 0 14px; border: 1px solid rgba(214,180,106,.3); background: rgba(214,180,106,.08) !important; color: #e2c77f !important; }
+
+.combat-scene { isolation: isolate; border-color: rgba(177, 173, 126, .42) !important; box-shadow: 0 20px 48px rgba(0,0,0,.36) !important; }
+.scene-backdrop { image-rendering: auto !important; filter: saturate(.82) brightness(.82); transform: scale(1.015); }
+.scene-vignette { z-index: 1; background: linear-gradient(180deg, rgba(8,14,15,.24), transparent 32%, rgba(8,14,15,.05) 58%, rgba(6,10,10,.74)), linear-gradient(90deg, rgba(8,14,15,.22), transparent 30%, transparent 70%, rgba(8,14,15,.15)); }
+.scene-ground { border-top: 1px solid rgba(220,205,148,.25); background: linear-gradient(180deg, rgba(10,14,13,.18), rgba(8,12,12,.84)); }
+.combat-sprite { z-index: 1; filter: drop-shadow(0 11px 10px rgba(0,0,0,.7)); }
+.combat-sprite-player::before, .combat-sprite-enemy::before { content: ""; position: absolute; z-index: -1; bottom: 4%; left: 12%; width: 76%; height: 24%; border-radius: 50%; background: radial-gradient(ellipse, rgba(214,180,106,.25), rgba(8,13,13,.1) 58%, transparent 72%); }
+.combat-sprite-enemy::before { background: radial-gradient(ellipse, rgba(200,112,87,.26), rgba(8,13,13,.1) 58%, transparent 72%); }
+.combat-scene > .absolute.top-0 { padding: 14px 16px; }
+
+@media (max-width: 700px) {
+  .brand-lockup { min-width: 0; }
+  .brand-sigil { width: 36px; height: 36px; flex-basis: 36px; }
+  .character-vitals { width: 100%; gap: 7px; }
+  .character-vitals > div:not(.character-gold) { flex: 1 1 120px; width: auto; }
+  .character-gold { min-height: 36px; }
+  .game-nav { position: relative; top: auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }

@@ -274,21 +274,20 @@ export function ZoneView() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-[1fr_320px] gap-3 md:gap-4">
-        <div className={`relative rounded-xl border-2 border-arcane-border shadow-2xl overflow-hidden bg-${currentZone.theme} min-h-[300px] md:min-h-[500px]`}>
+        <div className={`combat-scene relative rounded-xl border-2 border-arcane-border shadow-2xl overflow-hidden bg-${currentZone.theme} min-h-[300px] md:min-h-[500px]`}>
           
           <div className="absolute inset-0 z-0">
             <img 
               src={getBackgroundImage(currentZone.theme)} 
               alt={currentZone.name} 
-              className="w-full h-full object-cover" 
-              style={{ imageRendering: "pixelated" }} 
+              className="scene-backdrop w-full h-full object-cover" 
               onError={(e) => { 
                 if (e.currentTarget.src.endsWith(".png")) { e.currentTarget.src = e.currentTarget.src.replace(".png", ".jpg"); }
                 else if (e.currentTarget.src.endsWith(".jpg")) { e.currentTarget.src = e.currentTarget.src.replace(".jpg", ".webp"); }
                 else { e.currentTarget.style.display = 'none'; }
               }} 
             />
-            <div className="absolute inset-0 bg-black/40 pointer-events-none"></div>
+            <div className="scene-vignette absolute inset-0 pointer-events-none"></div>
           </div>
 
           {balloon && (
@@ -300,13 +299,13 @@ export function ZoneView() {
             </div>
           )}
 
-          <div className="absolute bottom-0 w-full h-12 md:h-16 bg-black/70 border-t-2 border-white/10 z-10 pointer-events-none"></div>
+          <div className="scene-ground absolute bottom-0 w-full h-12 md:h-16 z-10 pointer-events-none"></div>
 
           <div className="relative z-20 flex justify-between items-end px-4 md:px-20 pb-8 md:pb-12 h-[300px] md:h-[500px]">
             <div className="flex flex-col items-center relative translate-y-2 md:translate-y-4">
               
               {/* SPRITE DO JOGADOR (Agora baseado na Linhagem) */}
-              <div className={`w-24 h-24 md:w-40 md:h-40 flex items-center justify-center transition-transform ${weaponAnimClass}`}>
+              <div className={`combat-sprite combat-sprite-player relative w-24 h-24 md:w-40 md:h-40 flex items-center justify-center transition-transform ${weaponAnimClass}`}>
                 {!imageError ? (
                   <img 
                     key={playerLineage.id} // Força recarregar se a classe mudar
@@ -338,7 +337,7 @@ export function ZoneView() {
               <div className="flex flex-col items-center relative translate-y-2 md:translate-y-4">
                 {floatingDamage !== null && <div className="damage-number text-red-500 text-3xl md:text-5xl z-50 font-black drop-shadow-[0_2px_2px_rgba(0,0,0,1)]">-{floatingDamage}</div>}
                 
-                <div className={`w-24 h-24 md:w-40 md:h-40 flex items-center justify-center relative transition-transform ${isHurt ? 'animate-shake filter drop-shadow-[0_0_20px_rgba(220,38,38,1)]' : 'animate-idle'}`}>
+              <div className={`combat-sprite combat-sprite-enemy w-24 h-24 md:w-40 md:h-40 flex items-center justify-center relative transition-transform ${isHurt ? 'animate-shake filter drop-shadow-[0_0_20px_rgba(220,38,38,1)]' : 'animate-idle'}`}>
                   {currentMob?.sprite && !imageError ? (
                     <img 
                       key={currentMob.id}

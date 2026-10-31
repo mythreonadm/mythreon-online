@@ -9,7 +9,7 @@ export function CharacterPanel() {
   const xpPct = Math.min(100, (character.xp / character.xpToNext) * 100);
 
   return (
-    <div className="flex flex-wrap gap-4 text-xs font-sans">
+    <div className="character-vitals flex flex-wrap gap-3 text-xs font-sans">
       <div className="w-32">
         <div className="flex justify-between text-red-400 mb-1"><span>HP</span><span>{character.hp}/{character.hpMax}</span></div>
         <div className="h-2.5 bg-gray-900 rounded-full overflow-hidden"><div className="h-full bg-gradient-to-r from-red-600 to-red-400 transition-all duration-300" style={{ width: `${hpPct}%` }} /></div>
@@ -22,7 +22,7 @@ export function CharacterPanel() {
         <div className="flex justify-between text-arcane-gold mb-1"><span>XP</span><span>{character.xp}/{character.xpToNext}</span></div>
         <div className="h-2.5 bg-gray-900 rounded-full overflow-hidden"><div className="h-full bg-gradient-to-r from-yellow-600 to-arcane-gold transition-all duration-300" style={{ width: `${xpPct}%` }} /></div>
       </div>
-      <div className="text-arcane-gold font-bold bg-arcane-border/50 px-3 py-1 rounded-full flex items-center">💰 {character.gold}</div>
+      <div className="character-gold text-arcane-gold font-bold bg-arcane-border/50 px-3 py-1 rounded-full flex items-center"><span aria-hidden="true">✧</span>&nbsp;{character.gold.toLocaleString()}</div>
     </div>
   );
 }
