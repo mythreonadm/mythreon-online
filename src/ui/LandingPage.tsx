@@ -4,6 +4,8 @@ import { createLocalAccount, LocalAccount, signInLocalAccount } from "../utils/l
 
 type AccessMode = "register" | "login";
 
+const brandBannerUrl = new URL("../../imagens/image_5f23237d.jpg", import.meta.url).href;
+
 interface LandingPageProps {
   onAuthenticated: (account: LocalAccount) => void;
 }
@@ -22,6 +24,8 @@ export function LandingPage({ onAuthenticated }: LandingPageProps) {
         </a>
         <nav className="landing-nav" aria-label="Navegação principal">
           <a href="#universo">O universo</a>
+          <a href="#caminhos">Classes e builds</a>
+          <a href="#horizonte">O que vem aí</a>
           <a href="#jornada">Sua jornada</a>
           <a href="#historia">História</a>
         </nav>
@@ -61,13 +65,42 @@ export function LandingPage({ onAuthenticated }: LandingPageProps) {
           </div>
         </section>
 
-        <section className="landing-journey" id="jornada">
+        <figure className="landing-brand-art">
+          <img src={brandBannerUrl} alt="Mythreon Online em um vale suspenso iluminado por cristais" />
+          <figcaption>Um mundo antigo. Uma Essência que ainda guarda segredos.</figcaption>
+        </figure>
+
+        <section className="landing-paths landing-section" id="caminhos">
+          <div className="landing-section-heading">
+            <span className="landing-eyebrow">CLASSES, ARQUÉTIPOS E BUILDS</span>
+            <h2>Seu caminho nasce das <em>escolhas que você combina.</em></h2>
+            <p>Em Mythreon, seu arquétipo nasce das combinações que você escolhe. Combine um componente de Ataque, um de Suporte e uma Passiva para construir uma identidade própria: agressiva, resistente, veloz, arcana ou híbrida.</p>
+          </div>
+          <div className="landing-path-grid">
+            <article className="landing-path-card"><span className="landing-path-symbol">⚔</span><span className="landing-path-label">01 · ATAQUE</span><h3>Defina como lutar</h3><p>Golpes físicos, magia, veneno, sangramento, gelo, tempestade e outras forças moldam sua ofensiva.</p></article>
+            <article className="landing-path-card"><span className="landing-path-symbol">✧</span><span className="landing-path-label">02 · SUPORTE</span><h3>Escolha como persistir</h3><p>Cura, escudos, velocidade, adaptação, precisão e vínculos mudam o ritmo da batalha.</p></article>
+            <article className="landing-path-card"><span className="landing-path-symbol">◈</span><span className="landing-path-label">03 · PASSIVA</span><h3>Imprima sua marca</h3><p>Resistência, esquiva, crítico, experiência, drops e criação favorecem diferentes estratégias.</p></article>
+          </div>
+          <div className="landing-build-count">
+            <div><span className="landing-eyebrow">O SISTEMA ATUAL</span><strong>2.340</strong><p>combinações teóricas entre 15 ataques, 13 suportes e 12 passivas, antes de considerar os equipamentos.</p></div>
+            <div className="landing-build-target"><span>PRÓXIMO HORIZONTE</span><strong>3.900+</strong><p>Uma meta de expansão para novos arquétipos, escolhas e formas de montar sua build.</p></div>
+          </div>
+          <p className="landing-build-footnote">Os 33 arquétipos nomeados já registrados no jogo são combinações especiais. O catálogo cresce com o desenvolvimento de Mythreon.</p>
+        </section>        <section className="landing-journey" id="jornada">
           <div className="landing-journey-art" aria-hidden="true" />
           <div><span className="landing-eyebrow">SUA HISTÓRIA COMEÇA AGORA</span><h2>Escolha um nome.<br />O resto, Mythreon lembrará.</h2><p>Crie sua conta neste navegador, dê vida ao seu personagem e parta para sua primeira caçada. Seu progresso fica guardado para quando você voltar.</p><button className="landing-button" onClick={() => openAccess("register")}>Criar minha conta <span aria-hidden="true">→</span></button></div>
           <div className="landing-journey-seal"><span>✦</span><small>A ESSÊNCIA<br />REGISTRA TUDO</small></div>
         </section>
 
-        <section className="landing-lore" id="historia">
+        <section className="landing-roadmap" id="horizonte">
+          <div className="landing-roadmap-heading"><span className="landing-eyebrow">O FUTURO DE MYTHREON</span><h2>O próximo capítulo,<br /><em>construído com a comunidade.</em></h2><p>Estas ideias fazem parte da visão do projeto. Estamos trabalhando para transformar cada uma delas em sistemas jogáveis.</p></div>
+          <div className="landing-roadmap-grid">
+            <article className="landing-roadmap-card"><span className="landing-roadmap-status">PLANEJADO</span><span className="landing-roadmap-icon">✦</span><h3>Relíquias raras e mercado</h3><p>Itens raros podem ganhar valor dentro da economia do jogo. Um mercado entre jogadores está nos planos; regras, segurança e qualquer possibilidade de valor em dinheiro ainda serão definidas. Nenhum item possui valor monetário garantido.</p></article>
+            <article className="landing-roadmap-card"><span className="landing-roadmap-status">PLANEJADO</span><span className="landing-roadmap-icon">✉</span><h3>Trocas e correio</h3><p>Negociação direta e envio de itens pelo correio do jogo estão no horizonte, com controles para tornar as trocas claras e confiáveis.</p></article>
+            <article className="landing-roadmap-card"><span className="landing-roadmap-status">A ANUNCIAR</span><span className="landing-roadmap-icon">◉</span><h3>Comunidade no Discord</h3><p>Um espaço oficial para conversar, acompanhar novidades, compartilhar builds e participar dos próximos passos será divulgado quando estiver pronto.</p></article>
+            <article className="landing-roadmap-card"><span className="landing-roadmap-status">EM EVOLUÇÃO</span><span className="landing-roadmap-icon">⌖</span><h3>Novas jornadas</h3><p>Mais regiões, criaturas, histórias e caminhos para explorar o mundo e descobrir o que a Essência ainda guarda.</p></article>
+          </div>
+        </section>        <section className="landing-lore" id="historia">
           <div className="landing-lore-intro"><span className="landing-eyebrow">OS REGISTROS DA CÚPULA SINAX</span><h2>O Livro da Criação</h2><p>Do silêncio primordial à era presente, conheça os registros que explicam o nascimento de Mythreon. Esta é a história completa preservada no Arquivo do jogo.</p></div>
           <HistorySection />
         </section>

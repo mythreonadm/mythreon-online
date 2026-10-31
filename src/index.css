@@ -240,7 +240,7 @@ html { scroll-behavior: smooth; scroll-padding-top: 92px; }
 .landing-button-quiet { border-color: rgba(226, 221, 211, .22); background: rgba(19, 21, 30, .62); box-shadow: inset 0 1px rgba(255,255,255,.07); color: #ebe9e3; }
 .landing-button-quiet:hover { border-color: rgba(230,181,79,.6); }
 .landing-hero { position: relative; display: grid; min-height: 740px; grid-template-columns: minmax(0, 1fr) minmax(330px, .92fr); align-items: center; gap: 5%; width: min(1380px, 100%); margin: 0 auto; padding: 145px 5.5% 100px; isolation: isolate; }
-.landing-hero::before { position: absolute; z-index: -2; inset: 0 calc((1380px - 100vw)/2); content: ""; background: linear-gradient(90deg, #090b12 5%, rgba(9,11,18,.92) 34%, rgba(9,11,18,.36) 74%, #090b12 100%), linear-gradient(0deg, #090b12 0%, transparent 40%, rgba(9,11,18,.62) 100%), url('/assets/backgrounds/mountain.png') center 42%/cover; }
+.landing-hero::before { position: absolute; z-index: -2; inset: 0 calc((1380px - 100vw)/2); content: ""; background: linear-gradient(90deg, #090b12 5%, rgba(9,11,18,.92) 34%, rgba(9,11,18,.36) 74%, #090b12 100%), linear-gradient(0deg, #090b12 0%, transparent 40%, rgba(9,11,18,.62) 100%), url('../imagens/image_59cd7f8b.jpg') center 42%/cover; }
 .landing-hero-art { position: absolute; z-index: -1; top: 20%; right: -14%; width: 58%; height: 74%; pointer-events: none; background: radial-gradient(ellipse at 54% 50%, rgba(27, 140, 159, .17), transparent 62%); }
 .landing-hero-content { max-width: 650px; padding-top: 22px; }
 .landing-eyebrow { display: inline-flex; align-items: center; gap: 10px; color: var(--site-gold); font-size: 11px; font-weight: 900; letter-spacing: .2em; text-transform: uppercase; }
@@ -322,7 +322,7 @@ html { scroll-behavior: smooth; scroll-padding-top: 92px; }
   .landing-login { font-size: 12px; }
   .landing-button-small { min-height: 38px; padding: 0 11px; font-size: 11px; }
   .landing-hero { display: flex; min-height: 820px; flex-direction: column; align-items: stretch; justify-content: center; gap: 34px; padding: 128px 24px 95px; }
-  .landing-hero::before { inset: 0 -20vw; background: linear-gradient(180deg, rgba(9,11,18,.75), #090b12 94%), url('/assets/backgrounds/mountain.png') 58% center/cover; }
+  .landing-hero::before { inset: 0 -20vw; background: linear-gradient(180deg, rgba(9,11,18,.75), #090b12 94%), url('../imagens/image_59cd7f8b.jpg') 58% center/cover; }
   .landing-hero-content { padding-top: 10px; }
   .landing-eyebrow { font-size: 9px; letter-spacing: .15em; }
   .landing-hero h1 { margin: 19px 0 14px; font-size: clamp(47px, 13vw, 70px); }
@@ -358,4 +358,50 @@ html { scroll-behavior: smooth; scroll-padding-top: 92px; }
   .landing-footer img { width: 142px; }
   .landing-footer > span { display: none; }
   .account-dialog { padding: 28px 22px; }
+}
+
+/* Mythreon class paths, build roadmap and creator supplied key art */
+.landing-brand-art { position: relative; width: min(1260px, calc(100% - 48px)); margin: 0 auto 110px; overflow: hidden; border: 1px solid rgba(230,181,79,.36); border-radius: 18px; background: #101523; box-shadow: 0 28px 80px rgba(0,0,0,.38); }
+.landing-brand-art img { display: block; width: 100%; height: auto; }
+.landing-brand-art figcaption { position: absolute; right: 0; bottom: 0; left: 0; padding: 35px 20px 15px; background: linear-gradient(transparent,rgba(5,8,15,.76)); color: #e9e2d2; font-family: Georgia,serif; font-size: 14px; font-style: italic; text-align: center; }
+.landing-paths { padding: 4px 0 112px; }
+.landing-path-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+.landing-path-card { position: relative; min-height: 220px; padding: 25px; overflow: hidden; border: 1px solid rgba(92,205,208,.17); border-radius: 14px; background: linear-gradient(145deg,rgba(25,38,48,.86),rgba(17,19,28,.94)); }
+.landing-path-card::after { position: absolute; right: -25px; bottom: -35px; width: 130px; height: 130px; border-radius: 50%; background: radial-gradient(circle,rgba(48,179,184,.1),transparent 70%); content: ""; }
+.landing-path-symbol { display: inline-grid; width: 42px; height: 42px; place-items: center; margin-right: 12px; border: 1px solid rgba(78,215,212,.34); border-radius: 12px; background: rgba(45,174,179,.08); color: #72d7d0; font-size: 21px; vertical-align: middle; }
+.landing-path-label { color: #e4bc66; font-family: monospace; font-size: 10px; font-weight: 800; letter-spacing: .13em; }
+.landing-path-card h3 { margin: 21px 0 8px; color: #f2ead8; font-family: Georgia,serif; font-size: 21px; }
+.landing-path-card p, .landing-build-count p { margin: 0; color: #aeb4c0; font-size: 13px; line-height: 1.75; }
+.landing-build-count { display: grid; grid-template-columns: 1fr .72fr; gap: 28px; align-items: center; margin-top: 18px; padding: 26px 30px; border: 1px solid rgba(230,181,79,.24); border-radius: 14px; background: linear-gradient(105deg,rgba(40,34,27,.62),rgba(20,22,30,.91)); }
+.landing-build-count > div:first-child strong, .landing-build-target strong { display: block; margin: 7px 0 3px; color: #f0cb75; font-family: Georgia,serif; font-size: 40px; line-height: 1; }
+.landing-build-target { padding-left: 28px; border-left: 1px solid rgba(230,181,79,.22); }
+.landing-build-target > span { color: #8ed4cc; font-family: monospace; font-size: 9px; font-weight: 900; letter-spacing: .15em; }
+.landing-build-target strong { color: #8ed4cc; }
+.landing-build-footnote { margin: 14px 0 0; color: #8e929d; font-size: 11px; line-height: 1.7; text-align: center; }
+.landing-roadmap { width: min(1120px, calc(100% - 48px)); margin: 0 auto 112px; padding: 48px; border: 1px solid rgba(98,164,184,.2); border-radius: 20px; background: radial-gradient(ellipse at 100% 0,rgba(28,99,126,.16),transparent 48%),linear-gradient(145deg,rgba(20,23,33,.95),rgba(12,14,21,.96)); }
+.landing-roadmap-heading { max-width: 690px; margin-bottom: 34px; }
+.landing-roadmap-heading h2 { margin: 15px 0 12px; color: #f5f0e6; font-family: Georgia,serif; font-size: clamp(36px,5vw,54px); line-height: 1.08; }
+.landing-roadmap-heading h2 em { color: #80d4d2; font-style: normal; }
+.landing-roadmap-heading p { max-width: 620px; margin: 0; color: #adb2bf; font-size: 14px; line-height: 1.8; }
+.landing-roadmap-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 13px; }
+.landing-roadmap-card { position: relative; min-height: 205px; padding: 24px; border: 1px solid rgba(194,200,212,.12); border-radius: 13px; background: rgba(8,11,18,.42); }
+.landing-roadmap-status { position: absolute; top: 20px; right: 19px; padding: 5px 8px; border: 1px solid rgba(126,197,199,.23); border-radius: 999px; color: #8dcfd0; font-family: monospace; font-size: 8px; font-weight: 900; letter-spacing: .12em; }
+.landing-roadmap-icon { display: block; margin-bottom: 13px; color: #e6ba5c; font-size: 23px; }
+.landing-roadmap-card h3 { margin: 0 0 8px; color: #f1e7d4; font-family: Georgia,serif; font-size: 20px; }
+.landing-roadmap-card p { max-width: 460px; margin: 0; color: #a6adba; font-size: 12px; line-height: 1.8; }
+@media (max-width: 680px) {
+  .landing-brand-art { width: calc(100% - 28px); margin-bottom: 78px; border-radius: 12px; }
+  .landing-brand-art figcaption { padding: 25px 12px 10px; font-size: 10px; }
+  .landing-paths { padding-bottom: 78px; }
+  .landing-path-grid { grid-template-columns: 1fr; gap: 10px; }
+  .landing-path-card { min-height: 0; padding: 19px; }
+  .landing-path-card h3 { margin-top: 14px; }
+  .landing-build-count { grid-template-columns: 1fr; gap: 18px; padding: 21px; }
+  .landing-build-count > div:first-child strong, .landing-build-target strong { font-size: 35px; }
+  .landing-build-target { padding: 17px 0 0; border-top: 1px solid rgba(230,181,79,.22); border-left: 0; }
+  .landing-roadmap { width: calc(100% - 28px); margin-bottom: 78px; padding: 25px 18px; border-radius: 16px; }
+  .landing-roadmap-heading h2 { font-size: 38px; }
+  .landing-roadmap-grid { grid-template-columns: 1fr; }
+  .landing-roadmap-card { min-height: 0; padding: 21px; }
+  .landing-roadmap-status { top: 17px; right: 15px; }
 }
