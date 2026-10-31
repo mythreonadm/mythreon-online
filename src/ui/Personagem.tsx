@@ -4,6 +4,7 @@ import { VIALS } from "../data/vials";
 import { getLineageByAttack } from "../data/lineages";
 import { SlotType } from "../types";
 import { ItemIcon } from "./ItemIcon";
+import { StatAllocation } from "./StatAllocation";
 
 const SLOTS: { key: SlotType; label: string; icon: string }[] = [
   { key: "CAPACETE", label: "Capacete", icon: "🎩" },
@@ -88,6 +89,8 @@ export function Personagem() {
           </div>
         </div>
       </div>
+
+      <StatAllocation />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="bg-arcane-panel border border-arcane-border rounded-xl p-4 shadow-lg">

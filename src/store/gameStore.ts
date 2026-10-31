@@ -26,6 +26,7 @@ interface GameState {
   newGame: (name: string) => void;
   loadFromSave: () => boolean;
   save: () => void;
+  spendStatPoint: (stat: keyof CharacterSkills) => boolean;
   clearOfflineReport: () => void;
   clearDeathReport: () => void;
   healFull: () => void;
@@ -131,6 +132,19 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   save: () => { const { character, races } = get(); if (character) saveGame(character, races); },
+  spendStatPoint: (stat) => {
+    const { character } = get();
+    if (!character || (character.statPoints ?? 0) < 1) return false;
+    const updated: Character = {
+      ...character,
+      statPoints: character.statPoints - 1,
+      skills: { ...character.skills, [stat]: character.skills[stat] + 1 },
+    };
+    recalcStats(updated);
+    set({ character: updated });
+    get().save();
+    return true;
+  },
 
   tick: () => {
     const { character, currentZoneId, isTickRunning, isTraining } = get();

@@ -28,6 +28,7 @@ export function createNewCharacter(name: string): Character {
     quests: { active: {}, completed: [] },
     blesses: 0,
     skills: { melee: 10, defense: 10, magic: 10, distance: 10, soul: 10 },
+    statPoints: 0,
     skillXp: { ...zeroSkills },
     trainingSkill: null,
     autoSalvage: null,
@@ -54,6 +55,7 @@ export function loadGame(): SaveFile | null {
     const data = JSON.parse(raw);
     if (data.character) {
       if (!data.character.skills) data.character.skills = { melee: 10, defense: 10, magic: 10, distance: 10, soul: 10 };
+      if (!Number.isFinite(data.character.statPoints)) data.character.statPoints = Math.max(0, (data.character.level || 1) - 1);
       if (typeof data.character.skillXp === "number") data.character.skillXp = { melee: 0, defense: 0, magic: 0, distance: 0, soul: 0 };
       else if (!data.character.skillXp) data.character.skillXp = { melee: 0, defense: 0, magic: 0, distance: 0, soul: 0 };
       if (data.character.trainingSkill === undefined) data.character.trainingSkill = null;

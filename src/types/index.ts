@@ -153,6 +153,7 @@ export interface Character {
   
   skills: CharacterSkills;
   skillXp: CharacterSkills;
+  statPoints: number;
   trainingSkill?: keyof CharacterSkills | null;
   
   cards: CardInstance[];

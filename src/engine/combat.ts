@@ -40,7 +40,8 @@ const EQUIP_CATEGORIES = ["ARMA", "ARMADURA", "JOIA", "ESCUDO"];
 export function processTick(char: Character, zone: Zone, isOffline: boolean): TickResult {
   const result: TickResult = { kills: 0, gold: 0, xp: 0, drops: [], levelsGained: 0, death: false, log: [], enemyHp: 0, enemyMaxHp: 0, zoneId: zone.id, killed: {}, bossKills: {}, dropCounts: {}, potionsUsed: 0, soldGold: 0, salvagedItems: 0, attacked: false, usedMp: false, cardsDropped: [] };
   const debug = isDebug();
-  const ticks = isOffline ? Math.min(Math.floor((Date.now() - char.lastTick) / TICK_MS), (OFFLINE_MAX_HOURS * 3600) / (TICK_MS / 1000)) : 1;
+  const offlineLimitSeconds = OFFLINE_MAX_HOURS * 3600 + Math.max(0, char.skills?.soul ?? 0) * 15 * 60;
+  const ticks = isOffline ? Math.min(Math.floor((Date.now() - char.lastTick) / TICK_MS), offlineLimitSeconds / (TICK_MS / 1000)) : 1;
   const baseEnemy: Enemy | undefined = zone.enemies.find((e) => e.id === char.activeEnemyId) || zone.enemies[0];
   if (!baseEnemy) return result;
 
@@ -189,6 +190,8 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
       
       while (char.xp >= char.xpToNext) {
         char.xp -= char.xpToNext; char.level++; char.xpToNext = xpToNextLevel(char.level); result.levelsGained++;
+        char.statPoints = (char.statPoints ?? 0) + 1;
+        result.log.push("🌟 Você recebeu 1 ponto de status!");
         char.hp = playerHp; recalcStats(char); playerHp = char.hpMax; char.mp = char.mpMax;
         result.log.push(`✨ Subiu para nível ${char.level}!`);
       }
