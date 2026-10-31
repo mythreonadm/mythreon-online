@@ -2,6 +2,7 @@ import React, { useState, useMemo } from "react";
 import { useGameStore } from "../store/gameStore";
 import { CARD_TEMPLATES, TRAITS, getCardStats } from "../data/cards";
 import { CardInstance } from "../types";
+import { ArenaDuelos } from "./ArenaDuelos";
 
 type RegionFilter = "TODAS" | "BOSQUE_LYSS" | "PICO_DHOR" | "MAR_AZHAR" | "RUINAS_ASTERION" | "CICATRIZ_PROFUNDA";
 
@@ -74,6 +75,8 @@ export function Duelos() {
             </div>
           </div>
         </div>
+
+        <ArenaDuelos />
         
         <div className="bg-arcane-panel border border-arcane-border rounded-xl p-12 text-center">
           <div className="text-8xl mb-6">🎴</div>
@@ -117,15 +120,7 @@ export function Duelos() {
         </div>
       </div>
 
-      {/* Banner: Batalha em Breve */}
-      <div className="bg-gradient-to-r from-yellow-900/30 to-orange-900/20 border-2 border-yellow-600/50 rounded-xl p-6 text-center">
-        <div className="text-4xl mb-2">⚔️</div>
-        <h2 className="text-xl font-bold text-yellow-400 mb-1">Arena de Duelos em Construção</h2>
-        <p className="text-sm text-gray-300">
-          Em breve você poderá desafiar a IA em batalhas <strong>1x1</strong>, <strong>3x3</strong> e <strong>5x5</strong>.
-        </p>
-        <p className="text-xs text-gray-500 mt-2">Colete cartas agora para estar pronto quando a arena abrir.</p>
-      </div>
+      <ArenaDuelos />
 
       {/* Filtro por Região */}
       <div className="flex gap-2 flex-wrap">

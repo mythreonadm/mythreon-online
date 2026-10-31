@@ -11,6 +11,7 @@ import { salvageAllEquipment } from "../engine/salvage";
 import { updateQuestProgress, claimQuestReward, trackRaceDiscovery } from "../engine/questEngine";
 import { upgradeItemLevel, rerollItemAffixes } from "../engine/forge";
 import { depositItem as engineDeposit, withdrawItem as engineWithdraw, depositMany as engineDepositMany, withdrawMany as engineWithdrawMany } from "../engine/depot";
+import { FRAGMENT_TEMPLATES } from "../data/items";
 
 interface GameState {
   character: Character | null;
@@ -60,6 +61,7 @@ interface GameState {
   withdrawItem: (uid: string) => { success: boolean; error?: string };
   depositMany: (uids: string[]) => { success: boolean; moved: number; error?: string };
   withdrawMany: (uids: string[]) => { success: boolean; moved: number; error?: string };
+  claimArenaReward: (teamSize: 1 | 3 | 5) => { success: boolean; gold?: number; fragment?: string; remaining?: number; error?: string };
 }
 
 let tickInterval: ReturnType<typeof setInterval> | null = null;
@@ -462,5 +464,34 @@ export const useGameStore = create<GameState>((set, get) => ({
     const res = engineWithdrawMany(newCharacter, uids);
     if (res.moved > 0) { set({ character: newCharacter }); get().save(); }
     return { success: res.moved > 0, moved: res.moved, error: res.error };
+  },
+
+  claimArenaReward: (teamSize) => {
+    const { character, currentZoneId } = get();
+    if (!character) return { success: false, error: "Sem personagem" };
+    const today = new Date().toISOString().slice(0, 10);
+    const earnedToday = character.arenaRewardDay === today ? (character.arenaRewardsToday ?? 0) : 0;
+    if (earnedToday >= 3) return { success: false, error: "Você já recebeu as 3 recompensas diárias da Arena." };
+    const tier = ZONES[currentZoneId]?.tier ?? 1;
+    const gold = (teamSize === 1 ? 30 : teamSize === 3 ? 70 : 130) * tier;
+    const newCharacter: Character = {
+      ...character,
+      gold: character.gold + gold,
+      arenaRewardDay: today,
+      arenaRewardsToday: earnedToday + 1,
+      inventory: { ...character.inventory, items: [...character.inventory.items] },
+    };
+    let fragment: string | undefined;
+    if (teamSize === 3 || (teamSize === 5 && character.arenaRareRewardDay !== today)) {
+      const fragmentId = teamSize === 3 ? "FRAGMENTO_COMUM" : "FRAGMENTO_RARO";
+      const template = FRAGMENT_TEMPLATES[fragmentId];
+      if (addItem(newCharacter.inventory, { ...template, uid: `arena-${Date.now()}-${Math.random()}`, quantity: 1 })) {
+        fragment = fragmentId;
+        if (teamSize === 5) newCharacter.arenaRareRewardDay = today;
+      }
+    }
+    set({ character: newCharacter });
+    get().save();
+    return { success: true, gold, fragment, remaining: 2 - earnedToday };
   },
 }));

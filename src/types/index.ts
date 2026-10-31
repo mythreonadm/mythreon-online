@@ -157,6 +157,9 @@ export interface Character {
   trainingSkill?: keyof CharacterSkills | null;
   
   cards: CardInstance[];
+  arenaRewardDay?: string;
+  arenaRewardsToday?: number;
+  arenaRareRewardDay?: string;
   
   depot: Item[];       // NOVO
   depotMax: number;    // NOVO
