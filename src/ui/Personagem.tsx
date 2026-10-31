@@ -53,7 +53,6 @@ export function Personagem() {
 
   return (
     <div className="space-y-4">
-      {/* HEADER — sprite + info + barras */}
       <div className="bg-gradient-to-r from-arcane-panel to-arcane-bg border border-arcane-border rounded-xl p-4 md:p-6 shadow-lg">
         <div className="flex flex-wrap items-center gap-4 md:gap-6">
           <div className="w-24 h-24 md:w-32 md:h-32 flex items-center justify-center bg-arcane-bg rounded-full border-2 border-arcane-purple shadow-[0_0_20px_rgba(124,58,237,0.3)] overflow-hidden">
@@ -90,7 +89,6 @@ export function Personagem() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* COLUNA 1 — SLOTS */}
         <div className="bg-arcane-panel border border-arcane-border rounded-xl p-4 shadow-lg">
           <h2 className="text-lg font-bold text-arcane-gold mb-3 border-b border-arcane-border pb-2">🎽 Equipamento</h2>
           <div className="grid grid-cols-2 gap-2">
@@ -122,7 +120,6 @@ export function Personagem() {
           <p className="text-[10px] text-gray-500 italic mt-3 text-center">Clique em um item equipado para desequipar.</p>
         </div>
 
-        {/* COLUNA 2 — ATRIBUTOS */}
         <div className="bg-arcane-panel border border-arcane-border rounded-xl p-4 shadow-lg">
           <h2 className="text-lg font-bold text-arcane-gold mb-3 border-b border-arcane-border pb-2">📊 Atributos</h2>
 
@@ -164,7 +161,6 @@ export function Personagem() {
           </div>
         </div>
 
-        {/* COLUNA 3 — BÔNUS + MATRIZ */}
         <div className="space-y-4">
           <div className="bg-arcane-panel border border-arcane-border rounded-xl p-4 shadow-lg">
             <h2 className="text-lg font-bold text-arcane-gold mb-3 border-b border-arcane-border pb-2">✨ Bônus Ativos</h2>
@@ -175,10 +171,7 @@ export function Personagem() {
                 <div className="text-sm font-bold text-white">{character.activeRace.name}</div>
                 <div className="flex flex-wrap gap-1 mt-1">
                   {Object.entries(character.activeRace.bonus).map(([k, v]) => (
-                    <span
-                      key={k}
-                      className="text-[9px] bg-green-900/30 border border-green-800/50 px-1.5 py-0.5 rounded text-green-400 font-bold"
-                    >
+                    <span key={k} className="text-[9px] bg-green-900/30 border border-green-800/50 px-1.5 py-0.5 rounded text-green-400 font-bold">
                       +{typeof v === "number" && v % 1 === 0 ? v : (v as number).toFixed(2)} {k.toUpperCase()}
                     </span>
                   ))}

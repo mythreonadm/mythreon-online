@@ -1,8 +1,5 @@
 import { Character, Item, ItemStats, SlotType } from "../types";
 
-// Pesos de comparação de itens (score)
-// Atributos brutos valem 1 ponto por unidade. Percentuais valem peso fixo por 1.0 (i.e. 1% = 0.01 * peso).
-// HP vale 0.3, MP 0.1
 export const STAT_WEIGHTS: Record<keyof ItemStats, number> = {
   atk: 1, matk: 1, def: 1, arm: 1,
   hp: 0.3, mp: 0.1,
@@ -20,13 +17,10 @@ export function getItemScore(item?: Item | null): number {
   for (const affix of item.affixes ?? []) {
     score += affix.value * (STAT_WEIGHTS[affix.stat] ?? 1);
   }
-  // +10% por nível de upgrade
   score *= 1 + (item.upgradeLevel ?? 0) * 0.1;
   return score;
 }
 
-// Replica a lógica atual de equipItem para decidir qual slot será alvo
-// (Anéis: preenche vazios antes de substituir; se ambos cheios, substitui ANEL_I)
 export function getBestTargetSlot(char: Character, item: Item): SlotType | undefined {
   if (!item.slot) return undefined;
   if (item.slot !== "ANEL_I") return item.slot;
