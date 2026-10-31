@@ -9,6 +9,8 @@ import { ATTACK_SKILLS } from "../data/skills";
 import { getLineageByAttack } from "../data/lineages"; // NOVO IMPORT
 import { AccessIcon } from "./AccessIcon";
 import { getHuntQuestSignal } from "../utils/questSignals";
+import { POTION_TEMPLATES } from "../data/items";
+import { getPotionUsePrice } from "../data/potionEconomy";
 
 interface ZoneViewProps { onOpenQuest: (questId: string) => void; }
 
@@ -42,6 +44,8 @@ export function ZoneView({ onOpenQuest }: ZoneViewProps) {
   const currentZone = ZONES[currentZoneId];
   const currentMob = currentZone.enemies.find(e => e.id === character.activeEnemyId) || currentZone.enemies[0];
   const questSignal = getHuntQuestSignal(character, currentZoneId || currentZone.id);
+  const selectedHpPotion = POTION_TEMPLATES[character.autoHpPotionId || ""];
+  const selectedMpPotion = POTION_TEMPLATES[character.autoMpPotionId || ""];
 
   // Encontra a linhagem baseada na raça equipada (ou humano se não tiver)
   const playerLineage = getLineageByAttack(character.activeRace?.ataqueId);
@@ -270,9 +274,9 @@ export function ZoneView({ onOpenQuest }: ZoneViewProps) {
   const activeVialCount = Object.keys(character.activeVials).filter(id => character.activeVials[id] > Date.now()).length;
   const huntStats = character.huntStatsByZone?.[currentZoneId];
   const huntHours = (huntStats?.activeMs ?? 0) / 3600000;
-  const actualGoldPerHour = huntHours > 0 ? (huntStats?.gold ?? 0) / huntHours : 0;
+  const actualGoldPerHour = huntHours > 0 ? Math.max(0, (huntStats?.gold ?? 0) - (huntStats?.goldSpentPotions ?? 0)) / huntHours : 0;
   const sellLootGoldPerHour = huntHours > 0
-    ? Math.max(0, (huntStats?.gold ?? 0) - (huntStats?.soldGold ?? 0) + (huntStats?.lootValue ?? 0)) / huntHours
+    ? Math.max(0, (huntStats?.gold ?? 0) - (huntStats?.soldGold ?? 0) - (huntStats?.goldSpentPotions ?? 0) + (huntStats?.lootValue ?? 0)) / huntHours
     : 0;
   const recentEncounters = (huntStats?.history ?? []).slice(-8).reverse();
 
@@ -447,18 +451,22 @@ export function ZoneView({ onOpenQuest }: ZoneViewProps) {
             <div className="mb-3 md:mb-4">
               <div className="text-[9px] md:text-[10px] text-gray-500 uppercase font-bold mb-1">❤️ Poção de Vida</div>
               <div className="space-y-1.5 bg-black/30 p-2 rounded-lg border border-arcane-border/50">
+                <label className="flex items-center gap-2 text-[10px] md:text-xs text-gray-300">
+                  <input type="checkbox" checked={!!character.autoHpPotionEnabled} onChange={e => updateSettings({ autoHpPotionEnabled: e.target.checked })} className="accent-red-500" />
+                  Ativar automaticamente
+                </label>
                 <select 
-                  value={character.autoHpPotionId || ""} 
+                  value={character.autoHpPotionId || "POCAO_VIDA_1"} 
                   onChange={(e) => updateSettings({ autoHpPotionId: e.target.value })}
                   className="w-full bg-arcane-bg border border-arcane-border rounded px-2 py-1 text-white text-[10px] md:text-xs focus:outline-none focus:border-red-500"
                 >
-                  <option value="">Desativado</option>
                   <option value="POCAO_VIDA_1">Poção Pequena</option>
                   <option value="POCAO_VIDA_2">Poção Média</option>
                   <option value="POCAO_VIDA_3">Poção Grande</option>
                   <option value="POCAO_VIDA_4">Poção Superior</option>
                   <option value="POCAO_VIDA_5">Poção Suprema</option>
                 </select>
+                <div className="flex justify-between text-[9px] md:text-[10px]"><span className="text-gray-500">Cura {selectedHpPotion?.stats.hp?.toLocaleString("pt-BR") ?? 0} HP por uso</span><strong className="text-arcane-gold">💰 {getPotionUsePrice(character.autoHpPotionId).toLocaleString("pt-BR")} gold/uso</strong></div>
                 <div className="flex items-center gap-2">
                   <input 
                     type="range" min="10" max="90" step="5"
@@ -474,16 +482,20 @@ export function ZoneView({ onOpenQuest }: ZoneViewProps) {
             <div className="mb-3 md:mb-4">
               <div className="text-[9px] md:text-[10px] text-gray-500 uppercase font-bold mb-1">🔵 Poção de Mana</div>
               <div className="space-y-1.5 bg-black/30 p-2 rounded-lg border border-arcane-border/50">
+                <label className="flex items-center gap-2 text-[10px] md:text-xs text-gray-300">
+                  <input type="checkbox" checked={!!character.autoMpPotionEnabled} onChange={e => updateSettings({ autoMpPotionEnabled: e.target.checked })} className="accent-blue-500" />
+                  Ativar automaticamente
+                </label>
                 <select 
-                  value={character.autoMpPotionId || ""} 
+                  value={character.autoMpPotionId || "POCAO_MANA_1"} 
                   onChange={(e) => updateSettings({ autoMpPotionId: e.target.value })}
                   className="w-full bg-arcane-bg border border-arcane-border rounded px-2 py-1 text-white text-[10px] md:text-xs focus:outline-none focus:border-blue-500"
                 >
-                  <option value="">Desativado</option>
                   <option value="POCAO_MANA_1">Mana Pequena</option>
                   <option value="POCAO_MANA_2">Mana Média</option>
                   <option value="POCAO_MANA_3">Mana Grande</option>
                 </select>
+                <div className="flex justify-between text-[9px] md:text-[10px]"><span className="text-gray-500">Restaura {selectedMpPotion?.stats.mp?.toLocaleString("pt-BR") ?? 0} MP por uso</span><strong className="text-arcane-gold">💰 {getPotionUsePrice(character.autoMpPotionId).toLocaleString("pt-BR")} gold/uso</strong></div>
                 <div className="flex items-center gap-2">
                   <input 
                     type="range" min="10" max="90" step="5"
@@ -523,14 +535,14 @@ export function ZoneView({ onOpenQuest }: ZoneViewProps) {
               </div>
               <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-[9px] md:text-[10px]">
                 <div><div className="text-gray-500">EXP/h</div><div className="font-bold text-cyan-300">{metricNumber.format(huntHours ? (huntStats?.xp ?? 0) / huntHours : 0)}</div></div>
-                <div><div className="text-gray-500">GOLD/h recebido</div><div className="font-bold text-arcane-gold">{metricNumber.format(actualGoldPerHour)}</div></div>
+                <div><div className="text-gray-500">GOLD/h líquido</div><div className="font-bold text-arcane-gold">{metricNumber.format(actualGoldPerHour)}</div></div>
                 <div><div className="text-gray-500">GOLD/h com venda</div><div className="font-bold text-emerald-300">{metricNumber.format(sellLootGoldPerHour)}</div></div>
                 <div><div className="text-gray-500">Abates</div><div className="font-bold text-white">{metricNumber.format(huntStats?.kills ?? 0)}</div></div>
                 <div><div className="text-gray-500">Dano causado</div><div className="font-bold text-orange-300">{metricNumber.format(huntStats?.damageDealt ?? 0)}</div></div>
                 <div><div className="text-gray-500">Dano recebido</div><div className="font-bold text-rose-300">{metricNumber.format(huntStats?.damageTaken ?? 0)}</div></div>
               </div>
               <div className="mt-2 border-t border-white/5 pt-1.5 text-[8px] leading-relaxed text-gray-500">
-                GOLD/h com venda é uma projeção: ouro recebido + valor de venda dos drops. Nada é vendido automaticamente.
+                GOLD/h líquido desconta o gold gasto em poções. GOLD/h com venda projeta o valor dos drops equipáveis.
               </div>
               <details className="group mt-2 border-t border-white/5 pt-1.5">
                 <summary className="cursor-pointer list-none text-[9px] font-bold text-gray-400 hover:text-white">📜 Registro de combate ({huntStats?.history.length ?? 0}) <span className="float-right group-open:rotate-180">⌄</span></summary>
@@ -538,7 +550,7 @@ export function ZoneView({ onOpenQuest }: ZoneViewProps) {
                   <div className="mt-2 max-h-52 space-y-1.5 overflow-y-auto pr-1">
                     {recentEncounters.map(record => <div key={record.id} className="rounded-md border border-white/5 bg-black/30 p-2 text-[9px]">
                       <div className="flex items-start justify-between gap-2"><span className="font-bold text-white">{record.outcome === "death" ? "☠️ " : "⚔️ "}{record.enemyName}</span><time className="shrink-0 text-gray-600">{new Date(record.timestamp).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</time></div>
-                      <div className="mt-1 grid grid-cols-2 gap-x-2 text-gray-400"><span>⚔️ Causado: <b className="text-orange-300">{metricNumber.format(record.damageDealt)}</b></span><span>🩸 Recebido: <b className="text-rose-300">{metricNumber.format(record.damageTaken)}</b></span><span>✨ {metricNumber.format(record.xp)} EXP</span><span>🪙 {metricNumber.format(record.gold + record.soldGold)} gold</span></div>
+                      <div className="mt-1 grid grid-cols-2 gap-x-2 text-gray-400"><span>⚔️ Causado: <b className="text-orange-300">{metricNumber.format(record.damageDealt)}</b></span><span>🩸 Recebido: <b className="text-rose-300">{metricNumber.format(record.damageTaken)}</b></span><span>✨ {metricNumber.format(record.xp)} EXP</span><span>🪙 {metricNumber.format(record.gold + record.soldGold)} gold</span>{!!record.goldSpentPotions && <span>🧪 Poções: <b className="text-arcane-gold">−{metricNumber.format(record.goldSpentPotions)} gold</b></span>}</div>
                       {record.loot.length > 0 && <div className="mt-1 border-t border-white/5 pt-1 text-gray-400">Loot: {record.loot.map((item, index) => <span key={`${record.id}-${index}`} className="mr-1">{item.icon} {item.name}{item.quantity > 1 ? ` ×${item.quantity}` : ""}</span>)}<div className="mt-0.5 text-emerald-400/80">Valor potencial de venda: {metricNumber.format(record.lootValue)} gold</div></div>}
                     </div>)}
                   </div>}

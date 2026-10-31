@@ -1,6 +1,6 @@
 import React from "react";
 
-export type AccessIconName = "explore" | "character" | "backpack" | "depot" | "matrix" | "shop" | "quest" | "duel" | "archive";
+export type AccessIconName = "explore" | "character" | "backpack" | "depot" | "matrix" | "pet" | "shop" | "quest" | "duel" | "archive";
 
 interface AccessIconProps {
   name: AccessIconName;
@@ -31,8 +31,10 @@ export function AccessIcon({ name, className = "" }: AccessIconProps) {
       return <svg {...common}><path d="m3 9 2-5h14l2 5" /><path d="M4 9v11h16V9M3 9h18M12 9v11M8 13h1M15 13h1" /></svg>;
     case "matrix":
       return <svg {...common}><path d="m12 2 8 4.5v11L12 22l-8-4.5v-11L12 2Z" /><path d="M12 2v20M4 6.5l16 11M20 6.5l-16 11" /></svg>;
+    case "pet":
+      return <svg {...common}><path d="M12 13.3c-2.2 0-5.7 2.1-5.7 4.5 0 1.9 1.4 2.7 3 2.7 1.1 0 1.8-.5 2.7-.5s1.6.5 2.7.5c1.6 0 3-.8 3-2.7 0-2.4-3.5-4.5-5.7-4.5Z" /><ellipse cx="5.2" cy="10" rx="1.7" ry="2.2" /><ellipse cx="9.4" cy="6.4" rx="1.7" ry="2.2" /><ellipse cx="14.6" cy="6.4" rx="1.7" ry="2.2" /><ellipse cx="18.8" cy="10" rx="1.7" ry="2.2" /></svg>;
     case "shop":
-      return <svg {...common}><path d="M4 10v10h16V10M3 10l2-6h14l2 6M3 10a2.5 2.5 0 0 0 5 0 2.5 2.5 0 0 0 5 0 2.5 2.5 0 0 0 5 0 2.5 2.5 0 0 0 5 0" /><path d="M9 20v-6h6v6" /></svg>;
+      return <svg {...common}><path d="m14.5 3.5 6 6-2 2-6-6zM4 20l6.8-6.8 2 2L6 22H4z" /><path d="m11 13 3 3M3 22h18M8 19h8M5 16l3 3" /></svg>;
     case "quest":
       return <svg {...common}><path d="M6 4h11a3 3 0 0 1 0 6H7a3 3 0 0 0 0 6h11" /><path d="M6 4v12M18 10v10M10 7h4M10 13h4M10 19h4" /><circle cx="18" cy="7" r="3" /></svg>;
     case "duel":

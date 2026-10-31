@@ -78,7 +78,7 @@ export function makeEquipment(templateId: string, rarity: Rarity = "COMUM"): Ite
 
 export function makeComponent(templateId: string): Item {
   const t = ALL_COMPONENTS[templateId];
-  return createItem({ templateId: t.id, name: t.name, category: "COMPONENTE", tier: 1, componentType: t.type, law: t.law, icon: t.icon, stackable: true, maxStack: 100, quantity: 1, upgradeLevel: 0 });
+  return createItem({ templateId: t.id, name: t.name, category: "COMPONENTE", tier: 1, componentType: t.type, law: t.law, icon: t.icon, stackable: true, maxStack: 999, quantity: 1, upgradeLevel: 0 });
 }
 
 export function makeBackpack(key: string, tier: 1 | 2 | 3 | 4 | 5 = 1): Item | null {
@@ -108,11 +108,6 @@ export function rollDrops(enemy: Enemy, zone: Zone, _char: Character, mods: Drop
       const eq = makeEquipment(base.templateId, rollRarity(mods.rareBonus + (enemy.isBoss ? 0.5 : 0)));
       if (eq) drops.push(eq);
     }
-  }
-
-  if (chance(enemy.isBoss ? 0.5 : 0.06)) {
-    const p = makeEquipment(`POCAO_VIDA_${zone.tier}`);
-    if (p) drops.push(p);
   }
 
   if (enemy.backpackDrop && chance(enemy.backpackChance ?? 0)) {

@@ -23,9 +23,10 @@ export function ItemModal({ item, equipped, onEquip, onClose, onDeposit }: Props
   const isBetter = equipped ? getItemScore(item) > getItemScore(equipped) : true;
   const scoreDiff = getItemScore(item) - getItemScore(equipped);
 
-  const renderComparisonRow = (statKey: keyof ItemStats, label: string, isPercent = false) => {
+  const renderComparisonRow = (statKey: keyof ItemStats, label: string, isPercent = false, side: "new" | "equipped" = "new") => {
     const newVal = getTotalStat(item, statKey);
     const oldVal = getTotalStat(equipped, statKey);
+    const displayedValue = side === "new" ? newVal : oldVal;
     if (newVal === 0 && oldVal === 0) return null;
 
     const diff = newVal - oldVal;
@@ -42,8 +43,8 @@ export function ItemModal({ item, equipped, onEquip, onClose, onDeposit }: Props
       <div key={statKey} className="flex justify-between items-center py-1 border-b border-arcane-border/30 text-sm">
         <span className="text-gray-400">{label}</span>
         <div className="flex items-center gap-2 font-mono">
-          <span className="text-white">{format(newVal)}</span>
-          {equipped && diff !== 0 && (
+          <span className="text-white">{format(displayedValue)}</span>
+          {side === "new" && equipped && diff !== 0 && (
             <span className={`text-xs ${diffColor}`}>
               ({diff > 0 ? "+" : ""}{format(diff)})
             </span>
@@ -114,13 +115,23 @@ export function ItemModal({ item, equipped, onEquip, onClose, onDeposit }: Props
               <p className="text-xs text-gray-500 uppercase">Atualmente Equipado</p>
             </div>
             <div className="space-y-1">
-              {renderComparisonRow("atk", STAT_NAMES.atk)}
-              {renderComparisonRow("matk", STAT_NAMES.matk)}
-              {renderComparisonRow("def", STAT_NAMES.def)}
-              {renderComparisonRow("arm", STAT_NAMES.arm)}
-              {renderComparisonRow("hp", STAT_NAMES.hp)}
-              {renderComparisonRow("mp", STAT_NAMES.mp)}
-              {renderComparisonRow("crit", STAT_NAMES.crit, true)}
+              {renderComparisonRow("atk", STAT_NAMES.atk, false, "equipped")}
+              {renderComparisonRow("matk", STAT_NAMES.matk, false, "equipped")}
+              {renderComparisonRow("def", STAT_NAMES.def, false, "equipped")}
+              {renderComparisonRow("arm", STAT_NAMES.arm, false, "equipped")}
+              {renderComparisonRow("hp", STAT_NAMES.hp, false, "equipped")}
+              {renderComparisonRow("mp", STAT_NAMES.mp, false, "equipped")}
+              {renderComparisonRow("crit", STAT_NAMES.crit, true, "equipped")}
+              {renderComparisonRow("critDmg", STAT_NAMES.critDmg, true, "equipped")}
+              {renderComparisonRow("hit", STAT_NAMES.hit, true, "equipped")}
+              {renderComparisonRow("dge", STAT_NAMES.dge, true, "equipped")}
+              {renderComparisonRow("blk", STAT_NAMES.blk, true, "equipped")}
+              {renderComparisonRow("spd", STAT_NAMES.spd, true, "equipped")}
+              {renderComparisonRow("resFisico", STAT_NAMES.resFisico, true, "equipped")}
+              {renderComparisonRow("resMagico", STAT_NAMES.resMagico, true, "equipped")}
+              {renderComparisonRow("hpRegen", STAT_NAMES.hpRegen, false, "equipped")}
+              {renderComparisonRow("mpRegen", STAT_NAMES.mpRegen, false, "equipped")}
+              {renderComparisonRow("luck", STAT_NAMES.luck, true, "equipped")}
             </div>
           </div>
         )}

@@ -33,6 +33,13 @@ export function Quests({ focusQuestId, onFocusHandled }: QuestsProps) {
   const activeIds = Object.keys(character.quests?.active || {});
   const completedIds = character.quests?.completed || [];
   const availableQuests = getAvailableQuests(character);
+  const tutorialActiveIds = activeIds.filter(id => QUESTS.some(q => q.id === id && q.category === "TUTORIAL"));
+  const tutorialAvailable = availableQuests.filter(q => q.category === "TUTORIAL");
+  const otherActiveIds = activeIds.filter(id => !tutorialActiveIds.includes(id));
+  const otherAvailable = availableQuests.filter(q => q.category !== "TUTORIAL");
+  const currentTutorial = tutorialActiveIds.length
+    ? QUESTS.find(q => q.id === tutorialActiveIds[0])
+    : tutorialAvailable[0];
 
   const renderQuest = (template: any, isActive: boolean) => {
     const isCompletedQuest = completedIds.includes(template.id);
@@ -82,21 +89,29 @@ export function Quests({ focusQuestId, onFocusHandled }: QuestsProps) {
 
   return (
     <div className="space-y-6">
+      {(!character.tutorialCompleted || tutorialActiveIds.length > 0) && <section className="overflow-hidden rounded-xl border border-arcane-gold/30 bg-[radial-gradient(ellipse_at_top_right,rgba(201,160,77,.14),transparent_50%),linear-gradient(120deg,#171923,#0b1014)] p-5 shadow-[0_0_24px_rgba(201,160,77,.08)]">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div><div className="text-[10px] font-black uppercase tracking-[.24em] text-arcane-gold">Trilha inicial · só no começo da jornada</div><h2 className="mt-1 text-xl font-black text-white">🎓 Aprenda a Jogar</h2><p className="mt-1 text-xs text-gray-400">Missões curtas apresentam a Wiki, a Matriz, a caça e os serviços do Ferreiro.</p></div>
+          <div className="rounded-lg border border-white/10 bg-black/25 px-3 py-2 text-right"><div className="text-[9px] uppercase tracking-wider text-gray-500">Etapas concluídas</div><div className="font-mono text-sm font-bold text-arcane-gold">{QUESTS.filter(q => q.category === "TUTORIAL" && completedIds.includes(q.id)).length} / {QUESTS.filter(q => q.category === "TUTORIAL").length}</div></div>
+        </div>
+        {currentTutorial ? renderQuest(currentTutorial, tutorialActiveIds.includes(currentTutorial.id)) : <div className="rounded-lg border border-emerald-900/40 bg-emerald-950/20 p-4 text-sm text-emerald-300">Trilha inicial concluída. Sua aventura continua livremente.</div>}
+      </section>}
+
       <div className="bg-arcane-panel border border-arcane-border rounded-xl p-6 shadow-lg">
-        <h2 className="text-2xl font-bold text-arcane-gold mb-6">Missões Ativas ({activeIds.length})</h2>
+        <h2 className="text-2xl font-bold text-arcane-gold mb-6">Missões Ativas ({otherActiveIds.length})</h2>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-           {activeIds.map(id => {
+           {otherActiveIds.map(id => {
              const template = QUESTS.find(q => q.id === id);
              return template ? renderQuest(template, true) : null;
            })}
-           {activeIds.length === 0 && <p className="text-gray-500 italic col-span-3">Nenhuma missão ativa. Aceite missões na lista abaixo.</p>}
+           {otherActiveIds.length === 0 && <p className="text-gray-500 italic col-span-3">Nenhuma missão ativa. Aceite missões na lista abaixo.</p>}
         </div>
       </div>
 
       <div className="bg-arcane-panel border border-arcane-border rounded-xl p-6 shadow-lg">
         <h2 className="text-2xl font-bold text-arcane-cyan mb-6">Disponíveis</h2>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-           {availableQuests.map(q => renderQuest(q, false))}
+           {otherAvailable.map(q => renderQuest(q, false))}
         </div>
       </div>
     </div>

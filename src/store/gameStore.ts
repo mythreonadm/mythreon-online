@@ -1,17 +1,19 @@
 import { create } from "zustand";
-import { Character, Race, TickResult, CharacterSkills, OfflineReportData, BuffVialTemplate, DeathReportData, HuntZoneStats } from "../types";
+import { Character, Race, TickResult, CharacterSkills, OfflineReportData, BuffVialTemplate, DeathReportData, HuntZoneStats, DivineBeastId, QuestObjectiveType } from "../types";
 import { ZONES } from "../data/zones";
 import { createNewCharacter, loadGame, saveGame } from "../engine/save";
 import { processTick } from "../engine/combat";
 import { equipItem, unequipItem, addItem, removeItem } from "../engine/inventory";
 import { recalcStats, skillXpToNextLevel } from "../engine/stats";
 import { findNamedRace, generateRaceName, generateRaceId, generateRaceBonus } from "../data/races";
-import { ShopEntry, buyEntry, sellItem, sellAllEquipment } from "../engine/shop";
-import { salvageAllEquipment } from "../engine/salvage";
-import { updateQuestProgress, claimQuestReward, trackRaceDiscovery } from "../engine/questEngine";
+import { sellItem } from "../engine/shop";
+import { salvageAllEquipment, salvageSelectedEquipment } from "../engine/salvage";
+import { updateQuestProgress, claimQuestReward, trackRaceDiscovery, trackQuestAction } from "../engine/questEngine";
 import { upgradeItemLevel, rerollItemAffixes } from "../engine/forge";
 import { depositItem as engineDeposit, withdrawItem as engineWithdraw, depositMany as engineDepositMany, withdrawMany as engineWithdrawMany } from "../engine/depot";
 import { FRAGMENT_TEMPLATES } from "../data/items";
+import { DIVINE_BEASTS } from "../data/divineBeasts";
+import { QUESTS } from "../data/quests";
 
 interface GameState {
   character: Character | null;
@@ -44,13 +46,16 @@ interface GameState {
   synthesize: (a: string, s: string, p: string) => { success: boolean; error?: string };
   equipRace: (race: Race) => void;
   unequipRace: () => void;
-  buyItem: (entry: ShopEntry, qty?: number) => { success: boolean; error?: string };
+  equipDivineBeast: (id: DivineBeastId) => { success: boolean; error?: string };
+  unequipDivineBeast: () => void;
   sellItem: (uid: string, qty?: number) => void;
   salvageAll: (maxRarity: any) => void;
+  salvageSelected: (uids: string[]) => void;
   updateSettings: (settings: any) => void;
   activateBuff: () => void;
   acceptQuest: (id: string) => void;
   claimQuest: (id: string) => void;
+  recordQuestAction: (action: QuestObjectiveType) => void;
   useVial: (vial: BuffVialTemplate) => void;
   buyBless: () => void;
   refreshCompendium: () => void;
@@ -68,7 +73,7 @@ let tickInterval: ReturnType<typeof setInterval> | null = null;
 
 function recordHuntMetrics(character: Character, zoneId: string, result: TickResult) {
   const previous = character.huntStatsByZone?.[zoneId] ?? {
-    activeMs: 0, kills: 0, damageDealt: 0, damageTaken: 0, xp: 0, gold: 0, soldGold: 0, lootValue: 0, history: [],
+    activeMs: 0, kills: 0, damageDealt: 0, damageTaken: 0, xp: 0, gold: 0, goldSpentPotions: 0, soldGold: 0, lootValue: 0, history: [],
   } satisfies HuntZoneStats;
   const encounters = result.encounters ?? [];
   const updated: HuntZoneStats = {
@@ -78,6 +83,7 @@ function recordHuntMetrics(character: Character, zoneId: string, result: TickRes
     damageTaken: previous.damageTaken + (result.damageTaken ?? 0),
     xp: previous.xp + result.xp,
     gold: previous.gold + result.gold,
+    goldSpentPotions: (previous.goldSpentPotions ?? 0) + (result.goldSpentPotions ?? 0),
     soldGold: previous.soldGold + (result.soldGold ?? 0),
     lootValue: previous.lootValue + encounters.reduce((sum, encounter) => sum + encounter.lootValue, 0),
     history: [...previous.history, ...encounters].slice(-100),
@@ -321,6 +327,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     const newRaces = [...races, newRace];
     trackRaceDiscovery(newCharacter, newRaces);
+    trackQuestAction(newCharacter, "SYNTHESIZE");
 
     set({ character: newCharacter, races: newRaces });
     get().save();
@@ -330,7 +337,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   equipRace: (race) => {
     const { character } = get(); if (!character) return;
     const newCharacter = JSON.parse(JSON.stringify(character));
-    newCharacter.raceId = race.id; newCharacter.activeRace = race;
+    newCharacter.raceId = race.id; newCharacter.activeRace = race; newCharacter.activeDivineBeastId = undefined;
     recalcStats(newCharacter); set({ character: newCharacter }); get().save();
   },
 
@@ -344,24 +351,54 @@ export const useGameStore = create<GameState>((set, get) => ({
     get().save();
   },
 
-  buyItem: (entry, qty = 1) => {
-    const { character } = get(); if (!character) return { success: false, error: "Sem personagem" };
+  equipDivineBeast: (id) => {
+    const { character } = get();
+    if (!character) return { success: false, error: "Sem personagem" };
+    if (!DIVINE_BEASTS[id] || !(character.divineBeasts ?? []).some(beast => beast.id === id)) {
+      return { success: false, error: "Essa Divine Beast ainda não foi vinculada." };
+    }
     const newCharacter = JSON.parse(JSON.stringify(character));
-    const res = buyEntry(newCharacter, entry, qty);
-    if (res.success) { set({ character: newCharacter }); get().save(); }
-    return res;
+    newCharacter.activeDivineBeastId = id;
+    newCharacter.raceId = undefined;
+    newCharacter.activeRace = undefined;
+    recalcStats(newCharacter);
+    set({ character: newCharacter });
+    get().save();
+    return { success: true };
+  },
+
+  unequipDivineBeast: () => {
+    const { character } = get(); if (!character) return;
+    const newCharacter = JSON.parse(JSON.stringify(character));
+    newCharacter.activeDivineBeastId = undefined;
+    recalcStats(newCharacter);
+    set({ character: newCharacter });
+    get().save();
   },
 
   sellItem: (uid, qty = 1) => {
     const { character } = get(); if (!character) return;
     const newCharacter = JSON.parse(JSON.stringify(character));
-    sellItem(newCharacter, uid, qty); set({ character: newCharacter }); get().save();
+    const res = sellItem(newCharacter, uid, qty);
+    if (!res.success) return;
+    trackQuestAction(newCharacter, "SELL", res.count);
+    set({ character: newCharacter }); get().save();
   },
 
   salvageAll: (maxRarity) => {
     const { character } = get(); if (!character) return;
     const newChar = JSON.parse(JSON.stringify(character));
     const res = salvageAllEquipment(newChar, maxRarity);
+    newChar.totalSalvaged = (newChar.totalSalvaged || 0) + res.items;
+    updateQuestProgress(newChar, { kills: 0, gold: 0, xp: 0, drops: [], levelsGained: 0, death: false, log: [], enemyHp: 0, enemyMaxHp: 0, salvagedItems: res.items });
+    set({ character: newChar }); get().save(); alert(`Desmanchou ${res.items} itens e ganhou ${res.frags} fragmentos!`);
+  },
+
+  salvageSelected: (uids) => {
+    const { character } = get(); if (!character || uids.length === 0) return;
+    const newChar = JSON.parse(JSON.stringify(character));
+    const res = salvageSelectedEquipment(newChar, uids);
+    if (!res.items) return;
     newChar.totalSalvaged = (newChar.totalSalvaged || 0) + res.items;
     updateQuestProgress(newChar, { kills: 0, gold: 0, xp: 0, drops: [], levelsGained: 0, death: false, log: [], enemyHp: 0, enemyMaxHp: 0, salvagedItems: res.items });
     set({ character: newChar }); get().save(); alert(`Desmanchou ${res.items} itens e ganhou ${res.frags} fragmentos!`);
@@ -375,8 +412,10 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (settings.autoSalvage !== undefined) newCharacter.autoSalvage = settings.autoSalvage;
     if (settings.autoHpPotionId !== undefined) newCharacter.autoHpPotionId = settings.autoHpPotionId;
     if (settings.autoHpPotionPercent !== undefined) newCharacter.autoHpPotionPercent = settings.autoHpPotionPercent;
+    if (settings.autoHpPotionEnabled !== undefined) newCharacter.autoHpPotionEnabled = settings.autoHpPotionEnabled;
     if (settings.autoMpPotionId !== undefined) newCharacter.autoMpPotionId = settings.autoMpPotionId;
     if (settings.autoMpPotionPercent !== undefined) newCharacter.autoMpPotionPercent = settings.autoMpPotionPercent;
+    if (settings.autoMpPotionEnabled !== undefined) newCharacter.autoMpPotionEnabled = settings.autoMpPotionEnabled;
     set({ character: newCharacter }); get().save();
   },
 
@@ -404,7 +443,22 @@ export const useGameStore = create<GameState>((set, get) => ({
     const { character } = get(); if (!character) return;
     const newChar = JSON.parse(JSON.stringify(character));
     const res = claimQuestReward(newChar, id);
-    if (res.success) { set({ character: newChar }); get().save(); alert(res.msg); }
+    if (res.success) {
+      if (id === "TUT_BACKPACK") newChar.tutorialCompleted = true;
+      set({ character: newChar }); get().save(); alert(res.msg);
+    }
+  },
+
+  recordQuestAction: (action) => {
+    const { character } = get(); if (!character) return;
+    const hasPendingTutorialAction = Object.entries(character.quests?.active ?? {}).some(([id, state]) => {
+      const quest = QUESTS.find(template => template.id === id && template.category === "TUTORIAL");
+      return quest?.objectives.some((objective, index) => objective.type === action && (state.progress[index] ?? 0) < objective.count);
+    });
+    if (!hasPendingTutorialAction) return;
+    const newCharacter = JSON.parse(JSON.stringify(character));
+    trackQuestAction(newCharacter, action);
+    set({ character: newCharacter }); get().save();
   },
 
   useVial: (vial) => {
@@ -437,7 +491,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (!character) return { success: false, error: "Sem personagem" };
     const newCharacter = JSON.parse(JSON.stringify(character));
     const res = upgradeItemLevel(newCharacter, uid);
-    if (res.success) { set({ character: newCharacter }); get().save(); }
+    if (res.success) { trackQuestAction(newCharacter, "FORGE"); set({ character: newCharacter }); get().save(); }
     return res;
   },
 
@@ -446,7 +500,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (!character) return { success: false, error: "Sem personagem" };
     const newCharacter = JSON.parse(JSON.stringify(character));
     const res = rerollItemAffixes(newCharacter, uid);
-    if (res.success) { set({ character: newCharacter }); get().save(); }
+    if (res.success) { trackQuestAction(newCharacter, "FORGE"); set({ character: newCharacter }); get().save(); }
     return res;
   },
 

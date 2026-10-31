@@ -11,6 +11,7 @@ import { Shop } from "./ui/Shop";
 import { Quests } from "./ui/Quests";
 import { Wiki } from "./ui/Wiki";
 import { Duelos } from "./ui/Duelos";
+import { DivineBeasts } from "./ui/DivineBeasts";
 import { AudioManager } from "./ui/AudioManager";
 import { OfflineModal } from "./ui/OfflineModal";
 import { DeathScreen } from "./ui/DeathScreen";
@@ -19,26 +20,29 @@ import { AccessIcon, type AccessIconName } from "./ui/AccessIcon";
 import { LandingPage } from "./ui/LandingPage";
 import { closeLocalAccountSession, getLocalAccountSession, type LocalAccount } from "./utils/localAccounts";
 import { activateSaveAccount } from "./engine/save";
+import { getTutorialQuestSignal } from "./utils/questSignals";
 
-type Tab = "zona" | "personagem" | "backpack" | "depot" | "matriz" | "loja" | "missoes" | "duelos" | "wiki";
+type Tab = "zona" | "personagem" | "backpack" | "depot" | "matriz" | "pets" | "loja" | "missoes" | "duelos" | "wiki";
 
 const TAB_LABELS: Record<Tab, string> = {
   zona: "Explorar", personagem: "Personagem", backpack: "Mochila", depot: "Depósito",
-  matriz: "Matriz", loja: "Mercado", missoes: "Jornadas", duelos: "Duelo", wiki: "Arquivo",
+  matriz: "Matriz", pets: "Divine Beasts", loja: "Ferreiro", missoes: "Jornadas", duelos: "Duelo", wiki: "Arquivo",
 };
 
 const TAB_ICONS: Record<Tab, AccessIconName> = {
   zona: "explore", personagem: "character", backpack: "backpack", depot: "depot",
   matriz: "matrix", loja: "shop", missoes: "quest", duelos: "duel", wiki: "archive",
+  pets: "pet",
 };
 
 export default function App() {
   const [tab, setTab] = useState<Tab>("zona");
-  const { character, loadFromSave, newGame, startHunting, stopHunting } = useGameStore();
+  const { character, loadFromSave, newGame, startHunting, stopHunting, recordQuestAction } = useGameStore();
   const [name, setName] = useState("");
   const [debug, setDebugState] = useState(isDebug());
   const [focusQuestId, setFocusQuestId] = useState<string | null>(null);
   const [account, setAccount] = useState<LocalAccount | null>(() => getLocalAccountSession());
+  const tutorialSignal = character ? getTutorialQuestSignal(character) : null;
 
 useEffect(() => {
     if (!account) return;
@@ -53,6 +57,12 @@ useEffect(() => {
   }, [account?.id]);
 
   useEffect(() => { return () => stopHunting(); }, []);
+  useEffect(() => {
+    if (tab === "wiki") recordQuestAction("VISIT_WIKI");
+    if (tab === "matriz") recordQuestAction("VISIT_MATRIX");
+    if (tab === "loja") recordQuestAction("VISIT_FORGE");
+    if (tab === "backpack") recordQuestAction("VISIT_BACKPACK");
+  }, [tab, recordQuestAction]);
 
   const toggleDebug = () => {
     setDebug(!debug); setDebugState(!debug); window.location.reload();
@@ -137,18 +147,18 @@ useEffect(() => {
 
       <nav className="game-nav bg-arcane-panel/80 backdrop-blur border-b border-arcane-border sticky top-[73px] z-40">
         <div className="max-w-7xl mx-auto flex overflow-x-auto">
-          {(["zona", "personagem", "backpack", "depot", "matriz", "loja", "missoes", "duelos", "wiki"] as Tab[]).map((t) => (
+          {(["zona", "personagem", "backpack", "depot", "matriz", "pets", "loja", "missoes", "duelos", "wiki"] as Tab[]).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
               aria-current={tab === t ? "page" : undefined}
-              className={`nav-tab px-4 py-4 font-bold text-sm whitespace-nowrap transition-colors ${
+              className={`nav-tab relative flex items-center gap-2 px-4 py-4 font-bold text-sm whitespace-nowrap transition-colors ${
                 tab === t
                   ? "text-arcane-gold border-b-2 border-arcane-gold bg-arcane-border/30"
                   : "text-gray-400 hover:text-white"
               }`}
             >
-              <AccessIcon name={TAB_ICONS[t]} className="nav-tab-icon" />
+              <span className="relative"><AccessIcon name={TAB_ICONS[t]} className="nav-tab-icon" />{t === "missoes" && tutorialSignal && <span aria-hidden="true" className={`absolute -right-2 -top-2 grid h-4 min-w-4 place-items-center rounded-full px-1 text-[9px] font-black text-white shadow ${tutorialSignal.type === "claim" ? "bg-red-600 animate-pulse" : "bg-amber-500"}`}>{tutorialSignal.type === "claim" ? "!" : "?"}</span>}</span>
               {TAB_LABELS[t]}
             </button>
           ))}
@@ -161,6 +171,7 @@ useEffect(() => {
         {tab === "backpack" && <Backpack />}
         {tab === "depot" && <Depot />} {/* NOVO */}
         {tab === "matriz" && <MatrixView />}
+        {tab === "pets" && <DivineBeasts />}
         {tab === "loja" && <Shop />}
         {tab === "missoes" && <Quests focusQuestId={focusQuestId} onFocusHandled={clearQuestFocus} />}
         {tab === "duelos" && <Duelos />}

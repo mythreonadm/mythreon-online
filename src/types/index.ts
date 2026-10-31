@@ -72,6 +72,29 @@ export interface Race {
   bonus: ItemStats;
 }
 
+export type DivineBeastId = "LYSS_STAG" | "DHOR_GRIFFIN" | "AZHAR_SERPENT" | "ASTERION_OWL" | "VOID_FOX"
+  | "ASTER_PHOENIX" | "NOCTHAR_MOTH" | "KAELOR_SALAMANDER" | "VEYRA_TORTOISE" | "DHOR_BEETLE" | "LYSS_MOTH" | "NYR_SKY_RAY";
+
+export interface DivineBeastTemplate {
+  id: DivineBeastId;
+  name: string;
+  title: string;
+  region: string;
+  bossId: string;
+  rarity: "RARO" | "EPICO" | "LENDARIO";
+  emoji: string;
+  sprite: string;
+  lore: string;
+  bond: string;
+  bonus: Partial<ItemStats>;
+  dropChance: number;
+}
+
+export interface DivineBeastInstance {
+  id: DivineBeastId;
+  obtainedAt: number;
+}
+
 export interface Backpack {
   templateId: string; name: string; slots: number; dropBonus: number; rareDropBonus: number; xpBonus: number;
 }
@@ -101,7 +124,7 @@ export interface CharacterSkills {
   melee: number; defense: number; magic: number; distance: number; soul: number;
 }
 
-export type QuestObjectiveType = "KILL" | "KILL_BOSS" | "COLLECT" | "REACH_LEVEL" | "EARN_GOLD" | "SYNTHESIZE" | "SELL" | "SALVAGE" | "DISCOVER_TOTAL" | "DISCOVER_NAMED";
+export type QuestObjectiveType = "KILL" | "KILL_BOSS" | "COLLECT" | "REACH_LEVEL" | "EARN_GOLD" | "SYNTHESIZE" | "SELL" | "SALVAGE" | "FORGE" | "VISIT_WIKI" | "VISIT_MATRIX" | "VISIT_FORGE" | "VISIT_BACKPACK" | "DISCOVER_TOTAL" | "DISCOVER_NAMED";
 export type QuestCategory = "TUTORIAL" | "HISTORIA" | "CACA" | "COLETA" | "DESAFIO" | "REPETIVEL" | "COMPENDIO";
 
 export interface QuestObjective { type: QuestObjectiveType; target?: string; count: number; description: string; }
@@ -137,8 +160,12 @@ export interface Character {
   autoPotion?: number;
   autoHpPotionId?: string | null;
   autoHpPotionPercent?: number;
+  autoHpPotionEnabled?: boolean;
   autoMpPotionId?: string | null;
   autoMpPotionPercent?: number;
+  autoMpPotionEnabled?: boolean;
+  potionGoldWarningUntil?: number;
+  tutorialCompleted?: boolean;
   
   autoSell?: Rarity | null;
   autoSalvage?: Rarity | null;
@@ -160,10 +187,13 @@ export interface Character {
   arenaRewardDay?: string;
   arenaRewardsToday?: number;
   arenaRareRewardDay?: string;
+  divineBeasts?: DivineBeastInstance[];
+  activeDivineBeastId?: DivineBeastId;
   huntStatsByZone?: Record<string, HuntZoneStats>;
   fightEnemyId?: string;
   fightDamageDealt?: number;
   fightDamageTaken?: number;
+  fightPotionGoldSpent?: number;
   
   depot: Item[];       // NOVO
   depotMax: number;    // NOVO
@@ -187,6 +217,7 @@ export interface HuntEncounterRecord {
   damageTaken: number;
   xp: number;
   gold: number;
+  goldSpentPotions?: number;
   soldGold: number;
   lootValue: number;
   loot: HuntLootEntry[];
@@ -200,6 +231,7 @@ export interface HuntZoneStats {
   damageTaken: number;
   xp: number;
   gold: number;
+  goldSpentPotions?: number;
   soldGold: number;
   lootValue: number;
   history: HuntEncounterRecord[];
@@ -219,7 +251,7 @@ export interface TickResult {
   killed?: Record<string, number>;
   bossKills?: Record<string, number>;
   dropCounts?: Record<string, number>;
-  potionsUsed?: number; soldGold?: number;
+  potionsUsed?: number; goldSpentPotions?: number; soldGold?: number;
   salvagedItems?: number;
   skillLevelUp?: string;
   usedMp?: boolean;
@@ -229,4 +261,5 @@ export interface TickResult {
   damageTaken?: number;
   combatDurationMs?: number;
   encounters?: HuntEncounterRecord[];
+  divineBeastsDropped?: DivineBeastId[];
 }

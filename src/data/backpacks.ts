@@ -9,4 +9,3 @@ export const BACKPACKS: Record<string, Backpack> = {
   ARCANA: { templateId: "BACKPACK_ARCANA", name: "Mochila Arcana", slots: 100, dropBonus: 0.10, rareDropBonus: 0.08, xpBonus: 0.06 },
 };
 export const DEFAULT_BACKPACK = BACKPACKS.NORMAL;
-export const BACKPACK_PRICES: Record<string, number> = { COURO: 400, REFORCADA: 3500, EXPLORADOR: 18000, ARCANA: 90000 };

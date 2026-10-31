@@ -1,5 +1,5 @@
-import { Character, Enemy, Item, TickResult, Zone, CardInstance, HuntEncounterRecord, HuntLootEntry } from "../types";
-import { addItem, removeItem } from "./inventory";
+import { Character, Enemy, TickResult, Zone, CardInstance, HuntEncounterRecord, HuntLootEntry } from "../types";
+import { addItem } from "./inventory";
 import { rollDrops, rollAmbient, RARITY_ORDER } from "./drops";
 import { recalcStats, xpToNextLevel } from "./stats";
 import { sellValue } from "./shop";
@@ -7,6 +7,9 @@ import { salvageItem } from "./salvage";
 import { isDebug, TICK_MS, OFFLINE_MAX_HOURS } from "../config";
 import { ATTACK_SKILLS, ATTACK_SKILL_COOLDOWN, SUPPORT_EFFECTS, PASSIVE_EFFECTS } from "../data/skills";
 import { rollCardDrop, CARD_TEMPLATES } from "../data/cards";
+import { DIVINE_BEASTS } from "../data/divineBeasts";
+import { POTION_TEMPLATES } from "../data/items";
+import { getPotionUsePrice } from "../data/potionEconomy";
 
 interface Profile { xpPct: number; goldPct: number; dropPct: number; rarePct: number; healPct: number; skillDmgPct: number; cdReduce: number; lifesteal: number; }
 
@@ -29,16 +32,10 @@ export function buildProfile(char: Character): Profile {
   return p;
 }
 
-function pickPotion(char: Character, missing: number): Item | null {
-  const potions = char.inventory.items.filter((i) => i.category === "POCAO" && i.quantity > 0).sort((a, b) => (a.stats.hp ?? 0) - (b.stats.hp ?? 0));
-  if (potions.length === 0) return null;
-  return potions.find((p) => (p.stats.hp ?? 0) >= missing * 0.8) ?? potions[potions.length - 1];
-}
-
 const EQUIP_CATEGORIES = ["ARMA", "ARMADURA", "JOIA", "ESCUDO"];
 
 export function processTick(char: Character, zone: Zone, isOffline: boolean): TickResult {
-  const result: TickResult = { kills: 0, gold: 0, xp: 0, drops: [], levelsGained: 0, death: false, log: [], enemyHp: 0, enemyMaxHp: 0, zoneId: zone.id, killed: {}, bossKills: {}, dropCounts: {}, potionsUsed: 0, soldGold: 0, salvagedItems: 0, attacked: false, usedMp: false, cardsDropped: [], damageDealt: 0, damageTaken: 0, combatDurationMs: 0, encounters: [] };
+  const result: TickResult = { kills: 0, gold: 0, xp: 0, drops: [], levelsGained: 0, death: false, log: [], enemyHp: 0, enemyMaxHp: 0, zoneId: zone.id, killed: {}, bossKills: {}, dropCounts: {}, potionsUsed: 0, goldSpentPotions: 0, soldGold: 0, salvagedItems: 0, attacked: false, usedMp: false, cardsDropped: [], divineBeastsDropped: [], damageDealt: 0, damageTaken: 0, combatDurationMs: 0, encounters: [] };
   const debug = isDebug();
   const offlineLimitSeconds = OFFLINE_MAX_HOURS * 3600 + Math.max(0, char.skills?.soul ?? 0) * 15 * 60;
   const ticks = isOffline ? Math.min(Math.floor((Date.now() - char.lastTick) / TICK_MS), offlineLimitSeconds / (TICK_MS / 1000)) : 1;
@@ -50,9 +47,11 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
     char.fightEnemyId = fightId;
     char.fightDamageDealt = 0;
     char.fightDamageTaken = 0;
+    char.fightPotionGoldSpent = 0;
   }
   let encounterDamageDealt = char.fightDamageDealt ?? 0;
   let encounterDamageTaken = char.fightDamageTaken ?? 0;
+  let encounterPotionGoldSpent = char.fightPotionGoldSpent ?? 0;
   let simulatedTicks = 0;
   const recordDeathEncounter = () => {
     if (encounterDamageDealt <= 0 && encounterDamageTaken <= 0) return;
@@ -60,10 +59,12 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
       id: `${Date.now()}-${result.encounters!.length}-${baseEnemy.id}`,
       timestamp: Date.now(), zoneId: zone.id, enemyId: baseEnemy.id, enemyName: baseEnemy.name,
       damageDealt: encounterDamageDealt, damageTaken: encounterDamageTaken, xp: 0, gold: 0, soldGold: 0,
-      lootValue: 0, loot: [], outcome: "death",
+      goldSpentPotions: encounterPotionGoldSpent, lootValue: 0, loot: [], outcome: "death",
     });
     char.fightDamageDealt = 0;
     char.fightDamageTaken = 0;
+    char.fightPotionGoldSpent = 0;
+    encounterPotionGoldSpent = 0;
   };
 
   const diff = baseEnemy.difficulty || 1;
@@ -83,10 +84,15 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
   const skill = race ? ATTACK_SKILLS[race.ataqueId] : undefined;
   const skillCd = Math.max(1, ATTACK_SKILL_COOLDOWN - prof.cdReduce);
   
-  const hpPotId = char.autoHpPotionId || null;
+  const hpPotId = char.autoHpPotionEnabled ? char.autoHpPotionId || null : null;
   const hpPotPct = char.autoHpPotionPercent || 50;
-  const mpPotId = char.autoMpPotionId || null;
+  const mpPotId = char.autoMpPotionEnabled ? char.autoMpPotionId || null : null;
   const mpPotPct = char.autoMpPotionPercent || 50;
+  const warnInsufficientPotionGold = (cost: number) => {
+    if (Date.now() < (char.potionGoldWarningUntil ?? 0)) return;
+    char.potionGoldWarningUntil = Date.now() + 30_000;
+    result.log.push(`🪙 Gold insuficiente para usar a poção (custo: ${cost.toLocaleString("pt-BR")}g).`);
+  };
 
   let bagFullWarned = false;
 
@@ -117,13 +123,17 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
     }
 
     if (hpPotId && (playerHp / hpMax) * 100 <= hpPotPct) {
-      const potion = char.inventory.items.find(i => i.templateId === hpPotId && i.quantity > 0);
-      if (potion) { heal(potion.stats.hp ?? 0); removeItem(char.inventory, potion.uid, 1); result.potionsUsed!++; result.log.push(`🧪 Usou ${potion.name}.`); }
+      const potion = POTION_TEMPLATES[hpPotId];
+      const cost = getPotionUsePrice(hpPotId);
+      if (potion && char.gold >= cost) { char.gold -= cost; result.goldSpentPotions! += cost; encounterPotionGoldSpent += cost; char.fightPotionGoldSpent = encounterPotionGoldSpent; heal(potion.stats.hp ?? 0); result.potionsUsed!++; result.log.push(`🧪 ${potion.name}: -${cost.toLocaleString("pt-BR")}g.`); }
+      else if (potion) warnInsufficientPotionGold(cost);
     }
 
     if (mpPotId && (playerMp / mpMax) * 100 <= mpPotPct) {
-      const potion = char.inventory.items.find(i => i.templateId === mpPotId && i.quantity > 0);
-      if (potion) { playerMp = Math.min(mpMax, playerMp + (potion.stats.mp ?? 0)); removeItem(char.inventory, potion.uid, 1); result.potionsUsed!++; result.log.push(`🔮 Usou ${potion.name}.`); }
+      const potion = POTION_TEMPLATES[mpPotId];
+      const cost = getPotionUsePrice(mpPotId);
+      if (potion && char.gold >= cost) { char.gold -= cost; result.goldSpentPotions! += cost; encounterPotionGoldSpent += cost; char.fightPotionGoldSpent = encounterPotionGoldSpent; playerMp = Math.min(mpMax, playerMp + (potion.stats.mp ?? 0)); result.potionsUsed!++; result.log.push(`🔮 ${potion.name}: -${cost.toLocaleString("pt-BR")}g.`); }
+      else if (potion) warnInsufficientPotionGold(cost);
     }
 
     const triggered = !!support && t % support.cd === 0;
@@ -198,6 +208,18 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
         result.log.push(`🃏 CARTA DROPADA: ${template?.emoji} ${template?.name}!`);
         if (template) loot.push({ name: template.name, icon: template.emoji, quantity: 1, sellValue: 0, kind: "card" });
       }
+
+      let bondedBeastName: string | null = null;
+      const availableBeasts = enemy.isBoss
+        ? Object.values(DIVINE_BEASTS).filter(candidate => candidate.bossId === enemy.id && !(char.divineBeasts ?? []).some(owned => owned.id === candidate.id))
+        : [];
+      if (availableBeasts.length > 0 && Math.random() < availableBeasts[0].dropChance) {
+        const beast = availableBeasts[Math.floor(Math.random() * availableBeasts.length)];
+        if (!char.divineBeasts) char.divineBeasts = [];
+        char.divineBeasts.push({ id: beast.id, obtainedAt: Date.now() });
+        result.divineBeastsDropped!.push(beast.id);
+        bondedBeastName = beast.name;
+      }
       // ─── FIM DO DROP DE CARTA ───
       
       const drops = rollDrops(enemy, zone, char, { dropBonus: prof.dropPct, rareBonus: prof.rarePct, force: debug });
@@ -223,12 +245,14 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
         id: `${Date.now()}-${result.encounters!.length}-${enemy.id}`,
         timestamp: Date.now(), zoneId: zone.id, enemyId: enemy.id, enemyName: enemy.name,
         damageDealt: encounterDamageDealt, damageTaken: encounterDamageTaken, xp: xpGained, gold: g,
-        soldGold: (result.soldGold ?? 0) - soldGoldBefore,
+        goldSpentPotions: encounterPotionGoldSpent, soldGold: (result.soldGold ?? 0) - soldGoldBefore,
         lootValue: loot.reduce((total, item) => total + item.sellValue * item.quantity, 0), loot, outcome: "victory",
       };
       result.encounters!.push(encounter);
       encounterDamageDealt = 0;
       encounterDamageTaken = 0;
+      char.fightPotionGoldSpent = 0;
+      encounterPotionGoldSpent = 0;
       char.fightDamageDealt = 0;
       char.fightDamageTaken = 0;
       
@@ -240,6 +264,7 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
         result.log.push(`✨ Subiu para nível ${char.level}!`);
       }
       result.log.push(`Você derrotou o ${enemy.name} (${diff}⭐)! (+${g} ouro, +${xpGained} XP)`);
+      if (bondedBeastName) result.log.push(`🐾 Ressonância Divina! ${bondedBeastName} criou um vínculo com você.`);
       enemyHp = enemy.hp;
     } else {
       const e = support;

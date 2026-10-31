@@ -35,10 +35,14 @@ export function createNewCharacter(name: string): Character {
     autoSell: null,
     autoHpPotionId: "POCAO_VIDA_1",
     autoHpPotionPercent: 50,
+    autoHpPotionEnabled: false,
     autoMpPotionId: "POCAO_MANA_1",
     autoMpPotionPercent: 30,
+    autoMpPotionEnabled: false,
+    tutorialCompleted: false,
     activeVials: {},
     cards: [],
+    divineBeasts: [],
     depot: [],
     depotMax: 300,
   };
@@ -67,16 +71,26 @@ export function loadGame(): SaveFile | null {
       
       if (!data.character.autoHpPotionId) data.character.autoHpPotionId = "POCAO_VIDA_1";
       if (data.character.autoHpPotionPercent === undefined) data.character.autoHpPotionPercent = 50;
+      if (data.character.autoHpPotionEnabled === undefined) data.character.autoHpPotionEnabled = false;
       if (!data.character.autoMpPotionId) data.character.autoMpPotionId = "POCAO_MANA_1";
       if (data.character.autoMpPotionPercent === undefined) data.character.autoMpPotionPercent = 30;
+      if (data.character.autoMpPotionEnabled === undefined) data.character.autoMpPotionEnabled = false;
+      if (data.character.tutorialCompleted === undefined) {
+        data.character.tutorialCompleted = (data.character.level ?? 1) > 1;
+      }
       if (!data.character.activeVials) data.character.activeVials = {};
       
       // Migração para cartas
       if (!data.character.cards) data.character.cards = [];
+      if (!Array.isArray(data.character.divineBeasts)) data.character.divineBeasts = [];
       
       // Migração para o Depot
       if (!data.character.depot) data.character.depot = [];
       if (data.character.depotMax === undefined) data.character.depotMax = 300;
+      // Atualiza stacks antigos de componentes salvos antes do limite 999.
+      for (const item of [...(data.character.inventory?.items ?? []), ...(data.character.depot ?? [])]) {
+        if (item.category === "COMPONENTE" && item.stackable) item.maxStack = 999;
+      }
     }
     return data; 
   } catch (e) { 

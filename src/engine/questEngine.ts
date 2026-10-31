@@ -1,6 +1,8 @@
-import { Character, Race, TickResult } from "../types";
+import { Character, Race, TickResult, QuestObjectiveType } from "../types";
 import { QUESTS } from "../data/quests";
 import { addItem } from "./inventory";
+import { makeEquipment, makeBackpack } from "./drops";
+import { getPotionUsePrice } from "../data/potionEconomy";
 
 export function updateQuestProgress(char: Character, result: TickResult) {
   if (!char.quests || !char.quests.active) return;
@@ -37,6 +39,17 @@ export function updateQuestProgress(char: Character, result: TickResult) {
       }
       if (obj.type === "EARN_GOLD") progress[index] = (progress[index] || 0) + result.gold;
       if (obj.type === "SALVAGE" && result.salvagedItems) progress[index] = (progress[index] || 0) + result.salvagedItems;
+    });
+  }
+}
+
+export function trackQuestAction(char: Character, action: QuestObjectiveType, amount = 1) {
+  if (!char.quests?.active) return;
+  for (const [questId, state] of Object.entries(char.quests.active)) {
+    const template = QUESTS.find(quest => quest.id === questId);
+    if (!template || template.category !== "TUTORIAL") continue;
+    template.objectives.forEach((objective, index) => {
+      if (objective.type === action) state.progress[index] = Math.min(objective.count, (state.progress[index] ?? 0) + amount);
     });
   }
 }
@@ -92,11 +105,19 @@ export function claimQuestReward(char: Character, questId: string): { success: b
   
   if (template.rewards.items) {
     for (const itemReward of template.rewards.items) {
-       addItem(char.inventory, { 
-         uid: Math.random().toString(), templateId: itemReward.templateId, name: "Recompensa", 
-         category: "ARMA", tier: 1, rarity: itemReward.rarity || "COMUM", stats: {}, affixes: [], 
-         stackable: false, maxStack: 1, quantity: itemReward.quantity || 1, icon: "🎁" 
-       } as any);
+      const quantity = itemReward.quantity || 1;
+      if (itemReward.templateId.startsWith("POCAO_")) {
+        char.gold += getPotionUsePrice(itemReward.templateId) * quantity;
+        continue;
+      }
+      const backpackKey = itemReward.templateId.startsWith("BACKPACK_") ? itemReward.templateId.slice("BACKPACK_".length) : null;
+      const reward = backpackKey
+        ? makeBackpack(backpackKey)
+        : makeEquipment(itemReward.templateId, itemReward.rarity || "COMUM");
+      if (reward) {
+        reward.quantity = quantity;
+        addItem(char.inventory, reward);
+      }
     }
   }
 

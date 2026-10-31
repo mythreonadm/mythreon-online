@@ -1,6 +1,7 @@
 import { Character, ItemStats } from "../types";
 import { PASSIVE_EFFECTS, SUPPORT_EFFECTS } from "../data/skills";
 import { VIALS } from "../data/vials";
+import { DIVINE_BEASTS } from "../data/divineBeasts";
 
 export function getBaseStats(level: number): ItemStats {
   return { 
@@ -24,6 +25,7 @@ export function recalcStats(char: Character): void {
   const fromGear: any = {};
   const fromRace: any = {};
   const fromVials: any = {};
+  const fromBeast: any = {};
 
   // 1. Soma os stats de Equipamentos e Afixos
   for (const slot of Object.keys(char.equipped)) {
@@ -55,6 +57,10 @@ export function recalcStats(char: Character): void {
   const passive = char.activeRace ? PASSIVE_EFFECTS[char.activeRace.passivaId] : undefined;
   const support = char.activeRace ? SUPPORT_EFFECTS[char.activeRace.suporteId] : undefined;
   const fromPassive: any = passive?.stats ?? {};
+  const activeBeast = char.activeDivineBeastId ? DIVINE_BEASTS[char.activeDivineBeastId] : undefined;
+  if (activeBeast && (char.divineBeasts ?? []).some(beast => beast.id === activeBeast.id)) {
+    for (const [k, v] of Object.entries(activeBeast.bonus)) fromBeast[k] = v;
+  }
 
   // 5. Skills de Treino
   const skills = char.skills || { melee: 0, defense: 0, magic: 0, distance: 0, soul: 0 };
@@ -72,7 +78,7 @@ export function recalcStats(char: Character): void {
   const armMult = 1 + (passive?.armPct ?? 0) + (support?.permArmPct ?? 0);
   const hpMult = 1 + (passive?.hpPct ?? 0);
 
-  const sum = (k: string) => (fromGear[k] ?? 0) + (fromRace[k] ?? 0) + (fromPassive[k] ?? 0) + (fromVials[k] ?? 0);
+  const sum = (k: string) => (fromGear[k] ?? 0) + (fromRace[k] ?? 0) + (fromPassive[k] ?? 0) + (fromVials[k] ?? 0) + (fromBeast[k] ?? 0);
 
   // 7. Junta tudo e aplica os limites (Caps)
   char.baseStats = {

@@ -1,16 +1,26 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { ZONES } from "../data/zones";
 import { ALL_EQUIPMENT_TEMPLATES, POTION_TEMPLATES, FRAGMENT_TEMPLATES, UNIQUE_TEMPLATES } from "../data/items";
 import { ATAQUES, SUPORTES, PASSIVAS } from "../data/components";
 import { NAMED_RACES, RACE_LORE } from "../data/races";
 import { VIALS } from "../data/vials";
-import { BACKPACKS, BACKPACK_PRICES } from "../data/backpacks";
+import { BACKPACKS } from "../data/backpacks";
 import { ATTACK_SKILLS, SUPPORT_EFFECTS, PASSIVE_EFFECTS } from "../data/skills";
+import { DIVINE_BEASTS, DIVINE_BEAST_ORDER } from "../data/divineBeasts";
+import { HUMAN_LINEAGE, LINEAGES } from "../data/lineages";
+import { Item } from "../types";
+import { getPotionUsePrice } from "../data/potionEconomy";
 
-type Section = "history" | "monsters" | "zones" | "equipment" | "consumables" | "components" | "races" | "bosses" | "backpacks" | "fragments";
+const PERCENT_STATS = new Set(["crit", "hit", "dge", "spd", "blk", "resFisico", "resMagico", "critDmg", "lifesteal"]);
+function formatWikiStat(stat: string, value: number) {
+  return PERCENT_STATS.has(stat) && Math.abs(value) <= 1 ? `${(value * 100).toFixed(0)}%` : value.toLocaleString("pt-BR");
+}
+
+type Section = "history" | "beasts" | "monsters" | "zones" | "equipment" | "consumables" | "components" | "races" | "bosses" | "backpacks" | "fragments";
 
 const SECTION_META: { id: Section; label: string; icon: string; color: string }[] = [
   { id: "history", label: "História", icon: "📜", color: "text-arcane-gold" },
+  { id: "beasts", label: "Divine Beasts", icon: "🐾", color: "text-arcane-gold" },
   { id: "monsters", label: "Monstros", icon: "👹", color: "text-red-400" },
   { id: "zones", label: "Zonas", icon: "🗺️", color: "text-green-400" },
   { id: "equipment", label: "Equipamentos", icon: "⚔️", color: "text-arcane-cyan" },
@@ -51,7 +61,7 @@ export function Wiki() {
           </div>
           <div className="text-right text-xs text-gray-500">
             <div>Arquivo da Cúpula Sinax</div>
-            <div className="text-arcane-cyan font-bold">Tomo I · v1.0</div>
+            <div className="text-arcane-cyan font-bold">Tomo I · v1.2</div>
           </div>
         </div>
         {section !== "history" && (
@@ -85,6 +95,7 @@ export function Wiki() {
       {/* CONTENT */}
       <div className="min-h-[400px]">
         {section === "history" && <HistorySection />}
+        {section === "beasts" && <DivineBeastsWikiSection search={search} />}
         {section === "monsters" && <MonstersSection search={search} />}
         {section === "zones" && <ZonesSection search={search} />}
         {section === "equipment" && <EquipmentSection search={search} />}
@@ -97,6 +108,60 @@ export function Wiki() {
       </div>
     </div>
   );
+}
+
+function WikiItemIcon({ item, size = "h-10 w-10" }: { item: Pick<Item, "templateId" | "name" | "icon">; size?: string }) {
+  const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [item.templateId]);
+  return failed
+    ? <span className={`${size} grid shrink-0 place-items-center text-2xl`}>{item.icon}</span>
+    : <img src={`/assets/items/${item.templateId}.png`} alt={item.name} className={`${size} shrink-0 object-contain [image-rendering:pixelated]`} onError={() => setFailed(true)} />;
+}
+
+function WikiAssetIcon({ templateId, name, emoji = "🎒", size = "h-12 w-12" }: { templateId: string; name: string; emoji?: string; size?: string }) {
+  const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [templateId]);
+  return failed
+    ? <span className={`${size} grid shrink-0 place-items-center text-3xl`}>{emoji}</span>
+    : <img src={`/assets/items/${templateId}.png`} alt={name} className={`${size} shrink-0 object-contain [image-rendering:pixelated]`} onError={() => setFailed(true)} />;
+}
+
+function DivineBeastsWikiSection({ search }: { search: string }) {
+  const filtered = DIVINE_BEAST_ORDER.map(id => DIVINE_BEASTS[id]).filter(beast => `${beast.name} ${beast.title} ${beast.region} ${beast.lore} ${beast.bond}`.toLowerCase().includes(search.toLowerCase()));
+  const statNames: Record<string, string> = { hp: "Vida", mp: "Mana", atk: "Ataque", matk: "Magia", arm: "Armadura", def: "Defesa", crit: "Crítico", hit: "Precisão", dge: "Esquiva", spd: "Velocidade", blk: "Bloqueio", resMagico: "Res. mágica" };
+  const percentStats = new Set(["crit", "hit", "dge", "spd", "resMagico"]);
+  const bossNames = Object.values(ZONES).flatMap(zone => zone.enemies).reduce<Record<string, string>>((map, enemy) => { map[enemy.id] = enemy.name; return map; }, {});
+  return <div className="space-y-5">
+    <div className="rounded-xl border border-arcane-gold/30 bg-[radial-gradient(ellipse_at_top_right,rgba(201,160,77,.12),transparent_55%),#10151a] p-5">
+      <h2 className="text-xl font-black text-arcane-gold">Ecos vivos do Primeiro Canto</h2>
+      <p className="mt-2 text-sm leading-relaxed text-gray-300">As Divine Beasts são memórias vivas da Essência, despertadas nos guardiões de Mythreon. Elas representam o Caminho da Ressonância: vínculo, adaptação e cooperação com forças que já habitavam o mundo. O vínculo é uma escolha de evolução e identidade; na mecânica atual, a criatura ativa ocupa o espaço de Ressonância compartilhado com a Matriz, enquanto as demais permanecem na coleção.</p>
+      <div className="mt-3 grid gap-2 sm:grid-cols-3 text-xs">
+        <div className="rounded-lg border border-white/10 bg-black/20 p-3"><strong className="text-gray-200">Formação</strong><p className="mt-1 text-gray-400">Moldadores canalizam Dhor, Prime e Chronos para resistir, estruturar e fortalecer.</p></div>
+        <div className="rounded-lg border border-white/10 bg-black/20 p-3"><strong className="text-red-300">Ruptura</strong><p className="mt-1 text-gray-400">Condutores aceleram a Essência com Kaelor, Raan e Voro para atacar e romper limites.</p></div>
+        <div className="rounded-lg border border-arcane-gold/30 bg-arcane-gold/5 p-3"><strong className="text-arcane-gold">Ressonância</strong><p className="mt-1 text-gray-400">Tecelões conectam Lyss, Emohna e Veyra; Divine Beasts manifestam esse caminho pelo vínculo com ecos vivos.</p></div>
+      </div>
+      <p className="mt-3 text-[11px] text-gray-500">Cada chefe regional pode revelar um eco ainda não descoberto: 12% de chance por vitória. Cada vínculo é único; a criatura pode ser ativada ou guardada sem perder a coleção.</p>
+    </div>
+    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      {filtered.map(beast => {
+        const stats = Object.entries(beast.bonus);
+        return <article key={beast.id} className="overflow-hidden rounded-xl border border-arcane-border bg-arcane-panel">
+          <div className="flex items-center gap-3 border-b border-white/5 bg-black/20 p-3">
+            <BeastWikiImage sprite={beast.sprite} name={beast.name} emoji={beast.emoji} />
+            <div className="min-w-0"><div className="text-[9px] font-bold uppercase tracking-widest text-arcane-gold">{beast.region} · {beast.rarity}</div><h3 className="mt-1 text-lg font-black text-white">{beast.name}</h3><p className="text-xs text-gray-400">{beast.title}</p><p className="mt-2 text-[10px] text-gray-500">Guardião: {bossNames[beast.bossId] ?? beast.bossId}</p></div>
+          </div>
+          <div className="space-y-3 p-3"><p className="text-xs leading-relaxed text-gray-300">{beast.lore}</p><p className="text-[11px] italic leading-relaxed text-gray-500">{beast.bond}</p><div className="flex flex-wrap gap-1.5">{stats.map(([key, value]) => <span key={key} className="rounded border border-emerald-900/40 bg-emerald-950/20 px-2 py-1 text-[10px] font-bold text-emerald-300">+{percentStats.has(key) ? `${(Number(value) * 100).toFixed(0)}%` : value} {statNames[key] ?? key}</span>)}</div><div className="border-t border-white/5 pt-2 text-[10px] text-gray-500">Vínculo possível ao derrotar o chefe regional · 12% por vitória</div></div>
+        </article>;
+      })}
+    </div>
+  </div>;
+}
+
+function BeastWikiImage({ sprite, name, emoji }: { sprite: string; name: string; emoji: string }) {
+  const [failed, setFailed] = useState(false);
+  return <div className="grid h-24 w-24 shrink-0 place-items-center rounded-lg border border-white/10 bg-black/30">
+    {failed ? <span className="text-4xl">{emoji}</span> : <img src={sprite} alt={name} className="h-full w-full object-contain [image-rendering:pixelated]" onError={() => setFailed(true)} />}
+  </div>;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -118,6 +183,7 @@ export function HistorySection() {
     { num: 10, title: "A Era do Sangue e do Ouro", icon: "🏰", era: "Era das Guildas" },
     { num: 11, title: "As Relíquias e as Cicatrizes", icon: "⚜️", era: "Era das Guildas" },
     { num: 12, title: "O Último Vínculo", icon: "🐕", era: "O Presente" },
+    { num: 13, title: "Os Ecos Divinos", icon: "🐾", era: "O Presente" },
   ];
 
   const currentChapter = chapters.find(c => c.num === chapter)!;
@@ -545,6 +611,38 @@ function ChapterContent({ chapter }: { chapter: number }) {
         </div>
       );
 
+    case 13:
+      return (
+        <div>
+          <Q>Nem toda memória quer ser guardada em um arquivo. Algumas escolhem continuar vivas — e caminhar ao lado de alguém.</Q>
+          <H>O Nome que os Mortais Deram</H>
+          <P>Depois da Grande Ruptura, os Arquivistas encontraram doze ressonâncias vivas. Cinco surgiram nas grandes regiões conhecidas; outras sete carregavam traços das Consciências Primordiais. Nenhuma delas era uma Consciência em si, e nenhuma era um dos doze Primordiais ligados ao teste de Apolossaurus. Eram ecos menores, vivos e ainda assim impossíveis de explicar.</P>
+          <P>Os povos passaram a chamá-las de <strong className="text-arcane-gold">Divine Beasts</strong>. O nome não significa que sejam deuses. É apenas a palavra que encontraram para descrever seres cuja presença parece antiga como o mundo.</P>
+          <H>Os Cinco Ecos Regionais</H>
+          <ul className="list-disc list-inside text-gray-300 space-y-2 mb-4 pl-4">
+            <li><strong className="text-arcane-gold">Elarion</strong>, o Cervo das Raízes Luminosas, guarda a persistência de Lyss.</li>
+            <li><strong className="text-arcane-gold">Kharad</strong>, o Grifo da Coroa de Basalto, carrega a firmeza de Dhor.</li>
+            <li><strong className="text-arcane-gold">Nerith</strong>, a Serpe das Marés de Nacre, acompanha o fluxo de Azhar.</li>
+            <li><strong className="text-arcane-gold">Orivane</strong>, a Coruja dos Arquivos Celestes, preserva as lembranças de Asterion.</li>
+            <li><strong className="text-arcane-gold">Vesper</strong>, a Raposa do Limiar Silencioso, atravessa as memórias feridas da Cicatriz Profunda.</li>
+          </ul>
+          <H>Os Sete Ecos das Consciências</H>
+          <ul className="list-disc list-inside text-gray-300 space-y-2 mb-4 pl-4">
+            <li><strong className="text-arcane-gold">Solenne</strong>, a Fênix da Primeira Luz, carrega o eco de Aster.</li>
+            <li><strong className="text-arcane-gold">Nhal</strong>, a Mariposa do Silêncio Sereno, carrega o eco de Nocthar.</li>
+            <li><strong className="text-arcane-gold">Cindervane</strong>, a Salamandra da Mudança, carrega o eco de Kaelor.</li>
+            <li><strong className="text-arcane-gold">Memnora</strong>, a Tartaruga do Arquivo Vivo, carrega o eco de Veyra.</li>
+            <li><strong className="text-arcane-gold">Orruk</strong>, o Besouro-Cristal da Matéria, carrega o eco de Dhor.</li>
+            <li><strong className="text-arcane-gold">Floravelle</strong>, a Mariposa dos Brotos, carrega o eco de Lyss.</li>
+            <li><strong className="text-arcane-gold">Aeralis</strong>, a Raia-Celeste das Correntes, carrega o eco de Nyr.</li>
+          </ul>
+          <H>O Vínculo</H>
+          <P>Uma Divine Beast não é capturada nem obrigada a obedecer. Quando um viajante vence o guardião de uma região, a Essência pode reconhecer naquela jornada uma frequência compatível. Se a criatura aceitar, forma-se um vínculo — um encontro de vontades associado à Lei do Vínculo, Emohna.</P>
+          <P>Uma Matriz e uma Divine Beast ocupam o mesmo espaço de Ressonância. A Matriz canaliza um padrão de Leis; a Beast compartilha sua própria memória viva. O viajante pode escolher qual dessas presenças conduzirá sua força. A escolha pode ser desfeita, e nenhuma descoberta é perdida.</P>
+          <Q>Não caminham atrás de nós. Caminham conosco. E, enquanto houver memória, nenhum vínculo desaparece por completo.</Q>
+        </div>
+      );
+
     default:
       return null;
   }
@@ -576,12 +674,15 @@ function MonstersSection({ search }: { search: string }) {
         {filtered.map((m) => (
           <div key={m.id} className={`bg-arcane-panel border-2 rounded-lg p-3 ${m.isBoss ? "border-red-900/70" : "border-arcane-border"}`}>
             <div className="flex justify-between items-start mb-2">
-              <div>
+              <div className="flex items-center gap-2">
+                {m.sprite ? <img src={m.sprite} alt="" className="h-12 w-12 object-contain [image-rendering:pixelated]" /> : <span className="text-2xl">{m.emoji}</span>}
+                <div>
                 <h3 className="font-bold text-white text-sm flex items-center gap-1">
-                  {m.emoji} {m.name}
+                  {m.name}
                   {m.isBoss && <span className="text-[9px] bg-red-600 text-white px-1 rounded">👑</span>}
                 </h3>
                 <p className="text-[10px] text-gray-500">{m.zoneName} · Nv {m.minLevel}</p>
+                </div>
               </div>
               <span className="text-yellow-400 text-xs">{'⭐'.repeat(m.difficulty)}</span>
             </div>
@@ -593,9 +694,12 @@ function MonstersSection({ search }: { search: string }) {
             </div>
             <div className="text-[10px] text-gray-400 space-y-0.5">
               <div>💰 Ouro: {m.goldMin}–{m.goldMax}</div>
+              <div>⚔️ Equipamento: {m.isBoss ? "60%" : "15%"} de chance base · Tier da zona</div>
               <div>🔮 Drop: <span className="text-arcane-cyan">{ATAQUES[m.componentId]?.name || m.componentId}</span> ({(m.componentChance * 100).toFixed(0)}%)</div>
               {m.essenceId && <div>💎 Essência: <span className="text-arcane-cyan">{SUPORTES[m.essenceId]?.name || m.essenceId}</span> ({((m.essenceChance || 0) * 100).toFixed(0)}%)</div>}
-              {m.uniqueDropId && <div className="text-yellow-400">🏆 Único: {UNIQUE_TEMPLATES[m.uniqueDropId]?.name}</div>}
+              {m.uniqueDropId && <div className="text-yellow-400">🏆 Único: {UNIQUE_TEMPLATES[m.uniqueDropId]?.name} ({((m.uniqueDropChance || 0) * 100).toFixed(1)}%)</div>}
+              {m.backpackDrop && <div className="text-emerald-300">🎒 Mochila: {BACKPACKS[m.backpackDrop]?.name} ({((m.backpackChance || 0) * 100).toFixed(1)}%)</div>}
+              {m.isBoss && <div className="text-arcane-gold">🐾 Divine Beast: 12% enquanto houver ecos não descobertos para este chefe</div>}
             </div>
           </div>
         ))}
@@ -612,7 +716,8 @@ function ZonesSection({ search }: { search: string }) {
   return (
     <div className="space-y-3">
       {zones.map(z => (
-        <div key={z.id} className="bg-arcane-panel border border-arcane-border rounded-lg p-4">
+        <div key={z.id} className="relative isolate overflow-hidden bg-arcane-panel border border-arcane-border rounded-lg p-4">
+          <div aria-hidden="true" className="absolute inset-0 -z-10 bg-cover bg-center opacity-20" style={{ backgroundImage: `linear-gradient(90deg, rgba(9,14,18,.9), rgba(9,14,18,.55)), url('/assets/backgrounds/${z.theme}.png')` }} />
           <div className="flex justify-between items-start mb-3">
             <div>
               <h3 className="font-bold text-arcane-gold text-lg">🗺️ {z.name}</h3>
@@ -623,11 +728,12 @@ function ZonesSection({ search }: { search: string }) {
               <div>{z.enemies.length} inimigos</div>
             </div>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
             {z.enemies.map(e => (
-              <span key={e.id} className="bg-arcane-bg border border-arcane-border rounded px-2 py-1 text-xs">
-                {e.emoji} {e.name} <span className="text-yellow-400">{'⭐'.repeat(e.difficulty)}</span>
-              </span>
+              <div key={e.id} className="flex items-center gap-2 rounded-lg border border-white/5 bg-black/35 px-2 py-1.5 text-xs">
+                {e.sprite ? <img src={e.sprite} alt="" className="h-10 w-10 object-contain [image-rendering:pixelated]" /> : <span className="text-xl">{e.emoji}</span>}
+                <span className="min-w-0"><strong className="block truncate text-gray-200">{e.name}</strong><span className="text-yellow-400">{'⭐'.repeat(e.difficulty)}</span>{e.isBoss && <span className="ml-1 text-red-300">Chefe</span>}</span>
+              </div>
             ))}
           </div>
         </div>
@@ -668,20 +774,18 @@ function EquipmentSection({ search }: { search: string }) {
         ))}
       </div>
       <div className="text-xs text-gray-400">{items.length} itens encontrados</div>
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
-        {items.map(item => (
-          <div key={item.templateId} className="bg-arcane-panel border border-arcane-border rounded-lg p-3">
-            <h3 className="font-bold text-white text-sm flex items-center gap-1"><span>{item.icon}</span> {item.name}</h3>
-            <p className="text-[10px] text-gray-500 mb-2">Tier {item.tier} · {item.category}</p>
-            <div className="flex flex-wrap gap-1 text-[10px]">
-              {Object.entries(item.stats).map(([k, v]) => (
-                <span key={k} className="bg-arcane-bg px-1.5 py-0.5 rounded">
-                  <span className="text-gray-500 uppercase">{k}:</span> <span className="text-white font-bold">{v as number}</span>
-                </span>
-              ))}
-            </div>
-          </div>
-        ))}
+      <div className="overflow-hidden rounded-xl border border-arcane-border bg-arcane-panel shadow-xl">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[720px] border-collapse text-left text-xs">
+            <thead className="bg-black/30 text-[10px] uppercase tracking-wider text-gray-400"><tr><th className="px-4 py-3">Equipamento</th><th className="px-4 py-3">Tier</th><th className="px-4 py-3">Categoria</th><th className="px-4 py-3">Atributos base</th></tr></thead>
+            <tbody className="divide-y divide-white/5">{items.map(item => <tr key={item.templateId} className="transition hover:bg-white/[.035]">
+              <td className="px-4 py-2"><div className="flex items-center gap-3"><WikiItemIcon item={item} size="h-10 w-10" /><span className="font-bold text-white">{item.name}</span></div></td>
+              <td className="px-4 py-2"><span className="rounded-full border border-arcane-cyan/30 bg-arcane-cyan/10 px-2 py-1 font-bold text-arcane-cyan">T{item.tier}</span></td>
+              <td className="px-4 py-2 text-gray-300">{item.category}</td>
+              <td className="px-4 py-2"><div className="flex flex-wrap gap-1">{Object.entries(item.stats).map(([k, v]) => <span key={k} className="rounded bg-black/30 px-2 py-1 text-[10px]"><span className="text-gray-500 uppercase">{k}:</span> <strong className="text-white">{formatWikiStat(k, v as number)}</strong></span>)}</div></td>
+            </tr>)}</tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
@@ -701,9 +805,10 @@ function ConsumablesSection({ search }: { search: string }) {
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
           {potions.map(p => (
             <div key={p.templateId} className="bg-arcane-panel border border-arcane-border rounded-lg p-3">
-              <h4 className="font-bold text-white text-sm">{p.icon} {p.name}</h4>
+              <h4 className="font-bold text-white text-sm flex items-center gap-2"><WikiItemIcon item={p} size="h-9 w-9" /> {p.name}</h4>
               <p className="text-[10px] text-gray-500 mt-1">{p.stats.hp ? `❤️ Cura ${p.stats.hp} HP` : `🔮 Restaura ${p.stats.mp} MP`}</p>
-              <p className="text-[10px] text-gray-400 mt-1">Tier {p.tier} · Stack: 50</p>
+              <p className="text-[10px] text-arcane-gold mt-1">💰 {getPotionUsePrice(p.templateId).toLocaleString("pt-BR")} gold por uso</p>
+              <p className="text-[10px] text-gray-500 mt-1">Ative o consumo automático na tela de caça. O valor só é cobrado quando a poção é acionada.</p>
             </div>
           ))}
         </div>
@@ -781,9 +886,17 @@ function ComponentsSection({ search }: { search: string }) {
 function RacesSection({ search }: { search: string }) {
   const [showCombos, setShowCombos] = useState(false);
   const filtered = NAMED_RACES.filter(r => r.name.toLowerCase().includes(search.toLowerCase()));
+  const lineages = [HUMAN_LINEAGE, ...Object.values(LINEAGES)].filter(lineage => `${lineage.name} ${lineage.description}`.toLowerCase().includes(search.toLowerCase()));
 
   return (
     <div className="space-y-4">
+      <section className="rounded-xl border border-arcane-cyan/25 bg-gradient-to-br from-arcane-panel via-slate-950 to-arcane-panel p-4 shadow-lg">
+        <div className="mb-3"><h3 className="text-lg font-black text-arcane-cyan">Linhagens de combate</h3><p className="text-xs text-gray-400">As artes abaixo identificam a linhagem humana inicial e as 15 linhagens associadas aos componentes de Ataque. A combinação com Suporte e Passiva forma uma raça/build.</p></div>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">{lineages.map(lineage => <article key={lineage.id} className="flex min-w-0 items-center gap-2 rounded-lg border border-white/5 bg-black/25 p-2 transition hover:border-arcane-cyan/30">
+          <img src={lineage.sprite} alt={lineage.name} className="h-12 w-12 shrink-0 object-contain [image-rendering:pixelated]" onError={e => { e.currentTarget.style.visibility = "hidden"; }} />
+          <div className="min-w-0"><h4 className="truncate text-[11px] font-bold text-white">{lineage.name}</h4><p className="line-clamp-2 text-[9px] leading-tight text-gray-500">{lineage.description}</p></div>
+        </article>)}</div>
+      </section>
       <div className="bg-arcane-panel border border-arcane-border rounded-lg p-4">
         <div className="flex justify-between items-center flex-wrap gap-2">
           <div>
@@ -805,13 +918,13 @@ function RacesSection({ search }: { search: string }) {
           const pasEffect = PASSIVE_EFFECTS[r.passivaId];
           return (
             <div key={r.id} className="bg-arcane-panel border-2 border-arcane-gold/30 rounded-lg p-4">
-              <h3 className="font-bold text-arcane-gold text-base">{r.name}</h3>
+              <div className="mb-2 flex items-center gap-3"><img src={LINEAGES[r.ataqueId]?.sprite} alt="" className="h-14 w-14 object-contain [image-rendering:pixelated]" /><div><h3 className="font-bold text-arcane-gold text-base">{r.name}</h3><p className="text-[10px] text-gray-500">Linhagem {LINEAGES[r.ataqueId]?.name ?? ""}</p></div></div>
               <p className="text-[10px] text-gray-500 mb-2">ID: {r.id} · ★ Nomeada</p>
               <p className="text-[11px] italic text-gray-400 mb-3">"{RACE_LORE[r.id]}"</p>
               <div className="grid grid-cols-2 gap-1 text-[10px] mb-3">
                 {Object.entries(r.bonus).map(([k, v]) => (
                   <div key={k} className="bg-arcane-bg px-1 py-0.5 rounded text-center">
-                    <span className="text-gray-500 uppercase">{k}:</span> <span className="text-green-400 font-bold">+{(v as number) % 1 === 0 ? v : `${(v as number).toFixed(2)}`}</span>
+                    <span className="text-gray-500 uppercase">{k}:</span> <span className="text-green-400 font-bold">+{formatWikiStat(k, v as number)}</span>
                   </div>
                 ))}
               </div>
@@ -861,9 +974,9 @@ function BossesSection({ search }: { search: string }) {
             const unique = b.uniqueDropId ? UNIQUE_TEMPLATES[b.uniqueDropId] : null;
             return (
               <div key={b.id} className="bg-arcane-panel border-2 border-red-900/50 rounded-lg p-4">
-                <div className="flex justify-between items-start mb-2">
+                <div className="flex items-center justify-between gap-3 mb-2">
                   <div>
-                    <h4 className="font-bold text-white text-base">{b.emoji} {b.name} <span className="text-red-500">👑</span></h4>
+                    <div className="flex items-center gap-2">{b.sprite ? <img src={b.sprite} alt="" className="h-14 w-14 object-contain [image-rendering:pixelated]" /> : <span className="text-2xl">{b.emoji}</span>}<h4 className="font-bold text-white text-base">{b.name} <span className="text-red-500">👑</span></h4></div>
                     <p className="text-[10px] text-gray-500">{b.zoneName} · Nv {b.minLevel}</p>
                   </div>
                   <span className="text-yellow-400">{'⭐'.repeat(b.difficulty)}</span>
@@ -890,11 +1003,11 @@ function BossesSection({ search }: { search: string }) {
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
           {uniques.map(u => (
             <div key={u.templateId} className="bg-gradient-to-br from-yellow-900/20 to-arcane-panel border-2 border-arcane-gold/50 rounded-lg p-3">
-              <h4 className="font-bold text-arcane-gold text-sm">{u.icon} {u.name}</h4>
+              <h4 className="font-bold text-arcane-gold text-sm flex items-center gap-2"><WikiItemIcon item={u} size="h-10 w-10" /> {u.name}</h4>
               <p className="text-[10px] text-gray-400 italic mt-1">{u.uniqueEffect}</p>
               <div className="flex flex-wrap gap-1 text-[10px] mt-2">
                 {Object.entries(u.stats).map(([k, v]) => (
-                  <span key={k} className="bg-arcane-bg px-1 py-0.5 rounded"><span className="text-gray-500 uppercase">{k}:</span> <span className="text-white">{v as number}</span></span>
+                  <span key={k} className="bg-arcane-bg px-1 py-0.5 rounded"><span className="text-gray-500 uppercase">{k}:</span> <span className="text-white">{formatWikiStat(k, v as number)}</span></span>
                 ))}
               </div>
             </div>
@@ -913,16 +1026,16 @@ function BackpacksSection({ search }: { search: string }) {
   return (
     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
       {backpacks.map(([key, bp]) => {
-        const price = BACKPACK_PRICES[key];
+        const sources = Object.values(ZONES).flatMap(zone => zone.enemies.filter(enemy => enemy.backpackDrop === key).map(enemy => ({ zone: zone.name, enemy: enemy.name, chance: enemy.backpackChance ?? 0 })));
         return (
           <div key={key} className="bg-arcane-panel border border-arcane-border rounded-lg p-4">
-            <h3 className="font-bold text-white text-sm">🎒 {bp.name}</h3>
+            <div className="flex items-center gap-3"><WikiAssetIcon templateId={bp.templateId} name={bp.name} /><h3 className="font-bold text-white text-sm">{bp.name}</h3></div>
             <div className="mt-2 space-y-1 text-[11px]">
               <div className="flex justify-between"><span className="text-gray-400">Slots:</span><span className="text-arcane-cyan font-bold">{bp.slots}</span></div>
               {bp.xpBonus > 0 && <div className="flex justify-between"><span className="text-gray-400">Bônus XP:</span><span className="text-green-400 font-bold">+{(bp.xpBonus * 100).toFixed(0)}%</span></div>}
               {bp.dropBonus > 0 && <div className="flex justify-between"><span className="text-gray-400">Bônus Drop:</span><span className="text-green-400 font-bold">+{(bp.dropBonus * 100).toFixed(0)}%</span></div>}
               {bp.rareDropBonus > 0 && <div className="flex justify-between"><span className="text-gray-400">Bônus Raro:</span><span className="text-blue-400 font-bold">+{(bp.rareDropBonus * 100).toFixed(0)}%</span></div>}
-              <div className="flex justify-between pt-2 border-t border-arcane-border"><span className="text-gray-400">Preço:</span><span className="text-yellow-400 font-bold">{price ? `${price.toLocaleString()}g` : "Drop de monstro"}</span></div>
+              <div className="border-t border-arcane-border pt-2"><span className="text-gray-400">Origem:</span>{sources.length ? sources.map(source => <div key={`${source.zone}-${source.enemy}`} className="mt-1 text-emerald-300">{source.enemy} · {source.zone} · {(source.chance * 100).toFixed(1)}% de chance</div>) : <div className="mt-1 text-gray-400">Mochila inicial do personagem</div>}</div>
             </div>
           </div>
         );
@@ -941,14 +1054,14 @@ function FragmentsSection({ search }: { search: string }) {
       <div className="bg-arcane-panel border border-arcane-border rounded-lg p-4">
         <h3 className="text-lg font-bold text-cyan-400 mb-2">💎 Fragmentos de Essência</h3>
         <p className="text-xs text-gray-400">
-          Fragmentos são obtidos ao usar a função <strong className="text-white">Desmanchar</strong> no Mercador. Eles serão usados futuramente para Encantamento e Forja de itens.
+          Fragmentos são obtidos ao usar a desmontagem seletiva no <strong className="text-white">Ferreiro</strong>. A Forja consome Fragmentos e gold para aprimorar equipamentos; a quantidade necessária cresce conforme o nível do item.
         </p>
       </div>
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
         {fragments.map(f => (
           <div key={f.templateId} className="bg-arcane-panel border border-arcane-border rounded-lg p-4">
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-3xl">{f.icon}</span>
+              <WikiItemIcon item={f} size="h-12 w-12" />
               <div>
                 <h3 className={`font-bold text-sm ${f.rarity === "EPICO" ? "text-purple-400" : f.rarity === "RARO" ? "text-blue-400" : "text-gray-400"}`}>{f.name}</h3>
                 <p className="text-[10px] text-gray-500 uppercase">{f.rarity}</p>

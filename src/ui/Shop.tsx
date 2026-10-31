@@ -1,39 +1,32 @@
 import React, { useState } from "react";
 import { useGameStore } from "../store/gameStore";
-import { getShopStock } from "../engine/shop";
+import { sellValue } from "../engine/shop";
 import { RARITY_ORDER } from "../engine/drops";
 import { VIALS } from "../data/vials";
 import { Rarity, Item } from "../types";
 import { getUpgradeCost } from "../engine/forge";
 import { STAT_NAMES } from "../data/affixes";
 import { QuantityModal } from "./QuantityModal";
+import { ItemIcon } from "./ItemIcon";
 
 export function Shop() {
-  const { character, buyItem, sellItem, salvageAll, updateSettings, useVial, upgradeItem, rerollItem } = useGameStore();
+  const { character, sellItem, salvageAll, salvageSelected, updateSettings, useVial, upgradeItem, rerollItem } = useGameStore();
   
-  const [tab, setTab] = useState<"COMPRAR" | "FORJA" | "VIALS" | "VENDER" | "DESMANCHAR">("COMPRAR");
-  const [filter, setFilter] = useState("all");
+  const [tab, setTab] = useState<"FORJA" | "VIALS" | "VENDER" | "DESMANCHAR">("FORJA");
   const [actionRarity, setActionRarity] = useState<Rarity>("COMUM");
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
+  const [salvageSelection, setSalvageSelection] = useState<string[]>([]);
   
   // Estado do Modal de Quantidade
-  const [qtyModal, setQtyModal] = useState<{ open: boolean, item: any, action: "BUY" | "SELL", max: number } | null>(null);
+  const [qtyModal, setQtyModal] = useState<{ open: boolean, item: Item, action: "SELL", max: number } | null>(null);
 
   if (!character) return null;
 
-  const stock = getShopStock().filter(s => filter === "all" || s.kind === filter);
-  const inventory = character.inventory.items.filter(i => i.category !== "COMPONENTE" && i.category !== "POCAO" && i.category !== "FRAGMENTO");
-
-  // ─── HANDLERS COMPRAR ───
-  const handleBuyClick = (entry: any) => {
-    // Se for poção, abre o modal de quantidade. Senão, compra 1.
-    if (entry.kind === "POCAO") {
-      setQtyModal({ open: true, item: entry, action: "BUY", max: 99 });
-    } else {
-      const res = buyItem(entry, 1);
-      if (!res.success) alert(res.error);
-    }
-  };
+  const inventory = character.inventory.items.filter(i => i.category !== "COMPONENTE" && i.category !== "FRAGMENTO");
+  const forgeInventory = inventory.filter(i => i.category !== "POCAO");
+  const salvageable = character.inventory.items.filter(i => ["ARMA", "ARMADURA", "JOIA", "ESCUDO"].includes(i.category));
+  const selectedSalvageItems = salvageable.filter(i => salvageSelection.includes(i.uid));
+  const salvagePreview = selectedSalvageItems.reduce((total, item) => total + (item.rarity === "RARO" ? 2 : item.rarity === "EPICO" || item.rarity === "LENDARIO" ? 3 : 1) * item.quantity, 0);
 
   // ─── HANDLERS VENDER ───
   const handleSellClick = (item: Item) => {
@@ -49,13 +42,8 @@ export function Shop() {
   const confirmQtyAction = (qty: number) => {
     if (!qtyModal) return;
     
-    if (qtyModal.action === "BUY") {
-      const res = buyItem(qtyModal.item, qty);
-      if (!res.success) alert(res.error);
-    } else {
-      sellItem(qtyModal.item.uid, qty);
-      alert(`Vendidos ${qty}x ${qtyModal.item.name}!`);
-    }
+    sellItem(qtyModal.item.uid, qty);
+    alert(`Vendidos ${qty}x ${qtyModal.item.name}!`);
     setQtyModal(null);
   };
 
@@ -86,7 +74,7 @@ export function Shop() {
       {/* MODAL DE QUANTIDADE */}
       {qtyModal && (
         <QuantityModal 
-          title={qtyModal.action === "BUY" ? `Comprar ${qtyModal.item.name}` : `Vender ${qtyModal.item.name}`}
+          title={`Vender ${qtyModal.item.name}`}
           maxQty={qtyModal.max}
           onConfirm={confirmQtyAction}
           onCancel={() => setQtyModal(null)}
@@ -95,40 +83,15 @@ export function Shop() {
 
       {/* HEADER */}
       <div className="flex justify-between items-center mb-6 border-b border-arcane-border pb-4">
-        <h2 className="text-xl font-bold text-arcane-gold">Mercador Bolk & Forja</h2>
+        <div><h2 className="text-xl font-bold text-arcane-gold">Ferreiro de Mythreon</h2><p className="text-xs text-gray-500">Aprimore, negocie e recupere a Essência dos seus drops.</p></div>
+        <div className="rounded-lg border border-arcane-gold/25 bg-black/20 px-3 py-2 text-sm font-bold text-arcane-gold">💰 {character.gold.toLocaleString("pt-BR")} gold</div>
         <div className="flex bg-arcane-bg rounded-lg p-1 border border-arcane-border flex-wrap gap-1">
-          <button onClick={() => setTab("COMPRAR")} className={`px-3 py-1 text-sm font-bold rounded transition-colors ${tab === "COMPRAR" ? "bg-arcane-purple text-white" : "text-gray-400 hover:text-white"}`}>Itens</button>
           <button onClick={() => setTab("FORJA")} className={`px-3 py-1 text-sm font-bold rounded transition-colors ${tab === "FORJA" ? "bg-orange-600 text-white" : "text-gray-400 hover:text-white"}`}>Forja</button>
-          <button onClick={() => setTab("VIALS")} className={`px-3 py-1 text-sm font-bold rounded transition-colors ${tab === "VIALS" ? "bg-arcane-cyan text-black" : "text-gray-400 hover:text-white"}`}>Vials</button>
+          <button onClick={() => setTab("VIALS")} className={`px-3 py-1 text-sm font-bold rounded transition-colors ${tab === "VIALS" ? "bg-arcane-cyan text-black" : "text-gray-400 hover:text-white"}`}>Elixires</button>
           <button onClick={() => setTab("VENDER")} className={`px-3 py-1 text-sm font-bold rounded transition-colors ${tab === "VENDER" ? "bg-arcane-purple text-white" : "text-gray-400 hover:text-white"}`}>Vender</button>
           <button onClick={() => setTab("DESMANCHAR")} className={`px-3 py-1 text-sm font-bold rounded transition-colors ${tab === "DESMANCHAR" ? "bg-red-800 text-white" : "text-gray-400 hover:text-white"}`}>Desmanchar</button>
         </div>
       </div>
-
-      {/* ─── ABA COMPRAR ─── */}
-      {tab === "COMPRAR" && (
-        <>
-          <div className="flex gap-2 mb-4 flex-wrap">
-            {["all", "POCAO", "EQUIP", "MOCHILA"].map(f => (
-              <button key={f} onClick={() => setFilter(f)} className={`px-3 py-1 text-xs rounded-full font-bold transition-colors ${filter === f ? "bg-arcane-gold text-black" : "bg-arcane-bg text-gray-400"}`}>{f}</button>
-            ))}
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[500px] overflow-y-auto pr-2">
-            {stock.map(s => (
-              <div key={s.id} className="bg-arcane-bg border border-arcane-border p-3 rounded-lg flex items-center justify-between">
-                <div>
-                  <div className="font-bold flex items-center gap-2"><span>{s.icon}</span> {s.name}</div>
-                  <div className="text-xs text-gray-400">{s.info}</div>
-                  <div className="text-sm font-bold text-arcane-gold mt-1">💰 {s.price}</div>
-                </div>
-                <button onClick={() => handleBuyClick(s)} disabled={character.gold < s.price || character.level < s.minLevel} className="bg-green-700 hover:bg-green-600 disabled:bg-gray-800 disabled:text-gray-500 text-white px-3 py-1 rounded text-sm font-bold transition-colors">
-                  {character.level < s.minLevel ? `Nv ${s.minLevel}` : "Comprar"}
-                </button>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
 
       {/* ─── ABA VIALS ─── */}
       {tab === "VIALS" && (
@@ -178,10 +141,12 @@ export function Shop() {
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-3 max-h-[400px] overflow-y-auto pr-2">
             {inventory.map(item => (
               <div key={item.uid} className="bg-arcane-bg border border-arcane-border p-2 rounded-lg flex flex-col items-center">
-                <div className="text-3xl mb-1">{item.icon}</div>
+                <ItemIcon item={item} className="w-12 h-12 mb-1" />
                 <div className="text-xs font-bold text-center w-full truncate">{item.name}</div>
                 <div className="text-[10px] text-gray-400 uppercase">{item.rarity}</div>
                 {item.quantity > 1 && <div className="text-[10px] text-arcane-gold font-bold">x{item.quantity}</div>}
+                <div className="text-[10px] text-emerald-300 font-bold mt-1">💰 {sellValue(item).toLocaleString()} gold cada</div>
+                {item.quantity > 1 && <div className="text-[9px] text-emerald-500/80">Total: {(sellValue(item) * item.quantity).toLocaleString()} gold</div>}
                 <button onClick={() => handleSellClick(item)} className="mt-2 w-full bg-arcane-purple hover:bg-arcane-purple/80 text-white py-1 rounded text-xs font-bold transition-colors">Vender</button>
               </div>
             ))}
@@ -203,6 +168,33 @@ export function Shop() {
             </div>
             <button onClick={() => { salvageAll(actionRarity); }} className="bg-red-700 hover:bg-red-600 text-white px-4 py-1.5 rounded font-bold transition-colors">Desmanchar Itens</button>
           </div>
+
+          <section className="bg-arcane-bg/70 border border-arcane-border rounded-lg p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+              <div>
+                <h3 className="text-white font-bold">Desmontagem seletiva</h3>
+                <p className="text-xs text-gray-400">Marque somente os equipamentos que deseja transformar em fragmentos.</p>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => setSalvageSelection(salvageable.map(i => i.uid))} className="text-xs px-3 py-1.5 rounded bg-arcane-panel text-arcane-cyan border border-arcane-border">Selecionar todos</button>
+                <button onClick={() => setSalvageSelection([])} className="text-xs px-3 py-1.5 rounded bg-arcane-panel text-gray-300 border border-arcane-border">Limpar</button>
+              </div>
+            </div>
+            {salvageable.length ? <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-72 overflow-y-auto">
+              {salvageable.map(item => <label key={item.uid} className={`flex items-center gap-3 p-2 rounded border cursor-pointer ${salvageSelection.includes(item.uid) ? "border-red-500/70 bg-red-950/20" : "border-arcane-border bg-arcane-panel"}`}>
+                <input type="checkbox" checked={salvageSelection.includes(item.uid)} onChange={e => setSalvageSelection(current => e.target.checked ? [...current, item.uid] : current.filter(uid => uid !== item.uid))} />
+                <ItemIcon item={item} className="w-10 h-10 shrink-0" />
+                <span className="min-w-0"><span className="block text-xs text-white font-bold truncate">{item.name}</span><span className="text-[10px] text-gray-400">{item.rarity} · {item.quantity > 1 ? `x${item.quantity}` : "1 unidade"}</span></span>
+              </label>)}
+            </div> : <p className="text-sm text-gray-500 py-4 text-center">Nenhum equipamento disponível para desmontagem.</p>}
+            <div className="flex flex-wrap items-center justify-between gap-3 mt-4 pt-3 border-t border-arcane-border">
+              <span className="text-xs text-gray-300">{selectedSalvageItems.length} selecionado(s) · até {salvagePreview} fragmentos</span>
+              <button disabled={!selectedSalvageItems.length} onClick={() => {
+                if (selectedSalvageItems.some(item => item.rarity === "LENDARIO") && !window.confirm("Você selecionou equipamento LENDÁRIO. Deseja realmente desmontá-lo?")) return;
+                salvageSelected(salvageSelection); setSalvageSelection([]);
+              }} className="bg-red-700 hover:bg-red-600 disabled:bg-gray-800 disabled:text-gray-500 text-white px-4 py-2 rounded font-bold text-sm">Desmanchar selecionados</button>
+            </div>
+          </section>
           
           <div className="bg-arcane-bg border border-arcane-border p-4 rounded-lg mt-6">
             <h3 className="text-white font-bold mb-2">Automação de Desmanchar</h3>
@@ -221,14 +213,14 @@ export function Shop() {
           <div className="bg-arcane-bg border border-arcane-border rounded-lg p-4 max-h-[500px] overflow-y-auto">
             <h3 className="font-bold text-white mb-3">Selecione um item para aprimorar</h3>
             <div className="grid grid-cols-2 gap-2">
-              {inventory.map(item => (
+              {forgeInventory.map(item => (
                 <div key={item.uid} onClick={() => setSelectedItem(item)} className={`border p-2 rounded cursor-pointer transition-all ${selectedItem?.uid === item.uid ? "border-orange-500 bg-orange-900/20 scale-105" : "border-arcane-border hover:border-gray-500"}`}>
-                  <div className="text-xl text-center">{item.icon}</div>
+                  <ItemIcon item={item} className="w-10 h-10 mx-auto" />
                   <div className="text-xs font-bold text-center truncate">{item.name}</div>
                   <div className="text-[10px] text-center text-orange-400 font-bold">+{item.upgradeLevel} {item.rarity}</div>
                 </div>
               ))}
-              {inventory.length === 0 && <div className="col-span-2 text-center text-gray-500 py-4">Inventário vazio.</div>}
+              {forgeInventory.length === 0 && <div className="col-span-2 text-center text-gray-500 py-4">Nenhum equipamento disponível para forjar.</div>}
             </div>
           </div>
 
@@ -236,7 +228,7 @@ export function Shop() {
             {selectedItem ? (
               <>
                 <div className="text-center mb-4 border-b border-arcane-border pb-4">
-                  <div className="text-4xl mb-2">{selectedItem.icon}</div>
+                  <ItemIcon item={selectedItem} className="w-16 h-16 mx-auto mb-2" />
                   <h3 className="text-lg font-bold text-white">{selectedItem.name} <span className="text-orange-400">+{selectedItem.upgradeLevel}</span></h3>
                   <p className="text-xs text-arcane-cyan uppercase">{selectedItem.rarity} · Tier {selectedItem.tier}</p>
                 </div>

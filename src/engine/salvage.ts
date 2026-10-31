@@ -53,3 +53,20 @@ export function salvageAllEquipment(char: Character, maxRarity: Rarity): { items
 
   return { items: salvagedCount, frags: fragsGained };
 }
+
+export function salvageSelectedEquipment(char: Character, uids: string[]): { items: number, frags: number } {
+  const selected = new Set(uids);
+  const chosen = char.inventory.items.filter(item => selected.has(item.uid) && ["ARMA", "ARMADURA", "JOIA", "ESCUDO"].includes(item.category));
+  let items = 0;
+  let frags = 0;
+  for (const item of chosen) {
+    const quantity = item.quantity;
+    for (let count = 0; count < quantity; count++) {
+      const current = char.inventory.items.find(candidate => candidate.uid === item.uid);
+      if (!current) break;
+      const amount = salvageItem(char, current);
+      if (amount > 0) { items += 1; frags += amount; }
+    }
+  }
+  return { items, frags };
+}
