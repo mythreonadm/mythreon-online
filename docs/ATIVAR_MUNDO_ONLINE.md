@@ -1,6 +1,6 @@
 # Ativar contas e o mundo online de Mythreon
 
-O código foi implementado localmente. Não existe ainda um projeto Supabase configurado e não houve publicação. Este guia conecta os serviços reais; não coloque senhas ou chaves privadas no chat.
+O código já foi publicado na Vercel, com a inicialização da API corrigida em 9f4285b. O projeto Supabase real mythreon-online já foi criado na região sa-east-1 e as migrações online foram aplicadas. A Vercel já recebeu as URLs/chaves públicas e WORLD_ALLOWED_ORIGINS. Ainda falta apenas a conexão privada DATABASE_URL, o SMTP e uma nova implantação para o mundo responder a comandos.
 
 ## 1. Preserve o progresso anterior
 
@@ -10,9 +10,9 @@ Os saves locais continuam no navegador e não são apagados. Contas antigas loca
 
 Nesta versão, o mundo online inicia uma economia oficial separada. Importar diretamente gold/itens de um JSON editável permitiria duplicações. Não há migração automática de personagens locais para ranking/trocas: uma migração de veteranos precisa de validação administrativa e de um fluxo próprio. O backup não é perdido e não deve ser apagado para resolver conflitos.
 
-## 2. Crie o projeto Supabase
+## 2. Projeto Supabase
 
-Abra https://supabase.com/dashboard e crie um projeto para Mythreon. Guarde a senha do banco em local privado.
+O projeto criado é mythreon-online, ref ezjtbyouxnxleaapkrxv, na região sa-east-1. Guarde a senha do banco em local privado.
 
 No painel, obtenha:
 
@@ -22,14 +22,14 @@ No painel, obtenha:
 
 Não é necessário fornecer uma chave service_role para esta implementação: o servidor usa a conexão privada do Postgres e verifica a sessão no Supabase Auth.
 
-## 3. Crie as tabelas e políticas
+## 3. Tabelas e políticas aplicadas
 
 No SQL Editor do seu projeto, execute nesta ordem os arquivos da pasta do jogo:
 
 1. supabase/migrations/001_online_world.sql
 2. supabase/migrations/002_realtime.sql
 
-Eles criam contas, personagens, ranking, mensagens, amigos, correio, trocas e histórico de transações. As políticas RLS restringem leituras privadas. O navegador não recebe permissão para escrever gold, inventário, mensagens ou ranking diretamente nas tabelas; operações passam pela API autenticada.
+Essas duas migrações já foram aplicadas no projeto real. Elas criam contas, personagens, ranking, mensagens, amigos, correio, trocas e histórico de transações. As políticas RLS restringem leituras privadas. O navegador não recebe permissão para escrever gold, inventário, mensagens ou ranking diretamente nas tabelas; operações passam pela API autenticada.
 
 A segunda migração ativa as notificações Realtime das quatro tabelas sociais. Não execute estes arquivos em um banco de outro projeto.
 
@@ -108,6 +108,14 @@ O navegador do PC já usa o mesmo servidor que o celular. Para o executável, co
 Use as mesmas variáveis públicas do Supabase e execute npm run desktop:package. Mantenha a pasta win-unpacked inteira. A build grava somente origens públicas em dist/online-origins.json para permitir HTTPS/WebSocket no aplicativo sem liberar scripts externos.
 
 Os executáveis já gerados anteriormente não contêm esta integração nova. Não foram recompilados nesta etapa sem o projeto real configurado. O portátil único anterior também continua anterior. A tentativa antiga de compactação falhou por falta de espaço; confira o espaço disponível antes de gerar um novo portátil.
+
+## Estado atual da ativação
+
+- Supabase real criado e saudável: ezjtbyouxnxleaapkrxv.
+- As nove tabelas online existem com RLS habilitado; Realtime foi ativado para mensagens, amigos, correio e trocas.
+- Vercel configurada com as variáveis públicas e origens permitidas.
+- Falta cadastrar DATABASE_URL com a URI privada do Transaction Pooler. A senha do banco não é exposta pela integração e deve ser inserida diretamente na Vercel como variável criptografada.
+- Falta configurar SMTP público, Site URL/Redirect URLs no Auth e publicar uma nova implantação depois de preencher DATABASE_URL.
 
 ## Limites desta entrega
 

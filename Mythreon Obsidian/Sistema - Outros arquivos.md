@@ -10,7 +10,7 @@
 
 - [.gitignore](../.gitignore)
 - [Ativação Cérebro.bat](../Ativação Cérebro.bat)
-- [api/world.ts](../api/world.ts) — config, handler
+- [api/world.js](../api/world.js)
 - [imagens/WhatsApp Image 2026-10-30 at 00.42.53.jpeg](../imagens/WhatsApp Image 2026-10-30 at 00.42.53.jpeg)
 - [imagens/WhatsApp Image 2026-10-30 at 00.42.54 (1).jpeg](../imagens/WhatsApp Image 2026-10-30 at 00.42.54 (1).jpeg)
 - [imagens/WhatsApp Image 2026-10-30 at 00.42.54.jpeg](../imagens/WhatsApp Image 2026-10-30 at 00.42.54.jpeg)
@@ -37,6 +37,8 @@
 - [package-lock.json](../package-lock.json)
 - [postcss.config.js](../postcss.config.js)
 - [server/game.ts](../server/game.ts) — WorldState, freshWorld, executeGame, rankingMetrics
+- [server/generated/online-runtime.cjs](../server/generated/online-runtime.cjs)
+- [server/http.ts](../server/http.ts) — config, handler
 - [server/transfers.ts](../server/transfers.ts) — Offer, ItemSelection, emptyOffer, integer, canTransfer, restoreOffer, reserveOffer, receiveOffer
 - [server/world.ts](../server/world.ts) — Database, WorldRequest, CharacterRow, handleWorld
 - [src/config.ts](../src/config.ts) — isDebug, setDebug, TICK_MS, OFFLINE_MAX_HOURS

@@ -9,10 +9,12 @@
 ## Código e recursos
 
 - [scripts/balance-audit.cjs](../scripts/balance-audit.cjs)
+- [scripts/build-online-runtime.mjs](../scripts/build-online-runtime.mjs)
 - [scripts/journey-check.cjs](../scripts/journey-check.cjs)
 - [scripts/journey-ui-check.cjs](../scripts/journey-ui-check.cjs)
 - [scripts/online-check.ts](../scripts/online-check.ts)
 - [scripts/online-doctor.mjs](../scripts/online-doctor.mjs)
+- [scripts/online-runtime-check.mjs](../scripts/online-runtime-check.mjs)
 - [scripts/online-ui-check.cjs](../scripts/online-ui-check.cjs)
 - [scripts/run-ts-check.cjs](../scripts/run-ts-check.cjs)
 - [scripts/ts-test-loader.cjs](../scripts/ts-test-loader.cjs)

@@ -1,7 +1,7 @@
 ---
 projeto: Mythreon Online
 tipo: decisao
-status: implementado-localmente-aguardando-servicos
+status: codigo-publicado-aguardando-servicos
 atualizado: 2026-11-02
 resumo: Contas Supabase, motor autoritativo, ranking e sistemas sociais; ativação hospedada ainda pendente.
 ---
@@ -10,9 +10,9 @@ resumo: Contas Supabase, motor autoritativo, ranking e sistemas sociais; ativaç
 
 ## Estado real e autorização
 
-O usuário pediu cadastro real entre PC/celular, ranking, chat, mensagens privadas, VIP, correio e troca bilateral. Ao ser consultado, informou não ter projeto Firebase/Supabase e escolheu preparar Supabase. Código e testes locais foram concluídos; projeto hospedado, SMTP, conexão do banco e publicação não foram configurados. Não declarar jogadores conectados em produção nem cadastro público ativo.
+O usuário pediu cadastro real entre PC/celular, ranking, chat, mensagens privadas, VIP, correio e troca bilateral. Ao ser consultado, informou não ter projeto Firebase/Supabase e escolheu preparar Supabase. Código e testes locais foram concluídos; a correção de inicialização foi publicada na Vercel em 9f4285b. Projeto Supabase, SMTP e conexão do banco ainda não foram configurados. Não declarar jogadores conectados em produção nem cadastro público ativo.
 
-Guia operacional: [[docs/ATIVAR_MUNDO_ONLINE|Ativar o mundo online]]. Configuração-modelo sem segredos: .env.example. Nenhuma conta real, mensagem real, projeto externo, cobrança, push ou deploy foi criado/enviado.
+Guia operacional: [[docs/ATIVAR_MUNDO_ONLINE|Ativar o mundo online]]. Configuração-modelo sem segredos: .env.example. Nenhuma conta real, mensagem real, projeto Supabase ou cobrança foi criado/enviado. O código foi publicado; isso não equivale à ativação dos serviços.
 
 ## Arquitetura e autoridade
 
@@ -114,3 +114,7 @@ O usuário pediu ativar o mundo online e informou que ainda não criou projeto S
 Reprodução local em Node ESM simples: import relativo sem extensão falha com ERR_MODULE_NOT_FOUND. Correção: fonte HTTP em server/http.ts, bundle CommonJS primeiro-partido em server/generated/online-runtime.cjs, entrypoint ESModule api/world.js com import explícito .cjs. Gerador scripts/build-online-runtime.mjs; npm run build regenera o bundle antes do Vite. Artefato versionado para não depender da ordem de builds da Vercel; não contém segredos. Nunca editar o artefato manualmente. online:bundle-check verifica correspondência com as fontes.
 
 Teste de runtime Node real scripts/online-runtime-check.mjs: entrypoint importa e responde GET405, POST503 sem configuração, OPTIONS204 e origem externa403. PostgreSQL, typecheck, jornada e vitais verificados. Não confundir essa correção de inicialização com Supabase/banco/e-mails já ativados.
+
+### Verificação pública após publicação de 9f4285b
+
+Push autorizado pela solicitação de ativar o mundo online, concluído em origin/main. Endpoint publicado deixou de falhar na importação: GET /api/world retorna405 JSON, POST sem configuração retorna503 JSON com O mundo online ainda não foi configurado. Site continua HTTP200. Assim, o crash foi corrigido no ambiente hospedado. Supabase e Vercel foram encontrados como integrações disponíveis, mas a última verificação ainda os mostrou não instalados/conectados. O usuário confirmou não ter projeto Supabase nem SMTP. Próximo passo depende de instalar/conectar os serviços; não repetir essa pendência se uma mensagem posterior confirmar a conexão.
