@@ -6,7 +6,7 @@
     }
   ],
   "functions": {
-    "api/world.ts": {
+    "api/world.js": {
       "maxDuration": 60
     }
   }

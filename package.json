@@ -10,7 +10,7 @@
     "brain:seal": "node scripts/mythreon-brain.mjs --once --seal",
     "brain:open": "node scripts/mythreon-brain.mjs --open",
     "prebuild": "node scripts/mythreon-brain.mjs --once",
-    "build": "vite build",
+    "build": "npm run online:bundle && vite build",
     "preview": "vite preview",
     "desktop:start": "npm run build && electron .",
     "desktop:package": "npm run build && electron-builder --win --dir --x64",
@@ -20,7 +20,9 @@
     "typecheck": "tsc --noEmit && tsc -p tsconfig.server.json",
     "online:check": "node scripts/run-ts-check.cjs scripts/online-check.ts",
     "online:dev": "tsx scripts/world-dev.ts",
-    "online:doctor": "node scripts/online-doctor.mjs"
+    "online:doctor": "node scripts/online-doctor.mjs",
+    "online:bundle": "node scripts/build-online-runtime.mjs",
+    "online:bundle-check": "node scripts/build-online-runtime.mjs --check"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",
@@ -38,6 +40,7 @@
     "autoprefixer": "^10.4.0",
     "electron": "^45.2.1",
     "electron-builder": "^26.18.0",
+    "esbuild": "^0.28.2",
     "postcss": "^8.4.0",
     "tailwindcss": "^3.4.0",
     "tsx": "^4.23.15",

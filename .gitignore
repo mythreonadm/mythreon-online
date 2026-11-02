@@ -9,3 +9,6 @@ dist
 
 release/
 .obsidian/
+
+# Fixtures temporárias dos testes do Cérebro
+.mythreon-brain/tests/

@@ -1,5 +1,5 @@
 import {Pool} from 'pg';
-import {handleWorld} from '../server/world';
+import {handleWorld} from './world';
 let pool:Pool|undefined;
 export const config={maxDuration:60};
 export default async function handler(req:any,res:any){

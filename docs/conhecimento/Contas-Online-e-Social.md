@@ -17,7 +17,7 @@ Guia operacional: [[docs/ATIVAR_MUNDO_ONLINE|Ativar o mundo online]]. Configura�
 ## Arquitetura e autoridade
 
 - Supabase Auth recebe e-mail/senha, confirma e-mail, mantém sessão e oferece recuperação. A aplicação não armazena senhas online. Conta pode possuir até três personagens com nome único e ID UUID.
-- API Node em api/world.ts verifica Bearer usando /auth/v1/user. Não confia em um userId enviado pelo navegador nem apenas em decodificar JWT. Exige confirmação de e-mail e valida a origem.
+- API Node em api/world.js verifica Bearer usando /auth/v1/user. Não confia em um userId enviado pelo navegador nem apenas em decodificar JWT. Exige confirmação de e-mail e valida a origem.
 - Postgres, conexão TLS privada DATABASE_URL no servidor. Supabase anon/publishable é pública, DATABASE_URL e service_role nunca entram em VITE_. Compilação recusa secret/service_role no campo público. Não é necessário service_role para a API.
 - O motor atual foi isolado em createGameStore(runtime), preservando o useGameStore local. O servidor usa uma instância por operação, sem timers nem localStorage; aplica comandos autorizados sobre o estado real salvo.
 - O cliente online envia intenções: equipar UID, sintetizar IDs de componentes, comprar vial por ID etc. Não existe endpoint de substituir o personagem, gold ou inventário por um JSON do cliente.
@@ -75,7 +75,8 @@ Ferreiro exige sair da caça também na API; forja/reencanto aceitam apenas equi
 |---|---|
 | Banco e RLS | supabase/migrations/001_online_world.sql |
 | Publicação Realtime | supabase/migrations/002_realtime.sql |
-| API, autenticação e transação | api/world.ts |
+| Entrypoint publicado | api/world.js → server/generated/online-runtime.cjs |
+| API, autenticação e transação | server/http.ts |
 | Comandos e métricas | server/game.ts |
 | Operações sociais/financeiras | server/world.ts, server/transfers.ts |
 | Motor isolável | src/store/gameStore.ts |
@@ -105,3 +106,11 @@ Ainda necessário: projeto Supabase real, migrations e SMTP, variáveis na Verce
 ### Evidência adicional de middleware e correio
 
 A API também foi testada recusando origem externa, ausência de sessão, token inválido e e-mail não confirmado antes de acessar o banco. Correios ainda não recebidos têm prioridade na caixa para não ficarem inacessíveis sob o limite de histórico recente. Prévias reais do ambiente de teste em docs/anexos/online-teste-ranking.png e online-teste-troca.png; não representam serviço hospedado ativo.
+
+## 2026-11-02 — Ativação e inicialização da API
+
+O usuário pediu ativar o mundo online e informou que ainda não criou projeto Supabase nem possui SMTP. Instalação/conexão de Supabase e Vercel foi solicitada; sem credenciais configuradas no projeto local. O usuário já enviou o commit 17958bf (subindo mundo online). Verificação pública: site retorna HTTP200; GET /api/world retornava HTTP500 FUNCTION_INVOCATION_FAILED, embora o handler devesse retornar405 antes de ler configuração.
+
+Reprodução local em Node ESM simples: import relativo sem extensão falha com ERR_MODULE_NOT_FOUND. Correção: fonte HTTP em server/http.ts, bundle CommonJS primeiro-partido em server/generated/online-runtime.cjs, entrypoint ESModule api/world.js com import explícito .cjs. Gerador scripts/build-online-runtime.mjs; npm run build regenera o bundle antes do Vite. Artefato versionado para não depender da ordem de builds da Vercel; não contém segredos. Nunca editar o artefato manualmente. online:bundle-check verifica correspondência com as fontes.
+
+Teste de runtime Node real scripts/online-runtime-check.mjs: entrypoint importa e responde GET405, POST503 sem configuração, OPTIONS204 e origem externa403. PostgreSQL, typecheck, jornada e vitais verificados. Não confundir essa correção de inicialização com Supabase/banco/e-mails já ativados.

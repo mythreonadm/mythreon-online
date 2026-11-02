@@ -83,7 +83,7 @@ Para a versão web:
 
     npm run build
 
-O projeto inclui api/world.ts para a Vercel, e vercel.json preserva a rota /api/world. Fazer build local não publica nada; faça seu git push/deploy somente depois de conferir esta configuração. As variáveis VITE_ são incorporadas na compilação: alterá-las exige uma nova build.
+O projeto inclui api/world.js para a Vercel, e vercel.json preserva a rota /api/world. Fazer build local não publica nada; faça seu git push/deploy somente depois de conferir esta configuração. As variáveis VITE_ são incorporadas na compilação: alterá-las exige uma nova build.
 
 ## 7. Confira em dois aparelhos
 
@@ -135,3 +135,7 @@ Estas imagens usam contas fictícias e serviços de teste, não jogadores de pro
 
 - [Ranking](anexos/online-teste-ranking.png)
 - [Janela bilateral de troca](anexos/online-teste-troca.png)
+
+## Empacotamento da API
+
+A entrada publicada é api/world.js; a fonte editável é server/http.ts. O comando npm run build gera server/generated/online-runtime.cjs antes da build web, para evitar imports TypeScript sem extensão no Node da Vercel. Rode npm run online:bundle-check e node scripts/online-runtime-check.mjs antes de publicar alterações no servidor.
