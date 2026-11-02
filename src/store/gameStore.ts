@@ -19,7 +19,7 @@ import { FRAGMENT_TEMPLATES } from "../data/items";
 import { DIVINE_BEASTS } from "../data/divineBeasts";
 import { QUESTS } from "../data/quests";
 
-interface GameState {
+export interface GameState {
   character: Character | null;
   races: Race[];
   currentZoneId: string;
@@ -77,7 +77,7 @@ interface GameState {
   claimArenaReward: (teamSize: 1 | 3 | 5) => { success: boolean; gold?: number; fragment?: string; remaining?: number; error?: string };
 }
 
-let tickInterval: ReturnType<typeof setInterval> | null = null;
+
 
 function recordHuntMetrics(character: Character, zoneId: string, result: TickResult) {
   const previous = character.huntStatsByZone?.[zoneId] ?? {
@@ -99,7 +99,11 @@ function recordHuntMetrics(character: Character, zoneId: string, result: TickRes
   character.huntStatsByZone = { ...(character.huntStatsByZone ?? {}), [zoneId]: updated };
 }
 
-export const useGameStore = create<GameState>((set, get) => ({
+export function createGameStore(runtime: {server?: boolean; persist?: (character: Character,races: Race[])=>void; notify?: (message:string)=>void} = {}) {
+let tickInterval: ReturnType<typeof setInterval> | null = null;
+const notify = runtime.notify ?? ((message:string)=>{if(typeof alert !== 'undefined') alert(message);});
+const warn=(message:string)=>{if(runtime.server)throw Error(message);notify(message);};
+return create<GameState>((set, get) => ({
   character: null, races: [], currentZoneId: "BOSQUE_LYSS", lastTickResult: null, isTickRunning: false, isTraining: false, offlineReport: null, deathReport: null, healingUntil: null,
 
   finishIntro: () => { const c=get().character; if(!c)return; set({character:{...c,introSeen:true}}); get().save(); },
@@ -168,7 +172,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({ healingUntil: null });
   },
 
-  save: () => { const { character, races } = get(); if (character) saveGame(character, races); },
+  save: () => { const { character, races } = get(); if (character) { if(runtime.persist) runtime.persist(character,races); else saveGame(character, races); } },
   spendStatPoint: (stat) => {
     const { character } = get();
     if (!character || (character.statPoints ?? 0) < 1) return false;
@@ -227,13 +231,13 @@ export const useGameStore = create<GameState>((set, get) => ({
   startHunting: (zoneId) => {
     const { character, healingUntil } = get();
     if (!character) return;
-    if (healingUntil) return alert("Você está meditando! Termine antes de caçar.");
-    if (character.hp <= 0) return alert("Você precisa se curar na Casa antes de caçar!");
-    if ((character.staminaOnline ?? 120) <= 0) return alert("Sua stamina online acabou. Continue sua jornada offline para recuperar essa reserva.");
+    if (healingUntil) return warn("Você está meditando! Termine antes de caçar.");
+    if (character.hp <= 0) return warn("Você precisa se curar na Casa antes de caçar!");
+    if ((character.staminaOnline ?? 120) <= 0) return warn("Sua stamina online acabou. Continue sua jornada offline para recuperar essa reserva.");
 
     const zone = ZONES[zoneId];
-    if (!zone || !canEnterZone(character,zoneId)) return alert('Abra a travessia com a missão e o NPC em Jornadas.');
-    if (!canTutorialHunt(character)) return alert('Abra a missão da iniciação e siga a próxima etapa antes de caçar.');
+    if (!zone || !canEnterZone(character,zoneId)) return warn('Abra a travessia com a missão e o NPC em Jornadas.');
+    if (!canTutorialHunt(character)) return warn('Abra a missão da iniciação e siga a próxima etapa antes de caçar.');
     if (character.level < zone.minLevel) return;
 
     if (tickInterval) clearInterval(tickInterval);
@@ -245,23 +249,23 @@ export const useGameStore = create<GameState>((set, get) => ({
       character.enemyHp = zone.enemies[0].hp * zone.enemies[0].difficulty;
     }
     set({ isTickRunning: true, isTraining: false, currentZoneId: zoneId, character: { ...character } });
-    get().tick();
-    if (get().isTickRunning || get().isTraining) tickInterval = setInterval(() => get().tick(), 3000);
+    if (!runtime.server) { get().tick();
+    if (get().isTickRunning || get().isTraining) tickInterval = setInterval(() => get().tick(), 3000); }
   },
 
   startTraining: (skill) => {
     const { character, healingUntil } = get();
     if (!character) return;
-    if (isGuided(character) && !character.quests.active.TUT_TRAIN) return alert("O treino será apresentado na etapa Disciplina antes da força.");
-    if (healingUntil) return alert("Termine sua meditação primeiro!");
+    if (isGuided(character) && !character.quests.active.TUT_TRAIN) return warn("O treino será apresentado na etapa Disciplina antes da força.");
+    if (healingUntil) return warn("Termine sua meditação primeiro!");
 
     if (tickInterval) clearInterval(tickInterval);
     character.trainingSkill = skill;
     character.trainingLastTick = Date.now();
     character.lastTick = Date.now();
     set({ isTickRunning: false, isTraining: true, character: { ...character } });
-    get().tick();
-    tickInterval = setInterval(() => get().tick(), 3000);
+    if (!runtime.server) { get().tick();
+    tickInterval = setInterval(() => get().tick(), 3000); }
   },
 
   stopHunting: () => {
@@ -415,7 +419,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     const res = salvageAllEquipment(newChar, maxRarity);
     newChar.totalSalvaged = (newChar.totalSalvaged || 0) + res.items;
     updateQuestProgress(newChar, { kills: 0, gold: 0, xp: 0, drops: [], levelsGained: 0, death: false, log: [], enemyHp: 0, enemyMaxHp: 0, salvagedItems: res.items });
-    set({ character: newChar }); get().save(); alert(`Desmanchou ${res.items} itens e ganhou ${res.frags} fragmentos!`);
+    set({ character: newChar }); get().save(); notify(`Desmanchou ${res.items} itens e ganhou ${res.frags} fragmentos!`);
   },
 
   salvageSelected: (uids) => {
@@ -425,7 +429,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (!res.items) return;
     newChar.totalSalvaged = (newChar.totalSalvaged || 0) + res.items;
     updateQuestProgress(newChar, { kills: 0, gold: 0, xp: 0, drops: [], levelsGained: 0, death: false, log: [], enemyHp: 0, enemyMaxHp: 0, salvagedItems: res.items });
-    set({ character: newChar }); get().save(); alert(`Desmanchou ${res.items} itens e ganhou ${res.frags} fragmentos!`);
+    set({ character: newChar }); get().save(); notify(`Desmanchou ${res.items} itens e ganhou ${res.frags} fragmentos!`);
   },
 
   updateSettings: (settings) => {
@@ -482,7 +486,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (res.success) {
       if (id === "TUT_BACKPACK") { newChar.tutorialCompleted = true; newChar.tutorialRelicGranted = true; }
       trackRaceDiscovery(newChar, get().races);
-      set({ character: newChar }); get().save(); alert(res.msg);
+      set({ character: newChar }); get().save(); notify(res.msg);
     }
   },
 
@@ -519,18 +523,18 @@ export const useGameStore = create<GameState>((set, get) => ({
  newChar.activeVials[vial.id] = now + vial.durationMinutes * 60000;
     recalcStats(newChar);
     set({ character: newChar }); get().save();
-    alert(`Você bebeu ${vial.name}!`);
+    notify(`Você bebeu ${vial.name}!`);
   },
 
   buyBless: () => {
     const { character } = get(); if (!character) return;
     const price = character.level * 5000;
-    if (character.gold < price) return alert("Ouro insuficiente para comprar Bless.");
+    if (character.gold < price) return warn("Ouro insuficiente para comprar Bless.");
     const newChar = JSON.parse(JSON.stringify(character));
     newChar.gold -= price;
     newChar.blesses = Math.min(5, (newChar.blesses || 0) + 1);
     set({ character: newChar }); get().save();
-    alert(`Você comprou uma Bless! (${newChar.blesses}/5)`);
+    notify(`Você comprou uma Bless! (${newChar.blesses}/5)`);
   },
 
   upgradeItem: (uid) => {
@@ -616,3 +620,6 @@ export const useGameStore = create<GameState>((set, get) => ({
     return { success: true, gold, fragment, remaining: 2 - earnedToday };
   },
 }));
+}
+
+export const useGameStore = createGameStore();

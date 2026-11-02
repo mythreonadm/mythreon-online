@@ -3,6 +3,7 @@ import { JOURNEY_CHAPTERS } from '../data/worldJourney';
 import { countByTemplate, removeItem } from './inventory';
 export function isGuided(c: Character) { return c.journeyVersion === 1 && !c.tutorialCompleted; }
 export function canUseTab(c: Character, tab: string): boolean {
+ if(tab === "online" || tab === "ranking")return true;
  if (!isGuided(c)) return true;
  if (!c.introSeen) return tab === 'missoes';
  const done = c.quests.completed;

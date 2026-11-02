@@ -8,7 +8,7 @@
 
 ## Código e recursos
 
-- [src/store/gameStore.ts](../src/store/gameStore.ts) — useGameStore
+- [src/store/gameStore.ts](../src/store/gameStore.ts) — GameState, createGameStore, useGameStore
 
 ## Relações encontradas
 

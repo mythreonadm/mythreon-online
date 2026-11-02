@@ -320,3 +320,11 @@ Entrega Windows da Jornada: win-unpacked atualizado e testado (187 arquivos conf
 ## Continuidade — HP/MP e raridades — 2026-11-02
 
 loadGame deve recalcular atributos derivados antes do combate. Nunca confiar em hpMax/mpMax antigos do cache nem concatenar bônus legados como strings. UI usa formatVital/vitalPercent; precisão do combate preservada. Regras detalhadas e evidências em docs/conhecimento/Balanceamento-Combate-Economia.md. Raridades são compartilhadas em src/ui/itemRarity.ts, ItemIcon e CSS, sem copiar mapas de brilho por tela. Comum neutro, verde sem aura, azul suave, roxo forte, dourado pulsante. Testes vitals-check.cjs e journey-ui-check.cjs ampliados.
+
+## Continuidade — contas online e comunidade — 2026-11-02
+
+Usuário escolheu preparar Supabase, pois ainda não tem projeto. Nova fonte: docs/conhecimento/Contas-Online-e-Social.md; ativação em docs/ATIVAR_MUNDO_ONLINE.md. Auth real/servidor/Postgres foram implementados, mas NÃO configurados/publicados no serviço hospedado. Testes locais usam Auth/Realtime simulados e PostgreSQL em memória. Não afirmar cadastro público ativo.
+
+Motor isolado por createGameStore(runtime), servidor sem timers/localStorage. Cliente envia comandos, nunca Character/saldo editável. Recibos de idempotência, bloqueios ordenados, escrow, RLS e confirmação de revisão protegem transferências. Mesma conta até três personagens; 36 rankings; chat global/privado; VIP; correio; troca bilateral. Taxa 10 + ceil(2% gold) por envio/lado, nível5+iniciação para transferir, relíquia inicial vinculada. Servidor controla ticks e bônus de balloon; não aceitar DEBUG ou arena local como fonte de riqueza online.
+
+Saves locais continuam intactos; Baixar backup disponível no modo local. Importação de veteranos não está implementada e exige aprovação/validação para proteger a economia. Expiração de troca é resolvida ao interagir, sem cron. SMTP real, projeto, Vercel e testes de carga/concorrência ainda pendentes. Não colocar DATABASE_URL/service_role em VITE_. Sem push/deploy e sem rebuild dos executáveis antigos nesta migração.

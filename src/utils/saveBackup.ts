@@ -1,0 +1,2 @@
+import type {Character,Race} from '../types';
+export function downloadSaveBackup(character:Character,races:Race[]){const blob=new Blob([JSON.stringify({version:1,character,races,settings:{},stats:{}},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='mythreon-backup-'+character.name.replace(/[^a-z0-9_-]/gi,'_')+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}

@@ -1,3 +1,8 @@
+import {downloadSaveBackup} from './utils/saveBackup';
+import {onlineConfigured,supabase} from './online/client';
+import {OnlineSession} from './online/OnlineSession';
+import {OnlineCommunity,OnlineRanking,OnlineNotice,OnlineTradeWindow} from './ui/OnlineCommunity';
+import {useOnlineState,disconnectCharacter} from './online/controller';
 import { JourneyGuide } from './ui/JourneyGuide';
 import { canUseTab, isGuided } from './engine/journey';
 import React, { useCallback, useEffect, useState } from "react";
@@ -31,31 +36,33 @@ import { QUESTS } from "./data/quests";
 import { checkQuestCompletion } from "./engine/questEngine";
 import { ZONES } from "./data/zones";
 
-type Tab = "zona" | "personagem" | "backpack" | "depot" | "matriz" | "pets" | "laboratorio" | "shop" | "loja" | "missoes" | "duelos" | "wiki";
+type Tab = "zona" | "personagem" | "backpack" | "depot" | "matriz" | "pets" | "laboratorio" | "shop" | "loja" | "missoes" | "duelos" | "wiki" | "online" | "ranking";
 
 const TAB_LABELS: Record<Tab, string> = {
-  zona: "Explorar", personagem: "Personagem", backpack: "Mochila", depot: "Depósito",
+  online:"Comunidade",ranking:"Ranking", zona: "Explorar", personagem: "Personagem", backpack: "Mochila", depot: "Depósito",
   matriz: "Matriz", pets: "Divine Beasts", laboratorio: "Laboratório", shop: "Shop", loja: "Ferreiro", missoes: "Jornadas", duelos: "Duelo", wiki: "Arquivo",
 };
 
 const TAB_ICONS: Record<Tab, AccessIconName> = {
-  zona: "explore", personagem: "character", backpack: "backpack", depot: "depot",
+  online:"quest",ranking:"archive", zona: "explore", personagem: "character", backpack: "backpack", depot: "depot",
   matriz: "matrix", laboratorio: "matrix", shop: "shop", loja: "shop", missoes: "quest", duelos: "duel", wiki: "archive",
   pets: "pet",
 };
 
-export default function App() {
+export default function App(){return onlineConfigured?<OnlineSession>{(account,switchCharacter)=><GameApp onlineAccount={account} onSwitchCharacter={switchCharacter}/>}</OnlineSession>:<GameApp/>;}
+function GameApp({onlineAccount,onSwitchCharacter}:{onlineAccount?:LocalAccount;onSwitchCharacter?:()=>void}) {
+  const online=useOnlineState();
   const [tab, setTab] = useState<Tab>("zona");
   const { character, loadFromSave, newGame, startHunting, stopHunting, recordQuestAction, isTickRunning, setCurrentZone } = useGameStore();
   const [name, setName] = useState("");
   const [debug, setDebugState] = useState(isDebug());
   const [focusQuestId, setFocusQuestId] = useState<string | null>(null);
   const [trackedQuestId, setTrackedQuestId] = useState<string | null>(null);
-  const [account, setAccount] = useState<LocalAccount | null>(() => getLocalAccountSession());
+  const [account, setAccount] = useState<LocalAccount | null>(() => onlineAccount ?? getLocalAccountSession());
   const tutorialSignal = character ? getTutorialQuestSignal(character) : null;
 
 useEffect(() => {
-    if (!account) return;
+    if (!account || onlineAccount) return;
     activateSaveAccount(account.id);
     const loaded = loadFromSave();
     if (loaded) {
@@ -66,7 +73,7 @@ useEffect(() => {
     }
   }, [account?.id]);
 
-  useEffect(() => { return () => stopHunting(); }, []);
+  useEffect(() => { return () => { if(!onlineAccount) stopHunting(); }; }, []);
   useEffect(() => {
     if (tab === "wiki") recordQuestAction("VISIT_WIKI");
     if (tab === "matriz") recordQuestAction("VISIT_MATRIX");
@@ -123,6 +130,7 @@ useEffect(() => {
   };
   const clearQuestFocus = useCallback(() => setFocusQuestId(null), []);
   const logout = () => {
+    if(onlineAccount){disconnectCharacter();void supabase().auth.signOut({scope:"local"});return;}
     stopHunting();
     closeLocalAccountSession();
     activateSaveAccount();
@@ -166,6 +174,8 @@ useEffect(() => {
   return (
     <div className="min-h-screen bg-arcane-bg text-white pb-10 font-sans relative">
       <AudioManager />
+      <OnlineNotice/>
+      <OnlineTradeWindow/>
       <OfflineModal />
       <DeathScreen />
 
@@ -190,13 +200,15 @@ useEffect(() => {
             </div>
           </div>
           <CharacterPanel />
+          {!onlineAccount&&<button className="online-button-secondary" onClick={()=>downloadSaveBackup(character,useGameStore.getState().races)}>Baixar backup</button>}
+          {onSwitchCharacter&&<button onClick={onSwitchCharacter} className="online-button-secondary">Personagens</button>}
           <button onClick={logout} className="rounded-lg border border-arcane-border px-3 py-2 text-xs text-gray-300 hover:border-arcane-gold hover:text-arcane-gold">Sair da conta</button>
         </div>
       </header>
 
       <nav className="game-nav bg-arcane-panel/80 backdrop-blur border-b border-arcane-border sticky top-[73px] z-40">
         <div className="max-w-7xl mx-auto flex overflow-x-auto">
-          {(["zona", "personagem", "backpack", "depot", "matriz", "pets", "laboratorio", "shop", "loja", "missoes", "duelos", "wiki"] as Tab[]).map((t) => (
+          {(["zona", "personagem", "backpack", "depot", "matriz", "pets", "laboratorio", "shop", "loja", "missoes", "duelos", "wiki", "online", "ranking"] as Tab[]).map((t) => (
             <button
               key={t}
               onClick={() => {
@@ -223,7 +235,10 @@ useEffect(() => {
       <JourneyGuide openQuest={openQuest} followQuest={trackQuest} />
       <QuestTracker onSelect={trackQuest} />
 
-      <main className="game-main max-w-7xl mx-auto p-4 mt-4">
+      <main className={`game-main max-w-7xl mx-auto p-4 mt-4 ${online.pending ? "pointer-events-none opacity-70" : ""}`} aria-busy={online.pending}>
+        <fieldset disabled={online.pending} className="min-w-0 border-0 p-0 m-0">
+        {tab === "online" && <OnlineCommunity/>}
+        {tab === "ranking" && <OnlineRanking/>}
         {tab === "zona" && <ZoneView onOpenQuest={openQuest} trackedQuestId={trackedQuestId} />}
         {tab === "personagem" && <Personagem />}
         {tab === "backpack" && <Backpack />}
@@ -239,7 +254,7 @@ useEffect(() => {
         <div className="mt-6">
           <CombatLog />
         </div>
-      </main>
+      </fieldset></main>
     </div>
   );
 }

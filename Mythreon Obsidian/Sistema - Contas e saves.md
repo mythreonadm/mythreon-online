@@ -10,6 +10,7 @@
 
 - [src/engine/save.ts](../src/engine/save.ts) — activateSaveAccount, createNewCharacter, saveGame, loadGame
 - [src/utils/localAccounts.ts](../src/utils/localAccounts.ts) — LocalAccount, getLocalAccountSession, closeLocalAccountSession, createLocalAccount, signInLocalAccount
+- [src/utils/saveBackup.ts](../src/utils/saveBackup.ts) — downloadSaveBackup
 
 ## Relações encontradas
 

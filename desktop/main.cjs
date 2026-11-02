@@ -15,6 +15,8 @@ const external = url => {
 };
 async function createWindow() {
   const dist = path.join(app.getAppPath(), 'dist');
+  let onlineOrigins=[];try{onlineOrigins=JSON.parse(await fs.readFile(path.join(dist,'online-origins.json'),'utf8')).origins.filter(origin=>{try{return new URL(origin).origin===origin&&new URL(origin).protocol==='https:';}catch{return false;}});}catch{}
+  const connectSources=["'self'",...onlineOrigins,...onlineOrigins.map(origin=>origin.replace('https://','wss://'))].join(' ');
   protocol.handle('mythreon', async request => {
     try {
       const url = new URL(request.url);
@@ -25,7 +27,7 @@ async function createWindow() {
       if (relative.startsWith('..') || path.isAbsolute(relative) || !(await fs.stat(file)).isFile()) return new Response('Not found', { status: 404 });
       const response = await net.fetch(pathToFileURL(file).toString());
       const headers = new Headers(response.headers);
-      headers.set('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; worker-src 'self' blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-src 'none'");
+      headers.set('Content-Security-Policy', `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; worker-src 'self' blob:; connect-src ${connectSources}; object-src 'none'; base-uri 'none'; frame-src 'none'`);
       return new Response(response.body, { status: response.status, headers });
     } catch { return new Response('Not found', { status: 404 }); }
   });

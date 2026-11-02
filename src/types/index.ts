@@ -194,6 +194,7 @@ export interface Character {
   totalSalvaged?: number;
   enemyHp?: number; enemyHpId?: string;
   doubleAtkUntil?: number;
+  onlineBalloonUntil?: number;
   
   activeVials: Record<string, number>;
   

@@ -28,3 +28,41 @@
 {"at":"2026-11-02T14:54:12.202Z","files":[{"path":"docs/anexos/raridades-hp-mp.png","status":"added"}]}
 {"at":"2026-11-02T14:55:25.015Z","files":[{"path":"docs/conhecimento/Balanceamento-Combate-Economia.md","status":"changed"}]}
 {"at":"2026-11-02T17:10:15.883Z","files":[{"path":"package-lock.json","status":"changed"},{"path":"package.json","status":"changed"}]}
+{"at":"2026-11-02T17:10:19.864Z","files":[{"path":"package-lock.json","status":"changed"},{"path":"package.json","status":"changed"}]}
+{"at":"2026-11-02T17:11:32.761Z","files":[{"path":"src/online/rules.ts","status":"added"},{"path":"src/store/gameStore.ts","status":"changed"},{"path":"supabase/migrations/001_online_world.sql","status":"added"},{"path":"supabase/migrations/002_realtime.sql","status":"added"}]}
+{"at":"2026-11-02T17:12:47.294Z","files":[{"path":"server/game.ts","status":"added"}]}
+{"at":"2026-11-02T17:16:40.036Z","files":[{"path":"server/transfers.ts","status":"added"},{"path":"server/world.ts","status":"added"}]}
+{"at":"2026-11-02T17:18:25.630Z","files":[{"path":"api/world.ts","status":"added"},{"path":"scripts/world-dev.ts","status":"added"},{"path":"server/world.ts","status":"changed"},{"path":"tsconfig.server.json","status":"added"},{"path":"vercel.json","status":"changed"},{"path":"vite.config.ts","status":"added"}]}
+{"at":"2026-11-02T17:18:44.504Z","files":[{"path":"package-lock.json","status":"changed"},{"path":"package.json","status":"changed"}]}
+{"at":"2026-11-02T17:20:50.392Z","files":[{"path":"src/online/OnlineSession.tsx","status":"added"},{"path":"src/online/client.ts","status":"added"},{"path":"src/online/controller.ts","status":"added"},{"path":"src/ui/LandingPage.tsx","status":"changed"},{"path":"src/vite-env.d.ts","status":"added"}]}
+{"at":"2026-11-02T17:23:06.922Z","files":[{"path":"src/App.tsx","status":"changed"},{"path":"src/engine/journey.ts","status":"changed"},{"path":"src/index.css","status":"changed"},{"path":"src/ui/OnlineCommunity.tsx","status":"added"}]}
+{"at":"2026-11-02T17:25:45.754Z","files":[{"path":"scripts/online-check.ts","status":"added"},{"path":"server/game.ts","status":"changed"},{"path":"server/world.ts","status":"changed"}]}
+{"at":"2026-11-02T17:26:17.983Z","files":[{"path":"scripts/run-ts-check.cjs","status":"added"}]}
+{"at":"2026-11-02T17:29:32.446Z","files":[{"path":"desktop/main.cjs","status":"changed"},{"path":"package.json","status":"changed"},{"path":"src/store/gameStore.ts","status":"changed"},{"path":"src/ui/OnlineCommunity.tsx","status":"changed"},{"path":"vite.config.ts","status":"changed"}]}
+{"at":"2026-11-02T17:31:06.276Z","files":[{"path":"src/online/client.ts","status":"changed"},{"path":"src/online/controller.ts","status":"changed"}]}
+{"at":"2026-11-02T17:31:09.799Z","files":[{"path":"package-lock.json","status":"changed"},{"path":"package.json","status":"changed"}]}
+{"at":"2026-11-02T17:33:01.070Z","files":[{"path":"scripts/ts-test-loader.cjs","status":"added"},{"path":"scripts/vite-online-test.config.mjs","status":"added"},{"path":"src/App.tsx","status":"changed"},{"path":"src/online/client.ts","status":"changed"},{"path":"src/online/controller.ts","status":"changed"},{"path":"src/ui/CommerceBenefits.tsx","status":"changed"},{"path":"src/ui/LandingPage.tsx","status":"changed"}]}
+{"at":"2026-11-02T17:34:49.430Z","files":[{"path":"scripts/online-ui-check.cjs","status":"added"}]}
+{"at":"2026-11-02T17:35:36.147Z","files":[{"path":"scripts/online-ui-check.cjs","status":"changed"}]}
+{"at":"2026-11-02T17:36:04.383Z","files":[{"path":"scripts/online-ui-check.cjs","status":"changed"}]}
+{"at":"2026-11-02T17:38:51.145Z","files":[{"path":"src/ui/OnlineCommunity.tsx","status":"changed"}]}
+{"at":"2026-11-02T17:41:20.199Z","files":[{"path":"package.json","status":"changed"},{"path":"scripts/online-doctor.mjs","status":"added"},{"path":"server/transfers.ts","status":"changed"},{"path":"server/world.ts","status":"changed"},{"path":"vite.config.ts","status":"changed"}]}
+{"at":"2026-11-02T17:43:32.374Z","files":[{"path":"scripts/online-check.ts","status":"changed"},{"path":"scripts/online-ui-check.cjs","status":"changed"},{"path":"server/game.ts","status":"changed"},{"path":"src/App.tsx","status":"changed"},{"path":"src/utils/saveBackup.ts","status":"added"}]}
+{"at":"2026-11-02T17:45:04.340Z","files":[{"path":"server/game.ts","status":"changed"},{"path":"server/world.ts","status":"changed"},{"path":"src/online/rules.ts","status":"changed"},{"path":"src/ui/OnlineCommunity.tsx","status":"changed"}]}
+{"at":"2026-11-02T17:46:31.881Z","files":[{"path":"server/world.ts","status":"changed"}]}
+{"at":"2026-11-02T17:48:58.179Z","files":[{"path":"docs/ATIVAR_MUNDO_ONLINE.md","status":"added"},{"path":"supabase/migrations/001_online_world.sql","status":"changed"},{"path":"vercel.json","status":"changed"}]}
+{"at":"2026-11-02T17:51:37.197Z","files":[{"path":"scripts/online-check.ts","status":"changed"},{"path":"server/game.ts","status":"changed"},{"path":"src/types/index.ts","status":"changed"},{"path":"src/ui/Zone.tsx","status":"changed"}]}
+{"at":"2026-11-02T17:52:58.011Z","files":[{"path":"server/game.ts","status":"changed"}]}
+{"at":"2026-11-02T17:53:13.506Z","files":[{"path":"server/game.ts","status":"changed"}]}
+{"at":"2026-11-02T17:56:13.498Z","files":[{"path":"src/online/controller.ts","status":"changed"},{"path":"supabase/migrations/001_online_world.sql","status":"changed"}]}
+{"at":"2026-11-02T17:58:06.224Z","files":[{"path":"CEREBRO_MYTHREON.md","status":"changed"},{"path":"docs/conhecimento/00 - Fonte de conhecimento.md","status":"changed"},{"path":"docs/conhecimento/01 - Estado e pendencias.md","status":"changed"},{"path":"docs/conhecimento/Contas-Online-e-Social.md","status":"added"}]}
+{"at":"2026-11-02T18:00:25.760Z","files":[{"path":"docs/conhecimento/Contas-Online-e-Social.md","status":"changed"},{"path":"src/App.tsx","status":"changed"},{"path":"src/online/OnlineSession.tsx","status":"changed"},{"path":"src/online/controller.ts","status":"changed"}]}
+{"at":"2026-11-02T18:09:33.360Z","files":[{"path":"CEREBRO_MYTHREON.md","status":"changed"},{"path":"api/world.ts","status":"changed"},{"path":"docs/conhecimento/Contas-Online-e-Social.md","status":"changed"},{"path":"scripts/online-check.ts","status":"changed"},{"path":"server/game.ts","status":"changed"},{"path":"server/world.ts","status":"changed"}]}
+{"at":"2026-11-02T18:09:57.293Z","files":[{"path":"server/world.ts","status":"changed"}]}
+{"at":"2026-11-02T18:13:06.825Z","files":[{"path":"docs/ATIVAR_MUNDO_ONLINE.md","status":"changed"},{"path":"docs/anexos/online-teste-ranking.png","status":"added"},{"path":"docs/anexos/online-teste-troca.png","status":"added"},{"path":"docs/conhecimento/Contas-Online-e-Social.md","status":"changed"}]}
+{"at":"2026-11-02T18:13:07.045Z","files":[{"path":"docs/ATIVAR_MUNDO_ONLINE.md","status":"changed"},{"path":"docs/anexos/online-teste-ranking.png","status":"added"},{"path":"docs/anexos/online-teste-troca.png","status":"added"},{"path":"docs/conhecimento/Contas-Online-e-Social.md","status":"changed"}]}
+{"at":"2026-11-02T18:18:49.054Z","files":[{"path":"server/world.ts","status":"changed"}]}
+{"at":"2026-11-02T18:21:58.376Z","files":[{"path":"docs/conhecimento/01 - Estado e pendencias.md","status":"changed"},{"path":"docs/conhecimento/Contas-Online-e-Social.md","status":"changed"}]}
+{"at":"2026-11-02T18:21:58.635Z","files":[{"path":"docs/conhecimento/01 - Estado e pendencias.md","status":"changed"},{"path":"docs/conhecimento/Contas-Online-e-Social.md","status":"changed"}]}
+{"at":"2026-11-02T18:23:34.446Z","files":[{"path":"docs/ATIVAR_MUNDO_ONLINE.md","status":"changed"}]}
+{"at":"2026-11-02T18:23:34.706Z","files":[{"path":"docs/ATIVAR_MUNDO_ONLINE.md","status":"changed"}]}

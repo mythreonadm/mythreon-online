@@ -8,6 +8,7 @@
 - [[docs/conhecimento/Balanceamento-Combate-Economia|Balanceamento de combate e economia]] — Fórmulas revisadas e evidências da auditoria de combate e economia.
 - [[docs/conhecimento/balanceamento-depois|Auditoria balanceamento-depois]] — a revisar
 - [[docs/conhecimento/balanceamento-preparado|Auditoria balanceamento-preparado]] — a revisar
+- [[docs/conhecimento/Contas-Online-e-Social|Contas online, ranking e comunidade]] — Contas Supabase, motor autoritativo, ranking e sistemas sociais; ativação hospedada ainda pendente.
 - [[docs/conhecimento/Jornada-Lore-Biomas|Jornada, lore e biomas]] — Introdução guiada, economia inicial gradual e travessias por NPC ligam a lore aos sete biomas.
 - [[docs/conhecimento/Laboratorio-de-Builds-e-Windows|Laboratório de Builds e Windows]] — Laboratório isolado de combate e primeira distribuição Windows de desenvolvimento.
 - [[docs/conhecimento/Operacao do Cerebro e Obsidian|Operação do Cérebro e Obsidian]] — Como iniciar, conferir, escrever e recuperar o conhecimento do Mythreon.

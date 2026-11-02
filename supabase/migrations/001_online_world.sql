@@ -1,0 +1,32 @@
+-- Execute no SQL Editor do SEU projeto Supabase. Sem dados ou segredos embutidos.
+begin;
+create table if not exists public.world_accounts (id uuid primary key references auth.users(id), created_at timestamptz not null default now(), muted_until timestamptz);
+create table if not exists public.world_characters (id uuid primary key, owner_id uuid not null references public.world_accounts(id), name text not null check(char_length(name) between 3 and 24), state jsonb not null, revision bigint not null default 0, updated_at timestamptz not null default now(), online_at timestamptz not null default now(), created_at timestamptz not null default now());
+create unique index if not exists world_character_name on public.world_characters(lower(name));
+create index if not exists world_character_owner on public.world_characters(owner_id);
+create table if not exists public.world_operations (owner_id uuid not null references public.world_accounts(id), request_id uuid not null, response jsonb, created_at timestamptz not null default now(), primary key(owner_id,request_id));
+create table if not exists public.world_messages (id uuid primary key, sender_id uuid not null references public.world_characters(id), sender_owner uuid not null, sender_name text not null, recipient_id uuid references public.world_characters(id), recipient_owner uuid, body text not null check(char_length(body) between 1 and 500), created_at timestamptz not null default now());
+create index if not exists world_messages_sender on public.world_messages(sender_id,created_at desc);
+create index if not exists world_messages_global on public.world_messages(created_at desc) where recipient_id is null;
+create index if not exists world_messages_recent on public.world_messages(created_at desc);
+create index if not exists world_messages_private on public.world_messages(recipient_id,created_at desc);
+create table if not exists public.world_friends (id uuid primary key, inviter_id uuid not null references public.world_characters(id), invitee_id uuid not null references public.world_characters(id), inviter_owner uuid not null, invitee_owner uuid not null, status text not null default 'pending' check(status in ('pending','accepted')), created_at timestamptz not null default now(), check(inviter_id<>invitee_id));
+create unique index if not exists world_friends_pair on public.world_friends(least(inviter_id,invitee_id),greatest(inviter_id,invitee_id));
+create table if not exists public.world_mail (id uuid primary key, sender_id uuid not null references public.world_characters(id), recipient_id uuid not null references public.world_characters(id), sender_owner uuid not null, recipient_owner uuid not null, sender_name text not null, subject text not null, body text not null, gold bigint not null check(gold>=0), items jsonb not null, fee bigint not null check(fee>=0), claimed_at timestamptz, created_at timestamptz not null default now());
+create index if not exists world_mail_recipient on public.world_mail(recipient_id,created_at desc);
+create table if not exists public.world_trades (id uuid primary key, a_id uuid not null references public.world_characters(id), b_id uuid not null references public.world_characters(id), a_owner uuid not null, b_owner uuid not null, status text not null default 'invited' check(status in ('invited','open','completed','cancelled','expired')), offer_a jsonb not null default '{"gold":0,"items":[],"fee":0}', offer_b jsonb not null default '{"gold":0,"items":[],"fee":0}', revision bigint not null default 0, ready_a boolean not null default false, ready_b boolean not null default false, expires_at timestamptz not null, created_at timestamptz not null default now(), check(a_id<>b_id));
+create index if not exists world_trade_active_a on public.world_trades(a_id,status);
+create index if not exists world_trade_active_b on public.world_trades(b_id,status);
+create table if not exists public.world_rankings (character_id uuid primary key references public.world_characters(id), name text not null, metrics jsonb not null, current_map text not null, updated_at timestamptz not null default now());
+create table if not exists public.world_ledger (id uuid primary key, operation_id uuid not null, kind text not null, sender_id uuid references public.world_characters(id), recipient_id uuid references public.world_characters(id), gold bigint not null default 0, fee bigint not null default 0, items jsonb not null default '[]', created_at timestamptz not null default now());
+-- Dados privados permanecem visíveis apenas aos participantes. Escrita é exclusiva da API do servidor.
+do $$ declare t text; begin foreach t in array array['world_accounts','world_characters','world_operations','world_messages','world_friends','world_mail','world_trades','world_rankings','world_ledger'] loop execute format('alter table public.%I enable row level security',t); execute format('revoke all on public.%I from public, anon, authenticated',t); end loop; end $$;
+grant select on public.world_accounts,public.world_characters,public.world_messages,public.world_friends,public.world_mail,public.world_trades,public.world_rankings to authenticated;
+drop policy if exists own_account on public.world_accounts;create policy own_account on public.world_accounts for select to authenticated using(id=auth.uid());
+drop policy if exists own_character on public.world_characters;create policy own_character on public.world_characters for select to authenticated using(owner_id=auth.uid());
+drop policy if exists visible_messages on public.world_messages;create policy visible_messages on public.world_messages for select to authenticated using(recipient_id is null or sender_owner=auth.uid() or recipient_owner=auth.uid());
+drop policy if exists own_friends on public.world_friends;create policy own_friends on public.world_friends for select to authenticated using(inviter_owner=auth.uid() or invitee_owner=auth.uid());
+drop policy if exists own_mail on public.world_mail;create policy own_mail on public.world_mail for select to authenticated using(sender_owner=auth.uid() or recipient_owner=auth.uid());
+drop policy if exists own_trades on public.world_trades;create policy own_trades on public.world_trades for select to authenticated using(a_owner=auth.uid() or b_owner=auth.uid());
+drop policy if exists read_rankings on public.world_rankings;create policy read_rankings on public.world_rankings for select to authenticated using(true);
+commit;

@@ -1,3 +1,4 @@
+import {useOnlineState} from '../online/controller';
 import { formatVital, vitalPercent } from '../utils/vitals';
 import { canEnterZone } from '../engine/journey';
 import { PassageContract } from './WorldJourney';
@@ -48,6 +49,7 @@ function formatHuntDuration(ms: number) {
 }
 
 export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
+  const online = useOnlineState(state=>state.active);
   const { character, currentZoneId, startHunting, stopHunting, startTraining, stopTraining, isTickRunning, isTraining, lastTickResult, setActiveEnemy, activateBuff, updateSettings, buyBless, healFull, startHealing, cancelHealing, healingUntil } = useGameStore();
   
   const [isHurt, setIsHurt] = useState(false);
@@ -125,11 +127,12 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
       if (balloonTimeout.current) clearTimeout(balloonTimeout.current);
       return;
     }
-    if (lastTickResult && lastTickResult.attacked && !balloon && Math.random() < 0.15) {
+    if(online&&(!character.onlineBalloonUntil||character.onlineBalloonUntil<Date.now())){setBalloon(null);return;}
+    if (lastTickResult && lastTickResult.attacked && !balloon && (online ? !!character.onlineBalloonUntil : Math.random() < 0.15)) {
       setBalloon({ x: 10 + Math.random() * 80, y: 10 + Math.random() * 60 });
       balloonTimeout.current = setTimeout(() => setBalloon(null), 10000);
     }
-  }, [lastTickResult, isTickRunning, balloon]);
+  }, [lastTickResult, isTickRunning, balloon, online, character.onlineBalloonUntil]);
 
   const handleBalloonClick = () => {
     setBalloon(null);

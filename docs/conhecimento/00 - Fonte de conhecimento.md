@@ -12,6 +12,7 @@ As notas abaixo são as fontes preservadas para decisões, explicações e proce
 | Preciso entender… | Nota original |
 |---|---|
 | O que está pronto e o que falta | [[docs/conhecimento/01 - Estado e pendencias|Estado e pendências]] |
+| Cadastro real, ranking, chat, VIP, correio e trocas | [[docs/conhecimento/Contas-Online-e-Social|Contas online e comunidade]] |
 | Tutorial, história e acessos aos biomas | [[docs/conhecimento/Jornada-Lore-Biomas|Jornada, lore e biomas]] |
 | Combate, drops, resistências e progressão | [[docs/conhecimento/Balanceamento-Combate-Economia|Balanceamento de combate e economia]] |
 | Shop, premium e os ataques das Beasts | [[docs/conhecimento/Shop-Premium-Beasts|Shop, premium e Divine Beasts]] |

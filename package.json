@@ -17,7 +17,10 @@
     "desktop:portable": "npm run build && electron-builder --win portable --x64",
     "brain:check": "node scripts/brain-check.mjs",
     "journey:check": "node scripts/journey-check.cjs",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.server.json",
+    "online:check": "node scripts/run-ts-check.cjs scripts/online-check.ts",
+    "online:dev": "tsx scripts/world-dev.ts",
+    "online:doctor": "node scripts/online-doctor.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",
@@ -27,6 +30,7 @@
     "zustand": "^4.5.0"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.14",
     "@types/pg": "^8.23.1",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
@@ -36,8 +40,10 @@
     "electron-builder": "^26.18.0",
     "postcss": "^8.4.0",
     "tailwindcss": "^3.4.0",
+    "tsx": "^4.23.15",
     "typescript": "^5.3.0",
-    "vite": "^5.0.0"
+    "vite": "^5.0.0",
+    "ws": "^8.22.1"
   },
   "main": "desktop/main.cjs",
   "description": "Mythreon Online — RPG idle de fantasia arcana",

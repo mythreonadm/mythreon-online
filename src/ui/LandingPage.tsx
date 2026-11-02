@@ -1,3 +1,4 @@
+import { onlineConfigured, supabase } from '../online/client';
 import React, { FormEvent, useState } from "react";
 import { AssetImage } from "./AssetImage";
 import { HistorySection } from "./Wiki";
@@ -89,7 +90,7 @@ export function LandingPage({ onAuthenticated }: LandingPageProps) {
           <p className="landing-build-footnote">Os 33 arquétipos nomeados já registrados no jogo são combinações especiais. O catálogo cresce com o desenvolvimento de Mythreon.</p>
         </section>        <section className="landing-journey" id="jornada">
           <div className="landing-journey-art" aria-hidden="true"><AssetImage src="/assets/backgrounds/ruins.png" alt="" className="h-full w-full object-cover" /></div>
-          <div><span className="landing-eyebrow">SUA HISTÓRIA COMEÇA AGORA</span><h2>Escolha um nome.<br />O resto, Mythreon lembrará.</h2><p>Crie sua conta neste navegador, dê vida ao seu personagem e parta para sua primeira caçada. Seu progresso fica guardado para quando você voltar.</p><button className="landing-button" onClick={() => openAccess("register")}>Criar minha conta <span aria-hidden="true">→</span></button></div>
+          <div><span className="landing-eyebrow">SUA HISTÓRIA COMEÇA AGORA</span><h2>Escolha um nome.<br />O resto, Mythreon lembrará.</h2><p>{onlineConfigured ? "Crie sua conta, dê vida ao seu personagem e continue a mesma aventura no PC ou no celular. Seu progresso fica guardado no mundo de Mythreon." : "Crie sua conta local, dê vida ao seu personagem e parta para sua primeira caçada. Nesta versão local, o progresso fica neste navegador."}</p><button className="landing-button" onClick={() => openAccess("register")}>Criar minha conta <span aria-hidden="true">→</span></button></div>
           <div className="landing-journey-seal"><span>✦</span><small>A ESSÊNCIA<br />REGISTRA TUDO</small></div>
         </section>
 
@@ -119,6 +120,7 @@ function AccountDialog({ mode, onModeChange, onClose, onAuthenticated }: { mode:
   const [confirmation, setConfirmation] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState("");
   const registering = mode === "register";
 
   async function submit(event: FormEvent) {
@@ -127,6 +129,10 @@ function AccountDialog({ mode, onModeChange, onClose, onAuthenticated }: { mode:
     if (registering && password !== confirmation) return setError("As senhas não são iguais.");
     setBusy(true);
     try {
+      if(onlineConfigured){
+        if(registering){const {data,error}=await supabase().auth.signUp({email,password});if(error)throw error;if(!data.session){setNotice('Conta criada. Confirme seu e-mail e depois entre para criar seu personagem.');return;}onAuthenticated({id:data.user!.id,email:data.user!.email??email});}
+        else {const {data,error}=await supabase().auth.signInWithPassword({email,password});if(error)throw error;onAuthenticated({id:data.user.id,email:data.user.email??email});}return;
+      }
       const account = registering ? await createLocalAccount(email, password) : await signInLocalAccount(email, password);
       onAuthenticated(account);
     } catch (cause) {
@@ -143,17 +149,18 @@ function AccountDialog({ mode, onModeChange, onClose, onAuthenticated }: { mode:
         <AssetImage className="account-logo" src="/assets/branding/mythreon-logo-horizontal.png" alt="Mythreon Online" />
         <span className="landing-eyebrow">SUA JORNADA COMEÇA AQUI</span>
         <h2 id="account-title">{registering ? "Criar conta" : "Bem-vindo de volta"}</h2>
-        <p>{registering ? "Guarde seu progresso e prepare-se para explorar." : "Entre com a conta criada neste navegador."}</p>
+        <p>{registering ? "Guarde seu progresso e prepare-se para explorar." : onlineConfigured ? "Acesse seus personagens em qualquer aparelho." : "Entre com a conta local deste navegador."}</p>
         <form onSubmit={submit}>
           <label htmlFor="account-email">Conta (e-mail)</label>
           <input id="account-email" type="email" autoComplete="email" required value={email} onChange={event => setEmail(event.target.value)} placeholder="voce@exemplo.com" />
           <label htmlFor="account-password">Senha</label>
           <input id="account-password" type="password" autoComplete={registering ? "new-password" : "current-password"} required minLength={8} value={password} onChange={event => setPassword(event.target.value)} placeholder="Mínimo de 8 caracteres" />
           {registering && <><label htmlFor="account-confirm">Confirmar senha</label><input id="account-confirm" type="password" autoComplete="new-password" required minLength={8} value={confirmation} onChange={event => setConfirmation(event.target.value)} placeholder="Digite a senha novamente" /></>}
-          {error && <div className="account-error" role="alert">{error}</div>}
+          {error && <div className="account-error" role="alert">{error}</div>}{notice&&<p role="status" className="my-3 text-sm text-green-300">{notice}</p>}
           <button className="landing-button account-submit" disabled={busy}>{busy ? "Aguarde..." : registering ? "Criar conta e jogar" : "Entrar e continuar"}</button>
         </form>
-        <div className="account-note">Por enquanto, a conta e o progresso ficam salvos neste navegador.</div>
+        <div className="account-note">{onlineConfigured ? "Cadastro online com confirmação de e-mail. O progresso dos personagens fica no servidor." : "Modo local: conta e progresso ficam somente neste navegador. O mundo online ainda não foi conectado."}</div>
+        {onlineConfigured&&!registering&&<button type="button" className="account-switch" onClick={async()=>{setError("");if(!email)return setError("Informe seu e-mail para recuperar a senha.");const {error}=await supabase().auth.resetPasswordForEmail(email);if(error)setError(error.message);else setNotice("Confira seu e-mail para redefinir a senha.");}}>Esqueci minha senha</button>}
         <button className="account-switch" onClick={() => { setError(""); onModeChange(registering ? "login" : "register"); }}>{registering ? "Já tem conta? Entrar" : "Primeira vez aqui? Criar conta"}</button>
       </section>
     </div>

@@ -1,0 +1,23 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": [
+      "node"
+    ],
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "noEmit": true
+  },
+  "include": [
+    "api/**/*.ts",
+    "server/**/*.ts",
+    "scripts/world-dev.ts"
+  ],
+  "exclude": [
+    "src/deepseek_typescript_20261029_4ef2d6.ts",
+    "src/deepseek_typescript_20261029_4ef2d6 (1).ts"
+  ]
+}

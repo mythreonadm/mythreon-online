@@ -430,3 +430,22 @@ html { scroll-behavior: smooth; scroll-padding-top: 92px; }
 .rarity-art.rarity-lendario::before { inset:-8%; background:radial-gradient(ellipse,#ffe49b66,transparent 68%); animation:legendary-aura 3s ease-in-out infinite; }
 @keyframes legendary-aura { 0%,100% { opacity:.5; transform:scale(.92); } 50% { opacity:1; transform:scale(1.08); } }
 @media (prefers-reduced-motion:reduce) { .rarity-art.rarity-lendario::before { animation:none; } }
+
+.online-entry { min-height:100vh; display:flex; align-items:center; justify-content:center; background:#091013; color:#e7e9e7; padding:24px; }
+.online-card { border:1px solid #344548; border-radius:18px; background:linear-gradient(145deg,#142024,#0b1215); padding:clamp(18px,3vw,28px); color:#dce2df; }
+.online-input { width:100%; min-width:0; background:#080f12; border:1px solid #3c4c50; border-radius:8px; padding:10px 12px; color:#f1f5ef; }
+.online-input:focus { outline:2px solid #a88b47; outline-offset:2px; }
+.online-button,.online-button-secondary { display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; gap:8px; padding:9px 14px; border-radius:8px; border:1px solid #d6b46a; background:#d6b46a; color:#101719; font-weight:700; font-size:13px; cursor:pointer; }
+.online-button-secondary { background:#142125; border-color:#3c5258; color:#dbe5df; }
+.online-button:disabled,.online-button-secondary:disabled { opacity:.45; cursor:wait; }
+.online-character { width:100%; display:flex; justify-content:space-between; align-items:center; gap:12px; text-align:left; padding:15px; border:1px solid #40565b; background:#0c161a; border-radius:10px; }
+.online-character:hover { border-color:#d6b46a; }
+.online-eyebrow { color:#c9ac6b; text-transform:uppercase; font-size:10px; letter-spacing:.16em; margin-bottom:8px; }
+.online-chat-log { height:350px; overflow-y:auto; background:#080f12; border:1px solid #2c4146; border-radius:12px; padding:14px; }
+.online-offer-items { max-height:240px; overflow-y:auto; display:grid; gap:7px; margin:12px 0; }
+.online-table { width:100%; border-collapse:collapse; font-size:13px; }
+.online-table th { text-align:left; color:#c9ac6b; padding:12px; border-bottom:1px solid #40565b; }
+.online-table td { padding:13px 12px; border-bottom:1px solid #26383c; }
+.online-table tr:nth-child(even) { background:#16242880; }
+.online-modal-backdrop { position:fixed; inset:0; z-index:110; display:grid; place-items:center; padding:16px; background:#000c; backdrop-filter:blur(4px); }
+.online-trade-modal { width:min(900px,100%); max-height:92vh; overflow-y:auto; box-shadow:0 24px 80px #0009; }

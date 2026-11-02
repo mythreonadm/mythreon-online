@@ -1,0 +1,2 @@
+-- Ativa notificações; os dados continuam sujeitos às políticas RLS de 001_online_world.sql.
+do $$ declare t text; begin foreach t in array array['world_messages','world_friends','world_mail','world_trades'] loop if not exists(select 1 from pg_publication_tables where pubname='supabase_realtime' and schemaname='public' and tablename=t) then execute format('alter publication supabase_realtime add table public.%I',t); end if; end loop; end $$;

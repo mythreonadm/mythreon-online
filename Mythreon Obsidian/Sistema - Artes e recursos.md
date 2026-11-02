@@ -8,6 +8,8 @@
 
 ## Código e recursos
 
+- [docs/anexos/online-teste-ranking.png](../docs/anexos/online-teste-ranking.png)
+- [docs/anexos/online-teste-troca.png](../docs/anexos/online-teste-troca.png)
 - [docs/anexos/raridades-hp-mp.png](../docs/anexos/raridades-hp-mp.png)
 - [imagens/ARQUEIRO04.png](../imagens/ARQUEIRO04.png)
 - [imagens/ARQUEIRO1.png](../imagens/ARQUEIRO1.png)
