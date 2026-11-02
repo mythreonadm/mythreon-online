@@ -1,3 +1,4 @@
+import { WorldJourney } from './WorldJourney';
 import React, { useState, useMemo, useEffect } from "react";
 import { AssetImage } from "./AssetImage";
 import { ZONES } from "../data/zones";
@@ -18,9 +19,10 @@ function formatWikiStat(stat: string, value: number) {
   return PERCENT_STATS.has(stat) && Math.abs(value) <= 1 ? `${(value * 100).toFixed(0)}%` : value.toLocaleString("pt-BR");
 }
 
-type Section = "history" | "beasts" | "monsters" | "zones" | "equipment" | "elements" | "consumables" | "components" | "races" | "bosses" | "backpacks" | "fragments";
+type Section = "journey" | "history" | "beasts" | "monsters" | "zones" | "equipment" | "elements" | "consumables" | "components" | "races" | "bosses" | "backpacks" | "fragments";
 
 const SECTION_META: { id: Section; label: string; icon: string; color: string }[] = [
+  { id: "journey", label: "Jornada e Biomas", icon: "🗺️", color: "text-arcane-gold" },
   { id: "history", label: "História", icon: "📜", color: "text-arcane-gold" },
   { id: "beasts", label: "Divine Beasts", icon: "🐾", color: "text-arcane-gold" },
   { id: "monsters", label: "Monstros", icon: "👹", color: "text-red-400" },
@@ -97,6 +99,7 @@ export function Wiki() {
 
       {/* CONTENT */}
       <div className="min-h-[400px]">
+        {section === "journey" && <WorldJourney />}
         {section === "history" && <HistorySection />}
         {section === "beasts" && <DivineBeastsWikiSection search={search} />}
         {section === "monsters" && <MonstersSection search={search} />}
@@ -699,8 +702,8 @@ function MonstersSection({ search }: { search: string }) {
             <div className="text-[10px] text-gray-400 space-y-0.5">
               <div>💰 Ouro: {m.goldMin}–{m.goldMax}</div>
               {m.element && <div className="text-orange-200">{ELEMENTS.find(element => element.id === m.element)?.icon} Afinidade: {ELEMENTS.find(element => element.id === m.element)?.name} · dano elemental</div>}
-              {m.elementalResistances && Object.entries(m.elementalResistances).map(([element, resistance]) => <div key={element} className="text-cyan-200">Resistência: {ELEMENTS.find(entry => entry.id === element)?.name ?? element} {Math.round((resistance ?? 0) * 100)}%</div>)}
-              <div>⚔️ Equipamento: {m.isBoss ? "60%" : "15%"} de chance base · Tier da zona</div>
+              {m.elementalResistances && Object.entries(m.elementalResistances).map(([element, resistance]) => <div key={element} className="text-cyan-200">Resistência: {ELEMENTS.find(entry => entry.id === element)?.name ?? element} {Math.round(Number(resistance ?? 0) * 100)}%</div>)}
+              <div>⚔️ Equipamento: {m.isBoss ? "65%" : "18%"} de chance base · Tier da zona</div>
               <div>🔮 Drop: <span className="text-arcane-cyan">{ATAQUES[m.componentId]?.name || m.componentId}</span> ({(m.componentChance * 100).toFixed(0)}%)</div>
               {m.essenceId && <div>💎 Essência: <span className="text-arcane-cyan">{SUPORTES[m.essenceId]?.name || m.essenceId}</span> ({((m.essenceChance || 0) * 100).toFixed(0)}%)</div>}
               {m.uniqueDropId && <div className="text-yellow-400">🏆 Único: {UNIQUE_TEMPLATES[m.uniqueDropId]?.name} ({((m.uniqueDropChance || 0) * 100).toFixed(1)}%)</div>}

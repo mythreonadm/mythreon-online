@@ -1,6 +1,6 @@
 # Cérebro do Projeto — Mythreon Online
 
-> **Documento principal para continuidade entre IAs.** Leia este arquivo antes de propor ou editar o jogo. O índice vivo e compacto está em `.mythreon-brain/neurons.json`, gerado automaticamente pelo observador do projeto. Atualize a seção **Registro de continuidade** sempre que concluir uma tarefa. O código atual é a fonte da verdade sobre o que funciona; este documento é a fonte da verdade sobre intenção, decisões e contexto do projeto.
+> **Resumo de contexto e continuidade entre IAs.** A entrada principal é [[00 - Comece aqui]], seguida de [[docs/conhecimento/00 - Fonte de conhecimento]]. Regras, decisões e procedimentos duráveis ficam nas notas originais em docs/conhecimento. Use este documento para arquitetura resumida e histórico; confira o código antes de afirmar como o jogo funciona. O índice automático apenas localiza fontes e relações.
 
 **Última revisão:** 02/11/2026  
 **Pasta do projeto:** `C:\Users\dreey\OneDrive\Área de Trabalho\MYTHREON ONLINE`  
@@ -11,7 +11,7 @@
 
 ## 1. Instruções para a próxima IA
 
-1. Leia este arquivo antes de trabalhar. Depois examine `git status`, os arquivos citados na tarefa e o código atual; o conteúdo pode ter mudado desde esta revisão.
+1. Comece por `00 - Comece aqui.md`, o índice `docs/conhecimento/00 - Fonte de conhecimento.md` e a nota do assunto. Consulte seções deste Cérebro quando precisar de contexto/histórico. Confira `git status` e o código atual; planos antigos podem estar desatualizados.
 2. **Não implemente de novo algo que já existe.** Confirme cada pedido contra o código, não apenas contra a lista de pendências.
 3. Preserve as mecânicas existentes quando o pedido for visual. Não altere regras, dados, saves ou funcionalidades sem pedido explícito.
 4. Faça alterações pequenas e localizadas. Preserve compatibilidade com saves antigos; campos novos devem ter defaults/migração no carregamento.
@@ -25,21 +25,19 @@
 
 ### Prompt curto para iniciar uma sessão com outra IA
 
-> Acesse a pasta do projeto Mythreon Online e leia primeiro `CEREBRO_MYTHREON.md`. Ele contém as decisões e o contexto persistente do jogo. Confira o estado atual do código antes de editar, porque planos antigos podem estar desatualizados. Continue o pedido do usuário sem duplicar funções existentes, preserve saves e gameplay, faça mudanças incrementais e atualize o próprio Cérebro com o que mudou e o próximo passo.
+> Acesse a pasta Mythreon Online e leia `00 - Comece aqui.md`, o índice `docs/conhecimento/00 - Fonte de conhecimento.md` e a nota do assunto. Consulte o Cérebro para contexto histórico quando necessário. Ele contém as decisões e o contexto persistente do jogo. Confira o estado atual do código antes de editar, porque planos antigos podem estar desatualizados. Continue o pedido do usuário sem duplicar funções existentes, preserve saves e gameplay, faça mudanças incrementais e atualize o próprio Cérebro com o que mudou e o próximo passo.
 
-### Memória neural automática
+### Memória e conhecimento no Obsidian — versão 2
 
-- `scripts/mythreon-brain.mjs` cria `.mythreon-brain/neurons.json`: um grafo compacto e legível por IA com um neurônio por arquivo/tópico, exports, headings Markdown, dependências locais e relações inferidas pelo caminho. Hashes/mtime de controle ficam em `.mythreon-brain/state.json`, excluído do Git.
-- `npm run dev` gera o índice e mantém o observador ligado enquanto o servidor de desenvolvimento estiver rodando. Ao salvar/renomear/apagar arquivos no projeto, o índice é regenerado após uma pausa curta.
-- `npm run brain:watch` liga apenas o observador; `npm run brain:sync` faz uma atualização pontual.
-- `.mythreon-brain/neurons.json` é metadado compacto e pode ser versionado com o projeto. Ele não contém o código-fonte, segredos, senhas ou valores de `.env`. O formato usa tabelas e referências numéricas para reduzir repetição e tamanho.
-- Compressão é útil para arquivo local; criptografia não reduz tokens e um LLM não consegue ler ciphertext. Opcionalmente, `npm run brain:seal` cria uma cópia Gzip + AES-256-GCM usando `MYTHREON_BRAIN_KEY`; `npm run brain:open` a restaura. A chave precisa ser guardada fora da pasta/repositório e compartilhada com segurança entre computadores. Sem a mesma chave, a cópia cifrada não pode ser aberta.
-- A cópia criptografada é privada e ignorada pelo Git. Para continuidade entre modelos, use `CEREBRO_MYTHREON.md` + `.mythreon-brain/neurons.json`; eles permanecem em texto legível.
-- O observador roda apenas enquanto `npm run dev` ou `npm run brain:watch` estiver ativo. Não é um serviço permanente do Windows e não fica rodando após fechar o terminal.
-- `Ativação Cérebro.bat` inicia o observador com duplo clique. Enquanto a janela fica aberta, cada salvamento, adição ou remoção no projeto sincroniza `.mythreon-brain/neurons.json` e o vault `Mythreon Obsidian/`.
-- `Mythreon Obsidian/` é um vault legível: notas de sistema linkam os arquivos relacionados e umas às outras; `Início.md` concentra escala, última sincronização e registro recente. Abra essa pasta no Obsidian usando **Abrir pasta como vault**. O índice automático mapeia relações; decisões, explicações e aprendizados semânticos ainda precisam ser registrados neste Cérebro por uma IA ou pelo criador.
-- Obsidian facilita navegação visual e continuidade, mas não elimina o custo de contexto de uma IA. Para sessões econômicas, peça à IA para ler `CEREBRO_MYTHREON.md`, `Mythreon Obsidian/Início.md` e somente as notas/sources ligadas ao sistema que será alterado.
-- A tentativa de instalar inicialização automática do Windows não foi autorizada neste ambiente; para acompanhar alterações, mantenha `npm run dev` aberto ou rode `npm run brain:watch` em outro terminal.
+- Cofre oficial: raiz MYTHREON ONLINE. A entrada é [[00 - Comece aqui]], e a fonte autoral é [[docs/conhecimento/00 - Fonte de conhecimento]]. Notas originais em docs/conhecimento não são sobrescritas pelo observador.
+- Este Cérebro registra contexto e continuidade; o painel Mythreon Obsidian contém somente índices, catálogo com links para as notas originais e mapa técnico. A antiga cópia gerada deste arquivo foi preservada em Arquivo e deixou de ser fonte concorrente.
+- Ativação Cérebro.bat e npm run brain:watch iniciam um supervisor que reinicia o observador após falha e recarrega seu código quando atualizado. O observador tem lock contra duplicatas, verificação periódica de 30 s e recuperação de arquivos temporariamente indisponíveis. Fechar a janela encerra a observação; não é um serviço permanente do Windows.
+- npm run brain:sync faz reconstrução pontual. npm run dev mantém observação junto do Vite ou utiliza o observador já existente. O supervisor dedicado é a opção de recarga automática do código do Cérebro.
+- Binários e diretórios release/dist/node_modules/.git/.obsidian são ignorados. Assets entram como metadados sem leitura do conteúdo. O índice compacto fica em .mythreon-brain/neurons.json; estado interno em state.json; catálogo semântico em knowledge.json; estado da última sincronização em status.json.
+- changes.jsonl registra caminhos/estados observados sem o limite do resumo recente. Não reconstrói versões intermediárias enquanto o observador estava desligado e não substitui Git ou histórico de decisões.
+- O observador cataloga arquivos e relações; cabe ao criador/IA registrar por que as regras mudaram. Obsidian não interpreta código sozinho e não elimina o custo de contexto das IAs. Use leitura seletiva de notas e fontes.
+- brain:seal e brain:open preservam a opção de cópia Gzip/AES-256-GCM mediante MYTHREON_BRAIN_KEY. A memória de trabalho permanece legível; criptografia não reduz tokens. Não salvar a chave ou credenciais em notas/repositório.
+- Recuperação, diagnóstico e limites: [[docs/conhecimento/Operacao do Cerebro e Obsidian]]. Estado e falhas conhecidos: [[docs/conhecimento/Registro de problemas]].
 
 ---
 
@@ -303,3 +301,22 @@ Windows: Electron 45.2.1 + electron-builder 26.18.0, desktop/main.cjs e electron
 Validação: scripts/build-lab-check.cjs passou em não mutação, orçamento, bloqueios, RNG/relógio, repetibilidade e timeout; build passou. Typecheck global conserva erros antigos fora dos novos módulos. Cadeia de build tem advisories npm pendentes, sem correções major automáticas. Documentação e comandos em docs/conhecimento/Laboratorio-de-Builds-e-Windows.md. release e .obsidian ignorados pelo Git/observador; não indexar binários de saída. Próximos passos: playtest visual prolongado, migração web/desktop, identidade/assinatura do executável e revisão da cadeia de ferramentas antes de lançamento comercial.
 
 Verificação final Windows: o próprio portátil foi aberto em teste oculto com conta normal; código 0, interface/asset/WebCrypto/isolamento e Worker (8 alvos/6 planos) confirmados. 187 arquivos dist e main verificados. Evidências em release/windows-smoke-test.json, verification.json e checksums.sha256; pasta release é saída ignorada, não memória autoral.
+
+### 2026-11-02 — fonte de conhecimento no Obsidian e observador v2
+
+Pedido: corrigir EBUSY da captura e estruturar Obsidian como base de conhecimento. Identificada execução antiga em memória lendo release/electron.exe; notas originais permaneciam no disco. Criados entrada Comece aqui, índice autoral, estado/pendências, operação e registro de problemas; notas existentes mantidas em docs/conhecimento. Cópias técnicas antigas preservadas em Mythreon Obsidian/Arquivo, sem cópia concorrente ativa deste Cérebro. Catálogo gerado aponta para originais; grafo padrão foca conhecimento e conexões técnicas usam somente relações observadas.
+
+Código: brain-core.mjs centraliza exclusões, coleta tolerante a falhas, inventário de assets sem leitura, escrita por substituição e lock; mythreon-brain.mjs publica estado ok/parcial/erro, journal completo de caminhos, retry periódico; brain-service.mjs recarrega o observador e reinicia após falha. Ambos os bat iniciam o supervisor v2. Novas notas do Obsidian vão a docs/conhecimento; configurações anteriores preservadas em .mythreon-brain/backups. AGENTS.md e prompt de documentação v2 orientam futuras IAs a atualizar as fontes.
+
+Validação: npm run brain:check passou em exclusões de binários/segredos, EBUSY com preservação do índice, assets sem abertura, escrita por substituição, notas preservadas, migração reversível, lock contra duplicatas, eventos e recarga real de processo. npm run brain:sync concluiu estado ok. Limite: conteúdo semântico ainda é escrito por IA/criador; o observador não transforma sozinho todas as conversas/código em conhecimento interpretado. Fechar janela antiga e reabrir ativação uma vez; reabrir gráfico no Obsidian para carregar filtros.
+
+
+## Continuidade — 2026-11-02 — Jornada, lore e biomas
+
+Nova fonte autoral: [[docs/conhecimento/Jornada-Lore-Biomas|Jornada, lore e biomas]]. Ler esta nota antes de alterar tutorial/economia/mapas. Novos personagens têm intro e 14 quests graduais, Matriz apenas depois dos lobos, tutorial pausa caça e treino ao concluir. Não reativar caça automática no cadastro. Nunca liberar travessia apenas por nível: contratos com NPC validam e consomem recursos atomicamente. Salvar acessos permanentes em unlockedZoneIds, preservar veteranos journeyVersion=0. Nova curva XP gradual com migração por fração. Lore centralizada em src/data/worldJourney.ts e compartilhada com Wiki/quests. Novos mapas opcionais Veyra e Kaelor usam gradientes/emojis enquanto faltam artes; prompts em docs/ARTE_BIOMAS_MYTHREON.md. Não apagar PNGs transparentes: AssetImage prioriza PNG apenas em players e GIF/GIFF nos demais. Falha de mob não pode alterar o estado visual do personagem. Testes: journey:check, typecheck, build-lab-check, brain:check e journey-ui-check em perfil separado. Sem reset de saves, push ou deploy.
+
+Entrega Windows da Jornada: win-unpacked atualizado e testado (187 arquivos conferidos); portátil único continua anterior por falta de espaço em C:. Não informar que o portátil contém as novas quests. Ver release/journey-verification.json e nota Jornada-Lore-Biomas. Artes novas ainda são prompts/fallbacks, não imagens geradas.
+
+## Continuidade — HP/MP e raridades — 2026-11-02
+
+loadGame deve recalcular atributos derivados antes do combate. Nunca confiar em hpMax/mpMax antigos do cache nem concatenar bônus legados como strings. UI usa formatVital/vitalPercent; precisão do combate preservada. Regras detalhadas e evidências em docs/conhecimento/Balanceamento-Combate-Economia.md. Raridades são compartilhadas em src/ui/itemRarity.ts, ItemIcon e CSS, sem copiar mapas de brilho por tela. Comum neutro, verde sem aura, azul suave, roxo forte, dourado pulsante. Testes vitals-check.cjs e journey-ui-check.cjs ampliados.

@@ -5,7 +5,7 @@ import { checkQuestCompletion } from "../engine/questEngine";
 
 export function QuestTracker({ onSelect }: { onSelect: (questId: string) => void }) {
   const character = useGameStore(state => state.character);
-  const [minimized, setMinimized] = useState(() => localStorage.getItem("mythreon_quest_tracker_minimized") === "true");
+  const [minimized, setMinimized] = useState(() => localStorage.getItem("mythreon_quest_tracker_minimized") !== "false");
   const [showCompleted, setShowCompleted] = useState(false);
   if (!character) return null;
 

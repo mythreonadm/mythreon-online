@@ -1,20 +1,11 @@
-# Mythreon Online · Cérebro
+# Painel técnico do Cérebro
 
-> Abra esta pasta como um vault no Obsidian. O índice é atualizado por [36mAtivação Cérebro.bat[0m ou por [36mnpm run brain:sync[0m.
+> Índice automático. Edite as notas originais em docs/conhecimento; este arquivo pode ser recriado.
 
-## Memória principal
+O conhecimento principal está em [[docs/conhecimento/00 - Fonte de conhecimento|Fonte de conhecimento]]. Comece por [[00 - Comece aqui]].
 
-- [[CEREBRO_MYTHREON]] — decisões, arquitetura, estado e continuidade semântica.
-- [[Mapa de Sistemas]] — grafo de arquivos, tópicos e relações do código.
+- [[Mythreon Obsidian/Conhecimento - Catálogo|Catálogo de notas originais]]
+- [[Mythreon Obsidian/Mapa de Sistemas|Mapa técnico]]
+- [[Mythreon Obsidian/Estado da sincronização|Estado da sincronização]]
 
-## Sistemas
-
-[[Sistema - Audio|Audio]] · [[Sistema - Build Lab|Build Lab]] · [[Sistema - Combat|Combat]] · [[Sistema - Divine Beasts|Divine Beasts]] · [[Sistema - Document|Document]] · [[Sistema - Elements|Elements]] · [[Sistema - Engine|Engine]] · [[Sistema - Game Data|Game Data]] · [[Sistema - Interface|Interface]] · [[Sistema - Items|Items]] · [[Sistema - Matrix|Matrix]] · [[Sistema - Project Config|Project Config]] · [[Sistema - Project File|Project File]] · [[Sistema - Project Ui|Project Ui]] · [[Sistema - Quests|Quests]] · [[Sistema - Save And Accounts|Save And Accounts]] · [[Sistema - State|State]] · [[Sistema - Stats And Progression|Stats And Progression]] · [[Sistema - Tooling|Tooling]] · [[Sistema - Types|Types]] · [[Sistema - Utility|Utility]] · [[Sistema - Visual Assets|Visual Assets]] · [[Sistema - Windows Desktop|Windows Desktop]] · [[Sistema - Zones And Lore|Zones And Lore]]
-
-## Última sincronização
-
-2026-11-02T13:01:24.016Z
-
-- Alterado: `CEREBRO_MYTHREON.md`
-- Alterado: `docs/conhecimento/Laboratorio-de-Builds-e-Windows.md`
-- Adicionado: `scripts/verify-windows.cjs`
+O código descreve o comportamento real; notas registram regras, decisões e intenções. Não existe cópia editável concorrente do Cérebro nesta pasta.

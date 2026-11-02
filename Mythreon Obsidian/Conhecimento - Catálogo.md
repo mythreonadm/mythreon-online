@@ -1,0 +1,18 @@
+# Catálogo de conhecimento
+
+> Índice automático. Edite as notas originais em docs/conhecimento; este arquivo pode ser recriado.
+
+- [[docs/conhecimento/00 - Fonte de conhecimento|Fonte de conhecimento de Mythreon]] — Índice autoral e fonte de entrada para o conhecimento durável do projeto.
+- [[docs/conhecimento/01 - Estado e pendencias|Estado e pendências]] — Estado resumido do produto, cobertura documental e próximo trabalho.
+- [[docs/conhecimento/balanceamento-antes|Auditoria balanceamento-antes]] — a revisar
+- [[docs/conhecimento/Balanceamento-Combate-Economia|Balanceamento de combate e economia]] — Fórmulas revisadas e evidências da auditoria de combate e economia.
+- [[docs/conhecimento/balanceamento-depois|Auditoria balanceamento-depois]] — a revisar
+- [[docs/conhecimento/balanceamento-preparado|Auditoria balanceamento-preparado]] — a revisar
+- [[docs/conhecimento/Jornada-Lore-Biomas|Jornada, lore e biomas]] — Introdução guiada, economia inicial gradual e travessias por NPC ligam a lore aos sete biomas.
+- [[docs/conhecimento/Laboratorio-de-Builds-e-Windows|Laboratório de Builds e Windows]] — Laboratório isolado de combate e primeira distribuição Windows de desenvolvimento.
+- [[docs/conhecimento/Operacao do Cerebro e Obsidian|Operação do Cérebro e Obsidian]] — Como iniciar, conferir, escrever e recuperar o conhecimento do Mythreon.
+- [[docs/conhecimento/Registro de problemas|Registro de problemas]] — Problemas de documentação, sincronização e continuidade com suas evidências.
+- [[docs/conhecimento/Shop-Premium-Beasts|Shop, premium e Divine Beasts]] — a revisar
+- [[docs/conhecimento/Treino-e-Diferenciais-Mythreon|Disciplina e um mundo que se lembra]] — Treino implementado e propostas de identidade própria fundamentadas em pesquisa de idle games.
+
+[[docs/conhecimento/00 - Fonte de conhecimento|Voltar à fonte]]

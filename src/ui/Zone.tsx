@@ -1,3 +1,6 @@
+import { formatVital, vitalPercent } from '../utils/vitals';
+import { canEnterZone } from '../engine/journey';
+import { PassageContract } from './WorldJourney';
 import { TrainingProgress } from "./TrainingProgress";
 import React, { useEffect, useState } from "react";
 import { useGameStore } from "../store/gameStore";
@@ -57,7 +60,8 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
   const [healTimer, setHealTimer] = useState(0);
   const [magicCooldown, setMagicCooldown] = useState(0);
   const [mobilePanelOpen, setMobilePanelOpen] = useState(false);
-  const [imageError, setImageError] = useState(false);
+  const [playerImageError, setPlayerImageError] = useState(false);
+  const [enemyImageError, setEnemyImageError] = useState(false);
   
   const balloonTimeout = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -76,7 +80,7 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
   const playerLineage = getLineageByAttack(character.activeRace?.ataqueId);
 
   useEffect(() => {
-    setImageError(false);
+    setPlayerImageError(false); setEnemyImageError(false);
   }, [currentMob?.id, playerLineage.id]); // Reseta erro se o mob ou a raça mudar
 
   useEffect(() => {
@@ -192,16 +196,16 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
                 <p className="text-gray-400 mb-8 text-center max-w-md text-sm md:text-base px-4">Descanse para recuperar HP, ou escolha uma zona para explorar.</p>
                 <div className="grid grid-cols-1 md:flex md:flex-wrap gap-3 justify-center w-full max-w-2xl">
                   {Object.values(ZONES).map(z => {
-                      const isLocked = character.level < z.minLevel;
+                      const isLocked = character.level < z.minLevel || !canEnterZone(character,z.id);
                       const trackedQuest = QUESTS.find(q => q.id === trackedQuestId);
                       const highlightsZone = !!trackedQuest?.zoneId && trackedQuest.zoneId === z.id && trackedQuest.objectives.some(obj => ["KILL", "KILL_BOSS", "COLLECT"].includes(obj.type));
                       return (
-                        <button key={z.id} disabled={isLocked} onClick={() => startHunting(z.id)} className={`px-4 md:px-6 py-3 md:py-4 rounded-xl font-bold flex flex-col items-center transition-all ${highlightsZone && !isLocked ? "border-2 border-arcane-gold ring-2 ring-arcane-gold/50 shadow-[0_0_24px_rgba(201,160,77,.45)]" : ""} ${isLocked ? "bg-gray-900 text-gray-600 cursor-not-allowed" : "bg-arcane-purple hover:bg-arcane-purple/80 text-white shadow-lg hover:scale-105"}`}>
+                        <div key={z.id} className="min-w-48 max-w-sm"><button disabled={isLocked} onClick={() => startHunting(z.id)} className={`px-4 md:px-6 py-3 md:py-4 rounded-xl font-bold flex flex-col items-center transition-all ${highlightsZone && !isLocked ? "border-2 border-arcane-gold ring-2 ring-arcane-gold/50 shadow-[0_0_24px_rgba(201,160,77,.45)]" : ""} ${isLocked ? "bg-gray-900 text-gray-600 cursor-not-allowed" : "bg-arcane-purple hover:bg-arcane-purple/80 text-white shadow-lg hover:scale-105"}`}>
                           <span className="text-2xl mb-1">⚔️</span>
                           <span className="text-sm md:text-base">Caçar em {z.name}</span>
                           {highlightsZone && <span className="mt-1 text-[9px] font-black uppercase tracking-wider text-arcane-gold">◆ Objetivo da missão</span>}
-                          {isLocked && <span className="text-[10px] font-normal mt-1">Requer Nível {z.minLevel}</span>}
-                        </button>
+                          {isLocked && <span className="text-[10px] font-normal mt-1">Nível {z.minLevel} · {!canEnterZone(character,z.id) ? "Missão e entrega ao NPC" : "Nível necessário"}</span>}
+                        </button><PassageContract zoneId={z.id}/></div>
                       )
                   })}
                 </div>
@@ -274,6 +278,8 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
       case "mountain": return "/assets/backgrounds/mountain.png";
       case "ocean": return "/assets/backgrounds/ocean.png";
       case "ruins": return "/assets/backgrounds/ruins.png";
+      case "swamp": return "/assets/backgrounds/swamp.png";
+      case "desert": return "/assets/backgrounds/desert.png";
       case "abyss": return "/assets/backgrounds/abyss.png";
       default: return "";
     }
@@ -368,14 +374,14 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
               {activeBond && <div className="absolute bottom-16 left-full ml-1 md:ml-4 flex w-20 md:w-32 flex-col items-center" title={activeBond.name + ' · ' + activeBond.element}><AssetImage src={activeBond.beast.sprite} alt={activeBond.beast.name} className="h-24 w-24 md:h-36 md:w-36 object-contain [image-rendering:pixelated]" /><span className="rounded bg-black/70 px-2 text-[10px] text-arcane-gold">{activeBond.beast.name}</span></div>}
               {/* SPRITE DO JOGADOR (Agora baseado na Linhagem) */}
               <div className={`combat-sprite combat-sprite-player relative w-24 h-24 md:w-40 md:h-40 flex items-center justify-center transition-transform ${weaponAnimClass}`}>
-                {!imageError ? (
+                {!playerImageError ? (
                   <AssetImage
                     key={playerLineage.id} // Força recarregar se a classe mudar
                     src={getPlayerVisual()} 
                     alt={playerLineage.name} 
                     className="w-full h-full object-contain drop-shadow-[0_10px_10px_rgba(0,0,0,0.8)]" 
                     style={{ imageRendering: "pixelated" }} 
-                    onAllSourcesFail={() => setImageError(true)}
+                    onAllSourcesFail={() => setPlayerImageError(true)}
                   />
                 ) : (
                   <span className="text-[60px] md:text-[100px] leading-none select-none drop-shadow-lg">{getPlayerFallbackEmoji()}</span>
@@ -385,9 +391,9 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
               <div className="mt-1 md:mt-2 text-center w-32 md:w-48 bg-black/80 p-1.5 md:p-2 rounded-lg border-2 border-arcane-cyan shadow-[0_0_10px_rgba(6,182,212,0.5)]">
                 <h3 className="text-[10px] md:text-sm font-bold text-arcane-cyan truncate">{character.name}</h3>
                 <div className="h-1.5 md:h-2 bg-gray-900 rounded-full mt-1 overflow-hidden">
-                  <div className="h-full bg-green-500 rounded-full transition-all" style={{ width: `${(character.hp / character.hpMax) * 100}%` }} />
+                  <div className="h-full bg-green-500 rounded-full transition-all" style={{ width: `${vitalPercent(character.hp,character.hpMax)}%` }} />
                 </div>
-                <div className="text-[8px] md:text-[10px] text-gray-400 mt-0.5">{character.hp} / {character.hpMax}</div>
+                <div className="text-[8px] md:text-[10px] text-gray-400 mt-0.5">{formatVital(character.hp)} / {formatVital(character.hpMax)}</div>
               </div>
             </div>
 
@@ -400,14 +406,14 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
                 {floatingDamage !== null && <div className="damage-number text-red-500 text-3xl md:text-5xl z-50 font-black drop-shadow-[0_2px_2px_rgba(0,0,0,1)]">-{floatingDamage}</div>}
                 
               <div className={`combat-sprite combat-sprite-enemy w-24 h-24 md:w-40 md:h-40 flex items-center justify-center relative transition-transform ${isHurt ? 'animate-shake filter drop-shadow-[0_0_20px_rgba(220,38,38,1)]' : 'animate-idle'}`}>
-                  {currentMob?.sprite && !imageError ? (
+                  {currentMob?.sprite && !enemyImageError ? (
                     <AssetImage
                       key={currentMob.id}
                       src={currentMob.sprite} 
                       alt={currentMob.name} 
                       className="w-full h-full object-contain drop-shadow-[0_10px_10px_rgba(0,0,0,0.8)]" 
                       style={{ imageRendering: "pixelated" }} 
-                      onAllSourcesFail={() => setImageError(true)}
+                      onAllSourcesFail={() => setEnemyImageError(true)}
                     />
                   ) : (
                     <span className="text-[80px] md:text-[120px] leading-none select-none drop-shadow-lg">{currentMob?.emoji || "👾"}</span>
@@ -539,11 +545,11 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
               <div className="grid grid-cols-2 gap-1 text-[9px] md:text-[10px]">
                 <div className="flex items-center gap-1">
                   <span className="text-red-400">❤️</span>
-                  <span className="text-white font-bold">{Math.round((character.hp / character.hpMax) * 100)}%</span>
+                  <span className="text-white font-bold">{Math.round(vitalPercent(character.hp,character.hpMax))}%</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <span className="text-blue-400">🔵</span>
-                  <span className="text-white font-bold">{Math.round((character.mp / character.mpMax) * 100)}%</span>
+                  <span className="text-white font-bold">{Math.round(vitalPercent(character.mp,character.mpMax))}%</span>
                 </div>
                 {activeVialCount > 0 && (
                   <div className="col-span-2 flex items-center gap-1 text-purple-400">

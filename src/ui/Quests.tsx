@@ -1,3 +1,4 @@
+import { PassageContract } from './WorldJourney';
 import React, { useEffect, useState } from "react";
 import { useGameStore } from "../store/gameStore";
 import { QUESTS } from "../data/quests";
@@ -70,12 +71,13 @@ export function Quests({ focusQuestId, onFocusHandled }: QuestsProps) {
            })}
         </div>
 
+        {template.objectives.find((o:any)=>o.type === "UNLOCK_ZONE") && <PassageContract zoneId={template.objectives.find((o:any)=>o.type === "UNLOCK_ZONE").target} />}
         <div className="flex items-center justify-between mt-auto pt-4 border-t border-arcane-border">
            <div className="text-xs font-bold text-yellow-400 flex gap-2">
              <span>💰 {template.rewards.gold || 0}</span>
              <span>✨ {template.rewards.xp || 0} XP</span>
            </div>
-           {!isActive && !isCompletedQuest && (
+           {!isActive && !isCompletedQuest && !template.objectives.some((o:any)=>o.type === "UNLOCK_ZONE") && (
              <button onClick={() => acceptQuest(template.id)} className="bg-arcane-purple text-white px-4 py-1.5 rounded font-bold text-sm hover:bg-arcane-purple/80 transition-colors">Aceitar</button>
            )}
            {isActive && isReadyToClaim && (

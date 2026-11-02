@@ -96,3 +96,7 @@ Teste nativo oculto: abriu a interface, validou asset local e WebCrypto, confirm
 ## Verificação final do portátil
 
 O próprio release/Mythreon-Online-0.1.0-Windows-x64.exe foi executado com --smoke-test em perfil descartável e extração temporária, com a conta normal do Windows. Encerrou com código 0: interface renderizada, WebCrypto disponível, logo local carregado, renderer isolado e Worker com 8 alvos/6 planos. Evidências entregues em release/windows-smoke-test.json, release/verification.json e release/checksums.sha256. A checagem de integridade validou 187 arquivos dist e o main empacotado. Isso não substitui playtests prolongados nem assinatura digital.
+
+## Revisão Jornada — 2026-11-02
+
+O aplicativo em release/win-unpacked recebeu as novas quests e biomas; 187 arquivos iguais à build web atual e abertura/Worker testados. A compactação do portátil desta revisão foi impedida por falta de espaço em C:. O .exe portátil anterior permanece preservado e desatualizado quanto à Jornada. Abrir release/win-unpacked/Mythreon Online.exe para testar a versão atual; manter toda a pasta. Evidência em release/journey-verification.json. [[docs/conhecimento/Jornada-Lore-Biomas|Regras e detalhes desta revisão]].

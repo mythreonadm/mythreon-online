@@ -33,7 +33,8 @@ export function AudioManager() {
     
     // Se estiver caçando, usa o tema da zona. Se não, usa a música da casa.
     if (isTickRunning) {
-      trackName = ZONES[currentZoneId]?.theme || "forest";
+      const theme = ZONES[currentZoneId]?.theme;
+      trackName = theme === "swamp" ? "forest" : theme === "desert" ? "ruins" : theme || "forest";
     }
 
     const trackPath = `/assets/music/${trackName}.mp3`;

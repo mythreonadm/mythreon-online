@@ -1,6 +1,6 @@
 import { Character, Race, SaveFile, CharacterSkills, CardInstance } from "../types";
 import { DEFAULT_BACKPACK } from "../data/backpacks";
-import { getBaseStats, xpToNextLevel } from "./stats";
+import { getBaseStats, xpToNextLevel, recalcStats } from "./stats";
 import { makeEquipment } from "./drops";
 import { addItem } from "./inventory";
 
@@ -43,6 +43,7 @@ export function createNewCharacter(name: string): Character {
     autoMpPotionId: "POCAO_MANA_1",
     autoMpPotionPercent: 30,
     autoMpPotionEnabled: false,
+    introSeen: false, journeyVersion: 1, unlockedZoneIds: ["BOSQUE_LYSS"],
     tutorialCompleted: false,
     tutorialRelicGranted: false,
     staminaOnline: 120,
@@ -66,6 +67,16 @@ export function loadGame(): SaveFile | null {
   try { 
     const data = JSON.parse(raw);
     if (data.character) {
+      if (data.character.journeyVersion === undefined) {
+        data.character.journeyVersion = 0; data.character.introSeen = true;
+        data.character.unlockedZoneIds = ["BOSQUE_LYSS", ...[["PICO_DHOR",11],["MAR_AZHAR",26],["RUINAS_ASTERION",46],["CICATRIZ_PROFUNDA",71]].filter(([,level]) => data.character.level >= Number(level)).map(([id]) => String(id))];
+        if (data.character.currentZoneId && !data.character.unlockedZoneIds.includes(data.character.currentZoneId)) data.character.unlockedZoneIds.push(data.character.currentZoneId);
+      }
+      const legacyPasses: Record<string,string> = {PICO_DHOR:'PASS_DHOR',MAR_AZHAR:'PASS_AZHAR',RUINAS_ASTERION:'PASS_ASTERION',CICATRIZ_PROFUNDA:'PASS_CICATRIZ'};
+      if (data.character.journeyVersion === 0) {
+        data.character.quests ??= {active:{},completed:[]};
+        for(const id of data.character.unlockedZoneIds ?? []) { const q=legacyPasses[id]; if(q && !data.character.quests.completed.includes(q)) { data.character.quests.completed.push(q); delete data.character.quests.active[q]; } }
+      }
       const targetXp = xpToNextLevel(data.character.level || 1);
       const previousTarget = data.character.xpToNext;
       if (Number.isFinite(previousTarget) && previousTarget > 0 && previousTarget !== targetXp) {
@@ -123,6 +134,8 @@ export function loadGame(): SaveFile | null {
         if (item.category === "COMPONENTE" && item.stackable) item.maxStack = 999;
       }
     }
+    // Derived limits are rebuilt from level + current bonuses, never trusted from an old cache.
+    if (data.character) recalcStats(data.character);
     return data; 
   } catch (e) { 
     console.error("Erro ao carregar save:", e);

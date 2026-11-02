@@ -1,3 +1,5 @@
+import { RARITY_FRAME } from './itemRarity';
+import { formatVital, vitalPercent } from '../utils/vitals';
 import React, { useState } from "react";
 import { AssetImage } from "./AssetImage";
 import { useGameStore } from "../store/gameStore";
@@ -132,7 +134,7 @@ export function Personagem() {
                   onClick={() => setSlotPicker(slot.key)}
                   className={`relative bg-arcane-bg rounded-lg p-2 flex flex-col items-center transition-all border-2 ${
                     item
-                      ? `${RARITY_BORDER[item.rarity]} cursor-pointer hover:border-arcane-cyan`
+                      ? `${RARITY_FRAME[item.rarity]} cursor-pointer hover:border-arcane-cyan`
                       : "border-dashed border-arcane-border opacity-50 cursor-pointer"
                   }`}
                   title={item ? `Clique para ver ${item.name} e opções da mochila` : `Clique para escolher ${slot.label}`}
@@ -173,8 +175,8 @@ export function Personagem() {
             <div>
               <div className="text-[10px] text-blue-400 uppercase font-bold mb-1 tracking-wider">🛡️ Defensivos</div>
               <div className="space-y-1">
-                <StatLine icon="❤️" label="HP" value={`${character.hp.toLocaleString()} / ${character.hpMax.toLocaleString()}`} />
-                <StatLine icon="🔮" label="MP" value={`${character.mp.toLocaleString()} / ${character.mpMax.toLocaleString()}`} />
+                <StatLine icon="❤️" label="HP" value={`${formatVital(character.hp)} / ${formatVital(character.hpMax)}`} />
+                <StatLine icon="🔮" label="MP" value={`${formatVital(character.mp)} / ${formatVital(character.mpMax)}`} />
                 <StatLine icon="🪨" label="Armadura" value={formatStat(s.arm)} />
                 <StatLine icon="🛡️" label="Defesa" value={formatStat(s.def)} />
                 <StatLine icon="💨" label="Esquiva" value={formatStat(s.dge, true)} />
@@ -274,12 +276,12 @@ export function Personagem() {
 }
 
 function MiniBar({ label, current, max, color }: { label: string; current: number; max: number; color: string }) {
-  const pct = Math.min(100, (current / max) * 100);
+  const pct = vitalPercent(current,max);
   return (
     <div>
       <div className="flex justify-between text-[10px] text-gray-400 mb-0.5">
         <span>{label}</span>
-        <span>{Math.round(current)}/{Math.round(max)}</span>
+        <span>{formatVital(current)}/{formatVital(max)}</span>
       </div>
       <div className="h-2 bg-gray-900 rounded-full overflow-hidden">
         <div className={`h-full ${color} transition-all`} style={{ width: `${pct}%` }} />

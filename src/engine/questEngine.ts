@@ -1,7 +1,8 @@
 import { Character, Race, TickResult, QuestObjectiveType } from "../types";
 import { QUESTS } from "../data/quests";
 import { addItem } from "./inventory";
-import { makeEquipment, makeBackpack } from "./drops";
+import { makeEquipment, makeBackpack, makeComponent } from "./drops";
+import { ALL_COMPONENTS } from "../data/components";
 import { getPotionUsePrice } from "../data/potionEconomy";
 
 export function updateQuestProgress(char: Character, result: TickResult) {
@@ -11,7 +12,7 @@ export function updateQuestProgress(char: Character, result: TickResult) {
   for (const questId of activeQuests) {
     const template = QUESTS.find(q => q.id === questId);
     if (!template) continue;
-    if (template.category === "COMPENDIO") continue;
+    if (template.category === "COMPENDIO" || (template.zoneId && result.zoneId && template.zoneId !== result.zoneId)) continue;
 
     const progress = char.quests.active[questId].progress;
 
@@ -20,7 +21,7 @@ export function updateQuestProgress(char: Character, result: TickResult) {
         if (obj.target === "ANY") {
           const totalKills = Object.values(result.killed).reduce((a, b) => a + b, 0);
           progress[index] = (progress[index] || 0) + totalKills;
-        } else if (result.killed[obj.target]) {
+        } else if (obj.target && result.killed[obj.target]) {
           progress[index] = (progress[index] || 0) + result.killed[obj.target];
         }
       }
@@ -28,7 +29,7 @@ export function updateQuestProgress(char: Character, result: TickResult) {
         if (obj.target === "ANY") {
           const total = Object.values(result.bossKills).reduce((a,b)=>a+b, 0);
           progress[index] = (progress[index] || 0) + total;
-        } else if (result.bossKills[obj.target]) {
+        } else if (obj.target && result.bossKills[obj.target]) {
           progress[index] = (progress[index] || 0) + result.bossKills[obj.target];
         }
       }
@@ -68,7 +69,10 @@ export function trackRaceDiscovery(char: Character, races: Race[]) {
 
   // AUTO-ACEITA todas as quests de COMPENDIO que ainda não estão ativas nem completas
   QUESTS.filter(q => q.category === "COMPENDIO").forEach(q => {
-    if (!char.quests.active[q.id] && !char.quests.completed.includes(q.id)) {
+    const achieved = q.objectives.every(o => (o.type === 'DISCOVER_NAMED' ? namedRaces : totalRaces) >= o.count);
+    const eligible = achieved && (!q.requires || q.requires.every(id => char.quests.completed.includes(id)));
+    if (!eligible && char.quests.active[q.id]) delete char.quests.active[q.id];
+    if (eligible && !char.quests.active[q.id] && !char.quests.completed.includes(q.id)) {
       char.quests.active[q.id] = { progress: [0] };
     }
   });
@@ -98,7 +102,7 @@ export function checkQuestCompletion(char: Character, questId: string): boolean 
 
 export function claimQuestReward(char: Character, questId: string): { success: boolean, msg: string } {
   const template = QUESTS.find(q => q.id === questId);
-  if (!template || !checkQuestCompletion(char, questId)) return { success: false, msg: "Missão incompleta" };
+  if (!template || template.objectives.some(o=>o.type === "UNLOCK_ZONE") || !checkQuestCompletion(char, questId)) return { success: false, msg: "Missão incompleta" };
 
   if (template.rewards.gold) char.gold += template.rewards.gold;
   if (template.rewards.xp) char.xp += template.rewards.xp;
@@ -113,11 +117,12 @@ export function claimQuestReward(char: Character, questId: string): { success: b
       const backpackKey = itemReward.templateId.startsWith("BACKPACK_") ? itemReward.templateId.slice("BACKPACK_".length) : null;
       const reward = backpackKey
         ? makeBackpack(backpackKey)
-        : makeEquipment(itemReward.templateId, itemReward.rarity || "COMUM");
+        : ALL_COMPONENTS[itemReward.templateId] ? makeComponent(itemReward.templateId) : makeEquipment(itemReward.templateId, itemReward.rarity || "COMUM");
       if (reward) {
         reward.quantity = quantity;
-        const placed = addItem(char.inventory, reward);
-        if (!placed && itemReward.templateId === "UNICO_SIGILO_INICIACAO") char.depot.push(reward);
+        const inventory = structuredClone(char.inventory);
+        if (addItem(inventory, reward)) char.inventory = inventory;
+        else char.depot.push(reward);
       }
     }
   }

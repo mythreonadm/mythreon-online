@@ -1,3 +1,6 @@
+import { canEnterZone, canTutorialHunt, isGuided, unlockJourneyZone } from '../engine/journey';
+import { getAvailableQuests } from '../utils/questSignals';
+import { checkQuestCompletion } from '../engine/questEngine';
 import { applyTraining } from "../engine/training";
 import { create } from "zustand";
 import { Character, Race, TickResult, CharacterSkills, OfflineReportData, BuffVialTemplate, DeathReportData, HuntZoneStats, DivineBeastId, QuestObjectiveType } from "../types";
@@ -27,6 +30,8 @@ interface GameState {
   deathReport: DeathReportData | null;
   healingUntil: number | null;
 
+  finishIntro: () => void;
+  unlockZone: (id: string) => {success:boolean;error?:string};
   newGame: (name: string) => void;
   loadFromSave: () => boolean;
   save: () => void;
@@ -97,6 +102,8 @@ function recordHuntMetrics(character: Character, zoneId: string, result: TickRes
 export const useGameStore = create<GameState>((set, get) => ({
   character: null, races: [], currentZoneId: "BOSQUE_LYSS", lastTickResult: null, isTickRunning: false, isTraining: false, offlineReport: null, deathReport: null, healingUntil: null,
 
+  finishIntro: () => { const c=get().character; if(!c)return; set({character:{...c,introSeen:true}}); get().save(); },
+  unlockZone: id => { const c=get().character; if(!c)return {success:false}; const next=structuredClone(c); const result=unlockJourneyZone(next,id); if(result.success){set({character:next});get().save();} return result; },
   newGame: (name) => {
     const char = createNewCharacter(name);
     const races: Race[] = [];
@@ -110,7 +117,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (!save) return false;
     const timeAway = (Date.now() - save.character.lastTick) / 1000;
     let report = null;
-    if (timeAway > 60) {
+    if (timeAway > 60 && !isGuided(save.character)) {
       report = { timeAwaySeconds: timeAway, xpGained: Math.floor(timeAway * 10), goldGained: Math.floor(timeAway * 2), itemsDropped: Math.floor(timeAway / 60), levelsGained: 0 };
     }
 
@@ -184,11 +191,14 @@ export const useGameStore = create<GameState>((set, get) => ({
       const newCharacter = JSON.parse(JSON.stringify(character));
       const skill = newCharacter.trainingSkill;
       if (skill) {
+        const beforeSeconds = Number(newCharacter.trainingSeconds?.[skill] ?? 0);
         const trainingLog = applyTraining(newCharacter, Date.now());
+        trackQuestAction(newCharacter,"TRAIN",Number(newCharacter.trainingSeconds?.[skill] ?? 0)-beforeSeconds);
         recalcStats(newCharacter);
         const result: TickResult = { kills: 0, gold: 0, xp: 0, drops: [], levelsGained: 0, death: false, log: trainingLog, enemyHp: 0, enemyMaxHp: 0, skillLevelUp: trainingLog.length ? trainingLog.join(' · ') : undefined };
         set({ character: newCharacter, lastTickResult: result });
         get().save();
+        if (isGuided(newCharacter) && newCharacter.quests.active.TUT_TRAIN && checkQuestCompletion(newCharacter,"TUT_TRAIN")) get().stopTraining();
       }
       return;
     }
@@ -196,7 +206,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     const zone = ZONES[currentZoneId];
     if (!zone || character.level < zone.minLevel) { get().stopHunting(); return; }
 
-    const result = processTick(character, zone, Date.now() - character.lastTick > 15000);
+    if (isGuided(character)) character.lastTick = Date.now() - 3000;
+    const result = processTick(character, zone, !isGuided(character) && Date.now() - character.lastTick > 15000);
     recordHuntMetrics(character, zone.id, result);
 
     if (result.death && result.deathData) {
@@ -210,7 +221,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     recalcStats(character);
     set({ character: { ...character }, lastTickResult: result });
     get().save();
-    if (result.staminaDepleted) get().stopHunting();
+    if (result.staminaDepleted || (isGuided(character) && QUESTS.some(q=>q.category==='TUTORIAL' && character.quests.active[q.id] && checkQuestCompletion(character,q.id)))) get().stopHunting();
   },
 
   startHunting: (zoneId) => {
@@ -221,6 +232,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     if ((character.staminaOnline ?? 120) <= 0) return alert("Sua stamina online acabou. Continue sua jornada offline para recuperar essa reserva.");
 
     const zone = ZONES[zoneId];
+    if (!zone || !canEnterZone(character,zoneId)) return alert('Abra a travessia com a missão e o NPC em Jornadas.');
+    if (!canTutorialHunt(character)) return alert('Abra a missão da iniciação e siga a próxima etapa antes de caçar.');
     if (character.level < zone.minLevel) return;
 
     if (tickInterval) clearInterval(tickInterval);
@@ -233,12 +246,13 @@ export const useGameStore = create<GameState>((set, get) => ({
     }
     set({ isTickRunning: true, isTraining: false, currentZoneId: zoneId, character: { ...character } });
     get().tick();
-    tickInterval = setInterval(() => get().tick(), 3000);
+    if (get().isTickRunning || get().isTraining) tickInterval = setInterval(() => get().tick(), 3000);
   },
 
   startTraining: (skill) => {
     const { character, healingUntil } = get();
     if (!character) return;
+    if (isGuided(character) && !character.quests.active.TUT_TRAIN) return alert("O treino será apresentado na etapa Disciplina antes da força.");
     if (healingUntil) return alert("Termine sua meditação primeiro!");
 
     if (tickInterval) clearInterval(tickInterval);
@@ -275,7 +289,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   setCurrentZone: (zoneId) => {
-    if (!ZONES[zoneId]) return;
+    if (!ZONES[zoneId] || (get().character && !canEnterZone(get().character!,zoneId))) return;
     set({ currentZoneId: zoneId });
     const { character } = get();
     if (character) { character.currentZoneId = zoneId; character.activeEnemyId = ZONES[zoneId].enemies[0]?.id; character.enemyHp = undefined; character.enemyHpId = undefined; set({ character: { ...character } }); get().save(); }
@@ -451,6 +465,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   acceptQuest: (id) => {
     const { character, races } = get(); if (!character) return;
+    if (!getAvailableQuests(character).some(q=>q.id===id)) return;
     const newChar = JSON.parse(JSON.stringify(character));
     if (!newChar.quests) newChar.quests = { active: {}, completed: [] };
     if (!newChar.quests.active[id]) {
@@ -466,6 +481,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     const res = claimQuestReward(newChar, id);
     if (res.success) {
       if (id === "TUT_BACKPACK") { newChar.tutorialCompleted = true; newChar.tutorialRelicGranted = true; }
+      trackRaceDiscovery(newChar, get().races);
       set({ character: newChar }); get().save(); alert(res.msg);
     }
   },

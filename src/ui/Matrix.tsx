@@ -242,7 +242,7 @@ export function MatrixView() {
                         {Object.entries(r.bonus).map(([k, v]) => (
                           <div key={k} className="bg-arcane-bg px-1 py-0.5 rounded text-center">
                             <div className="text-gray-500 uppercase">{k}</div>
-                            <div className="font-bold text-green-400">+{(v as number) % 1 === 0 ? v : `${(v as number).toFixed(2)}`}</div>
+                            <div className="font-bold text-green-400">+{(v as number) % 1 === 0 ? Number(v) : `${(v as number).toFixed(2)}`}</div>
                           </div>
                         ))}
                       </div>
@@ -378,7 +378,7 @@ function ComponentSelector({ type, components, onSelect, onCancel }: any) {
               <button key={templateId} onClick={() => onSelect(templateId)} className="relative bg-arcane-panel border border-arcane-border hover:border-arcane-gold p-2 rounded-lg flex flex-col items-center transition-all hover:scale-105 group" title={t.skillDescription}>
                 <span className="text-2xl mb-1">{t.icon}</span>
                 <span className="text-[9px] text-center text-white truncate w-full">{t.name.split(" ")[0]}</span>
-                <span className="text-[9px] text-arcane-cyan font-bold">x{qty}</span>
+                <span className="text-[9px] text-arcane-cyan font-bold">x{String(qty)}</span>
                 <span className="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 z-40 hidden w-64 -translate-x-1/2 rounded-lg border border-arcane-gold/50 bg-[#080d10]/[.98] p-3 text-left text-[10px] shadow-2xl group-hover:block group-focus-visible:block">
                   {lineage && <span className="mb-2 flex items-center gap-2 border-b border-white/10 pb-2"><AssetImage src={lineage.sprite} alt="" className="h-10 w-10 object-contain" /><span><strong className="block text-arcane-gold">Humano → {lineage.name}</strong><span className="text-gray-400">{lineage.description}</span></span></span>}
                   <strong className="block text-white">{t.name}</strong><span className="mt-1 block leading-relaxed text-gray-300">{t.skillDescription}</span>
@@ -420,7 +420,7 @@ function RacePreview({ race, isNamed, isDiscovered, currentRace, onSynthesize, o
           {Object.entries(race.bonus).map(([k, v]) => (
             <div key={k} className="bg-green-900/30 border border-green-800/50 px-3 py-1 rounded-full text-sm">
               <span className="text-gray-400 uppercase text-xs">{k}:</span>{" "}
-              <span className="font-bold text-green-400">+{(v as number) % 1 === 0 ? v : `${(v as number).toFixed(2)}`}</span>
+              <span className="font-bold text-green-400">+{(v as number) % 1 === 0 ? Number(v) : `${(v as number).toFixed(2)}`}</span>
             </div>
           ))}
         </div>
@@ -481,7 +481,7 @@ function RaceCard({ race, isEquipped, onOpen, showLore }: any) {
         {Object.entries(race.bonus).slice(0,3).map(([k, v]) => (
           <div key={k} className="bg-arcane-bg px-1 py-0.5 rounded text-center">
             <div className="text-gray-500 uppercase">{k}</div>
-            <div className="font-bold text-green-400">+{(v as number) % 1 === 0 ? v : `${(v as number).toFixed(2)}`}</div>
+            <div className="font-bold text-green-400">+{(v as number) % 1 === 0 ? Number(v) : `${(v as number).toFixed(2)}`}</div>
           </div>
         ))}
       </div>

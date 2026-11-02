@@ -8,6 +8,7 @@ import { beastGrowth } from "../data/beastCombat";
 import { DIVINE_BEASTS } from "../data/divineBeasts";
 
 export function getBaseStats(level: number): ItemStats {
+  level = Number.isFinite(Number(level)) ? Math.max(1, Math.floor(Number(level))) : 1;
   return {
     hp: 150 + (level - 1) * 25,
     mp: 50 + (level - 1) * 15,
@@ -26,6 +27,7 @@ export function getBaseStats(level: number): ItemStats {
 
 export function recalcStats(char: Character): void {
   const base = getBaseStats(char.level);
+  const numeric = (value: unknown): number => { const n = Number(value); return Number.isFinite(n) ? n : 0; };
   const fromGear: any = {};
   const fromRace: any = {};
   const fromVials: any = {};
@@ -36,14 +38,14 @@ export function recalcStats(char: Character): void {
   for (const slot of Object.keys(char.equipped)) {
     const item = char.equipped[slot as keyof typeof char.equipped];
     if (!item?.stats) continue;
-    for (const [k, v] of Object.entries(item.stats)) fromGear[k] = (fromGear[k] || 0) + v;
-    for (const affix of item.affixes ?? []) fromGear[affix.stat] = (fromGear[affix.stat] || 0) + affix.value;
-    for (const [element, value] of Object.entries(item.elementalResistances ?? {})) elementalResistances[element as keyof typeof elementalResistances] = (elementalResistances[element as keyof typeof elementalResistances] ?? 0) + (value ?? 0);
+    for (const [k, v] of Object.entries(item.stats)) fromGear[k] = (fromGear[k] || 0) + numeric(v);
+    for (const affix of item.affixes ?? []) fromGear[affix.stat] = (fromGear[affix.stat] || 0) + numeric(affix.value);
+    for (const [element, value] of Object.entries(item.elementalResistances ?? {})) elementalResistances[element as keyof typeof elementalResistances] = (elementalResistances[element as keyof typeof elementalResistances] ?? 0) + numeric(value);
   }
 
   // 2. Soma os stats da Raça Equipada
   if (char.activeRace && char.activeRace.bonus) {
-    for (const [k, v] of Object.entries(char.activeRace.bonus)) fromRace[k] = v;
+    for (const [k, v] of Object.entries(char.activeRace.bonus)) fromRace[k] = numeric(v);
   }
 
   // 3. Soma os stats dos Vials Ativos
@@ -55,7 +57,7 @@ export function recalcStats(char: Character): void {
       if (expiry > now && !superseded) {
         const vial = VIALS[vialId];
         if (vial) {
-          for (const [k, v] of Object.entries(vial.stats)) fromVials[k] = (fromVials[k] || 0) + v;
+          for (const [k, v] of Object.entries(vial.stats)) fromVials[k] = (fromVials[k] || 0) + numeric(v);
         }
       }
     }
@@ -68,7 +70,7 @@ export function recalcStats(char: Character): void {
   const activeBeast = char.activeDivineBeastId ? DIVINE_BEASTS[char.activeDivineBeastId] : undefined;
   if (activeBeast && (char.divineBeasts ?? []).some(beast => beast.id === activeBeast.id)) {
     for (const [k, v] of Object.entries(beastGrowth(char.level))) fromBeast[k] = v;
-    for (const [k, v] of Object.entries(activeBeast.bonus)) fromBeast[k] = (fromBeast[k] ?? 0) + v;
+    for (const [k, v] of Object.entries(activeBeast.bonus)) fromBeast[k] = (fromBeast[k] ?? 0) + numeric(v);
   }
 
   // 5. Skills de Treino
@@ -85,14 +87,14 @@ export function recalcStats(char: Character): void {
   // 6. Multiplicadores (Passivas/Suportes)
   const atkMult = (1 + (support?.permAtkPct ?? 0)) * (1 + masteryBonus(char, isUsingBow ? "distance" : "melee"));
   const armMult = 1 + (passive?.armPct ?? 0) + (support?.permArmPct ?? 0);
-  const hpMult = 1 + (passive?.hpPct ?? 0);
+  const hpMult = 1 + numeric(passive?.hpPct);
 
-  const sum = (k: string) => (fromGear[k] ?? 0) + (fromRace[k] ?? 0) + (fromPassive[k] ?? 0) + (fromVials[k] ?? 0) + (fromBeast[k] ?? 0);
+  const sum = (k: string) => numeric(fromGear[k]) + numeric(fromRace[k]) + numeric(fromPassive[k]) + numeric(fromVials[k]) + numeric(fromBeast[k]);
 
   // 7. Junta tudo e aplica os limites (Caps)
   char.baseStats = {
-    hp: Math.floor((base.hp! + sum("hp")) * hpMult),
-    mp: base.mp! + sum("mp"),
+    hp: Math.max(1, Math.floor((base.hp! + sum("hp")) * hpMult)),
+    mp: Math.max(0, Math.floor(base.mp! + sum("mp"))),
     atk: Math.floor((base.atk! + sum("atk") + skillAtkBonus + skillDistBonus) * atkMult),
     matk: Math.floor((base.matk! + sum("matk") + skillMatkBonus) * (1 + masteryBonus(char, "magic"))),
     def: base.def! + sum("def") + skillDefBonus,
@@ -122,8 +124,9 @@ export function recalcStats(char: Character): void {
 
 // CURVA DE XP DO PERSONAGEM (Rápida até o 25, difícil depois)
 export function xpToNextLevel(level: number): number {
-  if (level <= 25) return Math.floor(100 * Math.pow(1.25, level - 1));
-  return Math.floor((100 * Math.pow(1.25, 24)) * Math.pow(level / 25, 3.5));
+  const safeLevel = Math.max(1, Math.floor(level));
+  if (safeLevel <= 25) return Math.floor(Math.max(200 * Math.pow(safeLevel, 1.35), 100 * Math.pow(1.25, safeLevel - 1)));
+  return Math.floor((100 * Math.pow(1.25, 24)) * Math.pow(safeLevel / 25, 3.5));
 }
 
 // CURVA DE XP DAS SKILLS DE TREINO

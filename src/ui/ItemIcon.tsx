@@ -1,3 +1,4 @@
+import { rarityArtClass } from './itemRarity';
 import React, { useState, useEffect } from "react";
 import { Item } from "../types";
 import { AssetImage } from "./AssetImage";
@@ -18,18 +19,18 @@ export function ItemIcon({ item, className = "text-3xl mb-1", style }: Props) {
 
   const imagePath = `/assets/items/${item.templateId}.png`;
 
+  const aura = rarityArtClass(item.rarity);
   if (hasError) {
     // Se a imagem não existir na pasta, mostra o emoji como fallback
-    return <div className={className} style={style}>{item.icon}</div>;
+    return <span className={`${className} ${aura}`} style={style} data-rarity={item.rarity}><span className="rarity-image rarity-emoji">{item.icon}</span></span>;
   }
 
   return (
-    <AssetImage
+    <span className={`${className} ${aura}`} style={style} data-rarity={item.rarity}><AssetImage
       src={imagePath}
       alt={item.name}
-      className={`${className} object-contain`}
-      style={style}
+      className="rarity-image h-full w-full object-contain"
       onAllSourcesFail={() => setHasError(true)}
-    />
+    /></span>
   );
 }

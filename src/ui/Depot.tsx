@@ -1,16 +1,10 @@
+import { RARITY_FRAME } from './itemRarity';
 import React, { useState } from "react";
 import { useGameStore } from "../store/gameStore";
 import { getItemScore } from "../engine/itemCompare";
 import { ItemIcon } from "./ItemIcon"; // NOVO
 import { Rarity } from "../types";
 
-const RARITY_GLOW: Record<Rarity, string> = {
-  COMUM: "border-gray-600",
-  INCOMUM: "border-green-500 shadow-[0_0_6px_rgba(34,197,94,0.35)]",
-  RARO: "border-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.45)]",
-  EPICO: "border-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.55)]",
-  LENDARIO: "border-arcane-gold shadow-[0_0_14px_rgba(201,160,77,0.7)]",
-};
 
 const RARITY_ORDER: Record<Rarity, number> = {
   COMUM: 0, INCOMUM: 1, RARO: 2, EPICO: 3, LENDARIO: 4,
@@ -137,7 +131,7 @@ export function Depot() {
             return (
               <div
                 key={item.uid}
-                className={`relative bg-arcane-bg border-2 rounded-lg p-2 flex flex-col items-center justify-center transition-all group ${RARITY_GLOW[item.rarity]} ${isSelected ? "ring-2 ring-blue-500 bg-blue-900/30" : ""}`}
+                className={`relative bg-arcane-bg border-2 rounded-lg p-2 flex flex-col items-center justify-center transition-all group ${RARITY_FRAME[item.rarity]} ${isSelected ? "ring-2 ring-blue-500 bg-blue-900/30" : ""}`}
               >
                 <button
                   onClick={() => toggleSelect(item.uid)}

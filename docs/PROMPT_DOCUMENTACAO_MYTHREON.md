@@ -1,7 +1,7 @@
 ---
 projeto: Mythreon Online
 tipo: prompt
-versao: 1
+versao: 2
 atualizado: 2026-11-02
 status: ativo
 resumo: Continuidade entre código, Cérebro Markdown e Obsidian.
@@ -19,7 +19,7 @@ OBJETIVO
 Continue o desenvolvimento preservando as decisões do criador, o funcionamento e os saves. Mantenha memória legível, verificável e compacta para outras IAs. Documente conhecimento durável; evite repetir o histórico inteiro em cada tarefa.
 
 ENTRADA E LEITURA SELETIVA
-1. Leia CEREBRO_MYTHREON.md e confira git status antes de editar.
+1. Leia 00 - Comece aqui.md e docs/conhecimento/00 - Fonte de conhecimento.md; escolha a nota do assunto e confira git status antes de editar. Consulte as seções pertinentes do CEREBRO_MYTHREON.md para contexto/histórico, sem carregar todo o material sem necessidade.
 2. Leia este prompt e consulte IMPLEMENTACAO_PENDENTE.md quando o pedido envolver pendências.
 3. Use .mythreon-brain/neurons.json ou Mythreon Obsidian/Início.md para localizar os sistemas relevantes. Leia somente os arquivos e notas necessários à tarefa; amplie a leitura quando houver dependências ou divergências.
 4. Confirme no código o que existe. Não trate documentação antiga, planos ou uma afirmação de conclusão como prova de implementação.
@@ -27,11 +27,12 @@ ENTRADA E LEITURA SELETIVA
 
 FONTES E RESPONSABILIDADES
 - Código e dados atuais: comportamento implementado.
-- CEREBRO_MYTHREON.md: resumo de arquitetura, intenção, decisões, estado e continuidade.
+- docs/conhecimento/00 - Fonte de conhecimento.md: índice autoral da base de conhecimento no Obsidian.
+- CEREBRO_MYTHREON.md: resumo de arquitetura, contexto e continuidade histórica, sem cópia concorrente ativa.
 - docs/conhecimento/: notas duráveis de sistemas, decisões, pesquisas, problemas e procedimentos, mantidas pelo criador e pelas IAs. Crie apenas as notas necessárias.
 - .mythreon-brain/neurons.json e state.json: índice e controle gerados pelo observador. Não editar manualmente.
-- Mythreon Obsidian/: visualização gerada. Os arquivos Início.md, Mapa de Sistemas.md, Sistema - *.md e a cópia de CEREBRO_MYTHREON.md são sobrescritos na sincronização. Não escreva conhecimento original nesses arquivos.
-- Para visualizar notas autorais no Obsidian agora, abra a raiz MYTHREON ONLINE como vault e navegue até docs/conhecimento/. Uma futura sincronização dessas notas para o vault gerado exige implementação explícita.
+- Mythreon Obsidian/: painel e catálogo gerados com links para as notas originais. Não escreva decisões nesses índices. Arquivo/ preserva versões antigas; nenhuma cópia nova do Cérebro é gerada.
+- O cofre oficial é a raiz MYTHREON ONLINE. Abra 00 - Comece aqui.md. As notas autorais não precisam ser copiadas: Obsidian lê diretamente os arquivos Markdown. O catálogo é automático; interpretar mudanças de código e atualizar conhecimento continua sendo tarefa da IA/criador.
 - Em divergências, registre a diferença entre intenção e comportamento. Não escolha silenciosamente uma versão nem marque algo como validado sem evidência.
 
 O QUE DOCUMENTAR
@@ -85,9 +86,11 @@ TAREFA DESTA SESSÃO
 1. Instale e abra o Obsidian.
 2. Escolha **Abrir pasta como vault** e selecione a raiz `MYTHREON ONLINE` para acessar código, documentação autoral e o mapa gerado no mesmo vault.
 3. Abra `CEREBRO_MYTHREON.md` e esta nota. O mapa gerado está em `Mythreon Obsidian/`.
-4. Edite conhecimento autoral em `docs/conhecimento/`; os arquivos gerados serão substituídos ao sincronizar.
+4. Edite conhecimento autoral em `docs/conhecimento/`. Confira o painel Estado da sincronização; índices gerados podem ser reconstruídos, notas autorais são preservadas.
 5. Dê duplo clique em `Ativação Cérebro.bat` e mantenha a janela aberta para acompanhar alterações. Sem o observador, use `npm run brain:sync` ao concluir o trabalho.
 
 ## Histórico
 
 - v1 — 2026-11-02: adaptação do material de referência ao Mythreon; separação entre memória semântica, índice automático e visualização Obsidian; proteção de notas autorais contra sobrescrita.
+
+- v2 — 2026-11-02: Obsidian/Markdown como base autoral única; entrada Comece aqui, catálogo por referência, eliminação da cópia ativa do Cérebro e recuperação de falhas no observador.

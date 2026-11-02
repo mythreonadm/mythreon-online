@@ -407,3 +407,26 @@ html { scroll-behavior: smooth; scroll-padding-top: 92px; }
   .landing-roadmap-card { min-height: 0; padding: 21px; }
   .landing-roadmap-status { top: 17px; right: 15px; }
 }
+
+/* Fallbacks dos novos biomas até receber as artes finais. */
+.bg-swamp { background: radial-gradient(ellipse at 30% 70%, #52774a66, transparent 55%), linear-gradient(#142d31,#152a22 45%,#081412); }
+.bg-desert { background: radial-gradient(ellipse at 75% 15%, #e8c57988, transparent 35%), linear-gradient(#3d2945,#875735 60%,#30252b); }
+
+/* Raridade compartilhada: normal neutro, verde sem aura, azul suave, roxo forte e ouro luminoso. */
+.rarity-frame.rarity-comum { border-color:#374151; box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000); }
+.rarity-frame.rarity-incomum { border-color:#38b86b; box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000); }
+.rarity-frame.rarity-raro { border-color:#559cff; box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),0 0 8px #3b82f640,inset 0 0 8px #3b82f60d; }
+.rarity-frame.rarity-epico { border-color:#bd79ff; box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),0 0 16px #a855f773,inset 0 0 12px #a855f71a; }
+.rarity-frame.rarity-lendario { border-color:#ffe296; box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),0 0 22px #f5c3518c,inset 0 0 16px #f5c35124; }
+.rarity-art { position:relative; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; isolation:isolate; overflow:visible; vertical-align:middle; }
+.rarity-art .rarity-image { position:relative; z-index:1; object-fit:contain; }
+.rarity-art .rarity-emoji { display:grid; place-items:center; width:100%; height:100%; font-size:2em; line-height:1; }
+.rarity-art.rarity-comum { filter:none; }
+.rarity-incomum .rarity-image { filter:drop-shadow(1px 0 0 #35b969) drop-shadow(-1px 0 0 #35b969); }
+.rarity-raro .rarity-image { filter:drop-shadow(0 0 3px #559cff88); }
+.rarity-epico .rarity-image { filter:drop-shadow(0 0 6px #b969ffc4); }
+.rarity-lendario .rarity-image { filter:drop-shadow(0 0 5px #fff0b4) drop-shadow(0 0 10px #f5b935aa); }
+.rarity-art.rarity-epico::before,.rarity-art.rarity-lendario::before { content:''; position:absolute; inset:8%; border-radius:50%; pointer-events:none; z-index:0; background:radial-gradient(ellipse,#a855f733,transparent 70%); }
+.rarity-art.rarity-lendario::before { inset:-8%; background:radial-gradient(ellipse,#ffe49b66,transparent 68%); animation:legendary-aura 3s ease-in-out infinite; }
+@keyframes legendary-aura { 0%,100% { opacity:.5; transform:scale(.92); } 50% { opacity:1; transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce) { .rarity-art.rarity-lendario::before { animation:none; } }

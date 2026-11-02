@@ -68,3 +68,21 @@ Critério para próxima rodada: medir sessões contínuas de 30 minutos por buil
 
 - [[CEREBRO_MYTHREON]]
 - [[Shop-Premium-Beasts]]
+
+## Revisão da iniciação e travessias — 2026-11-02
+
+A curva de XP foi substituída por floor(max(200 × nível^1,35; 100 × 1,25^(nível−1))) até 25; depois, a âncora anterior do nível 25 é preservada e cresce por (nível/25)^3,5. Preserva-se nível e fração de XP de saves anteriores. Recompensas iniciais de XP foram reduzidas e o debug fica limitado a localhost. Novos destinos de gold: seis contratos permanentes com NPCs. A seção anterior que descreve curva rápida/saltos de XP fica substituída por esta revisão. Valores completos e condições da amostra: [[docs/conhecimento/Jornada-Lore-Biomas|Jornada, lore e biomas]]. Os relatórios de balanceamento anteriores não foram regenerados e representam a versão anterior.
+
+A curva usa o maior valor entre a nova base inicial e a curva antiga até 25; a exigência de XP dos níveis avançados não diminui nesta revisão.
+
+## 2026-11-02 — HP/MP e identidade das raridades
+
+Barras passam a usar src/utils/vitals.ts: números inteiros em pt-BR e porcentagens limitadas a 0–100, protegidas contra NaN/limite zero. O combate conserva precisão fracionária. Cabeçalho informa no hover a base do nível, bônus atuais e total. Fórmulas base continuam HP=150+25×(nível−1), MP=50+15×(nível−1). Equipamentos, Matriz, passivas, vials e Beast continuam contribuindo.
+
+loadGame recalcula os atributos derivados após a migração, descartando hpMax/mpMax/baseStats antigos do cache antes de iniciar combate. recalcStats normaliza valores numéricos dos bônus para evitar concatenação de strings legadas e mantém máximos inteiros. Sem reset de nível, inventário ou bônus legítimos.
+
+Raridades centralizadas em src/ui/itemRarity.ts e ItemIcon, compartilhadas por mochila, depósito, slots do personagem e ícones nas lojas/modais: comum neutro; incomum contorno verde sem aura; raro contorno azul e luz suave; épico roxo com luz mais forte; lendário dourado com luz pulsante. Funciona em PNG/GIF/GIFF e fallback emoji. Seleção mantém seu indicador; animação respeita prefers-reduced-motion. CSS em src/index.css.
+
+Verificação: scripts/vitals-check.cjs reproduz limites salvos em 1e12, restaura nível 5 para HP250/MP110, testa bônus salvos como strings, mil recálculos sem acúmulo, remoção de equipamento, formatação e limites de barras. typecheck e journey:check passaram. Build web passou. Interface em perfil isolado confirmou cinco raridades, HP250/MP110 no nível5 e console sem erros; evidência visual node_modules/.cache/journey-ui/raridades.png (cache de teste). Os valores problemáticos da conta real não foram inspecionados diretamente; correção cobre cache derivado, concatenação numérica e exibição de casas decimais. Sem push/deploy.
+
+Aplicativo Windows em release/win-unpacked atualizado nesta revisão, 187 arquivos comparados com a build web e abertura/Worker testados. Portátil único anterior permanece desatualizado. Prévia preservada em docs/anexos/raridades-hp-mp.png.

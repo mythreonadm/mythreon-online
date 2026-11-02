@@ -1,10 +1,11 @@
 import { createHash, createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
 import { gzipSync, gunzipSync } from "node:zlib";
 import { spawn } from "node:child_process";
-import { readFile, readdir, stat, writeFile, mkdir } from "node:fs/promises";
+import { readFile, readdir, stat, writeFile, mkdir, appendFile } from "node:fs/promises";
 import { existsSync, statSync, watch as watchFs } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { isIgnored, scanPaths, collectFile, atomicWrite, renderVault, acquireWatchLock } from "./brain-core.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const BRAIN_DIR = path.join(ROOT, ".mythreon-brain");
@@ -12,8 +13,6 @@ const OBSIDIAN_DIR = path.join(ROOT, "Mythreon Obsidian");
 const INDEX_PATH = path.join(BRAIN_DIR, "neurons.json");
 const STATE_PATH = path.join(BRAIN_DIR, "state.json");
 const SEALED_PATH = path.join(BRAIN_DIR, "neurons.json.gz.enc");
-const EXCLUDED_DIRS = new Set([".git", "node_modules", "dist", ".mythreon-brain", "Mythreon Obsidian", ".vercel", "coverage", "release", ".obsidian"]);
-const TEXT_EXTENSIONS = new Set([".ts", ".tsx", ".js", ".jsx", ".mjs", ".css", ".html", ".json", ".md", ".yml", ".yaml"]);
 const MAX_HISTORY = 12;
 const MAX_CHANGED_PATHS = 30;
 let closing = false;
@@ -22,9 +21,11 @@ let watcher;
 let runAgain = false;
 let syncing = false;
 let debounceTimer;
+let pollTimer;
+let watchLock;
+let lastSyncResult;
 
 const posix = (value) => value.split(path.sep).join("/");
-const sha256 = (value) => createHash("sha256").update(value).digest("hex");
 const relative = (absolute) => posix(path.relative(ROOT, absolute));
 
 async function readPrevious() {
@@ -56,13 +57,13 @@ function topicsFor(file) {
   const p = file.toLowerCase();
   const topics = [];
   const rules = [
-    ["combat", /combat|arena|duel|fight/], ["quests", /quest|missao|missão|tutorial/],
+    ["knowledge", /cerebro|brain|obsidian|conhecimento|documentacao|documentação/], ["combat", /combat|arena|duel|fight/], ["quests", /quest|missao|missão|tutorial/],
     ["build-lab", /buildlab|build-lab|laboratorio/], ["windows-desktop", /desktop|electron|windows/],
     ["items", /item|inventory|backpack|depot|shop|forge|salvage/], ["matrix", /matrix|race|lineage|synthesis|component/],
     ["divine-beasts", /beast|pet/], ["zones-and-lore", /zone|wiki|lore|history/], ["elements", /element/],
     ["visual-assets", /asset|branding|sprite|background|player|monster|vfx|\.gif|\.giff|\.png|\.svg/],
     ["save-and-accounts", /save|account|auth|localaccount/], ["audio", /audio|sound|music/],
-    ["stats-and-progression", /stat|skill|level|xp|stamina/], ["project-ui", /app\.tsx|index\.css|tailwind/],
+    ["stats-and-progression", /stat|skill|level|xp|stamina|training|treino|maestria/], ["project-ui", /app\.tsx|index\.css|tailwind/],
   ];
   for (const [topic, pattern] of rules) if (pattern.test(p)) topics.push(topic);
   if (!topics.length) topics.push(classify(file));
@@ -92,26 +93,14 @@ function extractMetadata(file, source) {
   };
 }
 
-async function walk(directory, output = []) {
-  const entries = await readdir(directory, { withFileTypes: true });
-  for (const entry of entries) {
-    if (entry.name.startsWith(".~") || entry.name.endsWith(".tmp")) continue;
-    const absolute = path.join(directory, entry.name);
-    if (entry.isDirectory()) {
-      if (!EXCLUDED_DIRS.has(entry.name)) await walk(absolute, output);
-      continue;
-    }
-    output.push(absolute);
-  }
-  return output;
-}
-
 async function makeGraph(previous, privateState) {
   const oldFiles = privateState?.files?.map(node => [node.path, node])
     ?? previous?.nodes?.filter(node => node.type === "file").map(node => [node.path, node])
     ?? [];
   const previousNodes = new Map(oldFiles);
-  const paths = (await walk(ROOT)).map(relative).sort();
+  const warnings = [];
+  const scan = await scanPaths(ROOT, warnings);
+  const paths = scan.files.map(relative).sort();
   const livePaths = new Set(paths);
   const nodes = [];
   const stateFiles = [];
@@ -120,28 +109,24 @@ async function makeGraph(previous, privateState) {
 
   for (const file of paths) {
     const absolute = path.join(ROOT, ...file.split("/"));
-    const info = await stat(absolute);
     const old = previousNodes.get(file);
-    let hash = old?.hash;
-    let metadata = old?.meta ?? { symbols: [], dependencies: [], headings: [] };
-
-    if (!old || old.bytes !== info.size || old.mtime !== info.mtimeMs) {
-      const content = await readFile(absolute);
-      hash = sha256(content);
-      if (TEXT_EXTENSIONS.has(path.extname(file).toLowerCase())) metadata = extractMetadata(file, content.toString("utf8"));
-      if (!old) changed.push({ path: file, status: "added" });
-      else if (old.hash !== hash) changed.push({ path: file, status: "changed" });
-      else unchanged++;
-    } else {
-      unchanged++;
-    }
+    const collected = await collectFile(absolute, old, extractMetadata, warnings);
+    if (!collected) continue;
+    const { hash, bytes, mtime } = collected;
+    const metadata = collected.meta ?? { symbols: [], dependencies: [], headings: [] };
+    if (!old) changed.push({ path: file, status: 'added' });
+    else if (old.hash !== hash) changed.push({ path: file, status: 'changed' });
+    else unchanged++;
 
     const topics = topicsFor(file);
-    nodes.push({ path: file, kind: classify(file), hash, bytes: info.size, mtime: info.mtimeMs, topics, meta: metadata });
-    stateFiles.push({ path: file, kind: classify(file), hash, bytes: info.size, mtime: info.mtimeMs, topics, meta: metadata });
+    nodes.push({ path: file, kind: classify(file), hash, bytes, mtime, topics, meta: metadata });
+    stateFiles.push({ path: file, kind: classify(file), hash, bytes, mtime, topics, meta: metadata });
   }
 
-  for (const old of previousNodes.values()) if (!livePaths.has(old.path)) changed.push({ path: old.path, status: "removed" });
+  for (const old of previousNodes.values()) if (!livePaths.has(old.path) && !isIgnored(old.path)) {
+    if (scan.incomplete) { nodes.push(old); stateFiles.push(old); }
+    else changed.push({ path: old.path, status: 'removed' });
+  }
 
   const topics = [...new Set(nodes.flatMap(node => node.topics))].sort();
   const topicIndex = new Map(topics.map((topic, index) => [topic, index]));
@@ -172,12 +157,14 @@ async function makeGraph(previous, privateState) {
     p: "Mythreon Online",
     u: new Date().toISOString(),
     schema: "f rows=[path,kindId,topicIds,exports,importFileIds,markdownHeadings]; topic/kind/import references are numeric indexes",
-    s: { files: paths.length, topics: topics.length, relations: relationCount, unchangedSinceLastScan: unchanged },
+    s: { files: nodes.length, topics: topics.length, relations: relationCount, unchangedSinceLastScan: unchanged, changed: changed.length },
     t: topics,
     k: kinds,
     files,
     h: history.slice(-MAX_HISTORY),
     note: "Auto-index: f=[path,kindId,topicIds,exports,importIds,headings]. Hashes internos ficam em state.json, fora do índice legível. Import/topic links são relações entre neurônios; consulte CEREBRO_MYTHREON.md para semântica.",
+    warnings: warnings.map(entry => ({ ...entry, path: path.isAbsolute(entry.path) ? relative(entry.path) : entry.path })),
+    changes: changed,
     state: { v: 1, files: stateFiles },
   };
 }
@@ -214,74 +201,62 @@ async function openSealedGraph() {
   console.log(`[cerebro] Arquivo autenticado e restaurado em ${relative(output)}.`);
 }
 
-async function syncObsidianVault(graph) {
-  await mkdir(OBSIDIAN_DIR, { recursive: true });
-  const topicNames = graph.t;
-  const fileRows = graph.files;
-  const files = fileRows.map(row => ({ path: row[0], kind: graph.k[row[1]], topics: row[2].map(index => topicNames[index]), symbols: row[3], imports: row[4], headings: row[5] }));
-  const displayTopic = topic => topic.split(/[-_]/g).map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
-  const topicFile = topic => `Sistema - ${displayTopic(topic)}.md`;
-  const topicLinks = topicNames.map(topic => `[[${topicFile(topic).replace(/\.md$/, "")}|${displayTopic(topic)}]]`).join(" · ");
-  const latest = graph.h.at(-1);
-  const recentChanges = latest?.event === "filesystem-change"
-    ? latest.files.map(change => `- ${change.status === "removed" ? "Removido" : change.status === "added" ? "Adicionado" : "Alterado"}: \`${change.path}\``).join("\n")
-    : "- Nenhuma mudança de arquivo registrada nesta sincronização.";
-
-  await writeFile(path.join(OBSIDIAN_DIR, "Início.md"), `# Mythreon Online · Cérebro\n\n> Abra esta pasta como um vault no Obsidian. O índice é atualizado por [36mAtivação Cérebro.bat[0m ou por [36mnpm run brain:sync[0m.\n\n## Memória principal\n\n- [[CEREBRO_MYTHREON]] — decisões, arquitetura, estado e continuidade semântica.\n- [[Mapa de Sistemas]] — grafo de arquivos, tópicos e relações do código.\n\n## Sistemas\n\n${topicLinks}\n\n## Última sincronização\n\n${graph.u}\n\n${recentChanges}\n`, "utf8");
-  await writeFile(path.join(OBSIDIAN_DIR, "Mapa de Sistemas.md"), `# Mapa de Sistemas\n\nEste mapa é gerado a partir do índice de arquivos. Use os links de sistema para navegar e o Cérebro principal para entender decisões e intenção.\n\n## Sistemas\n\n${topicNames.map(topic => `- [[${topicFile(topic).replace(/\.md$/, "")}|${displayTopic(topic)}]]`).join("\n")}\n\n## Escala atual\n\n- Arquivos indexados: ${graph.s.files}\n- Sistemas relacionados: ${graph.s.topics}\n- Relações de tópico/import: ${graph.s.relations}\n`, "utf8");
-
-  for (let topicIndex = 0; topicIndex < topicNames.length; topicIndex++) {
-    const topic = topicNames[topicIndex];
-    const related = files.filter(file => file.topics.includes(topic));
-    const content = [`# ${displayTopic(topic)}`, ``, `> Índice automático do assunto. O arquivo de código é a fonte da verdade; consulte [[CEREBRO_MYTHREON]] para decisões e regras.`, ``, `## Arquivos relacionados`,
-      ...related.map(file => `- [${file.path}](../${file.path})${file.symbols.length ? ` — ${file.symbols.slice(0, 14).join(", ")}` : ""}${file.headings.length ? `\n  - Seções: ${file.headings.slice(0, 8).join(" · ")}` : ""}`),
-      ``, `## Conexões`, topicLinks, ``, `## Registro recente`, recentChanges, ``].join("\n");
-    await writeFile(path.join(OBSIDIAN_DIR, topicFile(topic)), content, "utf8");
-  }
-  try {
-    const brain = await readFile(path.join(ROOT, "CEREBRO_MYTHREON.md"), "utf8");
-    await writeFile(path.join(OBSIDIAN_DIR, "CEREBRO_MYTHREON.md"), brain, "utf8");
-  } catch { /* o vault continua utilizável até que o documento principal exista */ }
+async function publishStatus(result) {
+  await atomicWrite(path.join(BRAIN_DIR, 'status.json'), JSON.stringify(result, null, 2)+'\n');
+  const lines = ['# Estado da sincronização', '', '> Painel automático; não substitui as notas de conhecimento.', '',
+    'Estado: **'+result.status+'**', 'Atualizado: '+result.at, 'PID do processo: '+process.pid, '',
+    result.message ?? '', '', ...(result.warnings ?? []).map(item=>'- '+item.path+' — '+item.code), '',
+    '[[docs/conhecimento/00 - Fonte de conhecimento|Abrir a base de conhecimento]]', ''];
+  await atomicWrite(path.join(OBSIDIAN_DIR, 'Estado da sincronização.md'), lines.join('\n'));
 }
-
 async function syncBrain({ quiet = false } = {}) {
-  if (syncing) { runAgain = true; return; }
+  if (closing) return lastSyncResult;
+  if (syncing) { runAgain = true; return lastSyncResult; }
   syncing = true;
   try {
     const previous = await readPrevious();
     const privateState = await readState();
     const graph = await makeGraph(previous, privateState);
     await mkdir(BRAIN_DIR, { recursive: true });
-    const { state, ...publicGraph } = graph;
-    await writeFile(INDEX_PATH, `${JSON.stringify(publicGraph)}\n`, "utf8");
-    await writeFile(STATE_PATH, `${JSON.stringify(state)}\n`, "utf8");
-    await syncObsidianVault(publicGraph);
-    const sealed = process.argv.includes("--seal") ? await sealGraph(publicGraph) : false;
-    if (!quiet) {
-      const changedCount = publicGraph.h.at(-1)?.event === "filesystem-change" ? publicGraph.h.at(-1).files.length : 0;
-      console.log(`[cerebro] ${publicGraph.s.files} arquivos · ${publicGraph.s.topics} tópicos · ${publicGraph.s.relations} relações · ${changedCount} alterações registradas${sealed ? " · cópia compactada e criptografada criada" : ""}`);
-      if (process.argv.includes("--seal") && !process.env.MYTHREON_BRAIN_KEY) console.warn("[cerebro] Defina MYTHREON_BRAIN_KEY para ativar a cópia criptografada. A chave não deve ser salva no projeto nem enviada ao Git.");
-    }
+    const { state, changes, ...publicGraph } = graph;
+    await atomicWrite(INDEX_PATH, JSON.stringify(publicGraph)+'\n');
+    const notes = await renderVault(ROOT, publicGraph);
+    if (changes.length) await appendFile(path.join(BRAIN_DIR, 'changes.jsonl'), JSON.stringify({at:graph.u,files:changes})+'\n', 'utf8');
+    await atomicWrite(STATE_PATH, JSON.stringify(state)+'\n');
+    const sealed = process.argv.includes('--seal') ? await sealGraph(publicGraph) : false;
+    if (process.argv.includes('--seal') && !process.env.MYTHREON_BRAIN_KEY) console.warn('[cerebro] Defina MYTHREON_BRAIN_KEY para criar a cópia cifrada; o índice legível continua atualizado.');
+    const result = {at:graph.u,status:graph.warnings.length?'parcial':'ok',pid:process.pid,files:graph.s.files,notes,changed:changes.length,warnings:graph.warnings,message:notes+' notas originais catalogadas. Decisões e explicações são mantidas em docs/conhecimento.'};
+    await publishStatus(result); lastSyncResult=result;
+    if (!quiet || changes.length || result.status!=='ok') console.log('[cerebro v2] '+result.status+' · '+graph.s.files+' arquivos · '+notes+' notas originais · '+changes.length+' alterações'+(sealed?' · cópia cifrada criada':''));
+    if(graph.warnings.length)console.warn('[cerebro] Arquivos indisponíveis foram preservados no índice anterior. O observador tentará novamente.');
+    return result;
+  } catch(error) {
+    const result={at:new Date().toISOString(),status:'erro',pid:process.pid,message:'A sincronização não terminou. As notas originais não foram removidas. Nova tentativa automática no modo observador.',warnings:[{path:error.path?relative(error.path):'sincronização',code:error.code??error.message}]};
+    lastSyncResult=result;
+    console.error('[cerebro] Sincronização incompleta: '+(error.code??error.message)+'. O observador continua ativo.');
+    try { await publishStatus(result); } catch { console.error('[cerebro] Não foi possível gravar o painel de estado agora.'); }
+    return result;
   } finally {
-    syncing = false;
-    if (runAgain) { runAgain = false; void syncBrain({ quiet: true }); }
+    syncing=false;
+    if(runAgain && !closing){runAgain=false;void syncBrain();}
   }
 }
-
 async function startWatcher() {
+  watchLock=await acquireWatchLock(BRAIN_DIR);
+  if(!watchLock){console.log('[cerebro] Já existe um observador ativo. Use a janela existente; se ela for antiga, feche-a e abra Ativação Cérebro.bat novamente.');return false;}
   await syncBrain();
   try {
-    watcher = watchFs(ROOT, { recursive: true }, (_event, filename) => {
-      const changedPath = filename?.toString().replaceAll("\\", "/") ?? "";
-      if (changedPath.startsWith(".mythreon-brain/") || changedPath.startsWith("Mythreon Obsidian/") || changedPath.startsWith("node_modules/") || changedPath.startsWith("dist/") || changedPath.startsWith(".git/") || changedPath.startsWith("release/") || changedPath.startsWith(".obsidian/")) return;
+    watcher=watchFs(ROOT,{recursive:true},(_event,filename)=>{
+      const changed=filename?.toString()??'';
+      if(isIgnored(changed))return;
       clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(() => void syncBrain(), 900);
+      debounceTimer=setTimeout(()=>void syncBrain(),900);
     });
-    console.log("[cerebro] Observando mudanças na pasta. Use Ctrl+C para parar.");
-  } catch (error) {
-    console.error("[cerebro] Não foi possível iniciar a observação recursiva:", error);
-    process.exitCode = 1;
-  }
+    watcher.on('error', error=>console.warn('[cerebro] Aviso do observador: '+error.code+'. A verificação periódica continua.'));
+  } catch(error) { console.warn('[cerebro] Observação por eventos indisponível: '+error.code+'. Verificação periódica ativa.'); }
+  pollTimer=setInterval(()=>void syncBrain({quiet:true}),30000);
+  console.log('[cerebro v2] Observando arquivos e notas. Revisão de segurança a cada 30 s; Ctrl+C encerra.');
+  return true;
 }
 
 async function shutdown() {
@@ -289,6 +264,8 @@ async function shutdown() {
   closing = true;
   clearTimeout(debounceTimer);
   watcher?.close();
+  clearInterval(pollTimer);
+  await watchLock?.release();
   if (childProcess && !childProcess.killed) childProcess.kill("SIGINT");
 }
 
@@ -299,7 +276,8 @@ const mode = process.argv.find(arg => ["--once", "--watch", "--dev", "--open"].i
 if (mode === "--open") {
   await openSealedGraph();
 } else if (mode === "--once") {
-  await syncBrain();
+  const result = await syncBrain();
+  if (result?.status !== "ok") process.exitCode = 1;
 } else if (mode === "--watch") {
   await startWatcher();
 } else {

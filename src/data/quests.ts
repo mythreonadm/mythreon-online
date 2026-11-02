@@ -1,4 +1,5 @@
 import { QuestTemplate } from "../types";
+import { JOURNEY_CHAPTERS } from "./worldJourney";
 
 const kill = (target: string, count: number, name: string) => ({ type: "KILL" as const, target, count, description: `Derrote ${count} ${name}` });
 const boss = (target: string, name: string) => ({ type: "KILL_BOSS" as const, target, count: 1, description: `Derrote o chefe ${name}` });
@@ -12,98 +13,108 @@ export const QUESTS: QuestTemplate[] = [
   // ═══════════════════════════════════════════════════════════════
   { id: "COMP_T10", name: "Colecionador Iniciante", giver: "Anciã Seraphine", category: "COMPENDIO", minLevel: 1,
     description: "A Matriz espera por você. Descubra 10 raças diferentes.",
-    objectives: [discoverTotal(10)], rewards: { gold: 1300, xp: 1000 } },
+    objectives: [discoverTotal(10)], rewards: { gold: 1300, xp: 25 } },
 
   { id: "COMP_T25", name: "Explorador da Matriz", giver: "Anciã Seraphine", category: "COMPENDIO", minLevel: 1, requires: ["COMP_T10"],
     description: "O caminho do Arquivista é longo. Descubra 25 raças.",
-    objectives: [discoverTotal(25)], rewards: { gold: 5550, xp: 5000 } },
+    objectives: [discoverTotal(25)], rewards: { gold: 5550, xp: 25 } },
 
   { id: "COMP_T50", name: "Arquivista Dedicado", giver: "Anciã Seraphine", category: "COMPENDIO", minLevel: 1, requires: ["COMP_T25"],
     description: "Metade do caminho para a maestria. Descubra 50 raças.",
-    objectives: [discoverTotal(50)], rewards: { gold: 25000, xp: 25000, items: [{ templateId: "FRAGMENTO_RARO", quantity: 50 }] } },
+    objectives: [discoverTotal(50)], rewards: { gold: 25000, xp: 25, items: [{ templateId: "FRAGMENTO_RARO", quantity: 50 }] } },
 
   { id: "COMP_T100", name: "Mestre da Matriz", giver: "Anciã Seraphine", category: "COMPENDIO", minLevel: 1, requires: ["COMP_T50"],
     description: "Você domina a arte da síntese. Descubra 100 raças.",
-    objectives: [discoverTotal(100)], rewards: { gold: 100000, xp: 100000, items: [{ templateId: "FRAGMENTO_EPICO", quantity: 25 }] } },
+    objectives: [discoverTotal(100)], rewards: { gold: 100000, xp: 25, items: [{ templateId: "FRAGMENTO_EPICO", quantity: 25 }] } },
 
   { id: "COMP_T200", name: "O Caminho Infinito", giver: "Anciã Seraphine", category: "COMPENDIO", minLevel: 1, requires: ["COMP_T100"],
     description: "Nenhum limite te detém. Descubra 200 raças.",
-    objectives: [discoverTotal(200)], rewards: { gold: 500000, xp: 500000, items: [{ templateId: "FRAGMENTO_EPICO", quantity: 50 }] } },
+    objectives: [discoverTotal(200)], rewards: { gold: 500000, xp: 25, items: [{ templateId: "FRAGMENTO_EPICO", quantity: 50 }] } },
 
   // ─── NOMEADAS (LENDÁRIAS) ───
   { id: "COMP_N1", name: "Primeira Lenda", giver: "Anciã Seraphine", category: "COMPENDIO", minLevel: 1,
     description: "Descubra sua primeira raça nomeada. Cada uma guarda um fragmento da história de Mythreon.",
-    objectives: [discoverNamed(1)], rewards: { gold: 3100, xp: 2000 } },
+    objectives: [discoverNamed(1)], rewards: { gold: 3100, xp: 25 } },
 
   { id: "COMP_N5", name: "Caçador de Lendas", giver: "Anciã Seraphine", category: "COMPENDIO", minLevel: 1, requires: ["COMP_N1"],
     description: "Cinco nomes lendários em sua coleção. Continue.",
-    objectives: [discoverNamed(5)], rewards: { gold: 15000, xp: 15000, items: [{ templateId: "FRAGMENTO_EPICO", quantity: 10 }] } },
+    objectives: [discoverNamed(5)], rewards: { gold: 15000, xp: 25, items: [{ templateId: "FRAGMENTO_EPICO", quantity: 10 }] } },
 
   { id: "COMP_N10", name: "Guardião das Histórias", giver: "Anciã Seraphine", category: "COMPENDIO", minLevel: 1, requires: ["COMP_N5"],
     description: "Dez raças nomeadas descobertas. Você está entre os grandes Arquivistas.",
-    objectives: [discoverNamed(10)], rewards: { gold: 75000, xp: 75000, items: [{ templateId: "FRAGMENTO_RARO", quantity: 25 }] } },
+    objectives: [discoverNamed(10)], rewards: { gold: 75000, xp: 25, items: [{ templateId: "FRAGMENTO_RARO", quantity: 25 }] } },
 
   { id: "COMP_N20", name: "Voz das Consciências", giver: "Anciã Seraphine", category: "COMPENDIO", minLevel: 1, requires: ["COMP_N10"],
     description: "Vinte lendas em sua coleção. Poucos chegam tão longe.",
-    objectives: [discoverNamed(20)], rewards: { gold: 300000, xp: 300000, items: [{ templateId: "FRAGMENTO_EPICO", quantity: 50 }] } },
+    objectives: [discoverNamed(20)], rewards: { gold: 300000, xp: 25, items: [{ templateId: "FRAGMENTO_EPICO", quantity: 50 }] } },
 
   { id: "COMP_N33", name: "O Último Arquivista", giver: "Anciã Seraphine", category: "COMPENDIO", minLevel: 1, requires: ["COMP_N20"],
     description: "Todas as 33 raças nomeadas descobertas. Você é a lenda viva de Mythreon.",
-    objectives: [discoverNamed(33)], rewards: { gold: 1500000, xp: 1000000, items: [{ templateId: "FRAGMENTO_EPICO", quantity: 100 }] } },
+    objectives: [discoverNamed(33)], rewards: { gold: 1500000, xp: 25, items: [{ templateId: "FRAGMENTO_EPICO", quantity: 100 }] } },
 
   // ═══════════════════════════════════════════════════════════════
   // TUTORIAL / ONBOARDING
   // ═══════════════════════════════════════════════════════════════
   { id: "TUT_WIKI", name: "O Arquivo de Mythreon", giver: "Arquivista Sinax", category: "TUTORIAL", minLevel: 1,
     description: "Antes de partir, consulte a Wiki para conhecer o mundo e os caminhos de evolução.",
-    objectives: [{ type: "VISIT_WIKI", count: 1, description: "Visite o Arquivo / Wiki" }], rewards: { gold: 100, xp: 50 } },
-  { id: "TUT_1", name: "O Primeiro Passo", giver: "Guardiã Mirelle", category: "TUTORIAL", zoneId: "BOSQUE_LYSS", minLevel: 1, requires: ["TUT_WIKI"],
+    objectives: [{ type: "VISIT_WIKI", count: 1, description: "Visite o Arquivo / Wiki" }], rewards: { gold: 100, xp: 25 } },
+  { id: "TUT_1", name: "O Primeiro Passo", giver: "Guardiã Mirelle", category: "TUTORIAL", zoneId: "BOSQUE_LYSS", minLevel: 1, requires: ["TUT_POTIONS"],
     description: "Bem-vindo a Mythreon. Derrote 10 Lobos-Ferais para testar suas forças.",
-    objectives: [kill("LOBO", 10, "Lobos")], rewards: { gold: 190, xp: 100 } },
+    objectives: [kill("LOBO", 10, "Lobos")], rewards: { gold: 190, xp: 25 } },
   { id: "TUT_MATRIX", name: "Uma Matriz, Muitas Possibilidades", giver: "Arquivista Sinax", category: "TUTORIAL", minLevel: 1, requires: ["TUT_1"],
     description: "Conheça a Matriz e descubra como combinar componentes para criar uma raça única.",
-    objectives: [{ type: "VISIT_MATRIX", count: 1, description: "Visite a aba Matriz" }], rewards: { gold: 150, xp: 50 } },
-  { id: "TUT_POTIONS", name: "Preparar os Elixires", giver: "Herbalista Tomé", category: "TUTORIAL", minLevel: 1, requires: ["TUT_MATRIX"],
+    objectives: [{ type: "VISIT_MATRIX", count: 1, description: "Visite a aba Matriz" }], rewards: { gold: 100, xp: 20, items: [{ templateId: "A1" }, { templateId: "S1" }, { templateId: "P1" }] } },
+  { id: "TUT_POTIONS", name: "Preparar os Elixires", giver: "Herbalista Tomé", category: "TUTORIAL", minLevel: 1, requires: ["TUT_WIKI"],
     description: "Na tela de caça, escolha uma poção e ajuste o limite automático. Ativar o consumo é opcional e cada uso custa gold.",
-    objectives: [{ type: "CONFIGURE_POTIONS", count: 1, description: "Configure uma poção de HP ou MP" }], rewards: { gold: 150, xp: 50 } },
-  { id: "TUT_2", name: "A Forja da Alma", giver: "Guardiã Mirelle", category: "TUTORIAL", minLevel: 1, requires: ["TUT_POTIONS"],
+    objectives: [{ type: "CONFIGURE_POTIONS", count: 1, description: "Configure uma poção de HP ou MP" }], rewards: { gold: 150, xp: 25 } },
+  { id: "TUT_2", name: "A Forja da Alma", giver: "Guardiã Mirelle", category: "TUTORIAL", minLevel: 1, requires: ["TUT_MATRIX"],
     description: "Combine um Ataque, um Suporte e uma Passiva na Matriz; depois equipe a raça criada para concluir sua iniciação.",
-    objectives: [{ type: "SYNTHESIZE", count: 1, description: "Crie uma raça na Matriz" }, { type: "EQUIP_RACE", count: 1, description: "Equipe a raça criada" }], rewards: { gold: 300, xp: 150 } },
-  { id: "TUT_3", name: "Ciclo de Renovação", giver: "Herbalista Tomé", category: "TUTORIAL", zoneId: "BOSQUE_LYSS", minLevel: 2, requires: ["TUT_2"],
-    description: "Derrote criaturas para ganhar ouro e encontrar equipamentos. Guarde pelo menos um equipamento de drop para conhecer o Ferreiro.",
-    objectives: [kill("ANY", 20, "criaturas"), { type: "EARN_GOLD", count: 300, description: "Ganhe 300 de Ouro" }], rewards: { gold: 500, xp: 200 } },
-  { id: "TUT_FORGE_VISIT", name: "Conheça o Ferreiro", giver: "Ferreiro Bolk", category: "TUTORIAL", minLevel: 3, requires: ["TUT_3"],
+    objectives: [{ type: "SYNTHESIZE", count: 1, description: "Crie uma raça na Matriz" }, { type: "EQUIP_RACE", count: 1, description: "Equipe a raça criada" }], rewards: { gold: 300, xp: 25 } },
+  { id: "TUT_3", name: "Ciclo de Renovação", giver: "Herbalista Tomé", category: "TUTORIAL", zoneId: "BOSQUE_LYSS", minLevel: 1, requires: ["TUT_2"],
+    description: "Derrote criaturas para ganhar ouro e encontrar equipamentos. Bolk entrega três espadas de prática nesta etapa: uma para desmanchar, uma para aprimorar e uma para vender. Depois, seus equipamentos virão dos drops.",
+    objectives: [kill("ANY", 20, "criaturas"), { type: "EARN_GOLD", count: 300, description: "Ganhe 300 de Ouro" }], rewards: { gold: 150, xp: 25, items: [{ templateId: "ESPADA_T1" }, { templateId: "ESPADA_T1" }, { templateId: "ESPADA_T1" }] } },
+  { id: "TUT_FORGE_VISIT", name: "Conheça o Ferreiro", giver: "Ferreiro Bolk", category: "TUTORIAL", minLevel: 1, requires: ["TUT_3"],
     description: "O Ferreiro transforma drops em poder e Fragmentos. Visite a oficina para aprender os serviços disponíveis.",
-    objectives: [{ type: "VISIT_FORGE", count: 1, description: "Visite o Ferreiro" }], rewards: { gold: 200, xp: 50 } },
-  { id: "TUT_4", name: "Limpeza de Inventário", giver: "Ferreiro Bolk", category: "TUTORIAL", minLevel: 3, requires: ["TUT_FORGE_VISIT"],
-    description: "Escolha cinco equipamentos indesejados no Ferreiro e transforme-os em Fragmentos. Reserve pelo menos um equipamento de drop para aprimorar na próxima etapa.",
-    objectives: [{ type: "SALVAGE", count: 5, description: "Desmanche 5 equipamentos" }], rewards: { gold: 1500, xp: 150, items: [{ templateId: "FRAGMENTO_COMUM", quantity: 10 }] } },
-  { id: "TUT_FORGE", name: "Mãos à Forja", giver: "Ferreiro Bolk", category: "TUTORIAL", minLevel: 3, requires: ["TUT_4"],
+    objectives: [{ type: "VISIT_FORGE", count: 1, description: "Visite o Ferreiro" }], rewards: { gold: 200, xp: 25 } },
+  { id: "TUT_4", name: "Limpeza de Inventário", giver: "Ferreiro Bolk", category: "TUTORIAL", minLevel: 1, requires: ["TUT_FORGE_VISIT"],
+    description: "Escolha um equipamento indesejado no Ferreiro e transforme-os em Fragmentos. Reserve pelo menos um equipamento de drop para aprimorar na próxima etapa.",
+    objectives: [{ type: "SALVAGE", count: 1, description: "Desmanche 1 equipamento" }], rewards: { gold: 150, xp: 25, items: [{ templateId: "FRAGMENTO_COMUM", quantity: 10 }] } },
+  { id: "TUT_FORGE", name: "Mãos à Forja", giver: "Ferreiro Bolk", category: "TUTORIAL", minLevel: 1, requires: ["TUT_4"],
     description: "Aprimore um equipamento no Ferreiro. Cada nível exige ouro e Fragmentos; escolha um item que pretende manter.",
-    objectives: [{ type: "FORGE", count: 1, description: "Aprimore um equipamento uma vez" }], rewards: { gold: 500, xp: 150, items: [{ templateId: "FRAGMENTO_COMUM", quantity: 5 }] } },
-  { id: "TUT_SELL", name: "Uma Troca Justa", giver: "Ferreiro Bolk", category: "TUTORIAL", minLevel: 3, requires: ["TUT_FORGE"],
+    objectives: [{ type: "FORGE", count: 1, description: "Aprimore um equipamento uma vez" }], rewards: { gold: 150, xp: 25, items: [{ templateId: "FRAGMENTO_COMUM", quantity: 5 }] } },
+  { id: "TUT_SELL", name: "Uma Troca Justa", giver: "Ferreiro Bolk", category: "TUTORIAL", minLevel: 1, requires: ["TUT_FORGE"],
     description: "Venda no Ferreiro um item que não pretende usar. O valor em gold aparece antes da confirmação.",
-    objectives: [{ type: "SELL", count: 1, description: "Venda 1 item ao Ferreiro" }], rewards: { gold: 400, xp: 100 } },
-  { id: "TUT_BACKPACK", name: "Preparar a Jornada", giver: "Guardiã Mirelle", category: "TUTORIAL", minLevel: 3, requires: ["TUT_SELL"],
-    description: "Revise sua mochila e os equipamentos coletados. Mochilas melhores são encontradas como drops de chefes.",
-    objectives: [{ type: "VISIT_BACKPACK", count: 1, description: "Visite sua Mochila" }], rewards: { gold: 300, xp: 100, items: [{ templateId: "UNICO_SIGILO_INICIACAO" }] } },
+    objectives: [{ type: "SELL", count: 1, description: "Venda 1 item ao Ferreiro" }], rewards: { gold: 100, xp: 25 } },
+  {id:'TUT_PATHS',name:'Escolher quem se tornar',giver:'Anciã Seraphine',category:'TUTORIAL',minLevel:1,requires:['TUT_SELL'],description:'A Matriz transforma sua linhagem. As Divine Beasts substituem essa transformação por um vínculo. Examine seus atributos em Personagem, conheça as Beasts e veja os recursos por gold no Shop. Você não precisa comprar nem possuir uma Beast para concluir.',objectives:[{type:'VISIT_CHARACTER',count:1,description:'Veja seus atributos em Personagem'},{type:'VISIT_BEASTS',count:1,description:'Conheça as Divine Beasts'},{type:'VISIT_SHOP',count:1,description:'Conheça o Shop, sem obrigação de comprar'}],rewards:{gold:50,xp:20}},
+  {id:'TUT_TRAIN',name:'Disciplina antes da força',giver:'Guardiã Mirelle',category:'TUTORIAL',minLevel:1,requires:['TUT_PATHS'],description:'Na Casa em Explorar, clique em Treinar, escolha uma habilidade e pratique por 30 segundos. Treinar troca tempo de caça por força permanente; não fornece XP de personagem. A iniciação pausa o treino ao cumprir o objetivo.',objectives:[{type:'TRAIN',count:30,description:'Treine uma habilidade por 30 segundos'}],rewards:{gold:50,xp:20}},
+  {id:'TUT_LAB',name:'Preparar antes de arriscar',giver:'Arquivista Sinax',category:'TUTORIAL',minLevel:1,requires:['TUT_TRAIN'],description:'Conheça o Laboratório de Builds. Ele estima resultados de combate com seu personagem e ajuda a planejar equipamentos, treino e sustento. As projeções não liberam mapas nem garantem vitórias.',objectives:[{type:'VISIT_LAB',count:1,description:'Visite o Laboratório de Builds'}],rewards:{gold:50,xp:20}},
+  { id: "TUT_BACKPACK", name: "Preparar a Jornada", giver: "Guardiã Mirelle", category: "TUTORIAL", minLevel: 1, requires: ["TUT_LAB"],
+    description: "Revise sua mochila e conheça o depósito. O Sigilo do Primeiro Eco reconhece sua iniciação: agora a jornada é livre. Procure Mirelle e siga as missões do Bosque antes de enfrentar o Espectro de Brasa no nível 15.",
+    objectives: [{ type: "VISIT_BACKPACK", count: 1, description: "Visite sua Mochila" }, {type:"VISIT_DEPOT",count:1,description:"Conheça o Depósito para guardar recursos"}], rewards: { gold: 300, xp: 25, items: [{ templateId: "UNICO_SIGILO_INICIACAO" }] } },
 
   // ═══════════════════════════════════════════════════════════════
   // HISTÓRIA POR ZONA
   // ═══════════════════════════════════════════════════════════════
-  { id: "LYSS_1", name: "Praga de Vespas", giver: "Guardiã Mirelle", category: "HISTORIA", zoneId: "BOSQUE_LYSS", minLevel: 5, requires: ["TUT_BACKPACK"],
+  { id: "LYSS_1", name: "Praga de Vespas", giver: "Guardiã Mirelle", category: "HISTORIA", zoneId: "BOSQUE_LYSS", minLevel: 1, requires: ["TUT_BACKPACK"],
     description: "Elimine 25 vespas e traga 3 ferrões. Equipamentos continuam sendo encontrados durante a caça.",
-    objectives: [kill("VESPA", 25, "Vespas"), collect("A2", 3, "Ferrões")], rewards: { gold: 1500, xp: 2500 } },
+    objectives: [kill("VESPA", 25, "Vespas"), collect("A2", 3, "Ferrões")], rewards: { gold: 500, xp: 150 } },
   { id: "LYSS_BOSS", name: "O Espectro de Brasa", giver: "Guardiã Mirelle", category: "DESAFIO", zoneId: "BOSQUE_LYSS", minLevel: 15, requires: ["LYSS_1"],
     description: "Derrote o Espectro de Brasa. Ele pode deixar sua mochila ou equipamento como drop ao ser derrotado.",
-    objectives: [boss("ESPECTRO", "Espectro de Brasa")], rewards: { gold: 5000, xp: 10000 } },
+    objectives: [boss("ESPECTRO", "Espectro de Brasa")], rewards: { gold: 1000, xp: 300 } },
 
   // ═══════════════════════════════════════════════════════════════
   // REPETÍVEIS
   // ═══════════════════════════════════════════════════════════════
-  { id: "REP_LYSS", name: "Patrulha do Bosque", giver: "Caçador Brann", category: "REPETIVEL", zoneId: "BOSQUE_LYSS", minLevel: 5, repeatable: true,
+  { id: "REP_LYSS", name: "Patrulha do Bosque", giver: "Caçador Brann", category: "REPETIVEL", zoneId: "BOSQUE_LYSS", minLevel: 5, repeatable: true, requires: ["TUT_BACKPACK"],
     description: "Cace 100 criaturas em qualquer lugar do Bosque.",
-    objectives: [kill("ANY", 100, "monstros")], rewards: { gold: 2300, xp: 5000 } },
+    objectives: [kill("ANY", 100, "monstros")], rewards: { gold: 350, xp: 150 } },
 ];
+
+for (const chapter of JOURNEY_CHAPTERS.filter(c => c.pass)) {
+  const pass = chapter.pass!;
+  QUESTS.push({ id: pass.questId, name: 'Travessia: ' + chapter.name, giver: pass.npc, category: 'HISTORIA', minLevel: pass.level, requires: [pass.requires], description: chapter.story + ' Entregue os recursos à expedição para abrir permanentemente a passagem.', objectives: [{ type: 'UNLOCK_ZONE', target: chapter.id, count: 1, description: 'Financie a travessia de ' + chapter.name }], rewards: {} });
+  QUESTS.push({ id: chapter.id + '_STORY', name: chapter.mission, giver: pass.npc, category: 'HISTORIA', zoneId: chapter.id, minLevel: pass.level, requires: [pass.questId], description: chapter.conflict, objectives: chapter.hunts.map(h => kill(h.id,h.count,h.name)), rewards: {gold: Math.floor(pass.gold * .08), xp: 150} });
+  QUESTS.push({ id: chapter.id + '_BOSS', name: chapter.bossTitle, giver: pass.npc, category: 'DESAFIO', zoneId: chapter.id, minLevel: chapter.bossLevel, requires: [chapter.id + '_STORY'], description: chapter.resolution, objectives: [boss(chapter.bossId, chapter.bossTitle)], rewards: {gold: Math.floor(pass.gold * .12), xp: 300} });
+}
 
 export const QUESTS_BY_ID: Record<string, QuestTemplate> = Object.fromEntries(QUESTS.map((q) => [q.id, q]));

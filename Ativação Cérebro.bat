@@ -1,10 +1,11 @@
 @echo off
+chcp 65001 >nul
 setlocal
 title Ativação do Cérebro - Mythreon Online
 cd /d "%~dp0"
 
 echo.
-echo  Mythreon Online - Cérebro ativo
+echo  Mythreon Online - Cérebro v2
 echo  Sincronizando o índice e o vault do Obsidian...
 echo.
 
@@ -21,7 +22,7 @@ if not exist "scripts\mythreon-brain.mjs" (
   exit /b 1
 )
 
-call npm run brain:watch
+node scripts\brain-service.mjs
 echo.
 echo  O observador do Cerebro foi encerrado.
 pause

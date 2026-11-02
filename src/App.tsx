@@ -1,3 +1,5 @@
+import { JourneyGuide } from './ui/JourneyGuide';
+import { canUseTab, isGuided } from './engine/journey';
 import React, { useCallback, useEffect, useState } from "react";
 import { AssetImage } from "./ui/AssetImage";
 import { useGameStore } from "./store/gameStore";
@@ -58,7 +60,7 @@ useEffect(() => {
     const loaded = loadFromSave();
     if (loaded) {
       const state = useGameStore.getState();
-      if (state.character && state.character.hp > 0) startHunting(state.character.currentZoneId || "BOSQUE_LYSS");
+      if (state.character && !isGuided(state.character) && state.character.hp > 0) startHunting(state.character.currentZoneId || "BOSQUE_LYSS");
     } else {
       useGameStore.setState({ character: null, races: [], currentZoneId: "BOSQUE_LYSS", offlineReport: null });
     }
@@ -70,6 +72,11 @@ useEffect(() => {
     if (tab === "matriz") recordQuestAction("VISIT_MATRIX");
     if (tab === "loja") recordQuestAction("VISIT_FORGE");
     if (tab === "backpack") recordQuestAction("VISIT_BACKPACK");
+    if (tab === "personagem") recordQuestAction("VISIT_CHARACTER");
+    if (tab === "pets") recordQuestAction("VISIT_BEASTS");
+    if (tab === "shop") recordQuestAction("VISIT_SHOP");
+    if (tab === "laboratorio") recordQuestAction("VISIT_LAB");
+    if (tab === "depot") recordQuestAction("VISIT_DEPOT");
   }, [tab, recordQuestAction]);
 
   const toggleDebug = () => {
@@ -92,10 +99,13 @@ useEffect(() => {
     const objectiveType = objective?.type;
     const targetTabs: Record<string, Tab> = {
       VISIT_WIKI: "wiki", VISIT_MATRIX: "matriz", SYNTHESIZE: "matriz", EQUIP_RACE: "matriz",
-      VISIT_FORGE: "loja", FORGE: "loja", SELL: "loja", SALVAGE: "loja", VISIT_BACKPACK: "backpack", CONFIGURE_POTIONS: "zona",
+      VISIT_FORGE: "loja", FORGE: "loja", SELL: "loja", SALVAGE: "loja", VISIT_BACKPACK: "backpack", CONFIGURE_POTIONS: "zona", VISIT_CHARACTER:"personagem", VISIT_BEASTS:"pets", VISIT_SHOP:"shop", VISIT_LAB:"laboratorio", VISIT_DEPOT:"depot", TRAIN:"zona",
     };
     const destinationTab = objectiveType ? targetTabs[objectiveType] : undefined;
     if (destinationTab) {
+      if (objectiveType === "TRAIN" && isTickRunning) stopHunting();
+      if (!canUseTab(character,destinationTab)) { openQuest(questId); return; }
+      if (objectiveType?.startsWith("VISIT_") && tab === destinationTab) recordQuestAction(objectiveType as any);
       if (destinationTab === "loja" && isTickRunning) stopHunting();
       setTab(destinationTab);
       return;
@@ -143,7 +153,7 @@ useEffect(() => {
             className="w-full bg-arcane-bg border border-arcane-border rounded-lg px-4 py-3 text-white mb-6 focus:outline-none focus:border-arcane-purple"
           />
           <button
-            onClick={() => { if (name.trim()) { newGame(name.trim()); startHunting("BOSQUE_LYSS"); } }}
+            onClick={() => { if (name.trim()) { newGame(name.trim()); setTab("missoes"); } }}
             className="w-full bg-arcane-purple hover:bg-arcane-purple/80 text-white rounded-lg py-3 font-bold transition-all hover:scale-105"
           >
             Começar Jornada
@@ -171,12 +181,12 @@ useEffect(() => {
               <p className="text-xs text-arcane-cyan brand-subtitle">
                 {character.name} — Nível {character.level} {character.activeRace ? `(${character.activeRace.name})` : ""}
               </p>
-              <button
+              {location.hostname === "localhost" && <button
                 onClick={toggleDebug}
                 className={`text-[10px] px-2 py-1 rounded border ${debug ? "bg-red-900 border-red-500 text-red-200" : "bg-gray-800 border-gray-600 text-gray-400"}`}
               >
                 {debug ? "DEBUG ON" : "DEBUG OFF"}
-              </button>
+              </button>}
             </div>
           </div>
           <CharacterPanel />
@@ -190,11 +200,11 @@ useEffect(() => {
             <button
               key={t}
               onClick={() => {
-                if (t === "loja" && isTickRunning) return;
+                if (!canUseTab(character,t) || (t === "loja" && isTickRunning)) return;
                 setTab(t);
               }}
-              disabled={t === "loja" && isTickRunning}
-              title={t === "loja" && isTickRunning ? "Saia da caça para acessar o Ferreiro" : undefined}
+              disabled={!canUseTab(character,t) || (t === "loja" && isTickRunning)}
+              title={!canUseTab(character,t) ? "Liberado conforme sua iniciação. Siga a missão atual." : t === "loja" && isTickRunning ? "Saia da caça para acessar o Ferreiro" : undefined}
               aria-disabled={t === "loja" && isTickRunning}
               aria-current={tab === t ? "page" : undefined}
               className={`nav-tab relative flex items-center gap-2 px-4 py-4 font-bold text-sm whitespace-nowrap transition-colors ${
@@ -210,6 +220,7 @@ useEffect(() => {
         </div>
       </nav>
 
+      <JourneyGuide openQuest={openQuest} followQuest={trackQuest} />
       <QuestTracker onSelect={trackQuest} />
 
       <main className="game-main max-w-7xl mx-auto p-4 mt-4">

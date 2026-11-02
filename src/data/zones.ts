@@ -94,3 +94,20 @@ export const ZONES: Record<string, Zone> = {
     ],
   },
 };
+
+// Rotas laterais da Ruptura: espécies exclusivas, sem substituir as regiões existentes.
+ZONES.PANTANO_VEYRA = {id:'PANTANO_VEYRA',name:'Pântano de Veyra',tier:3,minLevel:26,maxLevel:45,theme:'swamp',ambientDrop:'P3',ambientPool:['P3','P5'],enemies:[
+ {id:'SAPO_MIASMA',name:'Sapo-Miasma',hp:360,atk:45,arm:15,xp:190,goldMin:65,goldMax:110,componentId:'A2',componentChance:.55,essenceId:'S2',essenceChance:.15,element:'VENENO',elementalResistances:{VENENO:.35,AGUA:.15},isBoss:false,difficulty:2,minLevel:26,emoji:'🐸'},
+ {id:'LIBELULA_LAMINA',name:'Libélula-Lâmina',hp:310,atk:55,arm:12,xp:220,goldMin:75,goldMax:120,componentId:'A10',componentChance:.55,essenceId:'S8',essenceChance:.15,element:'VENTO',isBoss:false,difficulty:3,minLevel:29,emoji:'🦋'},
+ {id:'CIPO_MEMORIA',name:'Cipó da Memória',hp:420,atk:48,arm:23,xp:260,goldMin:90,goldMax:140,componentId:'A7',componentChance:.55,essenceId:'S3',essenceChance:.15,element:'PSIQUICO',damageType:'MAGICO',isBoss:false,difficulty:3,minLevel:33,emoji:'🌿'},
+ {id:'CROCODILO_SILTE',name:'Crocodilo de Silte',hp:600,atk:60,arm:28,xp:320,goldMin:110,goldMax:170,componentId:'A5',componentChance:.55,essenceId:'S4',essenceChance:.15,element:'AGUA',elementalResistances:{AGUA:.3},isBoss:false,difficulty:4,minLevel:38,emoji:'🐊'},
+ {id:'MATRIARCA_LODO',name:'Matriarca do Lodo',hp:1500,atk:82,arm:32,xp:1150,goldMin:500,goldMax:750,componentId:'A7',componentChance:1,essenceId:'S3',essenceChance:.3,element:'VENENO',damageType:'MAGICO',elementalResistances:{VENENO:.4,AGUA:.2},isBoss:true,difficulty:5,minLevel:44,emoji:'🌳'}
+]};
+ZONES.DESERTO_KAELOR = {id:'DESERTO_KAELOR',name:'Deserto de Kaelor',tier:4,minLevel:46,maxLevel:70,theme:'desert',ambientDrop:'P4',ambientPool:['P4','P7'],enemies:[
+ {id:'ESCARAVELHO_VITREO',name:'Escaravelho Vítreo',hp:850,atk:95,arm:36,xp:450,goldMin:160,goldMax:250,componentId:'A2',componentChance:.55,essenceId:'S10',essenceChance:.15,element:'METAL',elementalResistances:{METAL:.35},isBoss:false,difficulty:3,minLevel:46,emoji:'🪲'},
+ {id:'ESPECTRO_SOLAR',name:'Espectro Solar',hp:760,atk:115,arm:28,xp:560,goldMin:190,goldMax:290,componentId:'A3',componentChance:.55,essenceId:'S9',essenceChance:.15,element:'FOGO',damageType:'MAGICO',elementalResistances:{FOGO:.35},isBoss:false,difficulty:3,minLevel:51,emoji:'☀️'},
+ {id:'SERPENTE_MIRAGEM',name:'Serpente de Miragem',hp:1000,atk:120,arm:35,xp:650,goldMin:220,goldMax:320,componentId:'A5',componentChance:.55,essenceId:'S6',essenceChance:.15,element:'PSIQUICO',isBoss:false,difficulty:4,minLevel:56,emoji:'🐍'},
+ {id:'GOLEM_OBSIDIANA',name:'Golem de Obsidiana',hp:1250,atk:125,arm:48,xp:800,goldMin:260,goldMax:380,componentId:'A9',componentChance:.55,essenceId:'S7',essenceChance:.15,element:'TERRA',elementalResistances:{TERRA:.35,FOGO:.15},isBoss:false,difficulty:4,minLevel:61,emoji:'🗿'},
+ {id:'SENTINELA_ZENITE',name:'Sentinela do Zênite',hp:2600,atk:155,arm:52,xp:3100,goldMin:1000,goldMax:1600,componentId:'A15',componentChance:1,essenceId:'S10',essenceChance:.3,element:'FOGO',damageType:'MAGICO',elementalResistances:{FOGO:.4,METAL:.2},isBoss:true,difficulty:5,minLevel:68,emoji:'🔆'}
+]};
+for (const zone of [ZONES.PANTANO_VEYRA,ZONES.DESERTO_KAELOR]) for (const enemy of zone.enemies) enemy.sprite='/assets/monsters/'+enemy.id+'.png';

@@ -120,7 +120,7 @@ export interface Zone {
   id: string; name: string; tier: 1 | 2 | 3 | 4 | 5;
   minLevel: number; maxLevel: number; enemies: Enemy[]; ambientDrop: string;
   ambientPool?: string[];
-  theme: "forest" | "mountain" | "ocean" | "ruins" | "abyss";
+  theme: "forest" | "mountain" | "ocean" | "ruins" | "abyss" | "swamp" | "desert";
 }
 
 export interface Inventory { backpack: Backpack; items: Item[]; }
@@ -129,7 +129,7 @@ export interface CharacterSkills {
   melee: number; defense: number; magic: number; distance: number; soul: number;
 }
 
-export type QuestObjectiveType = "KILL" | "KILL_BOSS" | "COLLECT" | "REACH_LEVEL" | "EARN_GOLD" | "SYNTHESIZE" | "EQUIP_RACE" | "CONFIGURE_POTIONS" | "SELL" | "SALVAGE" | "FORGE" | "VISIT_WIKI" | "VISIT_MATRIX" | "VISIT_FORGE" | "VISIT_BACKPACK" | "DISCOVER_TOTAL" | "DISCOVER_NAMED";
+export type QuestObjectiveType = "KILL" | "KILL_BOSS" | "COLLECT" | "REACH_LEVEL" | "EARN_GOLD" | "SYNTHESIZE" | "EQUIP_RACE" | "CONFIGURE_POTIONS" | "SELL" | "SALVAGE" | "FORGE" | "VISIT_WIKI" | "VISIT_MATRIX" | "VISIT_FORGE" | "VISIT_BACKPACK" | "VISIT_CHARACTER" | "VISIT_BEASTS" | "VISIT_SHOP" | "VISIT_LAB" | "VISIT_DEPOT" | "TRAIN" | "UNLOCK_ZONE" | "DISCOVER_TOTAL" | "DISCOVER_NAMED";
 export type QuestCategory = "TUTORIAL" | "HISTORIA" | "CACA" | "COLETA" | "DESAFIO" | "REPETIVEL" | "COMPENDIO";
 
 export interface QuestObjective { type: QuestObjectiveType; target?: string; count: number; description: string; }
@@ -178,6 +178,9 @@ export interface Character {
   autoMpPotionPercent?: number;
   autoMpPotionEnabled?: boolean;
   potionGoldWarningUntil?: number;
+  introSeen?: boolean;
+  journeyVersion?: number;
+  unlockedZoneIds?: string[];
   tutorialCompleted?: boolean;
   tutorialRelicGranted?: boolean;
   

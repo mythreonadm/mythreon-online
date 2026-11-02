@@ -1,0 +1,125 @@
+# Itens e Ferreiro
+
+> Índice automático. Edite as notas originais em docs/conhecimento; este arquivo pode ser recriado.
+
+## Conhecimento relacionado
+
+- [[docs/conhecimento/Shop-Premium-Beasts|Shop, premium e Divine Beasts]]
+
+## Código e recursos
+
+- [docs/conhecimento/Shop-Premium-Beasts.md](../docs/conhecimento/Shop-Premium-Beasts.md)
+- [public/assets/items/ANEL_T1.png](../public/assets/items/ANEL_T1.png)
+- [public/assets/items/ANEL_T2.png](../public/assets/items/ANEL_T2.png)
+- [public/assets/items/ANEL_T3.png](../public/assets/items/ANEL_T3.png)
+- [public/assets/items/ANEL_T4.png](../public/assets/items/ANEL_T4.png)
+- [public/assets/items/ANEL_T5.png](../public/assets/items/ANEL_T5.png)
+- [public/assets/items/ARCO_T1.png](../public/assets/items/ARCO_T1.png)
+- [public/assets/items/ARCO_T2.png](../public/assets/items/ARCO_T2.png)
+- [public/assets/items/ARCO_T3.png](../public/assets/items/ARCO_T3.png)
+- [public/assets/items/ARCO_T4.png](../public/assets/items/ARCO_T4.png)
+- [public/assets/items/ARCO_T5.png](../public/assets/items/ARCO_T5.png)
+- [public/assets/items/BACKPACK_ARCANA.png](../public/assets/items/BACKPACK_ARCANA.png)
+- [public/assets/items/BACKPACK_EXPLORADOR.png](../public/assets/items/BACKPACK_EXPLORADOR.png)
+- [public/assets/items/BACKPACK_NORMAL.png](../public/assets/items/BACKPACK_NORMAL.png)
+- [public/assets/items/BACKPACK_OLD.png](../public/assets/items/BACKPACK_OLD.png)
+- [public/assets/items/BACKPACK_REFORCADA.png](../public/assets/items/BACKPACK_REFORCADA.png)
+- [public/assets/items/BOTAS_T1.png](../public/assets/items/BOTAS_T1.png)
+- [public/assets/items/BOTAS_T2.png](../public/assets/items/BOTAS_T2.png)
+- [public/assets/items/BOTAS_T3.png](../public/assets/items/BOTAS_T3.png)
+- [public/assets/items/BOTAS_T4.png](../public/assets/items/BOTAS_T4.png)
+- [public/assets/items/BOTAS_T5.png](../public/assets/items/BOTAS_T5.png)
+- [public/assets/items/CAJADO_T1.png](../public/assets/items/CAJADO_T1.png)
+- [public/assets/items/CAJADO_T2.png](../public/assets/items/CAJADO_T2.png)
+- [public/assets/items/CAJADO_T3.png](../public/assets/items/CAJADO_T3.png)
+- [public/assets/items/CAJADO_T4.png](../public/assets/items/CAJADO_T4.png)
+- [public/assets/items/CAJADO_T5.png](../public/assets/items/CAJADO_T5.png)
+- [public/assets/items/CALCAS_T1.png](../public/assets/items/CALCAS_T1.png)
+- [public/assets/items/CALCAS_T2.png](../public/assets/items/CALCAS_T2.png)
+- [public/assets/items/CALCAS_T3.png](../public/assets/items/CALCAS_T3.png)
+- [public/assets/items/CALCAS_T4.png](../public/assets/items/CALCAS_T4.png)
+- [public/assets/items/CALCAS_T5.png](../public/assets/items/CALCAS_T5.png)
+- [public/assets/items/CAPACETE_T1.png](../public/assets/items/CAPACETE_T1.png)
+- [public/assets/items/CAPACETE_T2.png](../public/assets/items/CAPACETE_T2.png)
+- [public/assets/items/CAPACETE_T3.png](../public/assets/items/CAPACETE_T3.png)
+- [public/assets/items/CAPACETE_T4.png](../public/assets/items/CAPACETE_T4.png)
+- [public/assets/items/CAPACETE_T5.png](../public/assets/items/CAPACETE_T5.png)
+- [public/assets/items/COLAR_T1.png](../public/assets/items/COLAR_T1.png)
+- [public/assets/items/COLAR_T2.png](../public/assets/items/COLAR_T2.png)
+- [public/assets/items/COLAR_T3.png](../public/assets/items/COLAR_T3.png)
+- [public/assets/items/COLAR_T4.png](../public/assets/items/COLAR_T4.png)
+- [public/assets/items/COLAR_T5.png](../public/assets/items/COLAR_T5.png)
+- [public/assets/items/ESCUDO_T1.png](../public/assets/items/ESCUDO_T1.png)
+- [public/assets/items/ESCUDO_T2.png](../public/assets/items/ESCUDO_T2.png)
+- [public/assets/items/ESCUDO_T3.png](../public/assets/items/ESCUDO_T3.png)
+- [public/assets/items/ESCUDO_T4.png](../public/assets/items/ESCUDO_T4.png)
+- [public/assets/items/ESCUDO_T5.png](../public/assets/items/ESCUDO_T5.png)
+- [public/assets/items/ESPADA_T1.png](../public/assets/items/ESPADA_T1.png)
+- [public/assets/items/ESPADA_T2.png](../public/assets/items/ESPADA_T2.png)
+- [public/assets/items/ESPADA_T3.png](../public/assets/items/ESPADA_T3.png)
+- [public/assets/items/ESPADA_T4.png](../public/assets/items/ESPADA_T4.png)
+- [public/assets/items/ESPADA_T5.png](../public/assets/items/ESPADA_T5.png)
+- [public/assets/items/FRAGMENTO_COMUM.png](../public/assets/items/FRAGMENTO_COMUM.png)
+- [public/assets/items/FRAGMENTO_EPICO.png](../public/assets/items/FRAGMENTO_EPICO.png)
+- [public/assets/items/FRAGMENTO_RARO.png](../public/assets/items/FRAGMENTO_RARO.png)
+- [public/assets/items/LUVAS_T1.png](../public/assets/items/LUVAS_T1.png)
+- [public/assets/items/LUVAS_T2.png](../public/assets/items/LUVAS_T2.png)
+- [public/assets/items/LUVAS_T3.png](../public/assets/items/LUVAS_T3.png)
+- [public/assets/items/LUVAS_T4.png](../public/assets/items/LUVAS_T4.png)
+- [public/assets/items/LUVAS_T5.png](../public/assets/items/LUVAS_T5.png)
+- [public/assets/items/MACHADO_T1.png](../public/assets/items/MACHADO_T1.png)
+- [public/assets/items/MACHADO_T2.png](../public/assets/items/MACHADO_T2.png)
+- [public/assets/items/MACHADO_T3.png](../public/assets/items/MACHADO_T3.png)
+- [public/assets/items/MACHADO_T4.png](../public/assets/items/MACHADO_T4.png)
+- [public/assets/items/MACHADO_T5.png](../public/assets/items/MACHADO_T5.png)
+- [public/assets/items/PEITORAL_T1.png](../public/assets/items/PEITORAL_T1.png)
+- [public/assets/items/PEITORAL_T2.png](../public/assets/items/PEITORAL_T2.png)
+- [public/assets/items/PEITORAL_T3.png](../public/assets/items/PEITORAL_T3.png)
+- [public/assets/items/PEITORAL_T4.png](../public/assets/items/PEITORAL_T4.png)
+- [public/assets/items/PEITORAL_T5.png](../public/assets/items/PEITORAL_T5.png)
+- [public/assets/items/POCAO_MANA_1.png](../public/assets/items/POCAO_MANA_1.png)
+- [public/assets/items/POCAO_MANA_2.png](../public/assets/items/POCAO_MANA_2.png)
+- [public/assets/items/POCAO_MANA_3.png](../public/assets/items/POCAO_MANA_3.png)
+- [public/assets/items/POCAO_MANA_4.png](../public/assets/items/POCAO_MANA_4.png)
+- [public/assets/items/POCAO_MANA_5.png](../public/assets/items/POCAO_MANA_5.png)
+- [public/assets/items/POCAO_VIDA_1.png](../public/assets/items/POCAO_VIDA_1.png)
+- [public/assets/items/POCAO_VIDA_2.png](../public/assets/items/POCAO_VIDA_2.png)
+- [public/assets/items/POCAO_VIDA_3.png](../public/assets/items/POCAO_VIDA_3.png)
+- [public/assets/items/POCAO_VIDA_4.png](../public/assets/items/POCAO_VIDA_4.png)
+- [public/assets/items/POCAO_VIDA_5.png](../public/assets/items/POCAO_VIDA_5.png)
+- [public/assets/items/VARINHA_T1.png](../public/assets/items/VARINHA_T1.png)
+- [public/assets/items/VARINHA_T2.png](../public/assets/items/VARINHA_T2.png)
+- [public/assets/items/VARINHA_T3.png](../public/assets/items/VARINHA_T3.png)
+- [public/assets/items/VARINHA_T4.png](../public/assets/items/VARINHA_T4.png)
+- [public/assets/items/VARINHA_T5.png](../public/assets/items/VARINHA_T5.png)
+- [src/data/backpacks.ts](../src/data/backpacks.ts) — BACKPACKS, DEFAULT_BACKPACK
+- [src/data/items.ts](../src/data/items.ts) — createItem, ALL_EQUIPMENT_TEMPLATES, ARROW_TEMPLATES, POTION_TEMPLATES, UNIQUE_TEMPLATES, FRAGMENT_TEMPLATES, ALL_ITEM_TEMPLATES
+- [src/engine/depot.ts](../src/engine/depot.ts) — getDepotUsedSlots, depositItem, withdrawItem, depositMany, withdrawMany
+- [src/engine/forge.ts](../src/engine/forge.ts) — getUpgradeCost, upgradeItemLevel, rerollItemAffixes
+- [src/engine/inventory.ts](../src/engine/inventory.ts) — getUsedSlots, canAddItem, addItem, removeItem, countByTemplate, equipItem, unequipItem
+- [src/engine/itemCompare.ts](../src/engine/itemCompare.ts) — STAT_WEIGHTS, getItemScore, getBestTargetSlot, getEquippedForTarget, isUpgrade
+- [src/engine/salvage.ts](../src/engine/salvage.ts) — salvageItem, salvageAllEquipment, salvageSelectedEquipment
+- [src/engine/shop.ts](../src/engine/shop.ts) — sellValue, sellItem, sellAllEquipment
+- [src/ui/Backpack.tsx](../src/ui/Backpack.tsx) — Backpack
+- [src/ui/Depot.tsx](../src/ui/Depot.tsx) — Depot
+- [src/ui/Inventory.tsx](../src/ui/Inventory.tsx) — Inventory
+- [src/ui/ItemIcon.tsx](../src/ui/ItemIcon.tsx) — ItemIcon
+- [src/ui/ItemModal.tsx](../src/ui/ItemModal.tsx) — ItemModal
+- [src/ui/Shop.tsx](../src/ui/Shop.tsx) — Shop
+- [src/ui/itemRarity.ts](../src/ui/itemRarity.ts) — RARITY_FRAME, rarityArtClass
+
+## Relações encontradas
+
+- [[Mythreon Obsidian/Sistema - Divine Beasts|Divine Beasts]]
+- [[Mythreon Obsidian/Sistema - Elementos|Elementos]]
+- [[Mythreon Obsidian/Sistema - Motor do jogo|Motor do jogo]]
+- [[Mythreon Obsidian/Sistema - Dados do jogo|Dados do jogo]]
+- [[Mythreon Obsidian/Sistema - Telas|Telas]]
+- [[Mythreon Obsidian/Sistema - Conhecimento e documentação|Conhecimento e documentação]]
+- [[Mythreon Obsidian/Sistema - Estado|Estado]]
+- [[Mythreon Obsidian/Sistema - Atributos e progressão|Atributos e progressão]]
+- [[Mythreon Obsidian/Sistema - Tipos|Tipos]]
+- [[Mythreon Obsidian/Sistema - Utilitários|Utilitários]]
+- [[Mythreon Obsidian/Sistema - Artes e recursos|Artes e recursos]]
+
+[[Mythreon Obsidian/Mapa de Sistemas|Mapa técnico]]

@@ -1,24 +1,32 @@
 # Interface
 
-> Índice automático do assunto. O arquivo de código é a fonte da verdade; consulte [[CEREBRO_MYTHREON]] para decisões e regras.
+> Índice automático. Edite as notas originais em docs/conhecimento; este arquivo pode ser recriado.
 
-## Arquivos relacionados
-- [src/ui/AccessIcon.tsx](../src/ui/AccessIcon.tsx) — AccessIconName, AccessIcon
-- [src/ui/Attributes.tsx](../src/ui/Attributes.tsx) — Attributes
-- [src/ui/CharacterPanel.tsx](../src/ui/CharacterPanel.tsx) — CharacterPanel
-- [src/ui/CommerceBenefits.tsx](../src/ui/CommerceBenefits.tsx) — CommerceBenefits
-- [src/ui/DeathScreen.tsx](../src/ui/DeathScreen.tsx) — DeathScreen
-- [src/ui/Equipment.tsx](../src/ui/Equipment.tsx) — Equipment
-- [src/ui/LandingPage.tsx](../src/ui/LandingPage.tsx) — LandingPage
-- [src/ui/OfflineModal.tsx](../src/ui/OfflineModal.tsx) — OfflineModal
-- [src/ui/Personagem.tsx](../src/ui/Personagem.tsx) — Personagem
-- [src/ui/QuantityModal.tsx](../src/ui/QuantityModal.tsx) — QuantityModal
-- [src/ui/TrainingProgress.tsx](../src/ui/TrainingProgress.tsx) — TrainingProgress
+## Conhecimento relacionado
 
-## Conexões
-[[Sistema - Audio|Audio]] · [[Sistema - Build Lab|Build Lab]] · [[Sistema - Combat|Combat]] · [[Sistema - Divine Beasts|Divine Beasts]] · [[Sistema - Document|Document]] · [[Sistema - Elements|Elements]] · [[Sistema - Engine|Engine]] · [[Sistema - Game Data|Game Data]] · [[Sistema - Interface|Interface]] · [[Sistema - Items|Items]] · [[Sistema - Matrix|Matrix]] · [[Sistema - Project Config|Project Config]] · [[Sistema - Project File|Project File]] · [[Sistema - Project Ui|Project Ui]] · [[Sistema - Quests|Quests]] · [[Sistema - Save And Accounts|Save And Accounts]] · [[Sistema - State|State]] · [[Sistema - Stats And Progression|Stats And Progression]] · [[Sistema - Tooling|Tooling]] · [[Sistema - Types|Types]] · [[Sistema - Utility|Utility]] · [[Sistema - Visual Assets|Visual Assets]] · [[Sistema - Windows Desktop|Windows Desktop]] · [[Sistema - Zones And Lore|Zones And Lore]]
+- [[docs/conhecimento/00 - Fonte de conhecimento|Consultar as notas autorais]]
 
-## Registro recente
-- Alterado: `CEREBRO_MYTHREON.md`
-- Alterado: `docs/conhecimento/Laboratorio-de-Builds-e-Windows.md`
-- Adicionado: `scripts/verify-windows.cjs`
+## Código e recursos
+
+- [src/App.tsx](../src/App.tsx) — App
+- [src/index.css](../src/index.css)
+- [tailwind.config.js](../tailwind.config.js)
+
+## Relações encontradas
+
+- [[Mythreon Obsidian/Sistema - Áudio|Áudio]]
+- [[Mythreon Obsidian/Sistema - Laboratório de Builds|Laboratório de Builds]]
+- [[Mythreon Obsidian/Sistema - Combate|Combate]]
+- [[Mythreon Obsidian/Sistema - Divine Beasts|Divine Beasts]]
+- [[Mythreon Obsidian/Sistema - Motor do jogo|Motor do jogo]]
+- [[Mythreon Obsidian/Sistema - Telas|Telas]]
+- [[Mythreon Obsidian/Sistema - Itens e Ferreiro|Itens e Ferreiro]]
+- [[Mythreon Obsidian/Sistema - Matrizes|Matrizes]]
+- [[Mythreon Obsidian/Sistema - Outros arquivos|Outros arquivos]]
+- [[Mythreon Obsidian/Sistema - Missões|Missões]]
+- [[Mythreon Obsidian/Sistema - Contas e saves|Contas e saves]]
+- [[Mythreon Obsidian/Sistema - Estado|Estado]]
+- [[Mythreon Obsidian/Sistema - Artes e recursos|Artes e recursos]]
+- [[Mythreon Obsidian/Sistema - Mundo e História|Mundo e História]]
+
+[[Mythreon Obsidian/Mapa de Sistemas|Mapa técnico]]
