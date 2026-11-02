@@ -5,7 +5,7 @@ import { getPotionUsePrice } from "../data/potionEconomy";
 
 const TIER_BASE = [5, 20, 70, 220, 700];
 const RARITY_SELL: Record<Rarity, number> = { COMUM: 1, INCOMUM: 2, RARO: 5, EPICO: 12, LENDARIO: 40 };
-const EQUIP_CATEGORIES = ["ARMA", "ARMADURA", "JOIA", "ESCUDO"];
+const EQUIP_CATEGORIES = ["ARMA", "ARMADURA", "JOIA", "PULSEIRA", "ESCUDO"];
 
 export function sellValue(item: Item): number {
   switch (item.category) {
@@ -23,7 +23,8 @@ export function sellValue(item: Item): number {
 export function sellItem(char: Character, uid: string, qty = 1): { success: boolean; gold: number; count: number; error?: string } {
   const item = char.inventory.items.find((i) => i.uid === uid);
   if (!item) return { success: false, gold: 0, count: 0, error: "Item não encontrado" };
-  const n = Math.min(qty, item.quantity);
+  if (!Number.isFinite(qty) || qty < 1) return { success: false, gold: 0, count: 0, error: "Quantidade inválida" };
+  const n = Math.min(Math.floor(qty), item.quantity);
   const gold = sellValue(item) * n;
   removeItem(char.inventory, uid, n);
   char.gold += gold;

@@ -1,6 +1,6 @@
 export type Rarity = "COMUM" | "INCOMUM" | "RARO" | "EPICO" | "LENDARIO";
-export type SlotType = "CAPACETE" | "ARMADURA" | "LUVAS" | "CALCAS" | "BOTAS" | "COLAR" | "ANEL_I" | "ANEL_II" | "ARMA_PRINCIPAL" | "OFF_HAND" | "MUNICAO" | "BACKPACK";
-export type ItemCategory = "ARMA" | "ARMADURA" | "JOIA" | "ESCUDO" | "BACKPACK" | "FLECHA" | "COMPONENTE" | "POCAO" | "MATERIAL" | "FRAGMENTO";
+export type SlotType = "CAPACETE" | "ARMADURA" | "LUVAS" | "CALCAS" | "BOTAS" | "COLAR" | "ANEL_I" | "ANEL_II" | "PULSEIRA" | "ARMA_PRINCIPAL" | "OFF_HAND" | "MUNICAO" | "BACKPACK";
+export type ItemCategory = "ARMA" | "ARMADURA" | "JOIA" | "PULSEIRA" | "ESCUDO" | "BACKPACK" | "FLECHA" | "COMPONENTE" | "POCAO" | "MATERIAL" | "FRAGMENTO";
 export type ComponentType = "ATAQUE" | "SUPORTE" | "PASSIVA";
 export type Law = "PRIME" | "VORO" | "LOGHIS" | "EMOHNA" | "RAAN" | "SYNTHES" | "CHRONOS" | "LYSS" | "DHOR" | "KAELOR" | "NOCTHAR" | "VEYRA" | "ASTER";
 export type Element = "FOGO" | "ELETRICIDADE" | "VENTO" | "TERRA" | "AGUA" | "GELO" | "MORTE" | "SAGRADO" | "PSIQUICO" | "VENENO" | "METAL" | "BASE";
@@ -165,7 +165,7 @@ export interface Character {
   staminaOnline?: number;
   staminaOffline?: number;
   staminaUpdatedAt?: number;
-  premium: boolean; lastTick: number;
+  premium: boolean; lastTick: number; trainingBoostUntil?: number; trainingBoostDay?: string;
   
   quests: QuestState;
   blesses: number;
@@ -179,6 +179,7 @@ export interface Character {
   autoMpPotionEnabled?: boolean;
   potionGoldWarningUntil?: number;
   tutorialCompleted?: boolean;
+  tutorialRelicGranted?: boolean;
   
   autoSell?: Rarity | null;
   autoSalvage?: Rarity | null;
@@ -197,6 +198,10 @@ export interface Character {
   skillXp: CharacterSkills;
   statPoints: number;
   trainingSkill?: keyof CharacterSkills | null;
+  trainingMastery?: Partial<CharacterSkills>;
+  trainingSeconds?: Partial<CharacterSkills>;
+  trainingAchievements?: string[];
+  trainingLastTick?: number;
   
   cards: CardInstance[];
   arenaRewardDay?: string;

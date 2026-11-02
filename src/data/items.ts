@@ -32,6 +32,7 @@ const FAMILIES: Family[] = [
   // JOIAS (Mistas)
   { key: "COLAR", category: "JOIA", slot: "COLAR", icon: "📿", names: ["Colar de Semente", "Colar de Presa", "Colar de Pérola", "Colar de Asterion", "Colar da Cicatriz"], stats: { hp: [30, 70, 160, 330, 680], mp: [15, 35, 80, 165, 340] } },
   { key: "ANEL", category: "JOIA", slot: "ANEL_I", icon: "💍", names: ["Anel de Seiva", "Anel de Quartzo", "Anel de Coral", "Anel Estelar", "Anel do Abismo"], stats: { hp: [15, 35, 80, 165, 340], atk: [3, 7, 15, 30, 60], matk: [3, 7, 15, 30, 60] } },
+  { key: "PULSEIRA", category: "PULSEIRA", slot: "PULSEIRA", icon: "📿", names: ["Bracelete de Broto", "Pulseira da Seiva", "Bracelete de Maré", "Manilha Estelar", "Bracelete do Eclipse Sereno"], stats: { hp: [20, 45, 100, 220, 450], mp: [15, 35, 80, 180, 360], hpRegen: [1, 2, 3, 5, 8], mpRegen: [1, 2, 3, 5, 8] } },
 
   // ESCUDOS
   { key: "ESCUDO", category: "ESCUDO", slot: "OFF_HAND", icon: "🛡️", names: ["Escudo de Cortiça", "Escudo de Granito", "Escudo de Carapaça", "Escudo de Asterion", "Escudo do Abismo"], stats: { def: [4, 10, 22, 45, 90], arm: [2, 5, 12, 25, 50], blk: [0.05, 0.08, 0.10, 0.12, 0.15] } },
@@ -93,6 +94,7 @@ export const UNIQUE_TEMPLATES: Record<string, Item> = {
   UNICO_OLHO_ASTERION: createItem({ templateId: "UNICO_OLHO_ASTERION", name: "Olho de Asterion", category: "ARMADURA", slot: "CAPACETE", tier: 4, rarity: "LENDARIO", stats: { arm: 100, hp: 1500, crit: 0.10, hit: 0.10 }, rareDropBonus: 0.15, dropBonus: 0.05, icon: "👁️", uniqueEffect: "+15% de raridade alta" }),
   UNICO_PRESA_DEVORADOR: createItem({ templateId: "UNICO_PRESA_DEVORADOR", name: "Presa do Devorador", category: "ARMA", slot: "ARMA_PRINCIPAL", tier: 5, rarity: "LENDARIO", stats: { atk: 500, def: 80 }, lifesteal: 0.08, icon: "🦷", uniqueEffect: "Rouba 8% do dano como vida" }),
   UNICO_ANEL_GUARDIA: createItem({ templateId: "UNICO_ANEL_GUARDIA", name: "Anel da Guarda Eterna", category: "JOIA", slot: "ANEL_I", tier: 5, rarity: "LENDARIO", stats: { hp: 250, arm: 20 }, preventsDeathDrop: true, icon: "💍", uniqueEffect: "Impede 100% das perdas de itens ao morrer" }),
+  UNICO_SIGILO_INICIACAO: createItem({ templateId: "UNICO_SIGILO_INICIACAO", name: "Pulseira do Primeiro Eco", category: "PULSEIRA", slot: "PULSEIRA", tier: 1, rarity: "LENDARIO", stats: { hp: 60, mp: 40, hpRegen: 2, mpRegen: 2 }, icon: "✨", uniqueEffect: "Relíquia exclusiva por concluir o tutorial de Mythreon" }),
 };
 
 // ─── FRAGMENTOS ───

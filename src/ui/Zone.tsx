@@ -1,3 +1,4 @@
+import { TrainingProgress } from "./TrainingProgress";
 import React, { useEffect, useState } from "react";
 import { useGameStore } from "../store/gameStore";
 import { ZONES } from "../data/zones";
@@ -13,6 +14,7 @@ import { POTION_TEMPLATES } from "../data/items";
 import { getPotionUsePrice } from "../data/potionEconomy";
 import { AssetImage } from "./AssetImage";
 import { ItemIcon } from "./ItemIcon";
+import { getBeastCombat } from "../data/beastCombat";
 import { QUESTS } from "../data/quests";
 
 interface ZoneViewProps { onOpenQuest: (questId: string) => void; trackedQuestId?: string | null; }
@@ -61,8 +63,12 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
 
   if (!character) return null;
   const currentZone = ZONES[currentZoneId];
-  const currentMob = currentZone.enemies.find(e => e.id === character.activeEnemyId) || currentZone.enemies[0];
+  const selectedMob = currentZone.enemies.find(e => e.id === character.activeEnemyId);
+  const currentMob = selectedMob && character.level >= (selectedMob.minLevel ?? 1)
+    ? selectedMob
+    : currentZone.enemies.find(e => character.level >= (e.minLevel ?? 1)) || currentZone.enemies[0];
   const questSignal = getHuntQuestSignal(character, currentZoneId || currentZone.id);
+  const activeBond = getBeastCombat(character);
   const selectedHpPotion = POTION_TEMPLATES[character.autoHpPotionId || ""];
   const selectedMpPotion = POTION_TEMPLATES[character.autoMpPotionId || ""];
 
@@ -205,7 +211,7 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
             {houseTab === "train" && (
               <div className="animate-fade-in">
                 <div className="text-center mb-6">
-                  <h2 className="text-2xl font-bold text-arcane-gold">Sala de Treinamento</h2>
+                  <TrainingProgress /><h2 className="mt-5 text-2xl font-bold text-arcane-gold">Sala de Treinamento</h2>
                   <p className="text-gray-400 text-sm">Pratique suas habilidades na segurança da sua casa.</p>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
@@ -241,7 +247,7 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
         </div>
         <div className="bg-arcane-panel border border-arcane-border rounded-xl p-6 md:p-10 shadow-lg flex flex-col items-center justify-center min-h-[400px]">
           <div className="text-5xl md:text-6xl mb-6 animate-bounce">🏋️</div>
-          <h2 className="text-2xl md:text-3xl font-bold text-arcane-gold mb-2">Treinando {skillName}</h2>
+          <h2 className="text-2xl md:text-3xl font-bold text-arcane-gold mb-2">Treinando {skillName}</h2><TrainingProgress />
           <p className="text-gray-400 mb-8 text-center text-sm md:text-base">Seu personagem está treinando...</p>
           <div className="w-full max-w-md px-4">
             <div className="flex justify-between text-sm mb-2">
@@ -359,6 +365,7 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
           <div className="relative z-20 flex justify-between items-end px-4 md:px-20 pb-8 md:pb-12 h-[300px] md:h-[500px]">
             <div className="flex flex-col items-center relative translate-y-2 md:translate-y-4">
               
+              {activeBond && <div className="absolute bottom-16 left-full ml-1 md:ml-4 flex w-20 md:w-32 flex-col items-center" title={activeBond.name + ' · ' + activeBond.element}><AssetImage src={activeBond.beast.sprite} alt={activeBond.beast.name} className="h-24 w-24 md:h-36 md:w-36 object-contain [image-rendering:pixelated]" /><span className="rounded bg-black/70 px-2 text-[10px] text-arcane-gold">{activeBond.beast.name}</span></div>}
               {/* SPRITE DO JOGADOR (Agora baseado na Linhagem) */}
               <div className={`combat-sprite combat-sprite-player relative w-24 h-24 md:w-40 md:h-40 flex items-center justify-center transition-transform ${weaponAnimClass}`}>
                 {!imageError ? (

@@ -1,0 +1,27 @@
+{
+  "appId": "com.mythreon.online",
+  "productName": "Mythreon Online",
+  "directories": {
+    "output": "release"
+  },
+  "files": [
+    "dist/**/*",
+    "desktop/**/*",
+    "package.json"
+  ],
+  "asar": false,
+  "npmRebuild": false,
+  "win": {
+    "target": [
+      {
+        "target": "portable",
+        "arch": [
+          "x64"
+        ]
+      }
+    ],
+    "signAndEditExecutable": false,
+    "artifactName": "Mythreon-Online-${version}-Windows-${arch}.${ext}"
+  },
+  "electronDist": "node_modules/electron/dist"
+}

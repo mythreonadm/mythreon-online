@@ -10,10 +10,10 @@ import { QuantityModal } from "./QuantityModal";
 import { ItemIcon } from "./ItemIcon";
 import { ALL_EQUIPMENT_TEMPLATES } from "../data/items";
 
-export function Shop() {
+export function Shop({ storefront = false }: { storefront?: boolean }) {
   const { character, sellItem, salvageAll, salvageSelected, updateSettings, useVial, upgradeItem, rerollItem } = useGameStore();
   
-  const [tab, setTab] = useState<"FORJA" | "VIALS" | "VENDER" | "DESMANCHAR">("FORJA");
+  const [tab, setTab] = useState<"FORJA" | "VIALS" | "VENDER" | "DESMANCHAR">(storefront ? "VIALS" : "FORJA");
   const [actionRarity, setActionRarity] = useState<Rarity>("COMUM");
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [salvageSelection, setSalvageSelection] = useState<string[]>([]);
@@ -25,7 +25,7 @@ export function Shop() {
 
   const inventory = character.inventory.items.filter(i => i.category !== "COMPONENTE" && i.category !== "FRAGMENTO");
   const forgeInventory = inventory.filter(i => i.category !== "POCAO");
-  const salvageable = character.inventory.items.filter(i => ["ARMA", "ARMADURA", "JOIA", "ESCUDO"].includes(i.category));
+  const salvageable = character.inventory.items.filter(i => ["ARMA", "ARMADURA", "JOIA", "PULSEIRA", "ESCUDO"].includes(i.category));
   const selectedSalvageItems = salvageable.filter(i => salvageSelection.includes(i.uid));
   const salvagePreview = selectedSalvageItems.reduce((total, item) => total + (item.rarity === "RARO" ? 2 : item.rarity === "EPICO" || item.rarity === "LENDARIO" ? 3 : 1) * item.quantity, 0);
 
@@ -84,13 +84,13 @@ export function Shop() {
 
       {/* HEADER */}
       <div className="flex justify-between items-center mb-6 border-b border-arcane-border pb-4">
-        <div><h2 className="text-xl font-bold text-arcane-gold">Ferreiro de Mythreon</h2><p className="text-xs text-gray-500">Aprimore, negocie e recupere a Essência dos seus drops.</p></div>
+        <div><h2 className="text-xl font-bold text-arcane-gold">{storefront ? "Shop de Mythreon" : "Ferreiro de Mythreon"}</h2><p className="text-xs text-gray-500">Aprimore, negocie e recupere a Essência dos seus drops.</p></div>
         <div className="rounded-lg border border-arcane-gold/25 bg-black/20 px-3 py-2 text-sm font-bold text-arcane-gold">💰 {character.gold.toLocaleString("pt-BR")} gold</div>
         <div className="flex bg-arcane-bg rounded-lg p-1 border border-arcane-border flex-wrap gap-1">
-          <button onClick={() => setTab("FORJA")} className={`px-3 py-1 text-sm font-bold rounded transition-colors ${tab === "FORJA" ? "bg-orange-600 text-white" : "text-gray-400 hover:text-white"}`}>Forja</button>
-          <button onClick={() => setTab("VIALS")} className={`px-3 py-1 text-sm font-bold rounded transition-colors ${tab === "VIALS" ? "bg-arcane-cyan text-black" : "text-gray-400 hover:text-white"}`}>Elixires</button>
-          <button onClick={() => setTab("VENDER")} className={`px-3 py-1 text-sm font-bold rounded transition-colors ${tab === "VENDER" ? "bg-arcane-purple text-white" : "text-gray-400 hover:text-white"}`}>Vender</button>
-          <button onClick={() => setTab("DESMANCHAR")} className={`px-3 py-1 text-sm font-bold rounded transition-colors ${tab === "DESMANCHAR" ? "bg-red-800 text-white" : "text-gray-400 hover:text-white"}`}>Desmanchar</button>
+          {!storefront && <button onClick={() => setTab("FORJA")} className={`px-3 py-1 text-sm font-bold rounded transition-colors ${tab === "FORJA" ? "bg-orange-600 text-white" : "text-gray-400 hover:text-white"}`}>Forja</button>}
+          {storefront && <button onClick={() => setTab("VIALS")} className={`px-3 py-1 text-sm font-bold rounded transition-colors ${tab === "VIALS" ? "bg-arcane-cyan text-black" : "text-gray-400 hover:text-white"}`}>Elixires</button>}
+          {!storefront && <button onClick={() => setTab("VENDER")} className={`px-3 py-1 text-sm font-bold rounded transition-colors ${tab === "VENDER" ? "bg-arcane-purple text-white" : "text-gray-400 hover:text-white"}`}>Vender</button>}
+          {!storefront && <button onClick={() => setTab("DESMANCHAR")} className={`px-3 py-1 text-sm font-bold rounded transition-colors ${tab === "DESMANCHAR" ? "bg-red-800 text-white" : "text-gray-400 hover:text-white"}`}>Desmanchar</button>}
         </div>
       </div>
 
@@ -143,7 +143,7 @@ export function Shop() {
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-3 max-h-[400px] overflow-y-auto pr-2">
             {inventory.map(item => (
               <div key={item.uid} className="bg-arcane-bg border border-arcane-border p-2 rounded-lg flex flex-col items-center">
-                <ItemIcon item={item} className="w-12 h-12 mb-1" />
+                <ItemIcon item={item} className="w-20 h-20 mb-1" />
                 <div className="text-xs font-bold text-center w-full truncate">{item.name}</div>
                 <div className="text-[10px] text-gray-400 uppercase">{item.rarity}</div>
                 {item.quantity > 1 && <div className="text-[10px] text-arcane-gold font-bold">x{item.quantity}</div>}
@@ -185,7 +185,7 @@ export function Shop() {
             {salvageable.length ? <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-72 overflow-y-auto">
               {salvageable.map(item => <label key={item.uid} className={`flex items-center gap-3 p-2 rounded border cursor-pointer ${salvageSelection.includes(item.uid) ? "border-red-500/70 bg-red-950/20" : "border-arcane-border bg-arcane-panel"}`}>
                 <input type="checkbox" checked={salvageSelection.includes(item.uid)} onChange={e => setSalvageSelection(current => e.target.checked ? [...current, item.uid] : current.filter(uid => uid !== item.uid))} />
-                <ItemIcon item={item} className="w-10 h-10 shrink-0" />
+                <ItemIcon item={item} className="w-16 h-16 shrink-0" />
                 <span className="min-w-0"><span className="block text-xs text-white font-bold truncate">{item.name}</span><span className="text-[10px] text-gray-400">{item.rarity} · {item.quantity > 1 ? `x${item.quantity}` : "1 unidade"}</span></span>
               </label>)}
             </div> : <p className="text-sm text-gray-500 py-4 text-center">Nenhum equipamento disponível para desmontagem.</p>}
@@ -218,7 +218,7 @@ export function Shop() {
             <div className="grid grid-cols-2 gap-2">
               {forgeInventory.map(item => (
                 <div key={item.uid} onClick={() => setSelectedItem(item)} className={`border p-2 rounded cursor-pointer transition-all ${selectedItem?.uid === item.uid ? "border-orange-500 bg-orange-900/20 scale-105" : "border-arcane-border hover:border-gray-500"}`}>
-                  <ItemIcon item={item} className="w-10 h-10 mx-auto" />
+                  <ItemIcon item={item} className="w-16 h-16 mx-auto" />
                   <div className="text-xs font-bold text-center truncate">{item.name}</div>
                   <div className="text-[10px] text-center text-orange-400 font-bold">+{item.upgradeLevel} {item.rarity}</div>
                 </div>

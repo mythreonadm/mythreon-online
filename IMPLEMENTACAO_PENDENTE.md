@@ -54,3 +54,13 @@ As solicitações desta rodada foram implementadas nos arquivos do jogo. A aplic
 ## Arte ainda necessária para ampliar as animações
 
 O código aceita e anima arquivos PNG/GIF/Giff existentes, mas não foram gerados spritesheets novos para estados de ataque, magia, dano ou morte. Para evoluir essa parte, criar sprites pixel art por linhagem/monstro e colocar em `public/assets/characters/` e `public/assets/monsters/`, usando nomes estáveis como `NOME_idle.gif`, `NOME_attack.gif`, `NOME_cast.gif`, `NOME_hurt.gif` e `NOME_death.gif`. A integração de cada estado deve respeitar `prefers-reduced-motion` e não alterar intervalos ou regras de combate.
+
+## Atualização — 02/11/2026
+
+- Criada a família de pulseiras T1–T5, slot único, bônus de HP/MP e regeneração aplicada por tick. Entrou nas rotinas de drop, mochila, comparação, venda, desmanche, depósito e Wiki.
+- O tutorial entrega a Pulseira do Primeiro Eco, uma relíquia exclusiva. Saves que já concluíram o tutorial recebem a peça uma vez; mochila cheia envia a recompensa ao Depot.
+- História do Bosque agora exige o tutorial concluído. O Espectro exige nível 15, tem combate reforçado e o motor rejeita alvo bloqueado mesmo em save antigo. XP e gold deixam de multiplicar linearmente pelas estrelas: `1 + (dificuldade - 1) × 0,35`.
+- Arena recebeu três planos táticos com efeitos diferentes e preserva a ordem de seleção como ordem de entrada. O combate continua automático; falta uma fase interativa por turno para deixar de ser apenas uma simulação.
+- Fallback de emoji já é aplicado por `ItemIcon`; a lista de artes e prompts está em `docs/ARTE_ITENS_PENDENTES.md`.
+- O Cérebro agora sincroniza o vault `Mythreon Obsidian/`; abra essa pasta no Obsidian como vault. Use `Ativação Cérebro.bat` para manter observação contínua enquanto a janela estiver aberta.
+- Para o próximo balanceamento global, registrar ao menos 20 encontros por faixa de nível/build e medir tempo, dano recebido, mortes, XP, gold e consumo de poção; depois calibrar mob por mob sem aplicar o mesmo multiplicador a atributos e recompensas.

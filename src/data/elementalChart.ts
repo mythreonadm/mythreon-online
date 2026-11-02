@@ -19,6 +19,7 @@ const ADVANTAGES: Partial<Record<Element, Element[]>> = {
 
 export function elementMultiplier(attack?: Element, defense?: Element): number {
   if (!attack || !defense || attack === "BASE" || defense === "BASE") return 1;
+  if (ADVANTAGES[attack]?.includes(defense) && ADVANTAGES[defense]?.includes(attack)) return 1;
   if (ADVANTAGES[attack]?.includes(defense)) return 1.25;
   if (ADVANTAGES[defense]?.includes(attack)) return 0.75;
   return 1;

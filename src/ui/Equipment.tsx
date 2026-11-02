@@ -7,6 +7,7 @@ const SLOTS: { key: SlotType; label: string; icon: string }[] = [
   { key: "LUVAS", label: "Luvas", icon: "🧤" }, { key: "CALCAS", label: "Calças", icon: "👖" },
   { key: "BOTAS", label: "Botas", icon: "👢" }, { key: "COLAR", label: "Colar", icon: "📿" },
   { key: "ANEL_I", label: "Anel I", icon: "💍" }, { key: "ANEL_II", label: "Anel II", icon: "💍" },
+  { key: "PULSEIRA", label: "Pulseira", icon: "📿" },
   { key: "ARMA_PRINCIPAL", label: "Arma", icon: "⚔️" }, { key: "OFF_HAND", label: "Escudo", icon: "🛡️" },
 ];
 

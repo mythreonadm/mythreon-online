@@ -1,3 +1,4 @@
+import { applyTraining } from "../engine/training";
 import { create } from "zustand";
 import { Character, Race, TickResult, CharacterSkills, OfflineReportData, BuffVialTemplate, DeathReportData, HuntZoneStats, DivineBeastId, QuestObjectiveType } from "../types";
 import { ZONES } from "../data/zones";
@@ -57,6 +58,7 @@ interface GameState {
   acceptQuest: (id: string) => void;
   claimQuest: (id: string) => void;
   recordQuestAction: (action: QuestObjectiveType) => void;
+  buyTrainingBoost: () => { success: boolean; error?: string };
   useVial: (vial: BuffVialTemplate) => void;
   buyBless: () => void;
   refreshCompendium: () => void;
@@ -182,15 +184,9 @@ export const useGameStore = create<GameState>((set, get) => ({
       const newCharacter = JSON.parse(JSON.stringify(character));
       const skill = newCharacter.trainingSkill;
       if (skill) {
-        newCharacter.skillXp[skill] += 15;
-        const xpNeeded = skillXpToNextLevel(newCharacter.skills[skill]);
-        const result: TickResult = { kills: 0, gold: 0, xp: 0, drops: [], levelsGained: 0, death: false, log: [], enemyHp: 0, enemyMaxHp: 0 };
-        if (newCharacter.skillXp[skill] >= xpNeeded) {
-          newCharacter.skillXp[skill] -= xpNeeded;
-          newCharacter.skills[skill] += 1;
-          recalcStats(newCharacter);
-          result.skillLevelUp = `✨ Skill ${skill.toUpperCase()} subiu para o nível ${newCharacter.skills[skill]}!`;
-        }
+        const trainingLog = applyTraining(newCharacter, Date.now());
+        recalcStats(newCharacter);
+        const result: TickResult = { kills: 0, gold: 0, xp: 0, drops: [], levelsGained: 0, death: false, log: trainingLog, enemyHp: 0, enemyMaxHp: 0, skillLevelUp: trainingLog.length ? trainingLog.join(' · ') : undefined };
         set({ character: newCharacter, lastTickResult: result });
         get().save();
       }
@@ -214,7 +210,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     recalcStats(character);
     set({ character: { ...character }, lastTickResult: result });
     get().save();
-    if (result.staminaDepleted && !isOffline) get().stopHunting();
+    if (result.staminaDepleted) get().stopHunting();
   },
 
   startHunting: (zoneId) => {
@@ -247,6 +243,8 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     if (tickInterval) clearInterval(tickInterval);
     character.trainingSkill = skill;
+    character.trainingLastTick = Date.now();
+    character.lastTick = Date.now();
     set({ isTickRunning: false, isTraining: true, character: { ...character } });
     get().tick();
     tickInterval = setInterval(() => get().tick(), 3000);
@@ -262,13 +260,14 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (tickInterval) clearInterval(tickInterval);
     tickInterval = null;
     const { character } = get();
-    if (character) { character.trainingSkill = null; set({ isTraining: false, character: { ...character } }); }
+    if (character) { character.trainingSkill = null; character.trainingLastTick = undefined; character.lastTick = Date.now(); set({ isTraining: false, character: { ...character } }); get().save(); }
   },
 
   setActiveEnemy: (enemyId) => {
     const { character, currentZoneId } = get(); if (!character) return;
     const zone = ZONES[currentZoneId];
     const enemy = zone.enemies.find(e => e.id === enemyId);
+    if (!enemy || character.level < (enemy.minLevel ?? 1)) return;
     character.activeEnemyId = enemyId;
     character.enemyHp = (enemy?.hp || 0) * (enemy?.difficulty || 1);
     character.enemyHpId = enemyId;
@@ -466,7 +465,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     const newChar = JSON.parse(JSON.stringify(character));
     const res = claimQuestReward(newChar, id);
     if (res.success) {
-      if (id === "TUT_BACKPACK") newChar.tutorialCompleted = true;
+      if (id === "TUT_BACKPACK") { newChar.tutorialCompleted = true; newChar.tutorialRelicGranted = true; }
       set({ character: newChar }); get().save(); alert(res.msg);
     }
   },
@@ -483,15 +482,25 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({ character: newCharacter }); get().save();
   },
 
-  useVial: (vial) => {
+  buyTrainingBoost: () => {
+ const {character} = get(); if (!character) return {success:false};
+ const day = new Date().toISOString().slice(0,10);
+ if (character.trainingBoostDay === day) return {success:false,error:'Já adquirido hoje. Reinicia às 00:00 UTC.'};
+ if (character.gold < 250) return {success:false,error:'Gold insuficiente (250).'};
+ set({character:{...character,gold:character.gold-250,trainingBoostDay:day,trainingBoostUntil:Date.now()+1800000}});
+ get().save(); return {success:true};
+ },
+ useVial: (vial) => {
     const { character } = get(); if (!character) return;
     if (character.gold < vial.price) return;
     const newChar = JSON.parse(JSON.stringify(character));
     newChar.gold -= vial.price;
     if (!newChar.activeVials) newChar.activeVials = {};
     const now = Date.now();
-    const currentExpiry = newChar.activeVials[vial.id] && newChar.activeVials[vial.id] > now ? newChar.activeVials[vial.id] : now;
-    newChar.activeVials[vial.id] = currentExpiry + (vial.durationMinutes * 60 * 1000);
+
+    const family = vial.id.replace(/_[0-9]+$/, '');
+ for (const id of Object.keys(newChar.activeVials)) if (id.replace(/_[0-9]+$/, '') === family) delete newChar.activeVials[id];
+ newChar.activeVials[vial.id] = now + vial.durationMinutes * 60000;
     recalcStats(newChar);
     set({ character: newChar }); get().save();
     alert(`Você bebeu ${vial.name}!`);

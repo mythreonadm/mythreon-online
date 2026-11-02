@@ -1,0 +1,112 @@
+# Items
+
+> Índice automático do assunto. O arquivo de código é a fonte da verdade; consulte [[CEREBRO_MYTHREON]] para decisões e regras.
+
+## Arquivos relacionados
+- [docs/conhecimento/Shop-Premium-Beasts.md](../docs/conhecimento/Shop-Premium-Beasts.md)
+  - Seções: Shop, premium e Divine Beasts · Implementado · Achados e pendências de balanceamento · Validação · Fontes
+- [public/assets/items/ANEL_T1.png](../public/assets/items/ANEL_T1.png)
+- [public/assets/items/ANEL_T2.png](../public/assets/items/ANEL_T2.png)
+- [public/assets/items/ANEL_T3.png](../public/assets/items/ANEL_T3.png)
+- [public/assets/items/ANEL_T4.png](../public/assets/items/ANEL_T4.png)
+- [public/assets/items/ANEL_T5.png](../public/assets/items/ANEL_T5.png)
+- [public/assets/items/ARCO_T1.png](../public/assets/items/ARCO_T1.png)
+- [public/assets/items/ARCO_T2.png](../public/assets/items/ARCO_T2.png)
+- [public/assets/items/ARCO_T3.png](../public/assets/items/ARCO_T3.png)
+- [public/assets/items/ARCO_T4.png](../public/assets/items/ARCO_T4.png)
+- [public/assets/items/ARCO_T5.png](../public/assets/items/ARCO_T5.png)
+- [public/assets/items/BACKPACK_ARCANA.png](../public/assets/items/BACKPACK_ARCANA.png)
+- [public/assets/items/BACKPACK_EXPLORADOR.png](../public/assets/items/BACKPACK_EXPLORADOR.png)
+- [public/assets/items/BACKPACK_NORMAL.png](../public/assets/items/BACKPACK_NORMAL.png)
+- [public/assets/items/BACKPACK_OLD.png](../public/assets/items/BACKPACK_OLD.png)
+- [public/assets/items/BACKPACK_REFORCADA.png](../public/assets/items/BACKPACK_REFORCADA.png)
+- [public/assets/items/BOTAS_T1.png](../public/assets/items/BOTAS_T1.png)
+- [public/assets/items/BOTAS_T2.png](../public/assets/items/BOTAS_T2.png)
+- [public/assets/items/BOTAS_T3.png](../public/assets/items/BOTAS_T3.png)
+- [public/assets/items/BOTAS_T4.png](../public/assets/items/BOTAS_T4.png)
+- [public/assets/items/BOTAS_T5.png](../public/assets/items/BOTAS_T5.png)
+- [public/assets/items/CAJADO_T1.png](../public/assets/items/CAJADO_T1.png)
+- [public/assets/items/CAJADO_T2.png](../public/assets/items/CAJADO_T2.png)
+- [public/assets/items/CAJADO_T3.png](../public/assets/items/CAJADO_T3.png)
+- [public/assets/items/CAJADO_T4.png](../public/assets/items/CAJADO_T4.png)
+- [public/assets/items/CAJADO_T5.png](../public/assets/items/CAJADO_T5.png)
+- [public/assets/items/CALCAS_T1.png](../public/assets/items/CALCAS_T1.png)
+- [public/assets/items/CALCAS_T2.png](../public/assets/items/CALCAS_T2.png)
+- [public/assets/items/CALCAS_T3.png](../public/assets/items/CALCAS_T3.png)
+- [public/assets/items/CALCAS_T4.png](../public/assets/items/CALCAS_T4.png)
+- [public/assets/items/CALCAS_T5.png](../public/assets/items/CALCAS_T5.png)
+- [public/assets/items/CAPACETE_T1.png](../public/assets/items/CAPACETE_T1.png)
+- [public/assets/items/CAPACETE_T2.png](../public/assets/items/CAPACETE_T2.png)
+- [public/assets/items/CAPACETE_T3.png](../public/assets/items/CAPACETE_T3.png)
+- [public/assets/items/CAPACETE_T4.png](../public/assets/items/CAPACETE_T4.png)
+- [public/assets/items/CAPACETE_T5.png](../public/assets/items/CAPACETE_T5.png)
+- [public/assets/items/COLAR_T1.png](../public/assets/items/COLAR_T1.png)
+- [public/assets/items/COLAR_T2.png](../public/assets/items/COLAR_T2.png)
+- [public/assets/items/COLAR_T3.png](../public/assets/items/COLAR_T3.png)
+- [public/assets/items/COLAR_T4.png](../public/assets/items/COLAR_T4.png)
+- [public/assets/items/COLAR_T5.png](../public/assets/items/COLAR_T5.png)
+- [public/assets/items/ESCUDO_T1.png](../public/assets/items/ESCUDO_T1.png)
+- [public/assets/items/ESCUDO_T2.png](../public/assets/items/ESCUDO_T2.png)
+- [public/assets/items/ESCUDO_T3.png](../public/assets/items/ESCUDO_T3.png)
+- [public/assets/items/ESCUDO_T4.png](../public/assets/items/ESCUDO_T4.png)
+- [public/assets/items/ESCUDO_T5.png](../public/assets/items/ESCUDO_T5.png)
+- [public/assets/items/ESPADA_T1.png](../public/assets/items/ESPADA_T1.png)
+- [public/assets/items/ESPADA_T2.png](../public/assets/items/ESPADA_T2.png)
+- [public/assets/items/ESPADA_T3.png](../public/assets/items/ESPADA_T3.png)
+- [public/assets/items/ESPADA_T4.png](../public/assets/items/ESPADA_T4.png)
+- [public/assets/items/ESPADA_T5.png](../public/assets/items/ESPADA_T5.png)
+- [public/assets/items/FRAGMENTO_COMUM.png](../public/assets/items/FRAGMENTO_COMUM.png)
+- [public/assets/items/FRAGMENTO_EPICO.png](../public/assets/items/FRAGMENTO_EPICO.png)
+- [public/assets/items/FRAGMENTO_RARO.png](../public/assets/items/FRAGMENTO_RARO.png)
+- [public/assets/items/LUVAS_T1.png](../public/assets/items/LUVAS_T1.png)
+- [public/assets/items/LUVAS_T2.png](../public/assets/items/LUVAS_T2.png)
+- [public/assets/items/LUVAS_T3.png](../public/assets/items/LUVAS_T3.png)
+- [public/assets/items/LUVAS_T4.png](../public/assets/items/LUVAS_T4.png)
+- [public/assets/items/LUVAS_T5.png](../public/assets/items/LUVAS_T5.png)
+- [public/assets/items/MACHADO_T1.png](../public/assets/items/MACHADO_T1.png)
+- [public/assets/items/MACHADO_T2.png](../public/assets/items/MACHADO_T2.png)
+- [public/assets/items/MACHADO_T3.png](../public/assets/items/MACHADO_T3.png)
+- [public/assets/items/MACHADO_T4.png](../public/assets/items/MACHADO_T4.png)
+- [public/assets/items/MACHADO_T5.png](../public/assets/items/MACHADO_T5.png)
+- [public/assets/items/PEITORAL_T1.png](../public/assets/items/PEITORAL_T1.png)
+- [public/assets/items/PEITORAL_T2.png](../public/assets/items/PEITORAL_T2.png)
+- [public/assets/items/PEITORAL_T3.png](../public/assets/items/PEITORAL_T3.png)
+- [public/assets/items/PEITORAL_T4.png](../public/assets/items/PEITORAL_T4.png)
+- [public/assets/items/PEITORAL_T5.png](../public/assets/items/PEITORAL_T5.png)
+- [public/assets/items/POCAO_MANA_1.png](../public/assets/items/POCAO_MANA_1.png)
+- [public/assets/items/POCAO_MANA_2.png](../public/assets/items/POCAO_MANA_2.png)
+- [public/assets/items/POCAO_MANA_3.png](../public/assets/items/POCAO_MANA_3.png)
+- [public/assets/items/POCAO_MANA_4.png](../public/assets/items/POCAO_MANA_4.png)
+- [public/assets/items/POCAO_MANA_5.png](../public/assets/items/POCAO_MANA_5.png)
+- [public/assets/items/POCAO_VIDA_1.png](../public/assets/items/POCAO_VIDA_1.png)
+- [public/assets/items/POCAO_VIDA_2.png](../public/assets/items/POCAO_VIDA_2.png)
+- [public/assets/items/POCAO_VIDA_3.png](../public/assets/items/POCAO_VIDA_3.png)
+- [public/assets/items/POCAO_VIDA_4.png](../public/assets/items/POCAO_VIDA_4.png)
+- [public/assets/items/POCAO_VIDA_5.png](../public/assets/items/POCAO_VIDA_5.png)
+- [public/assets/items/VARINHA_T1.png](../public/assets/items/VARINHA_T1.png)
+- [public/assets/items/VARINHA_T2.png](../public/assets/items/VARINHA_T2.png)
+- [public/assets/items/VARINHA_T3.png](../public/assets/items/VARINHA_T3.png)
+- [public/assets/items/VARINHA_T4.png](../public/assets/items/VARINHA_T4.png)
+- [public/assets/items/VARINHA_T5.png](../public/assets/items/VARINHA_T5.png)
+- [src/data/backpacks.ts](../src/data/backpacks.ts) — BACKPACKS, DEFAULT_BACKPACK
+- [src/data/items.ts](../src/data/items.ts) — createItem, ALL_EQUIPMENT_TEMPLATES, ARROW_TEMPLATES, POTION_TEMPLATES, UNIQUE_TEMPLATES, FRAGMENT_TEMPLATES, ALL_ITEM_TEMPLATES
+- [src/engine/depot.ts](../src/engine/depot.ts) — getDepotUsedSlots, depositItem, withdrawItem, depositMany, withdrawMany
+- [src/engine/forge.ts](../src/engine/forge.ts) — getUpgradeCost, upgradeItemLevel, rerollItemAffixes
+- [src/engine/inventory.ts](../src/engine/inventory.ts) — getUsedSlots, canAddItem, addItem, removeItem, countByTemplate, equipItem, unequipItem
+- [src/engine/itemCompare.ts](../src/engine/itemCompare.ts) — STAT_WEIGHTS, getItemScore, getBestTargetSlot, getEquippedForTarget, isUpgrade
+- [src/engine/salvage.ts](../src/engine/salvage.ts) — salvageItem, salvageAllEquipment, salvageSelectedEquipment
+- [src/engine/shop.ts](../src/engine/shop.ts) — sellValue, sellItem, sellAllEquipment
+- [src/ui/Backpack.tsx](../src/ui/Backpack.tsx) — Backpack
+- [src/ui/Depot.tsx](../src/ui/Depot.tsx) — Depot
+- [src/ui/Inventory.tsx](../src/ui/Inventory.tsx) — Inventory
+- [src/ui/ItemIcon.tsx](../src/ui/ItemIcon.tsx) — ItemIcon
+- [src/ui/ItemModal.tsx](../src/ui/ItemModal.tsx) — ItemModal
+- [src/ui/Shop.tsx](../src/ui/Shop.tsx) — Shop
+
+## Conexões
+[[Sistema - Audio|Audio]] · [[Sistema - Build Lab|Build Lab]] · [[Sistema - Combat|Combat]] · [[Sistema - Divine Beasts|Divine Beasts]] · [[Sistema - Document|Document]] · [[Sistema - Elements|Elements]] · [[Sistema - Engine|Engine]] · [[Sistema - Game Data|Game Data]] · [[Sistema - Interface|Interface]] · [[Sistema - Items|Items]] · [[Sistema - Matrix|Matrix]] · [[Sistema - Project Config|Project Config]] · [[Sistema - Project File|Project File]] · [[Sistema - Project Ui|Project Ui]] · [[Sistema - Quests|Quests]] · [[Sistema - Save And Accounts|Save And Accounts]] · [[Sistema - State|State]] · [[Sistema - Stats And Progression|Stats And Progression]] · [[Sistema - Tooling|Tooling]] · [[Sistema - Types|Types]] · [[Sistema - Utility|Utility]] · [[Sistema - Visual Assets|Visual Assets]] · [[Sistema - Windows Desktop|Windows Desktop]] · [[Sistema - Zones And Lore|Zones And Lore]]
+
+## Registro recente
+- Alterado: `CEREBRO_MYTHREON.md`
+- Alterado: `docs/conhecimento/Laboratorio-de-Builds-e-Windows.md`
+- Adicionado: `scripts/verify-windows.cjs`

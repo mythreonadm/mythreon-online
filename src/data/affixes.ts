@@ -56,6 +56,7 @@ export function getPoolForCategory(category: ItemCategory): AffixPoolDef[] {
     case "ARMADURA": return ARMOR_AFFIXES;
     case "ESCUDO": return SHIELD_AFFIXES;
     case "JOIA": return JEWELRY_AFFIXES;
+    case "PULSEIRA": return JEWELRY_AFFIXES;
     default: return [];
   }
 }

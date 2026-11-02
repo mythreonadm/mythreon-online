@@ -1,3 +1,4 @@
+import { BALANCE, clamp, mitigatedDamage } from "../data/balance";
 import { Character, Enemy, Element, TickResult, Zone, CardInstance, HuntEncounterRecord, HuntLootEntry, DamageBreakdown } from "../types";
 import { addItem } from "./inventory";
 import { rollDrops, rollAmbient, RARITY_ORDER } from "./drops";
@@ -7,6 +8,7 @@ import { salvageItem } from "./salvage";
 import { isDebug, TICK_MS, OFFLINE_MAX_HOURS } from "../config";
 import { ATTACK_SKILLS, ATTACK_SKILL_COOLDOWN, SUPPORT_EFFECTS, PASSIVE_EFFECTS } from "../data/skills";
 import { rollCardDrop, CARD_TEMPLATES } from "../data/cards";
+import { getBeastCombat } from "../data/beastCombat";
 import { DIVINE_BEASTS } from "../data/divineBeasts";
 import { POTION_TEMPLATES } from "../data/items";
 import { getPotionUsePrice } from "../data/potionEconomy";
@@ -18,7 +20,7 @@ interface Profile { xpPct: number; goldPct: number; dropPct: number; rarePct: nu
 
 export function buildProfile(char: Character): Profile {
   const bp = char.inventory.backpack;
-  const p: Profile = { xpPct: bp.xpBonus ?? 0, goldPct: 0, dropPct: bp.dropBonus ?? 0, rarePct: bp.rareDropBonus ?? 0, healPct: 0, skillDmgPct: 0, cdReduce: 0, lifesteal: 0 };
+  const p: Profile = { xpPct: (bp.xpBonus ?? 0) + (char.premium ? 0.10 : 0), goldPct: 0, dropPct: bp.dropBonus ?? 0, rarePct: bp.rareDropBonus ?? 0, healPct: 0, skillDmgPct: 0, cdReduce: 0, lifesteal: 0 };
   for (const [slot, item] of Object.entries(char.equipped)) {
     if (!item || slot === "BACKPACK") continue;
     p.xpPct += item.xpBonus ?? 0; p.goldPct += item.goldBonus ?? 0; p.dropPct += item.dropBonus ?? 0; p.rarePct += item.rareDropBonus ?? 0; p.lifesteal += item.lifesteal ?? 0;
@@ -35,7 +37,7 @@ export function buildProfile(char: Character): Profile {
   return p;
 }
 
-const EQUIP_CATEGORIES = ["ARMA", "ARMADURA", "JOIA", "ESCUDO"];
+const EQUIP_CATEGORIES = ["ARMA", "ARMADURA", "JOIA", "PULSEIRA", "ESCUDO"];
 const emptyDamageBreakdown = (): DamageBreakdown => ({ physical: 0, elemental: {}, lifestealHealing: 0 });
 const addBreakdown = (target: DamageBreakdown, source: DamageBreakdown) => {
   target.physical += source.physical;
@@ -86,7 +88,10 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
     result.log.push(isOffline ? "🌙 Stamina offline esgotada; a simulação da caça foi limitada." : "⚡ Stamina online esgotada; a caça foi pausada.");
   }
   if (!ticks) { char.lastTick = Date.now(); return result; }
-  const baseEnemy: Enemy | undefined = zone.enemies.find((e) => e.id === char.activeEnemyId) || zone.enemies[0];
+  const savedTarget = zone.enemies.find((e) => e.id === char.activeEnemyId);
+  const baseEnemy: Enemy | undefined = savedTarget && char.level >= (savedTarget.minLevel ?? 1)
+    ? savedTarget
+    : zone.enemies.find(e => char.level >= (e.minLevel ?? 1)) || zone.enemies[0];
   if (!baseEnemy) return result;
 
   const fightId = `${zone.id}:${baseEnemy.id}`;
@@ -124,7 +129,10 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
   };
 
   const diff = baseEnemy.difficulty || 1;
-  const enemy = { ...baseEnemy, hp: baseEnemy.hp * diff, atk: baseEnemy.atk * diff, arm: baseEnemy.arm * diff, xp: baseEnemy.xp * diff, goldMin: baseEnemy.goldMin * diff, goldMax: baseEnemy.goldMax * diff };
+  // A dificuldade continua aumentando a pressão de combate, mas não multiplica linearmente XP e ouro.
+  // Isso reduz o avanço acelerado causado por criaturas com muitas estrelas sem tirar a recompensa do desafio.
+  const rewardScale = 1 + (diff - 1) * 0.20;
+  const enemy = { ...baseEnemy, hp: baseEnemy.hp * diff, atk: baseEnemy.atk * diff, arm: baseEnemy.arm * diff, xp: Math.round(baseEnemy.xp * rewardScale), goldMin: Math.round(baseEnemy.goldMin * rewardScale), goldMax: Math.round(baseEnemy.goldMax * rewardScale) };
 
   if (char.enemyHpId !== baseEnemy.id || char.enemyHp === undefined || char.enemyHp <= 0) {
     char.enemyHp = enemy.hp; char.enemyHpId = baseEnemy.id;
@@ -170,6 +178,10 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
     const mpMax = char.mpMax;
     result.attacked = false; result.lastDamage = 0; result.lastCrit = false; result.lastMiss = false; result.usedMp = false;
 
+    // Regeneração aplicada por tick (3 s), respeitando os limites de vida e mana.
+    if (playerHp > 0) playerHp = Math.min(hpMax, playerHp + Math.max(0, s.hpRegen ?? 0));
+    playerMp = Math.min(mpMax, playerMp + Math.max(0, s.mpRegen ?? 0));
+
     if (playerHp <= 0) {
       recordDeathEncounter();
       result.death = true;
@@ -207,9 +219,10 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
       result.attacked = true;
       if (debug) { result.lastDamage = 99999; return 99999; }
       if (Math.random() > (s.hit ?? 1)) { result.lastMiss = true; return 0; }
-      const base = (s.atk ?? 0) * atkMult * multiplier;
-      let dmg = Math.max(Math.ceil(base * 0.1), base - enemy.arm * (1 - ignoreArmor));
-      if (Math.random() < (s.crit ?? 0)) { dmg *= 1.5; result.lastCrit = true; }
+      const magicWeapon = ['CAJADO', 'VARINHA'].some(key => char.equipped.ARMA_PRINCIPAL?.templateId.includes(key));
+      const base = (magicWeapon ? s.matk ?? 0 : s.atk ?? 0) * atkMult * multiplier;
+      let dmg = mitigatedDamage(base, enemy.arm * (1 - ignoreArmor));
+      if (Math.random() < (s.crit ?? 0)) { dmg *= 1 + clamp(s.critDmg ?? 0.5, 0, 1.5); result.lastCrit = true; }
       if (support?.executeBonus && enemyHp < enemy.hp * 0.4) dmg *= 1 + support.executeBonus;
       dmg = Math.max(1, Math.round(dmg));
       result.lastDamage = (result.lastDamage ?? 0) + dmg;
@@ -223,15 +236,15 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
     if (Math.random() < (s.spd ?? 0)) dealt += strike();
 
     if (skill && t % skillCd === 0 && !debug) {
-      const manaCost = skill.manaCost + (char.level * 2);
+      const manaCost = skill.manaCost + Math.floor(char.level * 0.5);
       if (playerMp >= manaCost) {
         playerMp -= manaCost;
         result.usedMp = true;
         const raw = ((s.matk ?? 0) + (s.atk ?? 0) * 0.5) * skill.mult * (1 + prof.skillDmgPct);
         const armor = enemy.arm * (1 - skill.pierce) * (1 - ignoreArmor);
-        const baseSkillDamage = Math.max(Math.ceil(raw * 0.1), Math.round(raw - armor));
+        const baseSkillDamage = Math.round(mitigatedDamage(raw, armor));
         const skillElement = attackElement(race?.ataqueId);
-        const skillResistance = Math.max(0, Math.min(0.8, enemy.elementalResistances?.[skillElement] ?? 0));
+        const skillResistance = Math.max(0, Math.min(BALANCE.resistanceCap, enemy.elementalResistances?.[skillElement] ?? 0));
         const sd = Math.round(baseSkillDamage * elementMultiplier(skillElement, enemy.element) * (1 - skillResistance));
         dealt += sd; result.lastDamage = (result.lastDamage ?? 0) + sd;
         if (skillElement !== "BASE") {
@@ -253,7 +266,7 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
     const weapon = char.equipped.ARMA_PRINCIPAL;
     if (weapon?.element && (weapon.elementalDamagePct ?? 0) > 0 && dealt > 0) {
       const rawElementDamage = Math.round(dealt * (weapon.elementalDamagePct ?? 0));
-      const resistance = Math.max(0, Math.min(0.8, enemy.elementalResistances?.[weapon.element] ?? 0));
+      const resistance = Math.max(0, Math.min(BALANCE.resistanceCap, enemy.elementalResistances?.[weapon.element] ?? 0));
       const elementalDamage = Math.max(0, Math.round(rawElementDamage * elementMultiplier(weapon.element, enemy.element) * (1 - resistance)));
       dealt += elementalDamage;
       elementalThisTick += elementalDamage;
@@ -262,6 +275,19 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
       encounterDamageBreakdown.elemental[weapon.element] = (encounterDamageBreakdown.elemental[weapon.element] ?? 0) + elementalDamage;
     }
 
+    const bond = getBeastCombat(char);
+    if (bond && t % bond.cooldown === 0 && playerMp >= bond.mana && !debug) {
+      playerMp -= bond.mana;
+      result.usedMp = true;
+      const raw = ((s.atk ?? 0) + (s.matk ?? 0)) * 0.5 * bond.multiplier;
+      const resistance = Math.max(0, Math.min(BALANCE.resistanceCap, enemy.elementalResistances?.[bond.element] ?? 0));
+      const damage = Math.max(1, Math.round(mitigatedDamage(raw, enemy.arm * 0.5) * elementMultiplier(bond.element, enemy.element) * (1 - resistance)));
+      dealt += damage; elementalThisTick += damage;
+      result.lastDamage = (result.lastDamage ?? 0) + damage;
+      result.damageBreakdown!.elemental[bond.element] = (result.damageBreakdown!.elemental[bond.element] ?? 0) + damage;
+      encounterDamageBreakdown.elemental[bond.element] = (encounterDamageBreakdown.elemental[bond.element] ?? 0) + damage;
+      result.log.push(bond.beast.name + ' usa ' + bond.name + ': ' + damage + ' de dano ' + bond.element.toLowerCase() + '.');
+    }
     const physicalThisTick = Math.max(0, dealt - elementalThisTick);
     result.damageBreakdown!.physical += physicalThisTick;
     encounterDamageBreakdown.physical += physicalThisTick;
@@ -291,7 +317,7 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
       result.gold += g; char.gold += g; result.xp += xpGained; char.xp += xpGained;
       const loot: HuntLootEntry[] = [];
       const soldGoldBefore = result.soldGold ?? 0;
-      heal(hpMax * 0.1);
+      heal(hpMax * BALANCE.killRecovery);
 
       // ─── DROP DE CARTA (NOVO) ───
       const cardDrop = rollCardDrop(enemy.id, zone.tier, enemy.isBoss);
@@ -317,7 +343,7 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
       }
       // ─── FIM DO DROP DE CARTA ───
       
-      const drops = rollDrops(enemy, zone, char, { dropBonus: prof.dropPct, rareBonus: prof.rarePct, force: debug });
+      const drops = rollDrops(enemy, zone, char, { dropBonus: prof.dropPct, rareBonus: prof.rarePct + (char.baseStats.luck ?? 0), force: debug });
       if (debug || char.killsInZone % 10 === 0 || enemy.isBoss) drops.push(rollAmbient(zone));
       
       const autoSell = char.autoSell ?? null;
@@ -375,15 +401,15 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
       else {
         const armor = (s.arm ?? 0) * armMult;
         const reduction = armor + (s.def ?? 0) * 0.5;
-        const raw = Math.max(Math.ceil(enemy.atk * 0.1), enemy.atk - reduction);
+        const raw = mitigatedDamage(enemy.atk, reduction);
         const res = enemy.damageType === "MAGICO" ? (s.resMagico ?? 0) : (s.resFisico ?? 0);
-        let mult = (1 - Math.min(0.5, res)) * (1 - (buffOn ? e?.dmgReduction ?? 0 : 0) - (e?.permDmgReduction ?? 0));
+        let mult = (1 - clamp(res, 0, BALANCE.resistanceCap)) * (1 - (buffOn ? e?.dmgReduction ?? 0 : 0) - (e?.permDmgReduction ?? 0));
         if (Math.random() < (s.blk ?? 0)) mult *= 0.5;
         const physicalRaw = enemy.element ? Math.round(raw * 0.65) : raw;
         const elementalRaw = enemy.element ? raw - physicalRaw : 0;
-        const ePhysical = debug ? 0 : Math.max(1, Math.round(physicalRaw * Math.max(0.2, mult)));
-        const elementalResistance = Math.max(0, Math.min(0.8, enemy.element ? (char.elementalResistances?.[enemy.element] ?? 0) : 0));
-        const eElemental = debug || !enemy.element ? 0 : Math.max(0, Math.round(elementalRaw * Math.max(0.2, mult) * (1 - elementalResistance)));
+        const ePhysical = debug ? 0 : Math.max(1, Math.round(physicalRaw * clamp(mult, 0.1, 1)));
+        const elementalResistance = Math.max(0, Math.min(BALANCE.resistanceCap, enemy.element ? (char.elementalResistances?.[enemy.element] ?? 0) : 0));
+        const eElemental = debug || !enemy.element ? 0 : Math.max(0, Math.round(elementalRaw * clamp(mult, 0.1, 1) * (1 - elementalResistance)));
         const eDmg = ePhysical + eElemental;
         playerHp -= eDmg;
         result.damageTaken! += eDmg;
@@ -398,8 +424,7 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
         char.fightDamageTakenBreakdown = structuredClone(encounterDamageTakenBreakdown);
         if (eDmg > 0) result.log.push(`${enemy.name} causou ${eDmg} de dano em você.`);
       }
-      if (playerHp > 0) heal(hpMax * 0.015);
-      else {
+      if (playerHp <= 0) {
         recordDeathEncounter();
         result.death = true;
         const blessed = (char.blesses ?? 0) > 0;

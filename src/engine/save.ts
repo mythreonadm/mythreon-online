@@ -1,6 +1,8 @@
 import { Character, Race, SaveFile, CharacterSkills, CardInstance } from "../types";
 import { DEFAULT_BACKPACK } from "../data/backpacks";
 import { getBaseStats, xpToNextLevel } from "./stats";
+import { makeEquipment } from "./drops";
+import { addItem } from "./inventory";
 
 const LEGACY_SAVE_KEY = "mythreon_save_v1";
 const MIGRATION_KEY = "mythreon_save_account_migrated_v1";
@@ -42,6 +44,7 @@ export function createNewCharacter(name: string): Character {
     autoMpPotionPercent: 30,
     autoMpPotionEnabled: false,
     tutorialCompleted: false,
+    tutorialRelicGranted: false,
     staminaOnline: 120,
     staminaOffline: 480,
     staminaUpdatedAt: Date.now(),
@@ -63,6 +66,12 @@ export function loadGame(): SaveFile | null {
   try { 
     const data = JSON.parse(raw);
     if (data.character) {
+      const targetXp = xpToNextLevel(data.character.level || 1);
+      const previousTarget = data.character.xpToNext;
+      if (Number.isFinite(previousTarget) && previousTarget > 0 && previousTarget !== targetXp) {
+        data.character.xp = Math.floor(Math.max(0, data.character.xp || 0) / previousTarget * targetXp);
+      }
+      data.character.xpToNext = targetXp;
       if (!data.character.skills) data.character.skills = { melee: 10, defense: 10, magic: 10, distance: 10, soul: 10 };
       if (!Number.isFinite(data.character.statPoints)) data.character.statPoints = Math.max(0, (data.character.level || 1) - 1);
       if (typeof data.character.skillXp === "number") data.character.skillXp = { melee: 0, defense: 0, magic: 0, distance: 0, soul: 0 };
@@ -84,6 +93,18 @@ export function loadGame(): SaveFile | null {
       if (data.character.autoMpPotionEnabled === undefined) data.character.autoMpPotionEnabled = false;
       if (data.character.tutorialCompleted === undefined) {
         data.character.tutorialCompleted = (data.character.level ?? 1) > 1;
+      }
+      if (data.character.tutorialRelicGranted === undefined) data.character.tutorialRelicGranted = false;
+      if (data.character.quests?.completed?.includes("TUT_BACKPACK") && !data.character.tutorialRelicGranted) {
+        const alreadyOwnsRelic = [...(data.character.inventory?.items ?? []), ...(data.character.depot ?? []), ...Object.values(data.character.equipped ?? {})]
+          .some((item: any) => item?.templateId === "UNICO_SIGILO_INICIACAO");
+        if (alreadyOwnsRelic) data.character.tutorialRelicGranted = true;
+        else {
+          const relic = makeEquipment("UNICO_SIGILO_INICIACAO");
+          const placed = relic && addItem(data.character.inventory, relic);
+          if (relic && !placed) (data.character.depot ??= []).push(relic);
+          if (relic) data.character.tutorialRelicGranted = true;
+        }
       }
       if (!data.character.activeVials) data.character.activeVials = {};
       if (!Number.isFinite(data.character.staminaOnline)) data.character.staminaOnline = 120;

@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { AssetImage } from "./ui/AssetImage";
 import { useGameStore } from "./store/gameStore";
+import { BuildLab } from "./ui/BuildLab";
 import { Backpack } from "./ui/Backpack";
 import { Depot } from "./ui/Depot"; // NOVO
 import { Personagem } from "./ui/Personagem";
@@ -8,6 +9,7 @@ import { ZoneView } from "./ui/Zone";
 import { MatrixView } from "./ui/Matrix";
 import { CharacterPanel } from "./ui/CharacterPanel";
 import { CombatLog } from "./ui/CombatLog";
+import { CommerceBenefits } from "./ui/CommerceBenefits";
 import { Shop } from "./ui/Shop";
 import { Quests } from "./ui/Quests";
 import { Wiki } from "./ui/Wiki";
@@ -27,16 +29,16 @@ import { QUESTS } from "./data/quests";
 import { checkQuestCompletion } from "./engine/questEngine";
 import { ZONES } from "./data/zones";
 
-type Tab = "zona" | "personagem" | "backpack" | "depot" | "matriz" | "pets" | "loja" | "missoes" | "duelos" | "wiki";
+type Tab = "zona" | "personagem" | "backpack" | "depot" | "matriz" | "pets" | "laboratorio" | "shop" | "loja" | "missoes" | "duelos" | "wiki";
 
 const TAB_LABELS: Record<Tab, string> = {
   zona: "Explorar", personagem: "Personagem", backpack: "Mochila", depot: "Depósito",
-  matriz: "Matriz", pets: "Divine Beasts", loja: "Ferreiro", missoes: "Jornadas", duelos: "Duelo", wiki: "Arquivo",
+  matriz: "Matriz", pets: "Divine Beasts", laboratorio: "Laboratório", shop: "Shop", loja: "Ferreiro", missoes: "Jornadas", duelos: "Duelo", wiki: "Arquivo",
 };
 
 const TAB_ICONS: Record<Tab, AccessIconName> = {
   zona: "explore", personagem: "character", backpack: "backpack", depot: "depot",
-  matriz: "matrix", loja: "shop", missoes: "quest", duelos: "duel", wiki: "archive",
+  matriz: "matrix", laboratorio: "matrix", shop: "shop", loja: "shop", missoes: "quest", duelos: "duel", wiki: "archive",
   pets: "pet",
 };
 
@@ -184,7 +186,7 @@ useEffect(() => {
 
       <nav className="game-nav bg-arcane-panel/80 backdrop-blur border-b border-arcane-border sticky top-[73px] z-40">
         <div className="max-w-7xl mx-auto flex overflow-x-auto">
-          {(["zona", "personagem", "backpack", "depot", "matriz", "pets", "loja", "missoes", "duelos", "wiki"] as Tab[]).map((t) => (
+          {(["zona", "personagem", "backpack", "depot", "matriz", "pets", "laboratorio", "shop", "loja", "missoes", "duelos", "wiki"] as Tab[]).map((t) => (
             <button
               key={t}
               onClick={() => {
@@ -217,7 +219,9 @@ useEffect(() => {
         {tab === "depot" && <Depot />} {/* NOVO */}
         {tab === "matriz" && <MatrixView />}
         {tab === "pets" && <DivineBeasts />}
-        {tab === "loja" && <Shop />}
+        {tab === "laboratorio" && <BuildLab />}
+        {tab === "loja" && <Shop key="ferreiro" />}
+{tab === "shop" && <><CommerceBenefits /><Shop key="shop" storefront /></>}
         {tab === "missoes" && <Quests focusQuestId={focusQuestId} onFocusHandled={clearQuestFocus} />}
         {tab === "duelos" && <Duelos />}
         {tab === "wiki" && <Wiki />}

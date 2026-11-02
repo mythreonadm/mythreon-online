@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useGameStore } from "../store/gameStore";
 import { CARD_TEMPLATES, TRAITS } from "../data/cards";
-import { ArenaSize, makeOpponentDeck, simulateArenaDuel, ArenaBattleResult } from "../engine/cardArena";
+import { ArenaSize, ArenaStrategy, makeOpponentDeck, simulateArenaDuel, ArenaBattleResult } from "../engine/cardArena";
 import { CardInstance } from "../types";
 
 const MODES: { size: ArenaSize; title: string; subtitle: string; reward: string }[] = [
@@ -14,6 +14,7 @@ const GOLD = new Intl.NumberFormat("pt-BR");
 export function ArenaDuelos() {
   const { character, currentZoneId, claimArenaReward } = useGameStore();
   const [size, setSize] = useState<ArenaSize>(1);
+  const [strategy, setStrategy] = useState<ArenaStrategy>("PRECISAO");
   const [selected, setSelected] = useState<string[]>([]);
   const [battle, setBattle] = useState<ArenaBattleResult | null>(null);
   const [shownLogs, setShownLogs] = useState(0);
@@ -37,7 +38,7 @@ export function ArenaDuelos() {
     if (picked.length !== size) return;
     const averageLevel = picked.reduce((total, card) => total + card.level, 0) / size;
     const region = CARD_TEMPLATES[picked[0].templateId]?.region ?? currentZoneId;
-    const result = simulateArenaDuel(picked, makeOpponentDeck(region, size, averageLevel));
+    const result = simulateArenaDuel(picked, makeOpponentDeck(region, size, averageLevel), strategy);
     setBattle(result); setShownLogs(result.logs.length);
     if (result.winner === "player" && rewardsUsed < 3) {
       const reward = claimArenaReward(size);
@@ -70,6 +71,15 @@ export function ArenaDuelos() {
           {MODES.map(item => <button key={item.size} onClick={() => chooseMode(item.size)} className={`rounded-xl border p-3 text-left transition ${size === item.size ? "border-arcane-gold/70 bg-arcane-gold/10 shadow-[inset_0_0_20px_rgba(201,160,77,.07)]" : "border-white/10 bg-white/[.025] hover:border-white/20"}`}>
             <div className={`text-sm font-black ${size === item.size ? "text-arcane-gold" : "text-slate-300"}`}>{item.title}</div><div className="mt-0.5 text-[11px] text-slate-500">{item.subtitle}</div><div className="mt-2 text-[10px] font-semibold text-emerald-400">{item.reward}</div>
           </button>)}
+        </div>
+
+        <div className="rounded-xl border border-arcane-cyan/20 bg-cyan-950/10 p-4">
+          <div className="mb-2"><h3 className="text-sm font-bold text-white">Plano tático do capitão</h3><p className="text-xs text-slate-500">Sua escolha altera o combate. A ordem das cartas selecionadas define a ordem de entrada.</p></div>
+          <div className="grid grid-cols-3 gap-2">{([
+            ["ASSALTO", "⚔️ Assalto", "+22% dano; recebe desgaste"],
+            ["GUARDA", "🛡️ Guarda", "−28% dano recebido; −12% dano"],
+            ["PRECISAO", "🎯 Precisão", "+15% chance de crítico"],
+          ] as [ArenaStrategy, string, string][]).map(([id, label, detail]) => <button key={id} onClick={() => { setStrategy(id); setBattle(null); }} className={`rounded-lg border p-2 text-left transition ${strategy === id ? "border-arcane-cyan bg-cyan-400/10" : "border-white/10 bg-black/20 hover:border-white/20"}`}><b className="block text-xs text-slate-100">{label}</b><small className="mt-1 block text-[10px] text-slate-500">{detail}</small></button>)}</div>
         </div>
 
         <div className="rounded-xl border border-white/10 bg-black/20 p-4">

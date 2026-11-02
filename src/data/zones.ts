@@ -16,7 +16,7 @@ export const ZONES: Record<string, Zone> = {
       // NOVOS MOBS T1
       { id: "FADA_CORROMPIDA", name: "Fada Corrompida", hp: 22, atk: 8, arm: 0, xp: 35, goldMin: 15, goldMax: 25, componentId: "A3", componentChance: 0.5, essenceId: "S3", essenceChance: 0.15, isBoss: false, emoji: "🧚", difficulty: 2, minLevel: 4, sprite: "/assets/monsters/FADA_CORROMPIDA.png" },
       { id: "ARANHA_GIGANTE", name: "Aranha Gigante", hp: 40, atk: 7, arm: 3, xp: 40, goldMin: 18, goldMax: 28, componentId: "A2", componentChance: 0.6, essenceId: "S2", essenceChance: 0.10, isBoss: false, emoji: "🕷️", difficulty: 2, minLevel: 6, sprite: "/assets/monsters/ARANHA_GIGANTE.png" },
-      { id: "ESPECTRO", name: "Espectro de Brasa", hp: 80, atk: 9, arm: 2, xp: 110, goldMin: 60, goldMax: 100, componentId: "A3", componentChance: 1.0, essenceId: "S9", essenceChance: 0.30, isBoss: true, emoji: "👻", difficulty: 4, minLevel: 9, damageType: "MAGICO", element: "FOGO", backpackDrop: "OLD", backpackChance: 0.08, uniqueDropId: "UNICO_BRASA_ETERNA", uniqueDropChance: 0.06, sprite: "/assets/monsters/ESPECTRO.png" },
+      { id: "ESPECTRO", name: "Espectro de Brasa", hp: 160, atk: 16, arm: 8, xp: 80, goldMin: 60, goldMax: 100, componentId: "A3", componentChance: 1.0, essenceId: "S9", essenceChance: 0.30, isBoss: true, emoji: "👻", difficulty: 4, minLevel: 15, damageType: "MAGICO", element: "FOGO", backpackDrop: "OLD", backpackChance: 0.08, uniqueDropId: "UNICO_BRASA_ETERNA", uniqueDropChance: 0.06, sprite: "/assets/monsters/ESPECTRO.png" },
     ],
   },
 

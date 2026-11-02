@@ -141,7 +141,7 @@ export function Backpack() {
       </div>
 
       <div className="flex gap-2 mb-3 flex-wrap">
-        {["all", "ARMA", "ARMADURA", "JOIA", "ESCUDO", "COMPONENTE", "FRAGMENTO", "POCAO", "BACKPACK"].map(f => (
+        {["all", "ARMA", "ARMADURA", "JOIA", "PULSEIRA", "ESCUDO", "COMPONENTE", "FRAGMENTO", "POCAO", "BACKPACK"].map(f => (
           <button
             key={f}
             onClick={() => setCategoryFilter(f)}
@@ -217,7 +217,7 @@ export function Backpack() {
                 </button>
 
                 <div className="mb-1 flex justify-center">
-                  <ItemIcon item={item} className="w-12 h-12 drop-shadow-md" />
+                  <ItemIcon item={item} className="w-20 h-20 drop-shadow-md" />
                 </div>
                 <div className="text-xs text-center truncate w-full font-bold" title={item.name}>{item.name}</div>
                 {item.upgradeLevel > 0 && <div className="text-[10px] text-orange-400 font-bold">+{item.upgradeLevel}</div>}

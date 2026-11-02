@@ -116,7 +116,8 @@ export function claimQuestReward(char: Character, questId: string): { success: b
         : makeEquipment(itemReward.templateId, itemReward.rarity || "COMUM");
       if (reward) {
         reward.quantity = quantity;
-        addItem(char.inventory, reward);
+        const placed = addItem(char.inventory, reward);
+        if (!placed && itemReward.templateId === "UNICO_SIGILO_INICIACAO") char.depot.push(reward);
       }
     }
   }

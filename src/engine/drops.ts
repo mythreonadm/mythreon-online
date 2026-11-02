@@ -1,3 +1,4 @@
+import { BALANCE, clamp } from "../data/balance";
 import { Affix, Character, Enemy, Item, ItemStats, Rarity, Zone, Law } from "../types";
 import { ALL_COMPONENTS } from "../data/components";
 import { ALL_EQUIPMENT_TEMPLATES, ALL_ITEM_TEMPLATES, ARROW_TEMPLATES, UNIQUE_TEMPLATES, createItem } from "../data/items";
@@ -11,8 +12,8 @@ export const RARITY_MULT: Record<Rarity, number> = { COMUM: 1.0, INCOMUM: 1.3, R
 const AFFIX_COUNT: Record<Rarity, number> = { COMUM: 0, INCOMUM: 1, RARO: 2, EPICO: 3, LENDARIO: 3 };
 
 export function rollRarity(bonus = 0): Rarity {
-  const r = Math.random() / (1 + bonus);
-  if (r < 0.01) return "LENDARIO"; if (r < 0.05) return "EPICO"; if (r < 0.15) return "RARO"; if (r < 0.40) return "INCOMUM"; return "COMUM";
+  const r = Math.random() / (1 + clamp(bonus, 0, 1));
+  if (r < 0.002) return "LENDARIO"; if (r < 0.02) return "EPICO"; if (r < 0.10) return "RARO"; if (r < 0.35) return "INCOMUM"; return "COMUM";
 }
 
 // ESSA É A FUNÇÃO QUE ESTAVA FALTANDO O EXPORT
@@ -101,7 +102,7 @@ export interface DropMods { dropBonus: number; rareBonus: number; force?: boolea
 
 export function rollDrops(enemy: Enemy, zone: Zone, _char: Character, mods: DropMods = { dropBonus: 0, rareBonus: 0 }): Item[] {
   const drops: Item[] = [];
-  const chance = (p: number) => mods.force || Math.random() < Math.min(1, p * (1 + mods.dropBonus));
+  const chance = (p: number) => mods.force || Math.random() < Math.min(1, p * (1 + clamp(mods.dropBonus, 0, 1)));
 
   if (chance(enemy.componentChance)) drops.push(makeComponent(enemy.componentId));
   if (enemy.essenceId && chance(enemy.essenceChance ?? 0)) drops.push(makeComponent(enemy.essenceId));
@@ -111,7 +112,7 @@ export function rollDrops(enemy: Enemy, zone: Zone, _char: Character, mods: Drop
     if (arrow) drops.push({ ...arrow, uid: generateId(), quantity: enemy.isBoss ? 25 : 5 + Math.floor(Math.random() * 6) });
   }
 
-  if (chance(enemy.isBoss ? 0.6 : 0.15)) {
+  if (chance(enemy.isBoss ? BALANCE.bossEquipmentDrop : BALANCE.equipmentDrop)) {
     const pool = Object.values(ALL_EQUIPMENT_TEMPLATES).filter((t) => t.tier === zone.tier);
     if (pool.length > 0) {
       const base = pool[Math.floor(Math.random() * pool.length)];

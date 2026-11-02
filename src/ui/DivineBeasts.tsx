@@ -1,3 +1,4 @@
+import { beastGrowth, getBeastCombat } from "../data/beastCombat";
 import React, { useState } from "react";
 import { AssetImage } from "./AssetImage";
 import { DIVINE_BEASTS, DIVINE_BEAST_ORDER } from "../data/divineBeasts";
@@ -48,14 +49,19 @@ export function DivineBeasts() {
     </div>
 
     <footer className="rounded-xl border border-white/10 bg-black/20 p-4 text-xs leading-relaxed text-slate-500">
-      <span className="font-bold text-slate-300">Sobre os bônus:</span> cada guardião concede uma pequena especialidade enquanto ocupa o espaço de Ressonância. Os valores são iniciais e podem ser ajustados depois de observarmos as métricas de hunt.
+      <span className="font-bold text-slate-300">Sobre os bônus:</span> cada guardião concede um ataque elemental a cada 3 ticks, bônus de combate que crescem com o nível e uma especialidade enquanto ocupa o espaço de Ressonância. Os valores são iniciais e podem ser ajustados depois de observarmos as métricas de hunt.
     </footer>
   </div>;
 }
 
 function BeastCard({ beast, owned, active, onEquip, onUnequip }: { beast: DivineBeastTemplate; owned: boolean; active: boolean; onEquip: () => void; onUnequip: () => void }) {
   const [imageFailed, setImageFailed] = useState(false);
-  const stats = Object.entries(beast.bonus) as [keyof ItemStats, number][];
+  const character = useGameStore(state => state.character);
+  const growth = beastGrowth(character?.level ?? 1);
+  const bonus = { ...growth };
+  for (const [key, value] of Object.entries(beast.bonus)) (bonus as any)[key] = ((bonus as any)[key] ?? 0) + value;
+  const bond = character ? getBeastCombat({...character, activeRace: undefined, activeDivineBeastId: beast.id}) : null;
+  const stats = Object.entries(bonus) as [keyof ItemStats, number][];
   const sourceBoss = Object.values(ZONES).flatMap(zone => zone.enemies).find(enemy => enemy.id === beast.bossId);
   return <article className={`overflow-hidden rounded-xl border bg-[#0c1115] transition ${active ? "border-arcane-gold/70 shadow-[0_0_22px_rgba(201,160,77,.12)]" : owned ? "border-emerald-700/30" : "border-white/10 opacity-[.82]"}`}>
     <div className="flex min-h-36 items-center gap-4 border-b border-white/5 bg-[radial-gradient(ellipse_at_center,rgba(201,160,77,.10),transparent_65%)] px-4 py-3">
@@ -66,7 +72,7 @@ function BeastCard({ beast, owned, active, onEquip, onUnequip }: { beast: Divine
     </div>
     <div className="space-y-3 p-4">
       <p className="min-h-[54px] text-xs leading-relaxed text-slate-400">{owned ? beast.lore : `A Essência detecta um eco em ${beast.region}. O vínculo pode surgir ao derrotar o guardião local.`}</p>
-      {owned ? <><div className="rounded-lg border border-white/5 bg-black/20 p-2"><div className="mb-1 text-[9px] font-bold uppercase tracking-wider text-arcane-gold">Ressonância</div><div className="flex flex-wrap gap-1.5">{stats.map(([stat, value]) => <span key={stat} className="rounded border border-emerald-900/40 bg-emerald-950/20 px-2 py-1 text-[10px] font-bold text-emerald-300">+{stat === "crit" || stat === "hit" || stat === "dge" || stat === "resMagico" || stat === "spd" ? `${(value * 100).toFixed(0)}%` : numberFormat.format(value)} {STAT_LABELS[stat] ?? stat}</span>)}</div></div><p className="text-[10px] italic leading-relaxed text-slate-500">{beast.bond}</p></> : <div className="rounded-lg border border-white/5 bg-black/20 p-2 text-[10px] text-slate-500">Vínculo possível ao derrotar {sourceBoss?.name ?? "o chefe regional"}. Chance de 12% por vitória; o chefe revela um dos ecos ainda não descobertos.</div>}
+      {owned ? <><p className="text-xs text-cyan-200">{bond?.name} · {bond?.element} · a cada 3 ticks · {bond?.mana} MP. Bônus abaixo calculados para seu nível atual.</p><div className="rounded-lg border border-white/5 bg-black/20 p-2"><div className="mb-1 text-[9px] font-bold uppercase tracking-wider text-arcane-gold">Ressonância</div><div className="flex flex-wrap gap-1.5">{stats.map(([stat, value]) => <span key={stat} className="rounded border border-emerald-900/40 bg-emerald-950/20 px-2 py-1 text-[10px] font-bold text-emerald-300">+{stat === "crit" || stat === "hit" || stat === "dge" || stat === "resMagico" || stat === "spd" ? `${(value * 100).toFixed(0)}%` : numberFormat.format(value)} {STAT_LABELS[stat] ?? stat}</span>)}</div></div><p className="text-[10px] italic leading-relaxed text-slate-500">{beast.bond}</p></> : <div className="rounded-lg border border-white/5 bg-black/20 p-2 text-[10px] text-slate-500">Vínculo possível ao derrotar {sourceBoss?.name ?? "o chefe regional"}. Chance de 12% por vitória; o chefe revela um dos ecos ainda não descobertos.</div>}
       {owned && <button onClick={active ? onUnequip : onEquip} className={`w-full rounded-lg border px-3 py-2 text-xs font-black transition ${active ? "border-rose-900/50 bg-rose-950/40 text-rose-300 hover:bg-rose-900/50" : "border-arcane-gold/40 bg-arcane-gold/10 text-arcane-gold hover:bg-arcane-gold/20"}`}>{active ? "Encerrar vínculo" : "Ativar no espaço de Ressonância"}</button>}
     </div>
   </article>;

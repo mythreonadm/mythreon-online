@@ -762,7 +762,7 @@ function ElementalChartSection() {
 function EquipmentSection({ search }: { search: string }) {
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [tierFilter, setTierFilter] = useState<number>(0);
-  const categories = ["all", "ARMA", "ARMADURA", "JOIA", "ESCUDO", "FLECHA"];
+  const categories = ["all", "ARMA", "ARMADURA", "JOIA", "PULSEIRA", "ESCUDO", "FLECHA"];
 
   const items = [...Object.values(ALL_EQUIPMENT_TEMPLATES), ...Object.values(ARROW_TEMPLATES)].filter(i => {
     const matchSearch = i.name.toLowerCase().includes(search.toLowerCase());

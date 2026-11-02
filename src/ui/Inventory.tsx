@@ -69,7 +69,7 @@ export function Inventory() {
       </div>
       
       <div className="flex gap-2 mb-6 flex-wrap">
-        {["all", "ARMA", "ARMADURA", "JOIA", "ESCUDO", "COMPONENTE", "FRAGMENTO", "BACKPACK"].map((f) => (
+        {["all", "ARMA", "ARMADURA", "JOIA", "PULSEIRA", "ESCUDO", "COMPONENTE", "FRAGMENTO", "BACKPACK"].map((f) => (
           <button key={f} onClick={() => setFilter(f)} className={`px-3 py-1 text-xs rounded-full font-bold transition-colors ${filter === f ? "bg-arcane-purple text-white" : "bg-arcane-bg text-gray-400 hover:text-white border border-arcane-border"}`}>{f}</button>
         ))}
       </div>

@@ -1,17 +1,20 @@
+import { masteryBonus, trainingXpNeeded } from "./training";
+import { BALANCE } from "../data/balance";
 import { Character, ItemStats } from "../types";
 import { ELEMENTS } from "../data/elementalChart";
 import { PASSIVE_EFFECTS, SUPPORT_EFFECTS } from "../data/skills";
 import { VIALS } from "../data/vials";
+import { beastGrowth } from "../data/beastCombat";
 import { DIVINE_BEASTS } from "../data/divineBeasts";
 
 export function getBaseStats(level: number): ItemStats {
-  return { 
-    hp: 150 + (level - 1) * 30, 
-    mp: 50 + (level - 1) * 15, 
-    atk: 15 + Math.floor((level - 1) * 3), 
-    matk: 10 + Math.floor((level - 1) * 2), 
-    def: 3 + Math.floor((level - 1) * 0.8), 
-    arm: 3 + Math.floor((level - 1) * 0.8), 
+  return {
+    hp: 150 + (level - 1) * 25,
+    mp: 50 + (level - 1) * 15,
+    atk: 12 + Math.floor((level - 1) * 2.5),
+    matk: 12 + Math.floor((level - 1) * 2.5),
+    def: 3 + Math.floor((level - 1) * 0.8),
+    arm: 3 + Math.floor((level - 1) * 0.8),
     spd: 0, crit: 0.05, hit: 0.90, dge: 0.05, blk: 0,
     // NOVOS ATRIBUTOS BASE
     hpRegen: 1,
@@ -47,7 +50,9 @@ export function recalcStats(char: Character): void {
   const now = Date.now();
   if (char.activeVials) {
     for (const [vialId, expiry] of Object.entries(char.activeVials)) {
-      if (expiry > now) {
+      const family = vialId.replace(/_[0-9]+$/, '');
+      const superseded = Object.entries(char.activeVials).some(([other, until]) => until > now && other.replace(/_[0-9]+$/, '') === family && Number(other.split('_').at(-1)) > Number(vialId.split('_').at(-1)));
+      if (expiry > now && !superseded) {
         const vial = VIALS[vialId];
         if (vial) {
           for (const [k, v] of Object.entries(vial.stats)) fromVials[k] = (fromVials[k] || 0) + v;
@@ -62,22 +67,23 @@ export function recalcStats(char: Character): void {
   const fromPassive: any = passive?.stats ?? {};
   const activeBeast = char.activeDivineBeastId ? DIVINE_BEASTS[char.activeDivineBeastId] : undefined;
   if (activeBeast && (char.divineBeasts ?? []).some(beast => beast.id === activeBeast.id)) {
-    for (const [k, v] of Object.entries(activeBeast.bonus)) fromBeast[k] = v;
+    for (const [k, v] of Object.entries(beastGrowth(char.level))) fromBeast[k] = v;
+    for (const [k, v] of Object.entries(activeBeast.bonus)) fromBeast[k] = (fromBeast[k] ?? 0) + v;
   }
 
   // 5. Skills de Treino
   const skills = char.skills || { melee: 0, defense: 0, magic: 0, distance: 0, soul: 0 };
   const isUsingBow = char.equipped.ARMA_PRINCIPAL?.templateId.includes("ARCO");
 
-  const skillAtkBonus = skills.melee * 3;
-  const skillDistBonus = isUsingBow ? skills.distance * 3 : 0;
-  const skillMatkBonus = skills.magic * 3;
-  const skillArmBonus = skills.defense * 2;
-  const skillDefBonus = skills.defense * 1;
+  const skillAtkBonus = (isUsingBow ? 0 : skills.melee * 1.5);
+  const skillDistBonus = isUsingBow ? skills.distance * 1.5 : 0;
+  const skillMatkBonus = skills.magic * 1.5;
+  const skillArmBonus = skills.defense;
+  const skillDefBonus = skills.defense * 0.5;
   const skillHitBonus = isUsingBow ? skills.distance * 0.005 : 0;
 
   // 6. Multiplicadores (Passivas/Suportes)
-  const atkMult = 1 + (support?.permAtkPct ?? 0);
+  const atkMult = (1 + (support?.permAtkPct ?? 0)) * (1 + masteryBonus(char, isUsingBow ? "distance" : "melee"));
   const armMult = 1 + (passive?.armPct ?? 0) + (support?.permArmPct ?? 0);
   const hpMult = 1 + (passive?.hpPct ?? 0);
 
@@ -85,42 +91,42 @@ export function recalcStats(char: Character): void {
 
   // 7. Junta tudo e aplica os limites (Caps)
   char.baseStats = {
-    hp: Math.floor((base.hp! + sum("hp")) * hpMult), 
+    hp: Math.floor((base.hp! + sum("hp")) * hpMult),
     mp: base.mp! + sum("mp"),
-    atk: Math.floor((base.atk! + sum("atk") + skillAtkBonus + skillDistBonus) * atkMult), 
-    matk: base.matk! + sum("matk") + skillMatkBonus,
-    def: base.def! + sum("def") + skillDefBonus, 
-    arm: Math.floor((base.arm! + sum("arm") + skillArmBonus) * armMult),
-    spd: Math.min(base.spd! + sum("spd"), 0.8), 
+    atk: Math.floor((base.atk! + sum("atk") + skillAtkBonus + skillDistBonus) * atkMult),
+    matk: Math.floor((base.matk! + sum("matk") + skillMatkBonus) * (1 + masteryBonus(char, "magic"))),
+    def: base.def! + sum("def") + skillDefBonus,
+    arm: Math.floor((base.arm! + sum("arm") + skillArmBonus) * armMult * (1 + masteryBonus(char, "defense"))),
+    spd: Math.min(base.spd! + sum("spd"), 0.8),
     crit: Math.min(base.crit! + sum("crit") + (support?.critBonus ?? 0), 0.85),
     hit: Math.min(base.hit! + sum("hit") + (support?.hitBonus ?? 0) + skillHitBonus, 1.0),
-    dge: Math.min(base.dge! + sum("dge"), 0.5), 
+    dge: Math.min(base.dge! + sum("dge"), 0.5),
     blk: Math.min(base.blk! + sum("blk"), 0.5),
-    resFisico: Math.min(sum("resFisico"), 0.8), 
-    resMagico: Math.min(sum("resMagico"), 0.8),
-    
+    resFisico: Math.max(0, Math.min(sum("resFisico"), BALANCE.resistanceCap)),
+    resMagico: Math.max(0, Math.min(sum("resMagico"), BALANCE.resistanceCap)),
+
     // NOVOS ATRIBUTOS
     hpRegen: (base.hpRegen ?? 0) + sum("hpRegen"),
-    mpRegen: (base.mpRegen ?? 0) + sum("mpRegen"),
+    mpRegen: (base.mpRegen ?? 0) + sum("mpRegen") + Math.min(5, Math.floor((char.trainingMastery?.soul ?? 0) / 5)),
     luck: Math.min((base.luck ?? 0) + sum("luck"), 0.5),
     critDmg: (base.critDmg ?? 0.5) + sum("critDmg"),
   };
-  for (const element of ELEMENTS) elementalResistances[element.id] = Math.min(0.8, elementalResistances[element.id] ?? 0);
+  for (const element of ELEMENTS) elementalResistances[element.id] = Math.max(0, Math.min(BALANCE.resistanceCap, elementalResistances[element.id] ?? 0));
   char.elementalResistances = elementalResistances;
-  
-  char.hpMax = char.baseStats.hp!; 
+
+  char.hpMax = char.baseStats.hp!;
   char.mpMax = char.baseStats.mp!;
-  char.hp = Math.min(char.hp || char.hpMax, char.hpMax); 
-  char.mp = Math.min(char.mp || char.mpMax, char.mpMax);
+  char.hp = Math.min(Number.isFinite(char.hp) ? Math.max(0, char.hp) : char.hpMax, char.hpMax);
+  char.mp = Math.min(Number.isFinite(char.mp) ? Math.max(0, char.mp) : char.mpMax, char.mpMax);
 }
 
 // CURVA DE XP DO PERSONAGEM (Rápida até o 25, difícil depois)
 export function xpToNextLevel(level: number): number {
   if (level <= 25) return Math.floor(100 * Math.pow(1.25, level - 1));
-  return Math.floor(10000 * Math.pow(level / 25, 3.5));
+  return Math.floor((100 * Math.pow(1.25, 24)) * Math.pow(level / 25, 3.5));
 }
 
 // CURVA DE XP DAS SKILLS DE TREINO
 export function skillXpToNextLevel(level: number): number {
-  return Math.floor(100 * Math.pow(1.25, level));
+  return trainingXpNeeded(level);
 }

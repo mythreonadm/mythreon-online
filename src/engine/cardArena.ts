@@ -2,6 +2,7 @@ import { CARD_TEMPLATES, getCardStats } from "../data/cards";
 import { CardInstance, CardStats } from "../types";
 
 export type ArenaSize = 1 | 3 | 5;
+export type ArenaStrategy = "ASSALTO" | "GUARDA" | "PRECISAO";
 export interface ArenaFighter {
   instance: CardInstance;
   name: string;
@@ -35,17 +36,19 @@ export function makeOpponentDeck(region: string, size: ArenaSize, averageLevel: 
 
 interface Combatant extends ArenaFighter {
   hp: number; maxHp: number; fury: number; shield: boolean; poison: number; bleed: number;
-  fear: number; silence: number; firstStrike: boolean;
+  fear: number; silence: number; firstStrike: boolean; isPlayer: boolean;
 }
-const makeCombatant = (fighter: ArenaFighter): Combatant => ({ ...fighter, hp: fighter.stats.hp, maxHp: fighter.stats.hp,
+const makeCombatant = (fighter: ArenaFighter, isPlayer: boolean): Combatant => ({ ...fighter, hp: fighter.stats.hp, maxHp: fighter.stats.hp, isPlayer,
   fury: 0, shield: fighter.trait === "ESCUDO", poison: 0, bleed: 0, fear: 0, silence: 0, firstStrike: fighter.trait === "INVESTIDA" });
 
-export function simulateArenaDuel(playerDeck: CardInstance[], opponentDeck: CardInstance[]): ArenaBattleResult {
-  const player = playerDeck.map(toFighter).filter((f): f is ArenaFighter => !!f).map(makeCombatant);
-  const opponent = opponentDeck.map(toFighter).filter((f): f is ArenaFighter => !!f).map(makeCombatant);
+export function simulateArenaDuel(playerDeck: CardInstance[], opponentDeck: CardInstance[], strategy: ArenaStrategy = "PRECISAO"): ArenaBattleResult {
+  const player = playerDeck.map(toFighter).filter((f): f is ArenaFighter => !!f).map(f => makeCombatant(f, true));
+  const opponent = opponentDeck.map(toFighter).filter((f): f is ArenaFighter => !!f).map(f => makeCombatant(f, false));
   const logs: ArenaLogEntry[] = [];
   let turn = 0;
   const log = (text: string, kind: ArenaLogEntry["kind"] = "trait") => logs.push({ turn, text, kind });
+  const strategyLabel = strategy === "ASSALTO" ? "Assalto" : strategy === "GUARDA" ? "Guarda" : "Precisão";
+  log(`Plano tático: ${strategyLabel}. A ordem escolhida da formação define quem entra primeiro.`, "result");
 
   while (player.some(c => c.hp > 0) && opponent.some(c => c.hp > 0) && turn < 30) {
     turn++;
@@ -68,17 +71,20 @@ export function simulateArenaDuel(playerDeck: CardInstance[], opponentDeck: Card
       if (attacker.hp <= 0 || defender.hp <= 0) continue;
       if (defender.shield) { defender.shield = false; log(`${defender.name} bloqueia o primeiro golpe com Escudo!`, "trait"); continue; }
       const feared = attacker.fear > 0;
-      let damage = Math.max(1, Math.floor((attacker.stats.atk * (1 + attacker.fury * 0.1) * (feared ? 0.85 : 1)) - defender.stats.def * 0.55));
-      const critical = attacker.trait === "PRECISAO" && Math.random() < 0.2;
+      const playerDamage = attacker.isPlayer ? (strategy === "ASSALTO" ? 1.22 : strategy === "GUARDA" ? 0.88 : 1.05) : 1;
+      let damage = Math.max(1, Math.floor((attacker.stats.atk * (1 + attacker.fury * 0.1) * (feared ? 0.85 : 1) * playerDamage) - defender.stats.def * 0.55));
+      const critical = attacker.trait === "PRECISAO" && Math.random() < (attacker.isPlayer && strategy === "PRECISAO" ? 0.35 : 0.2);
       if (critical) damage *= 2;
       const special = turn % 3 === 0 && attacker.silence <= 0;
       if (special) damage = Math.floor(damage * 1.25);
+      if (defender.isPlayer && strategy === "GUARDA") damage = Math.max(1, Math.floor(damage * 0.72));
       defender.hp -= damage;
       log(`${attacker.emoji} ${attacker.name}${critical ? " acerta crítico" : " ataca"} ${defender.name} por ${damage}${special ? ` com ${attacker.ability}` : ""}.`, special ? "special" : "attack");
       if (special && attacker.trait === "VENENO") defender.poison = Math.max(defender.poison, 3);
       if (special && attacker.trait === "SANGRAMENTO") defender.bleed = Math.max(defender.bleed, 3);
       if (special && attacker.trait === "MEDO") defender.fear = Math.max(defender.fear, 3);
       if (special && attacker.trait === "SILENCIO") defender.silence = Math.max(defender.silence, 2);
+      if (attacker.isPlayer && strategy === "ASSALTO") attacker.hp -= Math.max(1, Math.floor(attacker.maxHp * 0.015));
       if (defender.trait === "ESPINHOS") { const reflected = Math.max(1, Math.floor(damage * 0.2)); attacker.hp -= reflected; log(`${defender.name} reflete ${reflected} de dano.`, "trait"); }
       if (defender.hp <= 0) log(`${defender.name} foi derrotado!`, "result");
     }

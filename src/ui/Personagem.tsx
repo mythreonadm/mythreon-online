@@ -22,6 +22,7 @@ const SLOTS: { key: SlotType; label: string; icon: string; column: number; row: 
   { key: "COLAR", label: "Colar", icon: "📿", column: 1, row: 4 },
   { key: "ANEL_I", label: "Anel I", icon: "💍", column: 2, row: 4 },
   { key: "ANEL_II", label: "Anel II", icon: "💍", column: 3, row: 4 },
+  { key: "PULSEIRA", label: "Pulseira", icon: "📿", column: 1, row: 5 },
   { key: "MUNICAO", label: "Flechas", icon: "🏹", column: 2, row: 5 },
 ];
 
@@ -114,7 +115,7 @@ export function Personagem() {
         <section className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-xl border border-arcane-gold/50 bg-arcane-panel p-4 shadow-2xl" onClick={e => e.stopPropagation()}>
           <div className="mb-3 flex items-center justify-between border-b border-white/10 pb-3"><div><h3 className="font-bold text-arcane-gold">{SLOTS.find(slot => slot.key === slotPicker)?.label}</h3><p className="text-xs text-gray-400">Seu item equipado e as opções compatíveis da mochila.</p></div><button onClick={() => setSlotPicker(null)} className="text-gray-400 hover:text-white">✕</button></div>
           {equippedInPicker ? <div className="mb-3 flex items-center gap-2 rounded-lg border border-arcane-gold/40 bg-black/20 p-2"><button onClick={() => setInspectItem(equippedInPicker)} className="flex min-w-0 flex-1 items-center gap-3 text-left"><ItemIcon item={equippedInPicker} className="h-12 w-12 shrink-0" /><span className="min-w-0"><strong className="block truncate text-sm text-white">{equippedInPicker.name} · equipado</strong><small className="text-gray-400">Clique para ver todos os atributos</small></span></button><button onClick={() => { const res = unequip(slotPicker); if (res.success) setSlotPicker(null); else alert(res.error); }} className="shrink-0 rounded border border-white/10 px-2 py-1 text-xs text-gray-300 hover:border-red-400 hover:text-red-300">Desequipar</button></div> : <p className="mb-3 text-xs text-gray-500">Slot vazio.</p>}
-          {compatibleItems.length ? <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">{compatibleItems.map(item => <button key={item.uid} title={`${item.name} · ${item.rarity} · ${Object.entries(item.stats).map(([key, value]) => `${key}: ${value}`).join(" · ")}`} onClick={() => setInspectItem(item)} className="flex items-center gap-2 rounded-lg border border-white/10 bg-black/20 p-2 text-left hover:border-arcane-cyan"><ItemIcon item={item} className="h-10 w-10 shrink-0" /><span className="min-w-0"><strong className="block truncate text-xs text-white">{item.name}</strong><small className="text-[10px] text-gray-400">{item.rarity} · passar o mouse mostra stats</small></span></button>)}</div> : <p className="py-6 text-center text-sm text-gray-500">Nenhum item compatível na mochila.</p>}
+          {compatibleItems.length ? <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">{compatibleItems.map(item => <button key={item.uid} title={`${item.name} · ${item.rarity} · ${Object.entries(item.stats).map(([key, value]) => `${key}: ${value}`).join(" · ")}`} onClick={() => setInspectItem(item)} className="flex items-center gap-2 rounded-lg border border-white/10 bg-black/20 p-2 text-left hover:border-arcane-cyan"><ItemIcon item={item} className="h-16 w-16 shrink-0" /><span className="min-w-0"><strong className="block truncate text-xs text-white">{item.name}</strong><small className="text-[10px] text-gray-400">{item.rarity} · passar o mouse mostra stats</small></span></button>)}</div> : <p className="py-6 text-center text-sm text-gray-500">Nenhum item compatível na mochila.</p>}
         </section>
       </div>}
 
@@ -138,7 +139,7 @@ export function Personagem() {
                 >
                   <div className="text-[9px] text-gray-400 uppercase tracking-wider mb-0.5">{slot.label}</div>
                   <div className="text-2xl mb-1 flex justify-center">
-                    {item ? <ItemIcon item={item} className="w-10 h-10" /> : slot.icon}
+                    {item ? <ItemIcon item={item} className="w-16 h-16" /> : slot.icon}
                   </div>
                   <div className="text-[10px] text-center truncate w-full font-bold" title={item?.name}>
                     {item?.name ?? "Vazio"}

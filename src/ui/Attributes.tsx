@@ -176,10 +176,10 @@ export function Attributes() {
         <div className="bg-arcane-panel border border-arcane-border rounded-xl p-6 shadow-lg">
           <h2 className="text-xl font-bold text-arcane-gold mb-4 border-b border-arcane-border pb-3">🏋️ Skills de Treino</h2>
           <div className="space-y-2">
-            <SkillRow icon="⚔️" name="Melee" level={character.skills.melee} bonus={`+${character.skills.melee * 3} ATK`} />
-            <SkillRow icon="🏹" name="Distance" level={character.skills.distance} bonus={`+${character.skills.distance * 3} ATK (arcos)`} />
-            <SkillRow icon="🪄" name="Magic" level={character.skills.magic} bonus={`+${character.skills.magic * 3} MATK`} />
-            <SkillRow icon="🛡️" name="Defesa" level={character.skills.defense} bonus={`+${character.skills.defense * 2} ARM, +${character.skills.defense} DEF`} />
+            <SkillRow icon="⚔️" name="Melee" level={character.skills.melee} bonus={`+${character.skills.melee * 1.5} ATK`} />
+            <SkillRow icon="🏹" name="Distance" level={character.skills.distance} bonus={`+${character.skills.distance * 1.5} ATK (arcos)`} />
+            <SkillRow icon="🪄" name="Magic" level={character.skills.magic} bonus={`+${character.skills.magic * 1.5} MATK`} />
+            <SkillRow icon="🛡️" name="Defesa" level={character.skills.defense} bonus={`+${character.skills.defense} ARM, +${character.skills.defense * 0.5} DEF`} />
             <SkillRow icon="🧘" name="Alma" level={character.skills.soul} bonus={`+${(character.skills.soul * 15)} min offline`} />
           </div>
         </div>
