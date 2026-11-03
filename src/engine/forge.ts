@@ -4,6 +4,8 @@ import { recalcStats } from "./stats";
 import { generateRandomAffixes } from "./drops";
 import { FRAGMENT_TEMPLATES, createItem } from "../data/items";
 
+export const FORGE_CATEGORIES = ["ARMA", "ARMADURA", "JOIA", "PULSEIRA", "ESCUDO", "FLECHA"] as const;
+
 // ─── CUSTO DE UPGRADE (+1, +2...) ───
 export function getUpgradeCost(item: Item): { fragments: number; gold: number; fragmentType: string } {
   const nextLevel = item.upgradeLevel + 1;
@@ -45,6 +47,7 @@ export function forgeFragments(char: Character, fromTemplateId: string): { succe
 export function upgradeItemLevel(char: Character, itemUid: string): { success: boolean; error?: string } {
   const item = char.inventory.items.find(i => i.uid === itemUid);
   if (!item) return { success: false, error: "Item não encontrado no inventário." };
+  if (!FORGE_CATEGORIES.includes(item.category as typeof FORGE_CATEGORIES[number])) return { success: false, error: "Escolha um equipamento válido para o Ferreiro." };
   if (item.upgradeLevel >= 10) return { success: false, error: "O item já atingiu o nível máximo (+10)." };
 
   const cost = getUpgradeCost(item);
@@ -87,6 +90,7 @@ export function upgradeItemLevel(char: Character, itemUid: string): { success: b
 export function rerollItemAffixes(char: Character, itemUid: string): { success: boolean; error?: string; newAffixes?: any[] } {
   const item = char.inventory.items.find(i => i.uid === itemUid);
   if (!item) return { success: false, error: "Item não encontrado." };
+  if (!FORGE_CATEGORIES.includes(item.category as typeof FORGE_CATEGORIES[number])) return { success: false, error: "Escolha um equipamento válido para o Ferreiro." };
   if (item.rarity === "COMUM") return { success: false, error: "Itens Comuns não possuem atributos para reencantar." };
 
   // Custo

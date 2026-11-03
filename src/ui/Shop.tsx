@@ -25,8 +25,8 @@ export function Shop({ storefront = false }: { storefront?: boolean }) {
   if (!character) return null;
 
   const inventory = character.inventory.items.filter(i => i.category !== "COMPONENTE" && i.category !== "FRAGMENTO");
-  const forgeInventory = inventory.filter(i => i.category !== "POCAO");
-  const salvageable = character.inventory.items.filter(i => ["ARMA", "ARMADURA", "JOIA", "PULSEIRA", "ESCUDO"].includes(i.category));
+  const forgeInventory = inventory.filter(i => ["ARMA", "ARMADURA", "JOIA", "PULSEIRA", "ESCUDO", "FLECHA"].includes(i.category));
+  const salvageable = character.inventory.items.filter(i => ["ARMA", "ARMADURA", "JOIA", "PULSEIRA", "ESCUDO", "FLECHA"].includes(i.category));
   const selectedSalvageItems = salvageable.filter(i => salvageSelection.includes(i.uid));
   const salvagePreview = selectedSalvageItems.reduce((total, item) => total + (item.rarity === "RARO" ? 2 : item.rarity === "EPICO" || item.rarity === "LENDARIO" ? 3 : 1) * item.quantity, 0);
 

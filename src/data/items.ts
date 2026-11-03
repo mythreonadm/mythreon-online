@@ -79,7 +79,7 @@ export const SWAMP_MATERIAL_TEMPLATES: Record<string, Item> = {
 // ainda não são consumidas pela caça automática.
 export const ARROW_TEMPLATES: Record<string, Item> = Object.fromEntries(TIERS.map(tier => {
   const names = ["Flecha de Madeira", "Flecha de Pedra", "Flecha de Aço", "Flecha Estelar", "Flecha do Eclipse"];
-  const item = createItem({ templateId: `FLECHA_T${tier}`, name: names[tier - 1], category: "FLECHA", slot: "MUNICAO", tier, rarity: "COMUM", stats: {}, stackable: false, maxStack: 1, quantity: 1, icon: "🏹" });
+  const item = createItem({ templateId: `FLECHA_T${tier}`, name: names[tier - 1], category: "FLECHA", slot: "MUNICAO", tier, rarity: "COMUM", stats: { atk: [4, 9, 18, 36, 72][tier - 1], hit: [0, 0.01, 0.02, 0.03, 0.04][tier - 1] }, stackable: false, maxStack: 1, quantity: 1, icon: "🏹" });
   return [item.templateId, item];
 }));
 
