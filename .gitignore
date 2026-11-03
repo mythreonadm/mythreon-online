@@ -10,5 +10,8 @@ dist
 release/
 .obsidian/
 
+# Anotações locais que podem conter credenciais de provedores
+ACC/
+
 # Fixtures temporárias dos testes do Cérebro
 .mythreon-brain/tests/
