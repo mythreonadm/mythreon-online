@@ -127,6 +127,7 @@ export function Backpack() {
       <div className="flex justify-between items-center mb-6 border-b border-arcane-border pb-4 flex-wrap gap-2">
         <div className="flex items-center gap-4">
           <h2 className="text-xl font-bold text-arcane-gold">🎒 Backpack</h2>
+          <span className={`rounded px-2 py-1 text-xs font-bold ${used >= total ? "bg-red-900/70 text-red-200" : used >= total - 3 ? "bg-yellow-900/60 text-yellow-200" : "bg-black/30 text-gray-400"}`}>{used}/{total} espaços{used >= total ? " · CHEIA" : ""}</span>
           <button onClick={selectAll} className="text-xs bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 rounded">Selecionar Tudo</button>
           <button onClick={equipBestPowerItems} title="A pontuação geral pode ignorar a sinergia dos atributos da sua build." className="text-xs bg-emerald-800 hover:bg-emerald-700 border border-emerald-500/40 text-white px-3 py-1.5 rounded font-bold">⚡ Equipar maior potência</button>
         </div>

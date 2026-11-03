@@ -104,6 +104,10 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
   const activeBond = getBeastCombat(character);
   const selectedHpPotion = POTION_TEMPLATES[character.autoHpPotionId || ""];
   const selectedMpPotion = POTION_TEMPLATES[character.autoMpPotionId || ""];
+  const backpackUsed = character.inventory.items.length;
+  const backpackCapacity = character.inventory.backpack.slots;
+  const backpackFull = backpackUsed >= backpackCapacity;
+  const backpackAlmostFull = !backpackFull && backpackUsed >= Math.max(1, backpackCapacity - 3);
 
   // Encontra a linhagem baseada na raça equipada (ou humano se não tiver)
   const playerLineage = getLineageByAttack(character.activeRace?.ataqueId);
@@ -189,6 +193,10 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
 
     return (
       <div className="space-y-6">
+        {(backpackFull || backpackAlmostFull) && <div role="status" className={`rounded-lg border px-4 py-3 text-sm font-bold shadow-lg ${backpackFull ? "border-red-500/70 bg-red-950/70 text-red-200" : "border-yellow-500/60 bg-yellow-950/50 text-yellow-200"}`}>
+          {backpackFull ? "🎒 Bolsa cheia! Novos itens não poderão ser coletados." : `⚠️ Bolsa quase cheia: ${backpackUsed}/${backpackCapacity} espaços ocupados.`}
+          <span className="ml-2 font-normal text-xs opacity-80">Visite o Depósito ou o Ferreiro antes de continuar.</span>
+        </div>}
         <div className="bg-arcane-panel border border-arcane-border rounded-xl p-4 md:p-8 shadow-lg flex flex-col items-center min-h-[400px] relative overflow-hidden">
           <div className="absolute inset-0 opacity-10 flex flex-wrap gap-10 p-10 pointer-events-none">
             <span className="text-9xl">🏠</span><span className="text-9xl">🪵</span>
@@ -357,6 +365,10 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
 
   return (
     <div className="space-y-3 md:space-y-6">
+      {(backpackFull || backpackAlmostFull) && <div role="status" className={`rounded-lg border px-4 py-3 text-xs md:text-sm font-bold shadow-lg ${backpackFull ? "border-red-500/70 bg-red-950/80 text-red-200" : "border-yellow-500/60 bg-yellow-950/60 text-yellow-200"}`}>
+        {backpackFull ? "🎒 Bolsa cheia! O próximo loot será perdido se não houver espaço." : `⚠️ Bolsa quase cheia: ${backpackUsed}/${backpackCapacity}.`}
+        <span className="ml-2 font-normal opacity-80">Abra Mochila, Depósito ou Ferreiro.</span>
+      </div>}
       <div className="flex flex-wrap justify-between items-center gap-2 relative z-50">
         <div className="flex gap-2 items-center flex-wrap">
           {questSignal && (
