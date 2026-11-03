@@ -4,7 +4,7 @@ import { STAT_NAMES } from "../data/affixes";
 import { getItemScore } from "../engine/itemCompare";
 import { ItemIcon } from "./ItemIcon"; // NOVO
 import { ELEMENTS } from "../data/elementalChart";
-import { emitItemChatLink } from "./itemChat";
+import { emitItemChatLink, emitItemTradeAnnouncement } from "./itemChat";
 
 interface Props {
   item: Item;
@@ -170,6 +170,15 @@ export function ItemModal({ item, equipped, onEquip, onClose, onDeposit, readOnl
             title="Insere um link deste item no chat aberto"
           >
             🔗 Linkar no chat
+          </button>
+
+          <button
+            type="button"
+            onClick={() => emitItemTradeAnnouncement(item)}
+            className="w-full rounded-lg border border-arcane-gold/50 bg-arcane-gold/10 py-2 font-bold text-arcane-gold transition hover:bg-arcane-gold/20"
+            title="Abre o anúncio no Chat de Trade"
+          >
+            📣 Anunciar no Trade
           </button>
 
           <button onClick={onClose} className="w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 rounded-lg">

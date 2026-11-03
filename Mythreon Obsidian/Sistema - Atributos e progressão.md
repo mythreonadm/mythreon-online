@@ -16,6 +16,7 @@
 - [src/engine/training.ts](../src/engine/training.ts) — TRAINING_MILESTONES, masteryBonus, trainingXpNeeded, applyTrainingDeathPenalty, applyTraining
 - [src/ui/StatAllocation.tsx](../src/ui/StatAllocation.tsx) — StatAllocation
 - [src/ui/TrainingProgress.tsx](../src/ui/TrainingProgress.tsx) — TrainingProgress
+- [supabase/migrations/006_market_stats_rls.sql](../supabase/migrations/006_market_stats_rls.sql)
 
 ## Relações encontradas
 

@@ -4659,7 +4659,7 @@ var RANKING_METRICS = [
 ];
 
 // server/transfers.ts
-var emptyOffer = () => ({ gold: 0, items: [], fee: 0 });
+var emptyOffer = () => ({ gold: 0, mythreonCoins: 0, items: [], fee: 0 });
 function integer(value, min = 0, max = Number.MAX_SAFE_INTEGER) {
   if (typeof value !== "number" || !Number.isSafeInteger(value) || value < min || value > max) throw Error("Quantidade ou valor inv\xE1lido.");
   return value;
@@ -4669,12 +4669,14 @@ function canTransfer(c) {
 }
 function restoreOffer(c, offer) {
   c.gold += offer.gold + offer.fee;
+  c.mythreonCoins = (c.mythreonCoins ?? 0) + (offer.mythreonCoins ?? 0);
   c.depot.push(...offer.items.map((i) => ({ ...i })));
 }
 function reserveOffer(c, value) {
   if (!value || typeof value !== "object") throw Error("Oferta inv\xE1lida.");
   const raw = value;
   const gold = integer(raw.gold ?? 0);
+  const mythreonCoins = integer(raw.mythreonCoins ?? 0);
   const selection = raw.items ?? [];
   if (!Array.isArray(selection) || selection.length > ONLINE_RULES.maxTradeItems) throw Error("Selecione at\xE9 dez itens.");
   const ids = /* @__PURE__ */ new Set();
@@ -4690,7 +4692,9 @@ function reserveOffer(c, value) {
   }
   const fee = transferFee(gold);
   if (c.gold < gold + fee) throw Error("Gold insuficiente para a oferta e a taxa.");
+  if ((c.mythreonCoins ?? 0) < mythreonCoins) throw Error("Mythreon Coins insuficientes para a oferta.");
   c.gold -= gold + fee;
+  c.mythreonCoins = (c.mythreonCoins ?? 0) - mythreonCoins;
   for (const part of selection) {
     for (const location2 of [c.inventory.items, c.depot]) {
       const idx = location2.findIndex((i) => i.uid === part.uid);
@@ -4700,11 +4704,12 @@ function reserveOffer(c, value) {
       break;
     }
   }
-  return { gold, items, fee };
+  return { gold, mythreonCoins, items, fee };
 }
 function receiveOffer(c, offer) {
   if (c.depot.length + offer.items.length > c.depotMax) throw Error("Libere espa\xE7o no dep\xF3sito antes de receber os anexos ou concluir a troca.");
   c.gold += offer.gold;
+  c.mythreonCoins = (c.mythreonCoins ?? 0) + (offer.mythreonCoins ?? 0);
   c.depot.push(...offer.items.map((i) => ({ ...i, uid: (0, import_node_crypto.randomUUID)() })));
 }
 
@@ -4718,7 +4723,7 @@ var text = (v, max) => {
   return v.trim();
 };
 async function commitCharacter(db, c) {
-  if (!Number.isSafeInteger(c.state.character.gold) || c.state.character.gold < 0) throw Error("Saldo fora dos limites.");
+  if (!Number.isSafeInteger(c.state.character.gold) || c.state.character.gold < 0 || !Number.isSafeInteger(c.state.character.mythreonCoins ?? 0) || (c.state.character.mythreonCoins ?? 0) < 0) throw Error("Saldo fora dos limites.");
   await db.query("update public.world_characters set state=$2,revision=revision+1,updated_at=now() where id=$1", [c.id, JSON.stringify(c.state)]);
   await db.query("insert into public.world_rankings(character_id,name,metrics,current_map) values($1,$2,$3,$4) on conflict(character_id) do update set metrics=excluded.metrics,name=excluded.name,current_map=excluded.current_map,updated_at=now()", [c.id, c.name, JSON.stringify(rankingMetrics(c.state)), c.state.character.currentZoneId]);
 }
@@ -4834,9 +4839,10 @@ async function handleWorld(db, owner, request) {
             b.state.counters.trades++;
             await commitCharacter(db, a);
             await commitCharacter(db, b);
-            await db.query("insert into public.world_ledger(id,operation_id,kind,sender_id,recipient_id,gold,fee,items) values($1,$2,$3,$4,$5,$6,$7,$8)", [(0, import_node_crypto2.randomUUID)(), request.requestId, "trade", a.id, b.id, offerA.gold + offerB.gold, offerA.fee + offerB.fee, JSON.stringify({ a: offerA.items, b: offerB.items })]);
+            await db.query("insert into public.world_ledger(id,operation_id,kind,sender_id,recipient_id,gold,fee,mythreon_coins,items) values($1,$2,$3,$4,$5,$6,$7,$8,$9)", [(0, import_node_crypto2.randomUUID)(), request.requestId, "trade", a.id, b.id, offerA.gold + offerB.gold, offerA.fee + offerB.fee, (offerA.mythreonCoins ?? 0) + (offerB.mythreonCoins ?? 0), JSON.stringify({ a: offerA.items, b: offerB.items })]);
             const quantity = (items) => items.reduce((sum, item) => sum + Math.max(1, Number(item.quantity) || 1), 0);
-            await db.query("insert into public.world_trade_transactions(id,trade_id,seller_character_id,seller_owner_id,buyer_character_id,buyer_owner_id,gold_price,fee_gold,items,counterparty_items,item_count) values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11),($12,$2,$5,$6,$3,$4,$13,$14,$15,$16,$17) on conflict(trade_id,seller_character_id,buyer_character_id) do nothing", [(0, import_node_crypto2.randomUUID)(), t.id, a.id, t.a_owner, b.id, t.b_owner, offerB.gold, offerA.fee, JSON.stringify(offerA.items), JSON.stringify(offerB.items), quantity(offerA.items), (0, import_node_crypto2.randomUUID)(), offerA.gold, offerB.fee, JSON.stringify(offerB.items), JSON.stringify(offerA.items), quantity(offerB.items)]);
+            await db.query("insert into public.world_trade_transactions(id,trade_id,seller_character_id,seller_owner_id,buyer_character_id,buyer_owner_id,gold_price,mythreon_coins_price,fee_gold,items,counterparty_items,item_count) values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12),($13,$2,$5,$6,$3,$4,$14,$15,$16,$17,$18,$19) on conflict(trade_id,seller_character_id,buyer_character_id) do nothing", [(0, import_node_crypto2.randomUUID)(), t.id, a.id, t.a_owner, b.id, t.b_owner, offerB.gold, offerB.mythreonCoins ?? 0, offerA.fee, JSON.stringify(offerA.items), JSON.stringify(offerB.items), quantity(offerA.items), (0, import_node_crypto2.randomUUID)(), offerA.gold, offerA.mythreonCoins ?? 0, offerB.fee, JSON.stringify(offerB.items), JSON.stringify(offerA.items), quantity(offerB.items)]);
+            await db.query(`insert into public.world_trade_item_stats(template_id,sale_events,units_sold,average_gold_price,lowest_gold_price,highest_gold_price,last_sold_at,average_mythreon_coin_price,lowest_mythreon_coin_price,highest_mythreon_coin_price) select item->>'templateId',count(*)::bigint,coalesce(sum((item->>'quantity')::numeric),0)::bigint,avg(gold_price)::numeric(20,2),min(gold_price),max(gold_price),max(completed_at),avg(mythreon_coins_price)::numeric(20,2),min(mythreon_coins_price),max(mythreon_coins_price) from public.world_trade_transactions tx cross join lateral jsonb_array_elements(tx.items) item where item ? 'templateId' group by item->>'templateId' on conflict(template_id) do update set sale_events=excluded.sale_events,units_sold=excluded.units_sold,average_gold_price=excluded.average_gold_price,lowest_gold_price=excluded.lowest_gold_price,highest_gold_price=excluded.highest_gold_price,last_sold_at=excluded.last_sold_at,average_mythreon_coin_price=excluded.average_mythreon_coin_price,lowest_mythreon_coin_price=excluded.lowest_mythreon_coin_price,highest_mythreon_coin_price=excluded.highest_mythreon_coin_price`);
             await db.query("update public.world_trades set status='completed',ready_a=true,ready_b=true,revision=revision+1 where id=$1", [t.id]);
             receipt = { tradeId: t.id, status: "completed" };
           } else {
@@ -4880,15 +4886,15 @@ async function handleWorld(db, owner, request) {
         if (target.id === actor.id) throw Error("Escolha outro personagem.");
         const offer = reserveOffer(actor.state.character, p.offer);
         const id2 = (0, import_node_crypto2.randomUUID)();
-        await db.query("insert into public.world_mail(id,sender_id,recipient_id,sender_owner,recipient_owner,sender_name,subject,body,gold,items,fee) values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)", [id2, actor.id, target.id, owner, target.owner_id, actor.name, text(p.subject, 80), typeof p.body === "string" ? p.body.slice(0, 1e3) : "", offer.gold, JSON.stringify(offer.items), offer.fee]);
+        await db.query("insert into public.world_mail(id,sender_id,recipient_id,sender_owner,recipient_owner,sender_name,subject,body,gold,mythreon_coins,items,fee) values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)", [id2, actor.id, target.id, owner, target.owner_id, actor.name, text(p.subject, 80), typeof p.body === "string" ? p.body.slice(0, 1e3) : "", offer.gold, offer.mythreonCoins, JSON.stringify(offer.items), offer.fee]);
         await commitCharacter(db, actor);
         receipt = { mailId: id2 };
-        await db.query("insert into public.world_ledger(id,operation_id,kind,sender_id,recipient_id,gold,fee,items) values($1,$2,$3,$4,$5,$6,$7,$8)", [(0, import_node_crypto2.randomUUID)(), request.requestId, "mail.send", actor.id, target.id, offer.gold, offer.fee, JSON.stringify(offer.items)]);
+        await db.query("insert into public.world_ledger(id,operation_id,kind,sender_id,recipient_id,gold,fee,mythreon_coins,items) values($1,$2,$3,$4,$5,$6,$7,$8,$9)", [(0, import_node_crypto2.randomUUID)(), request.requestId, "mail.send", actor.id, target.id, offer.gold, offer.fee, offer.mythreonCoins, JSON.stringify(offer.items)]);
       } else if (op === "mail.claim") {
         const mail = (await db.query("select * from public.world_mail where id=$1 and recipient_id=$2 for update", [uuid(p.id), actor.id])).rows[0];
         if (!mail) throw Error("Correio n\xE3o encontrado.");
         if (mail.claimed_at) throw Error("Este correio j\xE1 foi recebido.");
-        receiveOffer(actor.state.character, { gold: Number(mail.gold), items: mail.items, fee: 0 });
+        receiveOffer(actor.state.character, { gold: Number(mail.gold), mythreonCoins: Number(mail.mythreon_coins ?? 0), items: mail.items, fee: 0 });
         await db.query("update public.world_mail set claimed_at=now() where id=$1", [mail.id]);
         await commitCharacter(db, actor);
       } else if (op !== "social.read") throw Error("Opera\xE7\xE3o n\xE3o permitida.");

@@ -19,6 +19,10 @@ export function emitItemChatLink(item: Item) {
   window.dispatchEvent(new CustomEvent("mythreon:item-link", { detail: { item, link: createItemChatLink(item) } }));
 }
 
+export function emitItemTradeAnnouncement(item: Item) {
+  window.dispatchEvent(new CustomEvent("mythreon:item-link", { detail: { item, link: createItemChatLink(item), announceTrade: true } }));
+}
+
 export function parseItemChatLink(value: string): { label: string; rarity: string; tier: string; upgrade: number; stats: string } | null {
   const match = value.match(/\[\[MYTHREON_ITEM:([^\]]+)\]\]/);
   if (!match) return null;

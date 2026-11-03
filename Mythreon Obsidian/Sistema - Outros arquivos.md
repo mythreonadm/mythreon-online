@@ -66,6 +66,7 @@
 - [supabase/migrations/002_realtime.sql](../supabase/migrations/002_realtime.sql)
 - [supabase/migrations/003_trade_audit.sql](../supabase/migrations/003_trade_audit.sql)
 - [supabase/migrations/004_chat_channels.sql](../supabase/migrations/004_chat_channels.sql)
+- [supabase/migrations/005_online_trade_coins.sql](../supabase/migrations/005_online_trade_coins.sql)
 - [tsconfig.json](../tsconfig.json)
 - [tsconfig.node.json](../tsconfig.node.json)
 - [tsconfig.server.json](../tsconfig.server.json)

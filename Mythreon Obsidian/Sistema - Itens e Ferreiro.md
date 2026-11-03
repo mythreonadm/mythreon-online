@@ -169,7 +169,7 @@
 - [src/ui/ItemIcon.tsx](../src/ui/ItemIcon.tsx) — ItemIcon
 - [src/ui/ItemModal.tsx](../src/ui/ItemModal.tsx) — ItemModal
 - [src/ui/Shop.tsx](../src/ui/Shop.tsx) — Shop
-- [src/ui/itemChat.ts](../src/ui/itemChat.ts) — createItemChatLink, emitItemChatLink, parseItemChatLink, displayItemChatText
+- [src/ui/itemChat.ts](../src/ui/itemChat.ts) — createItemChatLink, emitItemChatLink, emitItemTradeAnnouncement, parseItemChatLink, displayItemChatText
 - [src/ui/itemRarity.ts](../src/ui/itemRarity.ts) — RARITY_FRAME, rarityArtClass
 
 ## Relações encontradas

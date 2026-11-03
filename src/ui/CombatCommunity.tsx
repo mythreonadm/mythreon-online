@@ -16,10 +16,10 @@ export function CombatCommunity() {
 
   useEffect(() => {
     const receiveItemLink = (event: Event) => {
-      const detail = (event as CustomEvent<{ link?: string }>).detail;
+      const detail = (event as CustomEvent<{ link?: string; announceTrade?: boolean }>).detail;
       if (!detail?.link) return;
       const link = detail.link;
-      setChannel("global");
+      setChannel(detail.announceTrade ? "trade" : "global");
       setBody(current => current ? `${current} ${link}` : link);
       setLocalError("");
     };

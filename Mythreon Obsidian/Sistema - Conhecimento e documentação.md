@@ -25,6 +25,7 @@
 - [[docs/conhecimento/Registro de problemas|Registro de problemas]]
 - [[docs/conhecimento/Sem título|Sem título]]
 - [[docs/conhecimento/Shop-Premium-Beasts|Shop, premium e Divine Beasts]]
+- [[docs/conhecimento/Trade-Online-Link-e-Mythreon-Coins-2026-11-03|Trade online, links de item e Mythreon Coins]]
 - [[docs/conhecimento/Treino-e-Diferenciais-Mythreon|Disciplina e um mundo que se lembra]]
 - [[docs/conhecimento/Tutorial-Storytelling-Videos-2026-11-03|Tutorial cinematográfico — Storytelling de Mythreon]]
 
@@ -54,6 +55,7 @@
 - [docs/conhecimento/Sem título.base](../docs/conhecimento/Sem título.base)
 - [docs/conhecimento/Sem título.md](../docs/conhecimento/Sem título.md)
 - [docs/conhecimento/Shop-Premium-Beasts.md](../docs/conhecimento/Shop-Premium-Beasts.md)
+- [docs/conhecimento/Trade-Online-Link-e-Mythreon-Coins-2026-11-03.md](../docs/conhecimento/Trade-Online-Link-e-Mythreon-Coins-2026-11-03.md)
 - [docs/conhecimento/Treino-e-Diferenciais-Mythreon.md](../docs/conhecimento/Treino-e-Diferenciais-Mythreon.md)
 - [docs/conhecimento/Tutorial-Storytelling-Videos-2026-11-03.md](../docs/conhecimento/Tutorial-Storytelling-Videos-2026-11-03.md)
 - [docs/conhecimento/balanceamento-antes.json](../docs/conhecimento/balanceamento-antes.json)
