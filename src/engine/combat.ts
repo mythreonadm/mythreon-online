@@ -15,6 +15,7 @@ import { getPotionUsePrice } from "../data/potionEconomy";
 import { DEFAULT_BACKPACK } from "../data/backpacks";
 import { recalcStats as recalculate } from "./stats";
 import { attackElement, elementMultiplier } from "../data/elementalChart";
+import { applyTrainingDeathPenalty } from "./training";
 
 interface Profile { xpPct: number; goldPct: number; dropPct: number; rarePct: number; healPct: number; skillDmgPct: number; cdReduce: number; lifesteal: number; }
 
@@ -185,6 +186,8 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
     if (playerHp <= 0) {
       recordDeathEncounter();
       result.death = true;
+      const skillPenalty = applyTrainingDeathPenalty(char);
+      if (skillPenalty) result.log.push(skillPenalty);
       const blessed = (char.blesses ?? 0) > 0;
       const xpLossPct = blessed ? 0.05 : 0.15;
       const xpLost = Math.floor(char.xp * xpLossPct);
@@ -215,6 +218,7 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
     const armMult = 1 + (buffOn ? support?.armPct ?? 0 : 0);
     const ignoreArmor = buffOn ? support?.ignoreArmor ?? 0 : 0;
 
+    const comboReady = (char.comboReadyUntil ?? 0) > Date.now() && (char.comboCooldownUntil ?? 0) <= Date.now();
     const strike = (multiplier = 1): number => {
       result.attacked = true;
       if (debug) { result.lastDamage = 99999; return 99999; }
@@ -230,6 +234,13 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
     };
 
     let dealt = strike();
+    if (comboReady) {
+      const bonus = strike(0.5);
+      dealt += bonus;
+      char.comboReadyUntil = undefined;
+      char.comboCooldownUntil = Date.now() + 15_000;
+      result.log.push(`⚡ Combo Especial! Segundo impacto +${bonus} dano.`);
+    }
     let elementalThisTick = 0;
     if (hasDoubleAtkBuff) { dealt += strike(); result.log.push(`⚡ Ataque Duplo!`); }
     if (triggered && support?.doubleStrike) dealt += strike();
@@ -310,6 +321,8 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
 
     if (enemyHp <= 0) {
       result.kills++; char.killsInZone++; char.totalKills = (char.totalKills ?? 0) + 1;
+      char.bestiaryKills ??= {};
+      char.bestiaryKills[enemy.id] = (char.bestiaryKills[enemy.id] ?? 0) + 1;
       result.killed![enemy.id] = (result.killed![enemy.id] ?? 0) + 1;
       if (enemy.isBoss) result.bossKills![enemy.id] = (result.bossKills![enemy.id] ?? 0) + 1;
       const g = Math.floor((enemy.goldMin + Math.floor(Math.random() * (enemy.goldMax - enemy.goldMin + 1))) * (1 + prof.goldPct));
@@ -350,9 +363,14 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
       const autoSalvage = char.autoSalvage ?? null;
       const sellByTemplate = new Set(char.autoSellTemplateIds ?? []);
       const salvageByTemplate = new Set(char.autoSalvageTemplateIds ?? []);
+      const ignoredLoot = new Set(char.ignoredLootTemplateIds ?? []);
 
       for (const d of drops) {
         loot.push({ name: d.name, icon: d.icon, quantity: d.quantity, sellValue: sellValue(d), kind: "item" });
+        if (ignoredLoot.has(d.templateId) && (char.bestiaryKills?.[enemy.id] ?? 0) >= 100) {
+          result.log.push(`🧺 Autoloot ignorou ${d.name}.`);
+          continue;
+        }
         const isEquip = EQUIP_CATEGORIES.includes(d.category);
         if (isEquip && d.rarity !== "LENDARIO" && ((autoSell && RARITY_ORDER.indexOf(d.rarity) <= RARITY_ORDER.indexOf(autoSell)) || sellByTemplate.has(d.templateId))) {
           const v = sellValue(d); char.gold += v; result.gold += v; result.soldGold! += v; continue;

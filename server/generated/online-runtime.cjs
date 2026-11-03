@@ -144,7 +144,17 @@ function masteryBonus(char, skill) {
 }
 function trainingXpNeeded(level) {
   const n = Math.max(0, level - 10);
-  return Math.floor(1500 + 150 * n + 15 * n * n);
+  return Math.floor(900 + 120 * n + 18 * n * n + Math.max(0, n - 10) ** 3 * 12);
+}
+function applyTrainingDeathPenalty(char) {
+  const entries = Object.keys(char.skills).filter((skill2) => (char.skills[skill2] ?? 0) > 10).sort((a, b) => (char.skills[b] ?? 0) - (char.skills[a] ?? 0));
+  const skill = entries[0];
+  if (!skill) return null;
+  const previous = char.skills[skill];
+  char.skills[skill] = Math.max(10, previous - 1);
+  const needed = trainingXpNeeded(char.skills[skill]);
+  char.skillXp[skill] = Math.floor(Math.min(char.skillXp[skill] ?? 0, needed - 1) * 0.9);
+  return `\u2620\uFE0F A morte interrompeu sua disciplina: ${skill} caiu de ${previous} para ${char.skills[skill]}.`;
 }
 function applyTraining(char, now) {
   const skill = char.trainingSkill;
@@ -1611,6 +1621,8 @@ function createNewCharacter(name) {
     autoSell: null,
     autoSellTemplateIds: [],
     autoSalvageTemplateIds: [],
+    ignoredLootTemplateIds: [],
+    bestiaryKills: {},
     autoHpPotionId: "POCAO_VIDA_1",
     autoHpPotionPercent: 50,
     autoHpPotionEnabled: false,
@@ -1675,6 +1687,8 @@ function loadGame() {
       if (data.character.autoSell === void 0) data.character.autoSell = null;
       if (!Array.isArray(data.character.autoSellTemplateIds)) data.character.autoSellTemplateIds = [];
       if (!Array.isArray(data.character.autoSalvageTemplateIds)) data.character.autoSalvageTemplateIds = [];
+      if (!Array.isArray(data.character.ignoredLootTemplateIds)) data.character.ignoredLootTemplateIds = [];
+      if (!data.character.bestiaryKills || typeof data.character.bestiaryKills !== "object") data.character.bestiaryKills = {};
       if (!data.character.autoHpPotionId) data.character.autoHpPotionId = "POCAO_VIDA_1";
       if (data.character.autoHpPotionPercent === void 0) data.character.autoHpPotionPercent = 50;
       if (data.character.autoHpPotionEnabled === void 0) data.character.autoHpPotionEnabled = false;
@@ -2449,6 +2463,8 @@ function processTick(char, zone, isOffline) {
     if (playerHp <= 0) {
       recordDeathEncounter();
       result.death = true;
+      const skillPenalty = applyTrainingDeathPenalty(char);
+      if (skillPenalty) result.log.push(skillPenalty);
       const blessed = (char.blesses ?? 0) > 0;
       const xpLossPct = blessed ? 0.05 : 0.15;
       const xpLost = Math.floor(char.xp * xpLossPct);
@@ -2492,6 +2508,7 @@ function processTick(char, zone, isOffline) {
     const atkMult = 1 + (buffOn ? support?.atkPct ?? 0 : 0);
     const armMult = 1 + (buffOn ? support?.armPct ?? 0 : 0);
     const ignoreArmor = buffOn ? support?.ignoreArmor ?? 0 : 0;
+    const comboReady = (char.comboReadyUntil ?? 0) > Date.now() && (char.comboCooldownUntil ?? 0) <= Date.now();
     const strike = (multiplier = 1) => {
       result.attacked = true;
       if (debug2) {
@@ -2515,6 +2532,13 @@ function processTick(char, zone, isOffline) {
       return dmg;
     };
     let dealt = strike();
+    if (comboReady) {
+      const bonus = strike(0.5);
+      dealt += bonus;
+      char.comboReadyUntil = void 0;
+      char.comboCooldownUntil = Date.now() + 15e3;
+      result.log.push(`\u26A1 Combo Especial! Segundo impacto +${bonus} dano.`);
+    }
     let elementalThisTick = 0;
     if (hasDoubleAtkBuff) {
       dealt += strike();
@@ -2595,6 +2619,8 @@ function processTick(char, zone, isOffline) {
       result.kills++;
       char.killsInZone++;
       char.totalKills = (char.totalKills ?? 0) + 1;
+      char.bestiaryKills ??= {};
+      char.bestiaryKills[enemy.id] = (char.bestiaryKills[enemy.id] ?? 0) + 1;
       result.killed[enemy.id] = (result.killed[enemy.id] ?? 0) + 1;
       if (enemy.isBoss) result.bossKills[enemy.id] = (result.bossKills[enemy.id] ?? 0) + 1;
       const g = Math.floor((enemy.goldMin + Math.floor(Math.random() * (enemy.goldMax - enemy.goldMin + 1))) * (1 + prof.goldPct));
@@ -2630,8 +2656,13 @@ function processTick(char, zone, isOffline) {
       const autoSalvage = char.autoSalvage ?? null;
       const sellByTemplate = new Set(char.autoSellTemplateIds ?? []);
       const salvageByTemplate = new Set(char.autoSalvageTemplateIds ?? []);
+      const ignoredLoot = new Set(char.ignoredLootTemplateIds ?? []);
       for (const d of drops) {
         loot.push({ name: d.name, icon: d.icon, quantity: d.quantity, sellValue: sellValue(d), kind: "item" });
+        if (ignoredLoot.has(d.templateId) && (char.bestiaryKills?.[enemy.id] ?? 0) >= 100) {
+          result.log.push(`\u{1F9FA} Autoloot ignorou ${d.name}.`);
+          continue;
+        }
         const isEquip = EQUIP_CATEGORIES.includes(d.category);
         if (isEquip && d.rarity !== "LENDARIO" && (autoSell && RARITY_ORDER.indexOf(d.rarity) <= RARITY_ORDER.indexOf(autoSell) || sellByTemplate.has(d.templateId))) {
           const v = sellValue(d);
@@ -3226,6 +3257,17 @@ function createGameStore(runtime = {}) {
         tickInterval = setInterval(() => get().tick(), 3e3);
       }
     },
+    armSpecialCombo: () => {
+      const { character, isTickRunning } = get();
+      if (!character || !isTickRunning) return { success: false, error: "O combo s\xF3 pode ser armado durante a ca\xE7a." };
+      const now = Date.now();
+      if ((character.comboCooldownUntil ?? 0) > now) return { success: false, error: `Aguarde ${Math.ceil((character.comboCooldownUntil - now) / 1e3)}s para recarregar.` };
+      const updated = JSON.parse(JSON.stringify(character));
+      updated.comboReadyUntil = now + 12e3;
+      set({ character: updated });
+      get().save();
+      return { success: true };
+    },
     stopHunting: () => {
       if (tickInterval) clearInterval(tickInterval);
       tickInterval = null;
@@ -3423,6 +3465,7 @@ function createGameStore(runtime = {}) {
         newCharacter.autoSalvageTemplateIds = settings.autoSalvageTemplateIds;
         newCharacter.autoSellTemplateIds = (newCharacter.autoSellTemplateIds ?? []).filter((id) => !settings.autoSalvageTemplateIds.includes(id));
       }
+      if (settings.ignoredLootTemplateIds !== void 0) newCharacter.ignoredLootTemplateIds = settings.ignoredLootTemplateIds;
       if (settings.autoHpPotionId !== void 0) newCharacter.autoHpPotionId = settings.autoHpPotionId;
       if (settings.autoHpPotionPercent !== void 0) newCharacter.autoHpPotionPercent = settings.autoHpPotionPercent;
       if (settings.autoHpPotionEnabled !== void 0) newCharacter.autoHpPotionEnabled = settings.autoHpPotionEnabled;
@@ -3692,6 +3735,9 @@ function executeGame(world, action, args = []) {
       if (!["melee", "magic", "distance", "defense", "soul"].includes(skill)) throw Error("Atributo inv\xE1lido.");
       result = s[action](skill);
       if (action === "startTraining") world.lastAdvanceAt = now;
+    } else if (action === "armSpecialCombo") {
+      result = s.armSpecialCombo();
+      if (!result?.success) throw Error(result?.error ?? "N\xE3o foi poss\xEDvel armar o combo.");
     } else if (action === "unequip") {
       const slots = ["CAPACETE", "ARMADURA", "LUVAS", "CALCAS", "BOTAS", "COLAR", "ANEL_I", "ANEL_II", "PULSEIRA", "ARMA_PRINCIPAL", "OFF_HAND", "MUNICAO", "BACKPACK"];
       if (!slots.includes(String(args[0]))) throw Error("Slot inv\xE1lido.");
@@ -3735,7 +3781,7 @@ function executeGame(world, action, args = []) {
         if (["autoSell", "autoSalvage"].includes(key)) {
           if (v !== null && !["COMUM", "INCOMUM", "RARO", "EPICO", "LENDARIO"].includes(String(v))) throw Error("Raridade inv\xE1lida.");
           clean[key] = v;
-        } else if (["autoSellTemplateIds", "autoSalvageTemplateIds"].includes(key)) {
+        } else if (["autoSellTemplateIds", "autoSalvageTemplateIds", "ignoredLootTemplateIds"].includes(key)) {
           if (!Array.isArray(v) || v.length > 500 || v.some((id) => typeof id !== "string" || id.length > 128)) throw Error("Itens inv\xE1lidos.");
           clean[key] = v;
         } else if (["autoHpPotionEnabled", "autoMpPotionEnabled"].includes(key)) {

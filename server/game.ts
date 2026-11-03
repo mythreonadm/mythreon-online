@@ -31,6 +31,7 @@ export function executeGame(world:WorldState,action?:string,args:unknown[]=[]):{
   else if(strings.includes(action)){const id=uid(args[0]);if(['upgradeItem','rerollItem'].includes(action)){const item=s.character!.inventory.items.find(i=>i.uid===id);if(!item||!['ARMA','ARMADURA','JOIA','PULSEIRA','ESCUDO'].includes(item.category))throw Error('Escolha um equipamento válido para o Ferreiro.');}result=(s[action as keyof GameState] as (id:string)=>unknown)(id);}
   else if(action==='startHunting'){const zone=uid(args[0]);if(!ZONES[zone])throw Error('Mapa inválido.');s.startHunting(zone);if(store.getState().isTickRunning){store.getState().character!.lastTick=now;world.lastAdvanceAt=now;}}
   else if(action==='startTraining'||action==='spendStatPoint'){const skill=uid(args[0]);if(!['melee','magic','distance','defense','soul'].includes(skill))throw Error('Atributo inválido.');result=(s[action] as (v:any)=>unknown)(skill);if(action==='startTraining')world.lastAdvanceAt=now;}
+  else if(action==='armSpecialCombo'){result=s.armSpecialCombo();if(!(result as any)?.success)throw Error((result as any)?.error??'Não foi possível armar o combo.');}
   else if(action==='unequip'){const slots=['CAPACETE','ARMADURA','LUVAS','CALCAS','BOTAS','COLAR','ANEL_I','ANEL_II','PULSEIRA','ARMA_PRINCIPAL','OFF_HAND','MUNICAO','BACKPACK'];if(!slots.includes(String(args[0])))throw Error('Slot inválido.');result=s.unequip(args[0]);}
   else if(action==='equipRace'){const id=typeof args[0]==='string'?args[0]:(args[0] as any)?.id;const race=s.races.find(r=>r.id===id);if(!race)throw Error('Matriz não descoberta.');s.equipRace(race);}
   else if(action==='equipDivineBeast'){result=s.equipDivineBeast(uid(args[0]) as any);}
@@ -46,7 +47,7 @@ export function executeGame(world:WorldState,action?:string,args:unknown[]=[]):{
   else if(action==='updateSettings'){
    const value=args[0];if(!value||typeof value!=='object'||Array.isArray(value))throw Error('Configuração inválida.');const clean:Record<string,unknown>={};
    for(const [key,v] of Object.entries(value)){if(['autoSell','autoSalvage'].includes(key)){if(v!==null&&!['COMUM','INCOMUM','RARO','EPICO','LENDARIO'].includes(String(v)))throw Error('Raridade inválida.');clean[key]=v;}
-   else if(['autoSellTemplateIds','autoSalvageTemplateIds'].includes(key)){if(!Array.isArray(v)||v.length>500||v.some(id=>typeof id!=='string'||id.length>128))throw Error('Itens inválidos.');clean[key]=v;}
+   else if(['autoSellTemplateIds','autoSalvageTemplateIds','ignoredLootTemplateIds'].includes(key)){if(!Array.isArray(v)||v.length>500||v.some(id=>typeof id!=='string'||id.length>128))throw Error('Itens inválidos.');clean[key]=v;}
    else if(['autoHpPotionEnabled','autoMpPotionEnabled'].includes(key)){if(typeof v!=='boolean')throw Error('Configuração inválida.');clean[key]=v;}
    else if(['autoHpPotionPercent','autoMpPotionPercent'].includes(key)){if(typeof v!=='number'||!Number.isFinite(v)||v<0||v>100)throw Error('Limite inválido.');clean[key]=v;}
    else if(['autoHpPotionId','autoMpPotionId'].includes(key)){if(v!==null&&(typeof v!=='string'||!/^POCAO_(VIDA|MANA)_[1-5]$/.test(v)))throw Error('Poção inválida.');clean[key]=v;}

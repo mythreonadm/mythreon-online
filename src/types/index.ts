@@ -188,6 +188,10 @@ export interface Character {
   autoSalvage?: Rarity | null;
   autoSellTemplateIds?: string[];
   autoSalvageTemplateIds?: string[];
+  /** Itens explicitamente ignorados pelo autoloot após liberar o bestiário. */
+  ignoredLootTemplateIds?: string[];
+  /** Abates registrados por criatura para liberar o catálogo de drops. */
+  bestiaryKills?: Record<string, number>;
   
   tickCount?: number;
   totalKills?: number;
@@ -206,6 +210,9 @@ export interface Character {
   trainingSeconds?: Partial<CharacterSkills>;
   trainingAchievements?: string[];
   trainingLastTick?: number;
+  /** Combo especial: fica armado por poucos segundos e é consumido no próximo tick. */
+  comboReadyUntil?: number;
+  comboCooldownUntil?: number;
   
   cards: CardInstance[];
   arenaRewardDay?: string;

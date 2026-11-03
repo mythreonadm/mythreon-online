@@ -12,8 +12,23 @@ export function masteryBonus(char: Character, skill: keyof CharacterSkills): num
   return Math.min(0.30, Math.max(0, char.trainingMastery?.[skill] ?? 0) * 0.01);
 }
 export function trainingXpNeeded(level: number): number {
+  // Primeiros níveis acessíveis em poucas horas; a curva acelera depois do 20.
   const n = Math.max(0, level - 10);
-  return Math.floor(1500 + 150 * n + 15 * n * n);
+  return Math.floor(900 + 120 * n + 18 * n * n + Math.max(0, n - 10) ** 3 * 12);
+}
+
+/** Penalidade de morte inspirada em Tibia: perde uma etapa de skill, sem zerar o progresso. */
+export function applyTrainingDeathPenalty(char: Character): string | null {
+  const entries = (Object.keys(char.skills) as (keyof CharacterSkills)[])
+    .filter(skill => (char.skills[skill] ?? 0) > 10)
+    .sort((a, b) => (char.skills[b] ?? 0) - (char.skills[a] ?? 0));
+  const skill = entries[0];
+  if (!skill) return null;
+  const previous = char.skills[skill];
+  char.skills[skill] = Math.max(10, previous - 1);
+  const needed = trainingXpNeeded(char.skills[skill]);
+  char.skillXp[skill] = Math.floor(Math.min(char.skillXp[skill] ?? 0, needed - 1) * 0.9);
+  return `☠️ A morte interrompeu sua disciplina: ${skill} caiu de ${previous} para ${char.skills[skill]}.`;
 }
 export function applyTraining(char: Character, now: number): string[] {
   const skill = char.trainingSkill;

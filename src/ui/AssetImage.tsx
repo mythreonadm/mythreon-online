@@ -5,12 +5,13 @@ type Props = Omit<React.ImgHTMLAttributes<HTMLImageElement>, "src" | "onError"> 
   fallbackSrc?: string;
   pixelated?: boolean;
   preferAnimated?: boolean;
+  removeWhite?: boolean;
   onAllSourcesFail?: () => void;
   onError?: React.ReactEventHandler<HTMLImageElement>;
 };
 
 /** Prefer animated .gif assets, then fall back to the supplied file and its .png counterpart. */
-export function AssetImage({ src, fallbackSrc, pixelated = true, preferAnimated = !src.startsWith("/assets/players/"), style, onAllSourcesFail, onError, ...props }: Props) {
+export function AssetImage({ src, fallbackSrc, pixelated = true, preferAnimated = !src.startsWith("/assets/players/"), removeWhite = false, style, onAllSourcesFail, onError, ...props }: Props) {
   const candidates = React.useMemo(() => {
     const isLocalAsset = src.startsWith("/assets/");
     const stem = src.replace(/\.(png|giff?|jpe?g|webp|avif)$/i, "");
@@ -28,7 +29,7 @@ export function AssetImage({ src, fallbackSrc, pixelated = true, preferAnimated 
   useEffect(() => { if (index >= candidates.length) onAllSourcesFail?.(); }, [index, candidates.length, onAllSourcesFail]);
 
   if (index >= candidates.length) return null;
-  return <img {...props} src={candidates[index]} style={{ ...(pixelated ? { imageRendering: "pixelated" } : {}), ...style }} onError={(event) => {
+  return <img {...props} src={candidates[index]} style={{ ...(pixelated ? { imageRendering: "pixelated" } : {}), ...(removeWhite ? { mixBlendMode: "multiply" as const } : {}), ...style }} onError={(event) => {
     if (index + 1 < candidates.length) setAttempt({ src, index: index + 1 });
     else { setAttempt({ src, index: candidates.length }); onError?.(event); }
   }} />;

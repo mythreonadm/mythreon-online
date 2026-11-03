@@ -37,6 +37,8 @@ export function createNewCharacter(name: string): Character {
     autoSell: null,
     autoSellTemplateIds: [],
     autoSalvageTemplateIds: [],
+    ignoredLootTemplateIds: [],
+    bestiaryKills: {},
     autoHpPotionId: "POCAO_VIDA_1",
     autoHpPotionPercent: 50,
     autoHpPotionEnabled: false,
@@ -95,6 +97,8 @@ export function loadGame(): SaveFile | null {
       if (data.character.autoSell === undefined) data.character.autoSell = null;
       if (!Array.isArray(data.character.autoSellTemplateIds)) data.character.autoSellTemplateIds = [];
       if (!Array.isArray(data.character.autoSalvageTemplateIds)) data.character.autoSalvageTemplateIds = [];
+      if (!Array.isArray(data.character.ignoredLootTemplateIds)) data.character.ignoredLootTemplateIds = [];
+      if (!data.character.bestiaryKills || typeof data.character.bestiaryKills !== "object") data.character.bestiaryKills = {};
       
       if (!data.character.autoHpPotionId) data.character.autoHpPotionId = "POCAO_VIDA_1";
       if (data.character.autoHpPotionPercent === undefined) data.character.autoHpPotionPercent = 50;

@@ -20,6 +20,8 @@ import { AssetImage } from "./AssetImage";
 import { ItemIcon } from "./ItemIcon";
 import { getBeastCombat } from "../data/beastCombat";
 import { QUESTS } from "../data/quests";
+import { ALL_ITEM_TEMPLATES } from "../data/items";
+import { playCombatSfx } from "../utils/sfx";
 
 interface ZoneViewProps { onOpenQuest: (questId: string) => void; trackedQuestId?: string | null; }
 
@@ -50,7 +52,7 @@ function formatHuntDuration(ms: number) {
 
 export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
   const online = useOnlineState(state=>state.active);
-  const { character, currentZoneId, startHunting, stopHunting, startTraining, stopTraining, isTickRunning, isTraining, lastTickResult, setActiveEnemy, activateBuff, updateSettings, buyBless, healFull, startHealing, cancelHealing, healingUntil } = useGameStore();
+  const { character, currentZoneId, startHunting, stopHunting, startTraining, stopTraining, isTickRunning, isTraining, lastTickResult, setActiveEnemy, activateBuff, updateSettings, buyBless, healFull, startHealing, cancelHealing, healingUntil, armSpecialCombo } = useGameStore();
   
   const [isHurt, setIsHurt] = useState(false);
   const [floatingDamage, setFloatingDamage] = useState<number | null>(null);
@@ -64,8 +66,26 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
   const [mobilePanelOpen, setMobilePanelOpen] = useState(false);
   const [playerImageError, setPlayerImageError] = useState(false);
   const [enemyImageError, setEnemyImageError] = useState(false);
+  const [comboKeys, setComboKeys] = useState(() => ["S", "D", "A"].sort(() => Math.random() - .5));
+  const [comboProgress, setComboProgress] = useState(0);
+  const [showLootConfig, setShowLootConfig] = useState<string | null>(null);
   
   const balloonTimeout = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!isTickRunning) return;
+    const onKey = (event: KeyboardEvent) => {
+      const key = event.key.toUpperCase();
+      if (key !== comboKeys[comboProgress]) { setComboProgress(0); return; }
+      const next = comboProgress + 1;
+      if (next >= comboKeys.length) {
+        const result = armSpecialCombo();
+        if (result.success) setComboProgress(0);
+      } else setComboProgress(next);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isTickRunning, comboKeys, comboProgress, armSpecialCombo]);
 
   if (!character) return null;
   const currentZone = ZONES[currentZoneId];
@@ -142,6 +162,7 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
 
   useEffect(() => {
     if (isTickRunning && lastTickResult && lastTickResult.attacked) {
+      playCombatSfx(activeBond && lastTickResult.log?.some(line => line.includes(activeBond.name)) ? "beast" : "hit");
       setIsAttacking(true); setShowProjectile(true);
       if (lastTickResult.lastDamage) {
         setTimeout(() => { setIsHurt(true); setFloatingDamage(lastTickResult.lastDamage!); }, 250); 
@@ -208,7 +229,19 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
                           <span className="text-sm md:text-base">Caçar em {z.name}</span>
                           {highlightsZone && <span className="mt-1 text-[9px] font-black uppercase tracking-wider text-arcane-gold">◆ Objetivo da missão</span>}
                           {isLocked && <span className="text-[10px] font-normal mt-1">Nível {z.minLevel} · {!canEnterZone(character,z.id) ? "Missão e entrega ao NPC" : "Nível necessário"}</span>}
-                        </button><PassageContract zoneId={z.id}/></div>
+                        </button>
+                        {!isLocked && <div className="mt-1 flex justify-center"><button type="button" onClick={() => setShowLootConfig(showLootConfig === z.id ? null : z.id)} className="text-[10px] text-cyan-300 hover:text-white">⚙ Autoloot / Bestiário</button></div>}
+                        {showLootConfig === z.id && !isLocked && (() => {
+                          const target = z.enemies[0];
+                          const kills = character.bestiaryKills?.[target.id] ?? 0;
+                          const known = kills >= 100;
+                          const ids = [target.componentId, target.essenceId].filter(Boolean) as string[];
+                          return <div className="mt-2 rounded-lg border border-cyan-800/60 bg-black/70 p-2 text-left text-[10px]">
+                            <div className="font-bold text-cyan-200">{target.name} · {kills}/100 abates</div>
+                            {!known ? <p className="mt-1 text-gray-500">Mate 100 para revelar os drops e configurar o autoloot.</p> : <div className="mt-1 space-y-1">{ids.map(id => { const item = ALL_ITEM_TEMPLATES[id]; if (!item) return null; const ignored = character.ignoredLootTemplateIds?.includes(id); return <label key={id} className="flex items-center gap-1 text-gray-300"><input type="checkbox" checked={!ignored} onChange={() => { const current = new Set(character.ignoredLootTemplateIds ?? []); ignored ? current.delete(id) : current.add(id); updateSettings({ ignoredLootTemplateIds: [...current] }); }} />{item.icon} {item.name}<span className="ml-auto text-gray-500">{ignored ? "ignorado" : "coletar"}</span></label>; })}</div>}
+                          </div>;
+                        })()}
+                        <PassageContract zoneId={z.id}/></div>
                       )
                   })}
                 </div>
@@ -346,6 +379,9 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
         <button onClick={stopHunting} className="bg-red-900/80 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs md:text-sm transition-colors border border-red-500/50 shadow-md">
           🏃 Sair
         </button>
+        <button onClick={() => { const result = armSpecialCombo(); if (!result.success) alert(result.error); }} className={`px-3 py-1.5 rounded-lg font-bold text-xs md:text-sm border shadow-md ${((character.comboCooldownUntil ?? 0) > Date.now()) ? "bg-gray-800 text-gray-500 border-gray-700" : "bg-purple-900/80 text-purple-200 border-purple-400/50 hover:bg-purple-700"}`} title="Complete a sequência de teclas para armar o segundo impacto">
+          ⚡ Combo {comboKeys.join("+")} {comboProgress ? `(${comboProgress}/3)` : ""}
+        </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-[1fr_320px] gap-3 md:gap-4">
@@ -374,7 +410,7 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
           <div className="relative z-20 flex justify-between items-end px-4 md:px-20 pb-8 md:pb-12 h-[300px] md:h-[500px]">
             <div className="flex flex-col items-center relative translate-y-2 md:translate-y-4">
               
-              {activeBond && <div className="absolute bottom-16 left-full ml-1 md:ml-4 flex w-20 md:w-32 flex-col items-center" title={activeBond.name + ' · ' + activeBond.element}><AssetImage src={activeBond.beast.sprite} alt={activeBond.beast.name} className="h-24 w-24 md:h-36 md:w-36 object-contain [image-rendering:pixelated]" /><span className="rounded bg-black/70 px-2 text-[10px] text-arcane-gold">{activeBond.beast.name}</span></div>}
+              {activeBond && <div className="absolute bottom-16 left-full ml-1 md:ml-4 flex w-20 md:w-32 flex-col items-center" title={activeBond.name + ' · ' + activeBond.element}><AssetImage removeWhite src={activeBond.beast.sprite} alt={activeBond.beast.name} className="h-24 w-24 md:h-36 md:w-36 object-contain [image-rendering:pixelated]" /><span className="rounded bg-black/70 px-2 text-[10px] text-arcane-gold">{activeBond.beast.name}</span></div>}
               {/* SPRITE DO JOGADOR (Agora baseado na Linhagem) */}
               <div className={`combat-sprite combat-sprite-player relative w-24 h-24 md:w-40 md:h-40 flex items-center justify-center transition-transform ${weaponAnimClass}`}>
                 {!playerImageError ? (

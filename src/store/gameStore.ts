@@ -46,6 +46,7 @@ export interface GameState {
   stopHunting: () => void;
   startTraining: (skill: keyof CharacterSkills) => void;
   stopTraining: () => void;
+  armSpecialCombo: () => { success: boolean; error?: string };
   setActiveEnemy: (enemyId: string) => void;
   setCurrentZone: (zoneId: string) => void;
   equip: (uid: string) => { success: boolean; error?: string };
@@ -268,6 +269,17 @@ return create<GameState>((set, get) => ({
     tickInterval = setInterval(() => get().tick(), 3000); }
   },
 
+  armSpecialCombo: () => {
+    const { character, isTickRunning } = get();
+    if (!character || !isTickRunning) return { success: false, error: "O combo só pode ser armado durante a caça." };
+    const now = Date.now();
+    if ((character.comboCooldownUntil ?? 0) > now) return { success: false, error: `Aguarde ${Math.ceil((character.comboCooldownUntil! - now) / 1000)}s para recarregar.` };
+    const updated = JSON.parse(JSON.stringify(character));
+    updated.comboReadyUntil = now + 12_000;
+    set({ character: updated }); get().save();
+    return { success: true };
+  },
+
   stopHunting: () => {
     if (tickInterval) clearInterval(tickInterval);
     tickInterval = null;
@@ -446,6 +458,7 @@ return create<GameState>((set, get) => ({
       newCharacter.autoSalvageTemplateIds = settings.autoSalvageTemplateIds;
       newCharacter.autoSellTemplateIds = (newCharacter.autoSellTemplateIds ?? []).filter((id: string) => !settings.autoSalvageTemplateIds.includes(id));
     }
+    if (settings.ignoredLootTemplateIds !== undefined) newCharacter.ignoredLootTemplateIds = settings.ignoredLootTemplateIds;
     if (settings.autoHpPotionId !== undefined) newCharacter.autoHpPotionId = settings.autoHpPotionId;
     if (settings.autoHpPotionPercent !== undefined) newCharacter.autoHpPotionPercent = settings.autoHpPotionPercent;
     if (settings.autoHpPotionEnabled !== undefined) newCharacter.autoHpPotionEnabled = settings.autoHpPotionEnabled;
