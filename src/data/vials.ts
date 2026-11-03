@@ -1,6 +1,7 @@
 import { BuffVialTemplate } from "../types";
 
 export const VIALS: Record<string, BuffVialTemplate> = {
+  VIAL_XP_RUSH: { id: "VIAL_XP_RUSH", name: "Elixir da Ascensão", description: "+1000% de XP por 1 hora (modo de testes)", durationMinutes: 60, icon: "🌟", stats: {}, xpPct: 10, price: 1000 },
   VIAL_TITAN_1: { id: "VIAL_TITAN_1", name: "Vial do Titã I", description: "+15 Força (ATK) por 15 min", durationMinutes: 15, icon: "🧪", stats: { atk: 15 }, price: 500 },
   VIAL_SAGE_1: { id: "VIAL_SAGE_1", name: "Vial do Sábio I", description: "+15 Inteligência (MATK) por 15 min", durationMinutes: 15, icon: "🧪", stats: { matk: 15 }, price: 500 },
   VIAL_SHADOW_1: { id: "VIAL_SHADOW_1", name: "Vial da Sombra I", description: "+5% Crítico e +5% Precisão por 15 min", durationMinutes: 15, icon: "🧪", stats: { crit: 0.05, hit: 0.05 }, price: 500 },

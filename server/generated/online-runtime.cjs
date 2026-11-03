@@ -315,6 +315,7 @@ var PASSIVE_EFFECTS = {
 
 // src/data/vials.ts
 var VIALS = {
+  VIAL_XP_RUSH: { id: "VIAL_XP_RUSH", name: "Elixir da Ascens\xE3o", description: "+1000% de XP por 1 hora (modo de testes)", durationMinutes: 60, icon: "\u{1F31F}", stats: {}, xpPct: 10, price: 1e3 },
   VIAL_TITAN_1: { id: "VIAL_TITAN_1", name: "Vial do Tit\xE3 I", description: "+15 For\xE7a (ATK) por 15 min", durationMinutes: 15, icon: "\u{1F9EA}", stats: { atk: 15 }, price: 500 },
   VIAL_SAGE_1: { id: "VIAL_SAGE_1", name: "Vial do S\xE1bio I", description: "+15 Intelig\xEAncia (MATK) por 15 min", durationMinutes: 15, icon: "\u{1F9EA}", stats: { matk: 15 }, price: 500 },
   VIAL_SHADOW_1: { id: "VIAL_SHADOW_1", name: "Vial da Sombra I", description: "+5% Cr\xEDtico e +5% Precis\xE3o por 15 min", durationMinutes: 15, icon: "\u{1F9EA}", stats: { crit: 0.05, hit: 0.05 }, price: 500 },
@@ -2369,6 +2370,9 @@ function rollCardDrop(monsterId, tier, isBoss) {
 function buildProfile(char) {
   const bp = char.inventory.backpack;
   const p = { xpPct: (bp.xpBonus ?? 0) + (char.premium ? 0.1 : 0), goldPct: 0, dropPct: bp.dropBonus ?? 0, rarePct: bp.rareDropBonus ?? 0, healPct: 0, skillDmgPct: 0, cdReduce: 0, lifesteal: 0 };
+  for (const [vialId, expiry] of Object.entries(char.activeVials ?? {})) {
+    if (expiry > Date.now()) p.xpPct += VIALS[vialId]?.xpPct ?? 0;
+  }
   for (const [slot, item] of Object.entries(char.equipped)) {
     if (!item || slot === "BACKPACK") continue;
     p.xpPct += item.xpBonus ?? 0;

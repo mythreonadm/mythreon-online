@@ -54,7 +54,7 @@ function formatHuntDuration(ms: number) {
 
 export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
   const online = useOnlineState(state=>state.active);
-  const { character, currentZoneId, startHunting, stopHunting, startTraining, stopTraining, isTickRunning, isTraining, lastTickResult, setActiveEnemy, activateBuff, updateSettings, buyBless, healFull, startHealing, cancelHealing, healingUntil, armSpecialCombo } = useGameStore();
+  const { character, currentZoneId, startHunting, stopHunting, startTraining, stopTraining, isTickRunning, isTraining, lastTickResult, setActiveEnemy, activateBuff, updateSettings, healFull, startHealing, cancelHealing, healingUntil, armSpecialCombo } = useGameStore();
   
   const [isHurt, setIsHurt] = useState(false);
   const [floatingDamage, setFloatingDamage] = useState<number | null>(null);
@@ -245,13 +245,9 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(8,14,16,.32),rgba(8,14,16,.78)_72%,rgba(8,14,16,.96))]" />
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,rgba(4,8,10,.58)_100%)] pointer-events-none" />
           
-          <div className="z-10 w-full max-w-4xl">
-            <div className="flex flex-col md:flex-row justify-center gap-3 mb-6">
-              <button onClick={buyBless} className="bg-arcane-gold text-black px-4 md:px-6 py-2 rounded-lg font-bold flex items-center justify-center gap-2 hover:scale-105 transition-transform shadow-[0_0_15px_rgba(201,160,77,0.5)] text-sm md:text-base">
-                ✨ Bless <span className="bg-black/20 px-2 py-0.5 rounded text-xs">{character.blesses || 0}/5</span>
-              </button>
-              
-              {(character.hp < character.hpMax || character.mp < character.mpMax) && (
+          <div className="z-10 mx-auto w-full max-w-4xl">
+            <div className="mb-6 flex justify-center gap-3">
+              {(character.hp < character.hpMax || character.mp < character.mpMax) ? (
                 healingUntil ? (
                   <button disabled className="bg-gray-800 text-arcane-cyan px-4 md:px-6 py-2 rounded-lg font-bold animate-pulse border border-arcane-cyan/50 text-sm md:text-base">
                     🧘 Meditando... {healTimer}s
@@ -261,7 +257,7 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
                     🧘 Meditar (15s)
                   </button>
                 )
-              )}
+              ) : <button disabled className="cursor-default rounded-lg border border-green-500/30 bg-green-950/30 px-4 py-2 text-sm font-bold text-green-300">💚 HP e MP completos</button>}
             </div>
 
             <div className="flex justify-center gap-2 md:gap-4 mb-8">
@@ -274,16 +270,16 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
                 <div className="mb-4 text-center text-4xl font-black tracking-[.22em] text-arcane-gold drop-shadow-[0_0_15px_rgba(201,160,77,0.7)]">REFÚGIO DA ESSÊNCIA</div>
                 <h2 className="text-2xl md:text-3xl font-bold text-arcane-gold mb-2 text-center">Sua Cabana Aconchegante</h2>
                 <p className="text-gray-400 mb-8 text-center max-w-md text-sm md:text-base px-4">Descanse para recuperar HP, ou escolha uma zona para explorar.</p>
-                <div className="grid grid-cols-1 md:flex md:flex-wrap gap-3 justify-center w-full max-w-2xl">
+                <div className="mx-auto grid w-full max-w-4xl grid-cols-1 gap-4 md:grid-cols-2">
                   {Object.values(ZONES).map(z => {
                       const isLocked = character.level < z.minLevel || !canEnterZone(character,z.id);
                       const trackedQuest = QUESTS.find(q => q.id === trackedQuestId);
                       const highlightsZone = !!trackedQuest?.zoneId && trackedQuest.zoneId === z.id && trackedQuest.objectives.some(obj => ["KILL", "KILL_BOSS", "COLLECT"].includes(obj.type));
                       return (
-                        <div key={z.id} className="min-w-48 max-w-sm"><button onClick={() => setMapPreviewZoneId(z.id)} className={`group relative min-h-36 w-full overflow-hidden rounded-xl border text-left font-bold transition-all ${highlightsZone && !isLocked ? "border-2 border-arcane-gold ring-2 ring-arcane-gold/50 shadow-[0_0_24px_rgba(201,160,77,.45)]" : "border-white/10"} ${isLocked ? "cursor-not-allowed grayscale" : "text-white shadow-lg hover:-translate-y-1 hover:border-arcane-gold"}`}>
+                        <div key={z.id} className="mx-auto w-full"><button onClick={() => setMapPreviewZoneId(z.id)} className={`group relative min-h-40 w-full overflow-hidden rounded-xl border text-left font-bold transition-all ${highlightsZone && !isLocked ? "border-2 border-arcane-gold ring-2 ring-arcane-gold/50 shadow-[0_0_24px_rgba(201,160,77,.45)]" : "border-white/10"} ${isLocked ? "cursor-not-allowed grayscale" : "text-white shadow-lg hover:-translate-y-1 hover:border-arcane-gold"}`}>
                           <AssetImage src={mapBackground(z.theme)} alt={`Mapa ${z.name}`} className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
                           <span className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-black/10" />
-                          <span className="relative flex h-full min-h-36 flex-col justify-end p-3"><span className="text-[10px] uppercase tracking-widest text-arcane-cyan">Mapa {z.tier}</span><span className="text-sm md:text-base">Caçar em {z.name}</span><span className="mt-1 text-[10px] font-semibold text-arcane-gold">Nível {z.minLevel}–{z.maxLevel}</span></span>
+                          <span className="relative flex h-full min-h-40 flex-col justify-end p-4"><span className="text-[10px] uppercase tracking-widest text-arcane-cyan">Mapa {z.tier}</span><span className="text-base md:text-lg">Caçar em {z.name}</span><span className="mt-1 text-[10px] font-semibold text-arcane-gold">Nível {z.minLevel}–{z.maxLevel}</span></span>
                           {highlightsZone && <span className="mt-1 text-[9px] font-black uppercase tracking-wider text-arcane-gold">◆ Objetivo da missão</span>}
                           {isLocked && <span className="text-[10px] font-normal mt-1">Nível {z.minLevel} · {!canEnterZone(character,z.id) ? "Missão e entrega ao NPC" : "Nível necessário"}</span>}
                         </button>

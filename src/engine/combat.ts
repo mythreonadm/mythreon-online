@@ -11,6 +11,7 @@ import { rollCardDrop, CARD_TEMPLATES } from "../data/cards";
 import { getBeastCombat } from "../data/beastCombat";
 import { DIVINE_BEASTS } from "../data/divineBeasts";
 import { POTION_TEMPLATES } from "../data/items";
+import { VIALS } from "../data/vials";
 import { getPotionUsePrice } from "../data/potionEconomy";
 import { DEFAULT_BACKPACK } from "../data/backpacks";
 import { recalcStats as recalculate } from "./stats";
@@ -22,6 +23,9 @@ interface Profile { xpPct: number; goldPct: number; dropPct: number; rarePct: nu
 export function buildProfile(char: Character): Profile {
   const bp = char.inventory.backpack;
   const p: Profile = { xpPct: (bp.xpBonus ?? 0) + (char.premium ? 0.10 : 0), goldPct: 0, dropPct: bp.dropBonus ?? 0, rarePct: bp.rareDropBonus ?? 0, healPct: 0, skillDmgPct: 0, cdReduce: 0, lifesteal: 0 };
+  for (const [vialId, expiry] of Object.entries(char.activeVials ?? {})) {
+    if (expiry > Date.now()) p.xpPct += (VIALS[vialId] as any)?.xpPct ?? 0;
+  }
   for (const [slot, item] of Object.entries(char.equipped)) {
     if (!item || slot === "BACKPACK") continue;
     p.xpPct += item.xpBonus ?? 0; p.goldPct += item.goldBonus ?? 0; p.dropPct += item.dropBonus ?? 0; p.rarePct += item.rareDropBonus ?? 0; p.lifesteal += item.lifesteal ?? 0;

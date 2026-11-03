@@ -147,7 +147,7 @@ export interface OfflineReportData {
 }
 
 export interface BuffVialTemplate {
-  id: string; name: string; description: string; durationMinutes: number; icon: string; stats: ItemStats; price: number;
+  id: string; name: string; description: string; durationMinutes: number; icon: string; stats: ItemStats; price: number; xpPct?: number;
 }
 
 export interface DeathReportData {

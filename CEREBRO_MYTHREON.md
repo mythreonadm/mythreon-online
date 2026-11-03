@@ -28,6 +28,13 @@
 - O Gear Score aparece no painel superior e no cabeçalho da aba Personagem. Ícones da Mochila e do Depósito foram ampliados para leitura melhor em desktop e celular.
 - A troca agora apresenta uma `Bag de envio`: itens selecionados ficam separados em uma área visual própria, podem ser removidos antes do envio e o lado do outro jogador continua visível via atualização social em tempo real. A confirmação dupla e a reserva server-side permanecem obrigatórias.
 
+## Refúgio, Bless e aceleração de testes — 2026-11-03
+
+- Cards de mapas foram centralizados em uma grade uniforme, com áreas de clique e títulos mais claros.
+- O botão Bless saiu da cabine e foi incorporado ao lado da barra de XP no cabeçalho. Com 0 Bless, fica vermelho, brilhando e pulsando; com Bless ativo, mostra a contagem normal.
+- A cabine mantém o acesso direto a Treinar e Meditar; quando HP/MP estão completos, a área de cura informa o estado em vez de esconder a ação.
+- A Shop recebeu o `VIAL_XP_RUSH` / `Elixir da Ascensão`: 1.000 gold, duração de 1 hora e bônus temporário de +1000% XP. É um acelerador de QA/testes e deve ser removido ou protegido por flag antes do lançamento oficial.
+
 ## Continuidade — Pântano de Veyra e conteúdo de mobs — 2026-11-03
 
 - O Pântano de Veyra agora possui uma linha própria de progressão: cinco componentes de Ataque (A16–A20), cinco Suportes (S14–S18), duas Passivas (P13–P14), cinco materiais de drop e oito equipamentos de tier 3.
