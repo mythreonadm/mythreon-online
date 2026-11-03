@@ -19,6 +19,7 @@ import { depositItem as engineDeposit, withdrawItem as engineWithdraw, depositMa
 import { FRAGMENT_TEMPLATES } from "../data/items";
 import { DIVINE_BEASTS } from "../data/divineBeasts";
 import { QUESTS } from "../data/quests";
+import { getMythreonOffer, MYTHREON_ECONOMY } from "../data/mythreonEconomy";
 
 export interface GameState {
   character: Character | null;
@@ -73,6 +74,8 @@ export interface GameState {
   upgradeItem: (uid: string) => { success: boolean; error?: string };
   rerollItem: (uid: string) => { success: boolean; error?: string };
   forgeFragments: (fromTemplateId: string) => { success: boolean; error?: string; crafted?: number };
+  refineMythreonCoins: (amount?: number) => { success: boolean; coins?: number; error?: string };
+  buyMythreonOffer: (offerId: string) => { success: boolean; error?: string };
   
   depositItem: (uid: string) => { success: boolean; error?: string };
   withdrawItem: (uid: string) => { success: boolean; error?: string };
@@ -603,6 +606,30 @@ return create<GameState>((set, get) => ({
     const result = forgeFragments(updated, fromTemplateId);
     if (result.success) { set({ character: updated }); get().save(); }
     return result;
+  },
+
+  refineMythreonCoins: (amount = 1) => {
+    const { character } = get();
+    if (!character) return { success: false, error: "Sem personagem." };
+    const coins = Math.max(1, Math.min(100, Math.floor(amount)));
+    const shards = coins * MYTHREON_ECONOMY.shardsPerCoin;
+    const gold = coins * MYTHREON_ECONOMY.goldPerCoin;
+    if ((character.mythreonShards ?? 0) < shards) return { success: false, error: `Você precisa de ${shards} Shards.` };
+    if (character.gold < gold) return { success: false, error: `Refinar custa ${gold.toLocaleString("pt-BR")} gold.` };
+    const next = { ...character, mythreonShards: (character.mythreonShards ?? 0) - shards, mythreonCoins: (character.mythreonCoins ?? 0) + coins, gold: character.gold - gold };
+    set({ character: next }); get().save(); notify(`✨ ${coins} Mythreon Coin${coins > 1 ? "s" : ""} refinada(s).`); return { success: true, coins };
+  },
+
+  buyMythreonOffer: (offerId) => {
+    const { character } = get();
+    const offer = getMythreonOffer(offerId);
+    if (!character || !offer) return { success: false, error: "Oferta inválida." };
+    if ((character.mythreonCoins ?? 0) < offer.priceCoins) return { success: false, error: `Você precisa de ${offer.priceCoins} Mythreon Coins.` };
+    const next = JSON.parse(JSON.stringify(character));
+    const item = makeEquipment(offer.templateId, offer.templateId === "FRAGMENTO_EPICO" ? "EPICO" : "LENDARIO");
+    if (!item || !addItem(next.inventory, item)) return { success: false, error: "Bolsa cheia. Libere um espaço antes de comprar." };
+    next.mythreonCoins = (next.mythreonCoins ?? 0) - offer.priceCoins;
+    set({ character: next }); get().save(); notify(`${offer.name} foi entregue na mochila.`); return { success: true };
   },
 
   depositItem: (uid) => {

@@ -26,6 +26,7 @@ export function createNewCharacter(name: string): Character {
   return {
     id: Math.random().toString(), name, level: 1, xp: 0, xpToNext: xpToNextLevel(1), gold: 0,
     hp: base.hp!, hpMax: base.hp!, mp: base.mp!, mpMax: base.mp!, baseStats: base,
+    mythreonShards: 0, mythreonCoins: 0,
     equipped: {}, inventory: { backpack: { ...DEFAULT_BACKPACK }, items: [] }, killsInZone: 0,
     currentZoneId: "BOSQUE_LYSS", premium: false, lastTick: Date.now(),
     quests: { active: {}, completed: [] },
@@ -93,6 +94,8 @@ export function loadGame(): SaveFile | null {
       if (data.character.trainingSkill === undefined) data.character.trainingSkill = null;
       if (!data.character.quests) data.character.quests = { active: {}, completed: [] };
       if (data.character.blesses === undefined) data.character.blesses = 0;
+      if (!Number.isFinite(data.character.mythreonShards)) data.character.mythreonShards = 0;
+      if (!Number.isFinite(data.character.mythreonCoins)) data.character.mythreonCoins = 0;
       
       if (data.character.autoSalvage === undefined) data.character.autoSalvage = null;
       if (data.character.autoSell === undefined) data.character.autoSell = null;

@@ -393,3 +393,13 @@ Atualização: clicar no card do mapa agora abre uma ficha modal sobre a miniatu
 Itens antigos de flecha podiam ter `stats: {}` porque foram criados antes da flecha receber atributos. O Ferreiro agora hidrata os atributos-base pelo template e reaplica os multiplicadores dos níveis já existentes antes de aplicar o próximo upgrade; isso corrige flechas +1/+2 sem resetar progresso. A mesma proteção vale para qualquer equipamento legado com estatística ausente.
 
 As faixas percentuais de afixos foram centralizadas em `src/data/affixes.ts` e aplicadas por `src/engine/drops.ts`: comum 0,5–1,5%, incomum 1,2–2,5%, raro 2–4%, épico 3,5–6% e lendário 5,5–9% (tier acrescenta até 48% sobre a faixa). Dano crítico usa faixas próprias maiores: 5–10%, 8–15%, 12–22%, 18–30% e 25–40%. Afixos inteiros escalam separadamente por raridade para evitar que HP/armadura explodam; comuns passaram a ter um único afixo pequeno, incomuns um, raros dois, épicos três e lendários quatro. O runtime online gerado foi sincronizado manualmente enquanto o esbuild continua bloqueado pelo OneDrive. Revalidar por simulação antes de declarar equilíbrio final.
+
+## Mythreon Shard, Mythreon Coin e economia rara — 2026-11-03
+
+Toda criatura viva pode liberar uma pequena quantidade de Mythreon Shards ao morrer. A chance é baixa e cresce suavemente com a dificuldade, o nível mínimo do monstro e 50% adicional em chefes; criaturas de dificuldade 4–5 e chefes podem liberar duas unidades em vez de uma. O drop é registrado no combate como `🔷` e persistido no personagem, sem depender do inventário.
+
+Refino atual: `100 Shards + 25.000 gold = 1 Mythreon Coin`. O preço alto funciona como sumidouro de gold e mantém a moeda rara; a interface oferece refino unitário e máximo possível. A Loja Especial aceita Coins para três ofertas iniciais: Sigilo do Primeiro Eco (8), Núcleo de Fragmento Épico (1) e Anel da Guarda Eterna (75). A compra exige espaço na mochila e grava o item normalmente.
+
+Arquivos: `src/data/mythreonEconomy.ts`, `src/types/index.ts`, `src/engine/combat.ts`, `src/engine/save.ts`, `src/store/gameStore.ts`, `src/ui/Shop.tsx`, `src/ui/CombatLog.tsx`, `server/game.ts`, `server/generated/online-runtime.cjs`. O painel Mercado Negro foi criado como área reservada; anúncios globais entre personagens ainda exigem a próxima migração transacional (`world_market_listings`) e não devem ser anunciados como ativos até essa etapa.
+
+Regras de segurança: o cliente só envia quantidade/ID; o servidor valida refino, oferta, saldo e itens. Não colocar chaves Supabase em VITE_. Testes executados após a implementação: `npm run typecheck` e `node --check server/generated/online-runtime.cjs`. Ainda falta commit/push e deploy pelo usuário.

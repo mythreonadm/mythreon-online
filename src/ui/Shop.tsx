@@ -10,11 +10,12 @@ import { QuantityModal } from "./QuantityModal";
 import { ItemIcon } from "./ItemIcon";
 import { ALL_EQUIPMENT_TEMPLATES } from "../data/items";
 import { countByTemplate } from "../engine/inventory";
+import { MYTHREON_ECONOMY, MYTHREON_OFFERS } from "../data/mythreonEconomy";
 
 export function Shop({ storefront = false }: { storefront?: boolean }) {
-  const { character, sellItem, salvageAll, salvageSelected, updateSettings, useVial, upgradeItem, rerollItem, forgeFragments } = useGameStore();
+  const { character, sellItem, salvageAll, salvageSelected, updateSettings, useVial, upgradeItem, rerollItem, forgeFragments, refineMythreonCoins, buyMythreonOffer } = useGameStore();
   
-  const [tab, setTab] = useState<"FORJA" | "VIALS" | "VENDER" | "DESMANCHAR">(storefront ? "VIALS" : "FORJA");
+  const [tab, setTab] = useState<"FORJA" | "VIALS" | "VENDER" | "DESMANCHAR" | "ESSENCIA" | "MERCADO">(storefront ? "VIALS" : "FORJA");
   const [actionRarity, setActionRarity] = useState<Rarity>("COMUM");
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [salvageSelection, setSalvageSelection] = useState<string[]>([]);
@@ -86,10 +87,13 @@ export function Shop({ storefront = false }: { storefront?: boolean }) {
       {/* HEADER */}
       <div className="flex justify-between items-center mb-6 border-b border-arcane-border pb-4">
         <div><h2 className="text-xl font-bold text-arcane-gold">{storefront ? "Shop de Mythreon" : "Ferreiro de Mythreon"}</h2><p className="text-xs text-gray-500">Aprimore, negocie e recupere a Essência dos seus drops.</p></div>
+        {storefront && <div className="flex flex-wrap gap-2 text-xs font-bold"><span className="rounded border border-cyan-600/50 bg-cyan-950/30 px-2 py-1 text-cyan-200">🔷 {character.mythreonShards ?? 0} Shards</span><span className="rounded border border-fuchsia-600/50 bg-fuchsia-950/30 px-2 py-1 text-fuchsia-200">🪙 {character.mythreonCoins ?? 0} Coins</span></div>}
         <div className="rounded-lg border border-arcane-gold/25 bg-black/20 px-3 py-2 text-sm font-bold text-arcane-gold">💰 {character.gold.toLocaleString("pt-BR")} gold</div>
         <div className="flex bg-arcane-bg rounded-lg p-1 border border-arcane-border flex-wrap gap-1">
           {!storefront && <button onClick={() => setTab("FORJA")} className={`px-3 py-1 text-sm font-bold rounded transition-colors ${tab === "FORJA" ? "bg-orange-600 text-white" : "text-gray-400 hover:text-white"}`}>Forja</button>}
           {storefront && <button onClick={() => setTab("VIALS")} className={`px-3 py-1 text-sm font-bold rounded transition-colors ${tab === "VIALS" ? "bg-arcane-cyan text-black" : "text-gray-400 hover:text-white"}`}>Elixires</button>}
+          {storefront && <button onClick={() => setTab("ESSENCIA")} className={`px-3 py-1 text-sm font-bold rounded transition-colors ${tab === "ESSENCIA" ? "bg-fuchsia-600 text-white" : "text-gray-400 hover:text-white"}`}>Essência</button>}
+          {storefront && <button onClick={() => setTab("MERCADO")} className={`px-3 py-1 text-sm font-bold rounded transition-colors ${tab === "MERCADO" ? "bg-rose-700 text-white" : "text-gray-400 hover:text-white"}`}>Mercado Negro</button>}
           {!storefront && <button onClick={() => setTab("VENDER")} className={`px-3 py-1 text-sm font-bold rounded transition-colors ${tab === "VENDER" ? "bg-arcane-purple text-white" : "text-gray-400 hover:text-white"}`}>Vender</button>}
           {!storefront && <button onClick={() => setTab("DESMANCHAR")} className={`px-3 py-1 text-sm font-bold rounded transition-colors ${tab === "DESMANCHAR" ? "bg-red-800 text-white" : "text-gray-400 hover:text-white"}`}>Desmanchar</button>}
         </div>
@@ -125,6 +129,21 @@ export function Shop({ storefront = false }: { storefront?: boolean }) {
               )
            })}
         </div>
+      )}
+
+      {tab === "ESSENCIA" && (
+        <div className="space-y-5">
+          <section className="rounded-xl border border-cyan-700/50 bg-cyan-950/15 p-5">
+            <h3 className="text-lg font-bold text-cyan-200">🔷 Refinaria de Mythreon</h3>
+            <p className="mt-1 text-sm text-gray-300">Shards caem raramente de toda criatura viva. Criar uma Coin exige energia e uma taxa alta em gold para manter seu valor.</p>
+            <div className="mt-4 flex flex-wrap items-center gap-3"><span className="rounded bg-black/30 px-3 py-2 text-sm text-cyan-100">100 Shards + {MYTHREON_ECONOMY.goldPerCoin.toLocaleString("pt-BR")} gold = 1 Mythreon Coin</span><button onClick={() => { const result = refineMythreonCoins(1); if (!result.success) alert(result.error); }} className="rounded bg-fuchsia-600 px-4 py-2 font-bold text-white hover:bg-fuchsia-500">Refinar 1 Coin</button><button onClick={() => { const result = refineMythreonCoins(Math.floor(Math.min(character.mythreonShards ?? 0, Math.floor(character.gold / MYTHREON_ECONOMY.goldPerCoin)) / MYTHREON_ECONOMY.shardsPerCoin)); if (!result.success) alert(result.error); }} className="rounded border border-fuchsia-500/60 px-4 py-2 font-bold text-fuchsia-100 hover:bg-fuchsia-900/40">Refinar máximo</button></div>
+          </section>
+          <section className="rounded-xl border border-fuchsia-700/40 bg-black/20 p-4"><h3 className="mb-3 font-bold text-fuchsia-200">Loja especial</h3><div className="grid gap-3 md:grid-cols-3">{MYTHREON_OFFERS.map(offer => <div key={offer.id} className="rounded-lg border border-arcane-border bg-arcane-bg p-4"><div className="text-3xl">{offer.icon}</div><h4 className="mt-2 font-bold text-white">{offer.name}</h4><p className="min-h-10 text-xs text-gray-400">{offer.description}</p><div className="mt-3 flex items-center justify-between"><span className="font-bold text-fuchsia-200">🪙 {offer.priceCoins}</span><button onClick={() => { const result = buyMythreonOffer(offer.id); if (!result.success) alert(result.error); }} className="rounded bg-fuchsia-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-fuchsia-600">Comprar</button></div></div>)}</div></section>
+        </div>
+      )}
+
+      {tab === "MERCADO" && (
+        <section className="space-y-4 rounded-xl border border-rose-700/40 bg-rose-950/10 p-5"><h3 className="text-lg font-bold text-rose-200">🕯️ Mercado Negro</h3><p className="text-sm text-gray-300">O mercado entre aventureiros será ligado ao mundo online na próxima etapa. Aqui fica o painel reservado para anúncios por gold ou Mythreon Coins, sem remover itens da sua mochila ainda.</p><div className="grid gap-3 md:grid-cols-2"><div className="rounded-lg border border-arcane-border bg-arcane-bg p-4"><h4 className="font-bold text-white">Anunciar um item</h4><p className="mt-1 text-xs text-gray-400">Selecione um item, defina gold ou Coins e publique para outros jogadores.</p><button disabled className="mt-3 cursor-not-allowed rounded bg-gray-700 px-3 py-2 text-xs font-bold text-gray-400">Em preparação para o mundo online</button></div><div className="rounded-lg border border-arcane-border bg-arcane-bg p-4"><h4 className="font-bold text-white">Ofertas disponíveis</h4><p className="mt-1 text-xs text-gray-400">As ofertas globais aparecerão aqui quando a tabela de anúncios estiver ativa no servidor.</p><span className="mt-3 inline-block rounded bg-rose-900/30 px-3 py-1 text-xs text-rose-200">Mercado seguro · taxa anti-inflação planejada</span></div></div></section>
       )}
 
       {/* ─── ABA VENDER ─── */}

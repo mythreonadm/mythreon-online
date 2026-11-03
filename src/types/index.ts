@@ -162,6 +162,7 @@ export interface DeathReportData {
 export interface Character {
   id: string; name: string; level: number; xp: number; xpToNext: number; gold: number;
   hp: number; hpMax: number; mp: number; mpMax: number; baseStats: ItemStats;
+  mythreonShards?: number; mythreonCoins?: number;
   equipped: Partial<Record<SlotType, Item>>; inventory: Inventory;
   raceId?: string; activeRace?: Race; killsInZone: number; currentZoneId?: string;
   activeEnemyId?: string;
@@ -314,4 +315,6 @@ export interface TickResult {
   encounters?: HuntEncounterRecord[];
   divineBeastsDropped?: DivineBeastId[];
   staminaDepleted?: boolean;
+  mythreonShards?: number;
+  mythreonCoins?: number;
 }

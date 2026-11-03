@@ -5,6 +5,7 @@ import {recalcStats,xpToNextLevel} from '../src/engine/stats';
 import {VIALS} from '../src/data/vials';
 import {ZONES} from '../src/data/zones';
 import {ALL_ITEM_TEMPLATES} from '../src/data/items';
+import { getMythreonOffer } from '../src/data/mythreonEconomy';
 import type {Character,Race} from '../src/types';
 export interface WorldState { character:Character; races:Race[]; isTickRunning:boolean; isTraining:boolean; healingUntil:number|null; deathReport:GameState['deathReport']; lastTickResult:GameState['lastTickResult']; lastAdvanceAt:number; counters:{forges:number;syntheses:number;trades:number;bosses:number}; }
 export function freshWorld(name:string,id:string):WorldState {const character=createNewCharacter(name);character.id=id;return {character,races:[],isTickRunning:false,isTraining:false,healingUntil:null,deathReport:null,lastTickResult:null,lastAdvanceAt:Date.now(),counters:{forges:0,syntheses:0,trades:0,bosses:0}};}
@@ -61,6 +62,8 @@ export function executeGame(world:WorldState,action?:string,args:unknown[]=[]):{
   else if(action==='healFull'){if(!world.healingUntil||now<world.healingUntil)throw Error('Aguarde a meditação.');s.healFull();}
   else if(action==='claimArenaReward')throw Error('Recompensas da arena local não podem ser importadas para a economia online.');
   else if(action==='forgeFragments'){const id=uid(args[0]);if(!['FRAGMENTO_COMUM','FRAGMENTO_RARO'].includes(id))throw Error('Receita inválida.');result=s.forgeFragments(id);if(!(result as any)?.success)throw Error((result as any)?.error??'Não foi possível fundir os fragmentos.');}
+  else if(action==='refineMythreonCoins'){const amount=args[0]===undefined?1:Number(args[0]);if(!Number.isInteger(amount)||amount<1||amount>100)throw Error('Quantidade de Coins inválida.');result=s.refineMythreonCoins(amount);if(!(result as any)?.success)throw Error((result as any)?.error??'Não foi possível refinar a energia.');}
+  else if(action==='buyMythreonOffer'){const id=uid(args[0]);if(!getMythreonOffer(id))throw Error('Oferta inválida.');result=s.buyMythreonOffer(id);if(!(result as any)?.success)throw Error((result as any)?.error??'Não foi possível concluir a compra.');}
   else throw Error('Ação não permitida.');
   if(action==='activateBuff')store.getState().character!.onlineBalloonUntil=undefined;
   if(action==='upgradeItem'&&(result as any)?.success)world.counters.forges++;

@@ -17,6 +17,7 @@ import { DEFAULT_BACKPACK } from "../data/backpacks";
 import { recalcStats as recalculate } from "./stats";
 import { attackElement, elementMultiplier } from "../data/elementalChart";
 import { applyTrainingDeathPenalty } from "./training";
+import { shardChance } from "../data/mythreonEconomy";
 
 interface Profile { xpPct: number; goldPct: number; dropPct: number; rarePct: number; healPct: number; skillDmgPct: number; cdReduce: number; lifesteal: number; }
 
@@ -81,7 +82,7 @@ function resolveDeath(char: Character, xpLost: number, goldLost: number): NonNul
 }
 
 export function processTick(char: Character, zone: Zone, isOffline: boolean): TickResult {
-  const result: TickResult = { kills: 0, gold: 0, xp: 0, drops: [], levelsGained: 0, death: false, log: [], enemyHp: 0, enemyMaxHp: 0, zoneId: zone.id, killed: {}, bossKills: {}, dropCounts: {}, potionsUsed: 0, goldSpentPotions: 0, soldGold: 0, salvagedItems: 0, attacked: false, usedMp: false, cardsDropped: [], divineBeastsDropped: [], damageDealt: 0, damageTaken: 0, damageBreakdown: emptyDamageBreakdown(), damageTakenBreakdown: emptyDamageBreakdown(), combatDurationMs: 0, encounters: [] };
+  const result: TickResult = { kills: 0, gold: 0, xp: 0, drops: [], levelsGained: 0, death: false, log: [], enemyHp: 0, enemyMaxHp: 0, zoneId: zone.id, killed: {}, bossKills: {}, dropCounts: {}, potionsUsed: 0, goldSpentPotions: 0, soldGold: 0, salvagedItems: 0, attacked: false, usedMp: false, cardsDropped: [], divineBeastsDropped: [], damageDealt: 0, damageTaken: 0, damageBreakdown: emptyDamageBreakdown(), damageTakenBreakdown: emptyDamageBreakdown(), combatDurationMs: 0, encounters: [], mythreonShards: 0 };
   const debug = isDebug();
   const offlineLimitSeconds = OFFLINE_MAX_HOURS * 3600 + Math.max(0, char.skills?.soul ?? 0) * 15 * 60;
   const requestedTicks = isOffline ? Math.min(Math.floor((Date.now() - char.lastTick) / TICK_MS), offlineLimitSeconds / (TICK_MS / 1000)) : 1;
@@ -344,6 +345,12 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
       const g = Math.floor((enemy.goldMin + Math.floor(Math.random() * (enemy.goldMax - enemy.goldMin + 1))) * goldDifficulty * (1 + prof.goldPct));
       const xpGained = Math.floor(enemy.xp * (1 + prof.xpPct)) * (debug ? 10 : 1);
       result.gold += g; char.gold += g; result.xp += xpGained; char.xp += xpGained;
+      if (!debug && Math.random() < shardChance(enemy)) {
+        const shards = enemy.isBoss || enemy.difficulty >= 4 ? 2 : 1;
+        char.mythreonShards = (char.mythreonShards ?? 0) + shards;
+        result.mythreonShards = (result.mythreonShards ?? 0) + shards;
+        result.log.push(`🔷 Você encontrou ${shards} Mythreon Shard${shards > 1 ? "s" : ""}.`);
+      }
       const loot: HuntLootEntry[] = [];
       const soldGoldBefore = result.soldGold ?? 0;
       heal(hpMax * BALANCE.killRecovery);

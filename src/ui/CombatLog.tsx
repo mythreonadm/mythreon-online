@@ -13,6 +13,7 @@ export function CombatLog() {
         <span className="text-yellow-400 font-bold">💰 +{lastTickResult.gold}</span>
         <span className="text-arcane-cyan font-bold">✨ +{lastTickResult.xp} XP</span>
         <span className="text-green-400 font-bold">📦 +{lastTickResult.drops.length} drops</span>
+        {!!lastTickResult.mythreonShards && <span className="text-cyan-300 font-bold">🔷 +{lastTickResult.mythreonShards} Shards</span>}
       </div>
       <div className="space-y-1 text-xs text-gray-300 bg-black/40 p-3 rounded-lg h-32 overflow-y-auto font-mono">
         {lastTickResult.log.map((line, i) => (

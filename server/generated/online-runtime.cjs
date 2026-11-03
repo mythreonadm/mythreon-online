@@ -89,7 +89,24 @@ function buildTemplates() {
   }
   return out;
 }
-var ALL_EQUIPMENT_TEMPLATES = buildTemplates();
+var SWAMP_EQUIPMENT_TEMPLATES = {
+  CAPUZ_MIASMA_T3: createItem({ templateId: "CAPUZ_MIASMA_T3", name: "Capuz do Miasma", category: "ARMADURA", slot: "CAPACETE", tier: 3, stats: { arm: 22, hp: 240, mp: 60, resMagico: 0.04 }, icon: "\u2623\uFE0F" }),
+  MANTO_MEMORIA_T3: createItem({ templateId: "MANTO_MEMORIA_T3", name: "Manto da Mem\xF3ria", category: "ARMADURA", slot: "ARMADURA", tier: 3, stats: { arm: 32, hp: 360, matk: 25 }, icon: "\u{1F9E5}" }),
+  LUVAS_LAMINA_T3: createItem({ templateId: "LUVAS_LAMINA_T3", name: "Luvas da L\xE2mina", category: "ARMADURA", slot: "LUVAS", tier: 3, stats: { arm: 14, atk: 22, hit: 0.04 }, icon: "\u{1FABD}" }),
+  BOTAS_SILTE_T3: createItem({ templateId: "BOTAS_SILTE_T3", name: "Botas do Silte", category: "ARMADURA", slot: "BOTAS", tier: 3, stats: { arm: 15, spd: 0.14, dge: 0.03 }, icon: "\u{1F97E}" }),
+  PULSEIRA_VEYRA_T3: createItem({ templateId: "PULSEIRA_VEYRA_T3", name: "Pulseira da Matriarca", category: "PULSEIRA", slot: "PULSEIRA", tier: 3, stats: { hp: 120, mp: 100, hpRegen: 4, mpRegen: 5, resMagico: 0.04 }, icon: "\u{1FAB7}" }),
+  ARCO_LIBELULA_T3: createItem({ templateId: "ARCO_LIBELULA_T3", name: "Arco da Lib\xE9lula", category: "ARMA", slot: "ARMA_PRINCIPAL", tier: 3, stats: { atk: 68, hit: 0.08, spd: 0.05 }, icon: "\u{1F3F9}" }),
+  ESCUDO_CARAPACA_VEYRA_T3: createItem({ templateId: "ESCUDO_CARAPACA_VEYRA_T3", name: "Escudo de Carapa\xE7a", category: "ESCUDO", slot: "OFF_HAND", tier: 3, stats: { def: 26, arm: 15, blk: 0.11, resFisico: 0.04 }, icon: "\u{1F6E1}\uFE0F" }),
+  COLAR_RAIZ_MEMORIA_T3: createItem({ templateId: "COLAR_RAIZ_MEMORIA_T3", name: "Colar da Raiz-Mem\xF3ria", category: "JOIA", slot: "COLAR", tier: 3, stats: { hp: 210, mp: 140, resMagico: 0.05, hpRegen: 2 }, icon: "\u{1F33F}" })
+};
+var ALL_EQUIPMENT_TEMPLATES = { ...buildTemplates(), ...SWAMP_EQUIPMENT_TEMPLATES };
+var SWAMP_MATERIAL_TEMPLATES = {
+  RESINA_MIASMA: createItem({ templateId: "RESINA_MIASMA", name: "Resina de Miasma", category: "MATERIAL", tier: 3, rarity: "COMUM", icon: "\u{1F9EA}", stackable: true, maxStack: 999 }),
+  ASA_LAMINA: createItem({ templateId: "ASA_LAMINA", name: "Asa Laminada", category: "MATERIAL", tier: 3, rarity: "COMUM", icon: "\u{1FABD}", stackable: true, maxStack: 999 }),
+  NO_MEMORIA: createItem({ templateId: "NO_MEMORIA", name: "N\xF3 de Mem\xF3ria", category: "MATERIAL", tier: 3, rarity: "RARO", icon: "\u{1FAA2}", stackable: true, maxStack: 999 }),
+  DENTE_SILTE: createItem({ templateId: "DENTE_SILTE", name: "Dente de Silte", category: "MATERIAL", tier: 3, rarity: "RARO", icon: "\u{1F9B7}", stackable: true, maxStack: 999 }),
+  COROA_LODO: createItem({ templateId: "COROA_LODO", name: "Coroa de Lodo", category: "MATERIAL", tier: 3, rarity: "EPICO", icon: "\u{1F451}", stackable: true, maxStack: 999 })
+};
 var ARROW_TEMPLATES = Object.fromEntries(TIERS.map((tier) => {
   const names = ["Flecha de Madeira", "Flecha de Pedra", "Flecha de A\xE7o", "Flecha Estelar", "Flecha do Eclipse"];
   const item = createItem({ templateId: `FLECHA_T${tier}`, name: names[tier - 1], category: "FLECHA", slot: "MUNICAO", tier, rarity: "COMUM", stats: { atk: [4, 9, 18, 36, 72][tier - 1], hit: [0, 0.01, 0.02, 0.03, 0.04][tier - 1] }, stackable: false, maxStack: 1, quantity: 1, icon: "\u{1F3F9}" });
@@ -130,7 +147,7 @@ var FRAGMENT_TEMPLATES = {
   FRAGMENTO_RARO: createItem({ templateId: "FRAGMENTO_RARO", name: "Fragmento Raro", category: "FRAGMENTO", tier: 1, rarity: "RARO", icon: "\u{1F48E}", stackable: true, maxStack: 999, quantity: 1, stats: {} }),
   FRAGMENTO_EPICO: createItem({ templateId: "FRAGMENTO_EPICO", name: "Fragmento \xC9pico", category: "FRAGMENTO", tier: 1, rarity: "EPICO", icon: "\u{1F52E}", stackable: true, maxStack: 999, quantity: 1, stats: {} })
 };
-var ALL_ITEM_TEMPLATES = { ...ALL_EQUIPMENT_TEMPLATES, ...ARROW_TEMPLATES, ...POTION_TEMPLATES, ...UNIQUE_TEMPLATES, ...FRAGMENT_TEMPLATES };
+var ALL_ITEM_TEMPLATES = { ...ALL_EQUIPMENT_TEMPLATES, ...SWAMP_MATERIAL_TEMPLATES, ...ARROW_TEMPLATES, ...POTION_TEMPLATES, ...UNIQUE_TEMPLATES, ...FRAGMENT_TEMPLATES };
 
 // src/engine/training.ts
 var TRAINING_MILESTONES = [
@@ -280,7 +297,12 @@ var ATTACK_SKILLS = {
   A12: { mult: 2.4, pierce: 0.8, manaCost: 20, desc: "Chicote Abissal: Ignora quase toda armadura." },
   A13: { mult: 2.6, pierce: 0.5, manaCost: 22, desc: "Descarga: Dano de trov\xE3o em cadeia." },
   A14: { mult: 2.2, pierce: 0.3, manaCost: 18, lifesteal: 0.4, desc: "Devorar: Drena vida do alvo." },
-  A15: { mult: 3, pierce: 0.6, manaCost: 25, desc: "Julgamento Estelar: Dano sagrado devastador." }
+  A15: { mult: 3, pierce: 0.6, manaCost: 25, desc: "Julgamento Estelar: Dano sagrado devastador." },
+  A16: { mult: 2.1, pierce: 0.25, manaCost: 16, desc: "N\xE9voa T\xF3xica: Dano de veneno e corros\xE3o." },
+  A17: { mult: 2.3, pierce: 0.45, manaCost: 17, desc: "Corte Prism\xE1tico: Dano de vento e precis\xE3o." },
+  A18: { mult: 2.2, pierce: 0.35, manaCost: 18, desc: "La\xE7o da Mem\xF3ria: Dano ps\xEDquico e eco." },
+  A19: { mult: 2.4, pierce: 0.3, manaCost: 19, desc: "Mordida Lodosa: Dano de \xE1gua e lentid\xE3o." },
+  A20: { mult: 3.2, pierce: 0.55, manaCost: 28, desc: "Dil\xFAvio de Lodo: Dano de veneno em \xE1rea." }
 };
 var ATTACK_SKILL_COOLDOWN = 4;
 var SUPPORT_EFFECTS = {
@@ -1127,7 +1149,12 @@ var ATAQUES = {
   A12: { id: "A12", name: "Tent\xE1culo Abissal", type: "ATAQUE", law: "NOCTHAR", icon: "\u{1F419}", skillName: "Chicote Abissal", skillDescription: "Dano sombrio que ignora armadura" },
   A13: { id: "A13", name: "Fragmento de Tempestade", type: "ATAQUE", law: "KAELOR", icon: "\u26A1", skillName: "Descarga", skillDescription: "Dano de trov\xE3o em cadeia" },
   A14: { id: "A14", name: "Presa de Verme-Abissal", type: "ATAQUE", law: "NOCTHAR", icon: "\u{1FAB1}", skillName: "Devorar", skillDescription: "Dano + drena vida" },
-  A15: { id: "A15", name: "Fragmento de Asterion", type: "ATAQUE", law: "ASTER", icon: "\u2604\uFE0F", skillName: "Julgamento Estelar", skillDescription: "Dano sagrado devastador" }
+  A15: { id: "A15", name: "Fragmento de Asterion", type: "ATAQUE", law: "ASTER", icon: "\u2604\uFE0F", skillName: "Julgamento Estelar", skillDescription: "Dano sagrado devastador" },
+  A16: { id: "A16", name: "Gl\xE2ndula de Miasma", type: "ATAQUE", law: "VEYRA", icon: "\u{1F9EA}", skillName: "N\xE9voa T\xF3xica", skillDescription: "Dano de veneno + corros\xE3o" },
+  A17: { id: "A17", name: "Asa de Lib\xE9lula-L\xE2mina", type: "ATAQUE", law: "RAAN", icon: "\u{1FABD}", skillName: "Corte Prism\xE1tico", skillDescription: "Dano de vento + precis\xE3o" },
+  A18: { id: "A18", name: "N\xF3 de Mem\xF3ria", type: "ATAQUE", law: "VEYRA", icon: "\u{1FAA2}", skillName: "La\xE7o da Mem\xF3ria", skillDescription: "Dano ps\xEDquico + eco" },
+  A19: { id: "A19", name: "Dente de Silte", type: "ATAQUE", law: "NOCTHAR", icon: "\u{1F9B7}", skillName: "Mordida Lodosa", skillDescription: "Dano de \xE1gua + lentid\xE3o" },
+  A20: { id: "A20", name: "Coroa da Matriarca", type: "ATAQUE", law: "VEYRA", icon: "\u{1F451}", skillName: "Dil\xFAvio de Lodo", skillDescription: "Dano de veneno em \xE1rea" }
 };
 var SUPORTES = {
   S1: { id: "S1", name: "N\xFAcleo de Lyss", type: "SUPORTE", law: "LYSS", icon: "\u{1F49A}", skillName: "B\xEAn\xE7\xE3o de Lyss", skillDescription: "Cura" },
@@ -1142,7 +1169,12 @@ var SUPORTES = {
   S10: { id: "S10", name: "N\xFAcleo de Loghis", type: "SUPORTE", law: "LOGHIS", icon: "\u{1F9EE}", skillName: "C\xE1lculo", skillDescription: "Aumenta precis\xE3o e cr\xEDtico" },
   S11: { id: "S11", name: "N\xFAcleo de Prime", type: "SUPORTE", law: "PRIME", icon: "\u262F\uFE0F", skillName: "Equil\xEDbrio", skillDescription: "Buff ATK/DEF permanente" },
   S12: { id: "S12", name: "N\xFAcleo de Synthes", type: "SUPORTE", law: "SYNTHES", icon: "\u{1F517}", skillName: "Fus\xE3o", skillDescription: "Rouba vida dos golpes" },
-  S13: { id: "S13", name: "N\xFAcleo de Voro", type: "SUPORTE", law: "VORO", icon: "\u{1FA78}", skillName: "Preda\xE7\xE3o", skillDescription: "Mais dano em alvos feridos" }
+  S13: { id: "S13", name: "N\xFAcleo de Voro", type: "SUPORTE", law: "VORO", icon: "\u{1FA78}", skillName: "Preda\xE7\xE3o", skillDescription: "Mais dano em alvos feridos" },
+  S14: { id: "S14", name: "N\xFAcleo de Miasma", type: "SUPORTE", law: "VEYRA", icon: "\u2623\uFE0F", skillName: "V\xE9u Contaminado", skillDescription: "Resist\xEAncia a veneno" },
+  S15: { id: "S15", name: "N\xFAcleo de L\xE2mina", type: "SUPORTE", law: "RAAN", icon: "\u{1F300}", skillName: "Corrente Cortante", skillDescription: "Precis\xE3o e velocidade" },
+  S16: { id: "S16", name: "N\xFAcleo de Mem\xF3ria", type: "SUPORTE", law: "VEYRA", icon: "\u{1F4DC}", skillName: "Revela\xE7\xE3o Profunda", skillDescription: "Revela fraquezas e aumenta XP" },
+  S17: { id: "S17", name: "N\xFAcleo de Silte", type: "SUPORTE", law: "NOCTHAR", icon: "\u{1F30A}", skillName: "Coura\xE7a de Lodo", skillDescription: "Escudo contra \xE1gua e f\xEDsico" },
+  S18: { id: "S18", name: "N\xFAcleo da Matriarca", type: "SUPORTE", law: "VEYRA", icon: "\u{1F331}", skillName: "Raiz Regeneradora", skillDescription: "Regenera\xE7\xE3o de vida e mana" }
 };
 var PASSIVAS = {
   P1: { id: "P1", name: "Passiva da Floresta", type: "PASSIVA", law: "LYSS", icon: "\u{1F332}", skillName: "Mem\xF3ria", skillDescription: "+Cura recebida" },
@@ -1156,45 +1188,54 @@ var PASSIVAS = {
   P9: { id: "P9", name: "Passiva da Encruzilhada", type: "PASSIVA", law: "VORO", icon: "\u{1F6E4}\uFE0F", skillName: "Ceticismo", skillDescription: "+Cr\xEDtico" },
   P10: { id: "P10", name: "Passiva da Biblioteca", type: "PASSIVA", law: "VEYRA", icon: "\u{1F3DB}\uFE0F", skillName: "Erudi\xE7\xE3o", skillDescription: "+XP" },
   P11: { id: "P11", name: "Passiva das Ru\xEDnas", type: "PASSIVA", law: "VEYRA", icon: "\u{1F3DA}\uFE0F", skillName: "Eco", skillDescription: "+Drops raros" },
-  P12: { id: "P12", name: "Passiva da Forja", type: "PASSIVA", law: "SYNTHES", icon: "\u2692\uFE0F", skillName: "Forja", skillDescription: "+Crafting" }
+  P12: { id: "P12", name: "Passiva da Forja", type: "PASSIVA", law: "SYNTHES", icon: "\u2692\uFE0F", skillName: "Forja", skillDescription: "+Crafting" },
+  P13: { id: "P13", name: "Passiva do P\xE2ntano", type: "PASSIVA", law: "VEYRA", icon: "\u{1FAB7}", skillName: "Resili\xEAncia", skillDescription: "+Resist\xEAncia a veneno e \xE1gua" },
+  P14: { id: "P14", name: "Passiva da Resina", type: "PASSIVA", law: "VEYRA", icon: "\u{1F7E2}", skillName: "Crescimento", skillDescription: "+Regenera\xE7\xE3o e vida m\xE1xima" }
 };
 var ALL_COMPONENTS = { ...ATAQUES, ...SUPORTES, ...PASSIVAS };
 
 // src/data/affixes.ts
+var PERCENT_AFFIX_RANGES = {
+  COMUM: { crit: [5e-3, 0.015], critDmg: [0.05, 0.1], hit: [5e-3, 0.015], spd: [5e-3, 0.015], luck: [5e-3, 0.015], dge: [5e-3, 0.015], blk: [5e-3, 0.015], resFisico: [5e-3, 0.015], resMagico: [5e-3, 0.015] },
+  INCOMUM: { crit: [0.012, 0.025], critDmg: [0.08, 0.15], hit: [0.012, 0.025], spd: [0.012, 0.025], luck: [0.012, 0.025], dge: [0.012, 0.025], blk: [0.012, 0.025], resFisico: [0.012, 0.025], resMagico: [0.012, 0.025] },
+  RARO: { crit: [0.02, 0.04], critDmg: [0.12, 0.22], hit: [0.02, 0.04], spd: [0.02, 0.04], luck: [0.02, 0.04], dge: [0.02, 0.04], blk: [0.02, 0.04], resFisico: [0.02, 0.04], resMagico: [0.02, 0.04] },
+  EPICO: { crit: [0.035, 0.06], critDmg: [0.18, 0.3], hit: [0.035, 0.06], spd: [0.035, 0.06], luck: [0.035, 0.06], dge: [0.035, 0.06], blk: [0.035, 0.06], resFisico: [0.035, 0.06], resMagico: [0.035, 0.06] },
+  LENDARIO: { crit: [0.055, 0.09], critDmg: [0.25, 0.4], hit: [0.055, 0.09], spd: [0.055, 0.09], luck: [0.055, 0.09], dge: [0.055, 0.09], blk: [0.055, 0.09], resFisico: [0.055, 0.09], resMagico: [0.055, 0.09] }
+};
 var WEAPON_AFFIXES = [
   { stat: "atk", minBase: 2, maxBase: 5, isPercent: false, weight: 20 },
   { stat: "matk", minBase: 2, maxBase: 5, isPercent: false, weight: 20 },
-  { stat: "crit", minBase: 0.01, maxBase: 0.02, isPercent: true, weight: 15 },
-  { stat: "critDmg", minBase: 0.05, maxBase: 0.1, isPercent: true, weight: 15 },
-  { stat: "hit", minBase: 0.01, maxBase: 0.02, isPercent: true, weight: 10 },
-  { stat: "spd", minBase: 0.01, maxBase: 0.03, isPercent: true, weight: 10 },
-  { stat: "luck", minBase: 0.01, maxBase: 0.03, isPercent: true, weight: 10 }
-  // Lucky = chance de drop raro
+  { stat: "crit", minBase: 0, maxBase: 0, isPercent: true, weight: 15 },
+  { stat: "critDmg", minBase: 0, maxBase: 0, isPercent: true, weight: 15 },
+  { stat: "hit", minBase: 0, maxBase: 0, isPercent: true, weight: 10 },
+  { stat: "spd", minBase: 0, maxBase: 0, isPercent: true, weight: 10 },
+  { stat: "luck", minBase: 0, maxBase: 0, isPercent: true, weight: 10 }
+  // Sorte = chance de drop raro
 ];
 var ARMOR_AFFIXES = [
   { stat: "hp", minBase: 10, maxBase: 30, isPercent: false, weight: 20 },
   { stat: "arm", minBase: 1, maxBase: 3, isPercent: false, weight: 20 },
   { stat: "def", minBase: 1, maxBase: 3, isPercent: false, weight: 15 },
   { stat: "hpRegen", minBase: 1, maxBase: 5, isPercent: false, weight: 15 },
-  { stat: "resFisico", minBase: 0.01, maxBase: 0.03, isPercent: true, weight: 10 },
-  { stat: "resMagico", minBase: 0.01, maxBase: 0.03, isPercent: true, weight: 10 },
-  { stat: "dge", minBase: 0.01, maxBase: 0.02, isPercent: true, weight: 10 }
+  { stat: "resFisico", minBase: 0, maxBase: 0, isPercent: true, weight: 10 },
+  { stat: "resMagico", minBase: 0, maxBase: 0, isPercent: true, weight: 10 },
+  { stat: "dge", minBase: 0, maxBase: 0, isPercent: true, weight: 10 }
 ];
 var SHIELD_AFFIXES = [
   { stat: "arm", minBase: 2, maxBase: 6, isPercent: false, weight: 30 },
-  { stat: "blk", minBase: 0.01, maxBase: 0.03, isPercent: true, weight: 30 },
+  { stat: "blk", minBase: 0, maxBase: 0, isPercent: true, weight: 30 },
   { stat: "hp", minBase: 10, maxBase: 20, isPercent: false, weight: 20 },
-  { stat: "resFisico", minBase: 0.02, maxBase: 0.04, isPercent: true, weight: 10 },
-  { stat: "resMagico", minBase: 0.02, maxBase: 0.04, isPercent: true, weight: 10 }
+  { stat: "resFisico", minBase: 0, maxBase: 0, isPercent: true, weight: 10 },
+  { stat: "resMagico", minBase: 0, maxBase: 0, isPercent: true, weight: 10 }
 ];
 var JEWELRY_AFFIXES = [
   { stat: "hp", minBase: 5, maxBase: 20, isPercent: false, weight: 15 },
   { stat: "mp", minBase: 5, maxBase: 20, isPercent: false, weight: 15 },
   { stat: "mpRegen", minBase: 1, maxBase: 3, isPercent: false, weight: 15 },
-  { stat: "crit", minBase: 0.01, maxBase: 0.02, isPercent: true, weight: 15 },
+  { stat: "crit", minBase: 0, maxBase: 0, isPercent: true, weight: 15 },
   { stat: "atk", minBase: 1, maxBase: 3, isPercent: false, weight: 10 },
   { stat: "matk", minBase: 1, maxBase: 3, isPercent: false, weight: 10 },
-  { stat: "luck", minBase: 0.01, maxBase: 0.05, isPercent: true, weight: 20 }
+  { stat: "luck", minBase: 0, maxBase: 0, isPercent: true, weight: 20 }
 ];
 function getPoolForCategory(category) {
   switch (category) {
@@ -1216,15 +1257,8 @@ function getPoolForCategory(category) {
 // src/engine/drops.ts
 var RARITY_ORDER = ["COMUM", "INCOMUM", "RARO", "EPICO", "LENDARIO"];
 var RARITY_MULT = { COMUM: 1, INCOMUM: 1.3, RARO: 1.7, EPICO: 2.2, LENDARIO: 3 };
-var PERCENT_AFFIX_RANGES = {
-  COMUM: { crit: [.005, .015], critDmg: [.05, .1], hit: [.005, .015], spd: [.005, .015], luck: [.005, .015], dge: [.005, .015], blk: [.005, .015], resFisico: [.005, .015], resMagico: [.005, .015] },
-  INCOMUM: { crit: [.012, .025], critDmg: [.08, .15], hit: [.012, .025], spd: [.012, .025], luck: [.012, .025], dge: [.012, .025], blk: [.012, .025], resFisico: [.012, .025], resMagico: [.012, .025] },
-  RARO: { crit: [.02, .04], critDmg: [.12, .22], hit: [.02, .04], spd: [.02, .04], luck: [.02, .04], dge: [.02, .04], blk: [.02, .04], resFisico: [.02, .04], resMagico: [.02, .04] },
-  EPICO: { crit: [.035, .06], critDmg: [.18, .3], hit: [.035, .06], spd: [.035, .06], luck: [.035, .06], dge: [.035, .06], blk: [.035, .06], resFisico: [.035, .06], resMagico: [.035, .06] },
-  LENDARIO: { crit: [.055, .09], critDmg: [.25, .4], hit: [.055, .09], spd: [.055, .09], luck: [.055, .09], dge: [.055, .09], blk: [.055, .09], resFisico: [.055, .09], resMagico: [.055, .09] }
-};
 var AFFIX_COUNT = { COMUM: 1, INCOMUM: 1, RARO: 2, EPICO: 3, LENDARIO: 4 };
-var FLAT_AFFIX_MULT = { COMUM: .8, INCOMUM: 1, RARO: 1.35, EPICO: 1.75, LENDARIO: 2.2 };
+var FLAT_AFFIX_MULT = { COMUM: 0.8, INCOMUM: 1, RARO: 1.35, EPICO: 1.75, LENDARIO: 2.2 };
 function rollRarity(bonus = 0) {
   const r = Math.random() / (1 + clamp(bonus, 0, 1));
   if (r < 2e-3) return "LENDARIO";
@@ -1288,6 +1322,11 @@ function makeComponent(templateId) {
   const t = ALL_COMPONENTS[templateId];
   return createItem({ templateId: t.id, name: t.name, category: "COMPONENTE", tier: 1, componentType: t.type, law: t.law, icon: t.icon, stackable: true, maxStack: 999, quantity: 1, upgradeLevel: 0 });
 }
+function makeMaterial(templateId) {
+  const t = ALL_ITEM_TEMPLATES[templateId];
+  if (!t || t.category !== "MATERIAL") return null;
+  return { ...t, uid: generateId(), stats: { ...t.stats }, quantity: 1, upgradeLevel: 0 };
+}
 function makeBackpack(key, tier = 1) {
   const bp = BACKPACKS[key];
   if (!bp) return null;
@@ -1303,12 +1342,16 @@ function rollDrops(enemy, zone, _char, mods = { dropBonus: 0, rareBonus: 0 }) {
   const progressionScale = enemy.isBoss ? 1 : 0.68;
   if (chance(enemy.componentChance * progressionScale)) drops.push(makeComponent(enemy.componentId));
   if (enemy.essenceId && chance((enemy.essenceChance ?? 0) * (enemy.isBoss ? 1 : 0.58))) drops.push(makeComponent(enemy.essenceId));
+  if (enemy.materialDropId && chance(enemy.materialChance ?? 0.35)) {
+    const material = makeMaterial(enemy.materialDropId);
+    if (material) drops.push(material);
+  }
   if (chance(enemy.isBoss ? 0.25 : 0.08)) {
     const arrow = ARROW_TEMPLATES[`FLECHA_T${zone.tier}`];
     if (arrow) drops.push({ ...arrow, uid: generateId(), quantity: 1 });
   }
   if (chance(enemy.isBoss ? BALANCE.bossEquipmentDrop : BALANCE.equipmentDrop)) {
-    const pool2 = Object.values(ALL_EQUIPMENT_TEMPLATES).filter((t) => t.tier === zone.tier);
+    const pool2 = enemy.equipmentDropIds?.length ? enemy.equipmentDropIds.map((id) => ALL_EQUIPMENT_TEMPLATES[id]).filter(Boolean) : Object.values(ALL_EQUIPMENT_TEMPLATES).filter((t) => t.tier === zone.tier);
     if (pool2.length > 0) {
       const base = pool2[Math.floor(Math.random() * pool2.length)];
       const eq = makeEquipment(base.templateId, rollRarity(mods.rareBonus + (enemy.isBoss ? 0.5 : 0)));
@@ -1587,11 +1630,11 @@ var ZONES = {
   }
 };
 ZONES.PANTANO_VEYRA = { id: "PANTANO_VEYRA", name: "P\xE2ntano de Veyra", tier: 3, minLevel: 26, maxLevel: 45, theme: "swamp", ambientDrop: "P3", ambientPool: ["P3", "P5"], enemies: [
-  { id: "SAPO_MIASMA", name: "Sapo-Miasma", hp: 360, atk: 45, arm: 15, xp: 190, goldMin: 65, goldMax: 110, componentId: "A2", componentChance: 0.55, essenceId: "S2", essenceChance: 0.15, element: "VENENO", elementalResistances: { VENENO: 0.35, AGUA: 0.15 }, isBoss: false, difficulty: 2, minLevel: 26, emoji: "\u{1F438}" },
-  { id: "LIBELULA_LAMINA", name: "Lib\xE9lula-L\xE2mina", hp: 310, atk: 55, arm: 12, xp: 220, goldMin: 75, goldMax: 120, componentId: "A10", componentChance: 0.55, essenceId: "S8", essenceChance: 0.15, element: "VENTO", isBoss: false, difficulty: 3, minLevel: 29, emoji: "\u{1F98B}" },
-  { id: "CIPO_MEMORIA", name: "Cip\xF3 da Mem\xF3ria", hp: 420, atk: 48, arm: 23, xp: 260, goldMin: 90, goldMax: 140, componentId: "A7", componentChance: 0.55, essenceId: "S3", essenceChance: 0.15, element: "PSIQUICO", damageType: "MAGICO", isBoss: false, difficulty: 3, minLevel: 33, emoji: "\u{1F33F}" },
-  { id: "CROCODILO_SILTE", name: "Crocodilo de Silte", hp: 600, atk: 60, arm: 28, xp: 320, goldMin: 110, goldMax: 170, componentId: "A5", componentChance: 0.55, essenceId: "S4", essenceChance: 0.15, element: "AGUA", elementalResistances: { AGUA: 0.3 }, isBoss: false, difficulty: 4, minLevel: 38, emoji: "\u{1F40A}" },
-  { id: "MATRIARCA_LODO", name: "Matriarca do Lodo", hp: 1500, atk: 82, arm: 32, xp: 1150, goldMin: 500, goldMax: 750, componentId: "A7", componentChance: 1, essenceId: "S3", essenceChance: 0.3, element: "VENENO", damageType: "MAGICO", elementalResistances: { VENENO: 0.4, AGUA: 0.2 }, isBoss: true, difficulty: 5, minLevel: 44, emoji: "\u{1F333}" }
+  { id: "SAPO_MIASMA", name: "Sapo-Miasma", hp: 360, atk: 45, arm: 15, xp: 190, goldMin: 65, goldMax: 110, componentId: "A16", componentChance: 0.5, essenceId: "S14", essenceChance: 0.14, materialDropId: "RESINA_MIASMA", materialChance: 0.42, equipmentDropIds: ["CAPUZ_MIASMA_T3"], element: "VENENO", elementalResistances: { VENENO: 0.35, AGUA: 0.15 }, isBoss: false, difficulty: 2, minLevel: 26, emoji: "\u{1F438}" },
+  { id: "LIBELULA_LAMINA", name: "Lib\xE9lula-L\xE2mina", hp: 310, atk: 55, arm: 12, xp: 220, goldMin: 75, goldMax: 120, componentId: "A17", componentChance: 0.5, essenceId: "S15", essenceChance: 0.14, materialDropId: "ASA_LAMINA", materialChance: 0.42, equipmentDropIds: ["LUVAS_LAMINA_T3", "ARCO_LIBELULA_T3"], element: "VENTO", isBoss: false, difficulty: 3, minLevel: 29, emoji: "\u{1F98B}" },
+  { id: "CIPO_MEMORIA", name: "Cip\xF3 da Mem\xF3ria", hp: 420, atk: 48, arm: 23, xp: 260, goldMin: 90, goldMax: 140, componentId: "A18", componentChance: 0.5, essenceId: "S16", essenceChance: 0.14, materialDropId: "NO_MEMORIA", materialChance: 0.42, equipmentDropIds: ["MANTO_MEMORIA_T3", "COLAR_RAIZ_MEMORIA_T3"], element: "PSIQUICO", damageType: "MAGICO", isBoss: false, difficulty: 3, minLevel: 33, emoji: "\u{1F33F}" },
+  { id: "CROCODILO_SILTE", name: "Crocodilo de Silte", hp: 600, atk: 60, arm: 28, xp: 320, goldMin: 110, goldMax: 170, componentId: "A19", componentChance: 0.5, essenceId: "S17", essenceChance: 0.14, materialDropId: "DENTE_SILTE", materialChance: 0.42, equipmentDropIds: ["BOTAS_SILTE_T3", "ESCUDO_CARAPACA_VEYRA_T3"], element: "AGUA", elementalResistances: { AGUA: 0.3 }, isBoss: false, difficulty: 4, minLevel: 38, emoji: "\u{1F40A}" },
+  { id: "MATRIARCA_LODO", name: "Matriarca do Lodo", hp: 1500, atk: 82, arm: 32, xp: 1150, goldMin: 500, goldMax: 750, componentId: "A20", componentChance: 1, essenceId: "S18", essenceChance: 0.3, materialDropId: "COROA_LODO", materialChance: 0.8, equipmentDropIds: ["PULSEIRA_VEYRA_T3", "MANTO_MEMORIA_T3"], element: "VENENO", damageType: "MAGICO", elementalResistances: { VENENO: 0.4, AGUA: 0.2 }, isBoss: true, difficulty: 5, minLevel: 44, emoji: "\u{1F333}" }
 ] };
 ZONES.DESERTO_KAELOR = { id: "DESERTO_KAELOR", name: "Deserto de Kaelor", tier: 4, minLevel: 46, maxLevel: 70, theme: "desert", ambientDrop: "P4", ambientPool: ["P4", "P7"], enemies: [
   { id: "ESCARAVELHO_VITREO", name: "Escaravelho V\xEDtreo", hp: 850, atk: 95, arm: 36, xp: 450, goldMin: 160, goldMax: 250, componentId: "A2", componentChance: 0.55, essenceId: "S10", essenceChance: 0.15, element: "METAL", elementalResistances: { METAL: 0.35 }, isBoss: false, difficulty: 3, minLevel: 46, emoji: "\u{1FAB2}" },
@@ -1626,6 +1669,8 @@ function createNewCharacter(name) {
     mp: base.mp,
     mpMax: base.mp,
     baseStats: base,
+    mythreonShards: 0,
+    mythreonCoins: 0,
     equipped: {},
     inventory: { backpack: { ...DEFAULT_BACKPACK }, items: [] },
     killsInZone: 0,
@@ -1704,6 +1749,8 @@ function loadGame() {
       if (data.character.trainingSkill === void 0) data.character.trainingSkill = null;
       if (!data.character.quests) data.character.quests = { active: {}, completed: [] };
       if (data.character.blesses === void 0) data.character.blesses = 0;
+      if (!Number.isFinite(data.character.mythreonShards)) data.character.mythreonShards = 0;
+      if (!Number.isFinite(data.character.mythreonCoins)) data.character.mythreonCoins = 0;
       if (data.character.autoSalvage === void 0) data.character.autoSalvage = null;
       if (data.character.autoSell === void 0) data.character.autoSell = null;
       if (!Array.isArray(data.character.autoSellTemplateIds)) data.character.autoSellTemplateIds = [];
@@ -2366,6 +2413,25 @@ function rollCardDrop(monsterId, tier, isBoss) {
   return null;
 }
 
+// src/data/mythreonEconomy.ts
+var MYTHREON_ECONOMY = {
+  shardsPerCoin: 100,
+  goldPerCoin: 25e3,
+  shardBaseChance: 8e-3,
+  shardDifficultyBonus: 3e-3,
+  shardLevelBonus: 5e-5
+};
+var MYTHREON_OFFERS = [
+  { id: "BLACK_SIGIL", name: "Sigilo do Primeiro Eco", description: "Rel\xEDquia do despertar de um novo aventureiro.", icon: "\u2728", templateId: "UNICO_SIGILO_INICIACAO", priceCoins: 8 },
+  { id: "GUARD_RING", name: "Anel da Guarda Eterna", description: "Protege os itens contra a perda ao morrer.", icon: "\u{1F48D}", templateId: "UNICO_ANEL_GUARDIA", priceCoins: 75 },
+  { id: "EPIC_FRAGMENT", name: "N\xFAcleo de Fragmento \xC9pico", description: "Material raro para forjas de alto n\xEDvel.", icon: "\u{1F52E}", templateId: "FRAGMENTO_EPICO", priceCoins: 1 }
+];
+var getMythreonOffer = (id) => MYTHREON_OFFERS.find((offer) => offer.id === id);
+function shardChance(enemy) {
+  const base = MYTHREON_ECONOMY.shardBaseChance + enemy.difficulty * MYTHREON_ECONOMY.shardDifficultyBonus + (enemy.minLevel ?? 1) * MYTHREON_ECONOMY.shardLevelBonus;
+  return Math.min(0.05, base * (enemy.isBoss ? 1.5 : 1));
+}
+
 // src/engine/combat.ts
 function buildProfile(char) {
   const bp = char.inventory.backpack;
@@ -2428,7 +2494,7 @@ function resolveDeath(char, xpLost, goldLost) {
   return { xpLost, goldLost, blessed, protectedByRing, lostBackpack, lostItems };
 }
 function processTick(char, zone, isOffline) {
-  const result = { kills: 0, gold: 0, xp: 0, drops: [], levelsGained: 0, death: false, log: [], enemyHp: 0, enemyMaxHp: 0, zoneId: zone.id, killed: {}, bossKills: {}, dropCounts: {}, potionsUsed: 0, goldSpentPotions: 0, soldGold: 0, salvagedItems: 0, attacked: false, usedMp: false, cardsDropped: [], divineBeastsDropped: [], damageDealt: 0, damageTaken: 0, damageBreakdown: emptyDamageBreakdown(), damageTakenBreakdown: emptyDamageBreakdown(), combatDurationMs: 0, encounters: [] };
+  const result = { kills: 0, gold: 0, xp: 0, drops: [], levelsGained: 0, death: false, log: [], enemyHp: 0, enemyMaxHp: 0, zoneId: zone.id, killed: {}, bossKills: {}, dropCounts: {}, potionsUsed: 0, goldSpentPotions: 0, soldGold: 0, salvagedItems: 0, attacked: false, usedMp: false, cardsDropped: [], divineBeastsDropped: [], damageDealt: 0, damageTaken: 0, damageBreakdown: emptyDamageBreakdown(), damageTakenBreakdown: emptyDamageBreakdown(), combatDurationMs: 0, encounters: [], mythreonShards: 0 };
   const debug2 = isDebug();
   const offlineLimitSeconds = OFFLINE_MAX_HOURS * 3600 + Math.max(0, char.skills?.soul ?? 0) * 15 * 60;
   const requestedTicks = isOffline ? Math.min(Math.floor((Date.now() - char.lastTick) / TICK_MS), offlineLimitSeconds / (TICK_MS / 1e3)) : 1;
@@ -2716,6 +2782,12 @@ function processTick(char, zone, isOffline) {
       char.gold += g;
       result.xp += xpGained;
       char.xp += xpGained;
+      if (!debug2 && Math.random() < shardChance(enemy)) {
+        const shards = enemy.isBoss || enemy.difficulty >= 4 ? 2 : 1;
+        char.mythreonShards = (char.mythreonShards ?? 0) + shards;
+        result.mythreonShards = (result.mythreonShards ?? 0) + shards;
+        result.log.push(`\u{1F537} Voc\xEA encontrou ${shards} Mythreon Shard${shards > 1 ? "s" : ""}.`);
+      }
       const loot = [];
       const soldGoldBefore = result.soldGold ?? 0;
       heal(hpMax * BALANCE.killRecovery);
@@ -2931,7 +3003,12 @@ var SUPPORT_TITLES = {
   S10: "do C\xE1lculo",
   S11: "do Equil\xEDbrio",
   S12: "da Fus\xE3o",
-  S13: "da Preda\xE7\xE3o"
+  S13: "da Preda\xE7\xE3o",
+  S14: "do Miasma",
+  S15: "da L\xE2mina",
+  S16: "da Mem\xF3ria",
+  S17: "do Silte",
+  S18: "da Matriarca"
 };
 var PASSIVE_SUFFIXES = {
   P1: "Eterna",
@@ -2945,7 +3022,9 @@ var PASSIVE_SUFFIXES = {
   P9: "Cruel",
   P10: "Erudita",
   P11: "Rara",
-  P12: "\xC1urea"
+  P12: "\xC1urea",
+  P13: "do P\xE2ntano",
+  P14: "da Resina"
 };
 var ATAQUE_NOMES_CURTOS = {
   A1: "Presa de Lobo",
@@ -2962,7 +3041,12 @@ var ATAQUE_NOMES_CURTOS = {
   A12: "Tent\xE1culo Abissal",
   A13: "Fragmento de Tempestade",
   A14: "Presa de Verme",
-  A15: "Fragmento de Asterion"
+  A15: "Fragmento de Asterion",
+  A16: "Gl\xE2ndula de Miasma",
+  A17: "Asa de Lib\xE9lula",
+  A18: "N\xF3 de Mem\xF3ria",
+  A19: "Dente de Silte",
+  A20: "Coroa da Matriarca"
 };
 function generateRaceName(ataqueId, suporteId, passivaId) {
   const atk = ATAQUE_NOMES_CURTOS[ataqueId] || "Ra\xE7a";
@@ -2990,15 +3074,24 @@ function findNamedRace(ataqueId, suporteId, passivaId) {
   return NAMED_RACES.find((r) => r.ataqueId === ataqueId && r.suporteId === suporteId && r.passivaId === passivaId) ?? null;
 }
 var MATRIX_STATS = {
-  totalAtaques: 15,
-  totalSuportes: 13,
-  totalPassivas: 12,
-  totalCombinacoes: 15 * 13 * 12,
+  totalAtaques: 20,
+  totalSuportes: 18,
+  totalPassivas: 14,
+  totalCombinacoes: 20 * 18 * 14,
   totalNomeadas: 33,
-  totalSobrenomes: 13 * 12
+  totalSobrenomes: 18 * 14
 };
 
 // src/engine/forge.ts
+var FORGE_CATEGORIES = ["ARMA", "ARMADURA", "JOIA", "PULSEIRA", "ESCUDO", "FLECHA"];
+function hydrateLegacyStats(item) {
+  const template = ALL_ITEM_TEMPLATES[item.templateId];
+  if (!template) return;
+  for (const [key, value] of Object.entries(template.stats ?? {})) {
+    const current = Number(item.stats?.[key]);
+    if (!Number.isFinite(current) || current === 0) item.stats[key] = Math.round(Number(value) * Math.pow(1.1, item.upgradeLevel ?? 0) * 100) / 100;
+  }
+}
 function getUpgradeCost(item) {
   const nextLevel = item.upgradeLevel + 1;
   let fragmentType = "FRAGMENTO_COMUM";
@@ -3038,12 +3131,8 @@ function forgeFragments(char, fromTemplateId) {
 function upgradeItemLevel(char, itemUid) {
   const item = char.inventory.items.find((i) => i.uid === itemUid);
   if (!item) return { success: false, error: "Item n\xE3o encontrado no invent\xE1rio." };
-  if (!["ARMA", "ARMADURA", "JOIA", "PULSEIRA", "ESCUDO", "FLECHA"].includes(item.category)) return { success: false, error: "Escolha um equipamento v\xE1lido para o Ferreiro." };
-  const template = ALL_ITEM_TEMPLATES[item.templateId];
-  if (template) for (const [key, value] of Object.entries(template.stats ?? {})) {
-    const current = Number(item.stats?.[key]);
-    if (!Number.isFinite(current) || current === 0) item.stats[key] = Math.round(Number(value) * Math.pow(1.1, item.upgradeLevel ?? 0) * 100) / 100;
-  }
+  if (!FORGE_CATEGORIES.includes(item.category)) return { success: false, error: "Escolha um equipamento v\xE1lido para o Ferreiro." };
+  hydrateLegacyStats(item);
   if (item.upgradeLevel >= 10) return { success: false, error: "O item j\xE1 atingiu o n\xEDvel m\xE1ximo (+10)." };
   const cost = getUpgradeCost(item);
   const fragmentsOwned = countByTemplate(char.inventory, cost.fragmentType);
@@ -3072,6 +3161,7 @@ function upgradeItemLevel(char, itemUid) {
 function rerollItemAffixes(char, itemUid) {
   const item = char.inventory.items.find((i) => i.uid === itemUid);
   if (!item) return { success: false, error: "Item n\xE3o encontrado." };
+  if (!FORGE_CATEGORIES.includes(item.category)) return { success: false, error: "Escolha um equipamento v\xE1lido para o Ferreiro." };
   if (item.rarity === "COMUM") return { success: false, error: "Itens Comuns n\xE3o possuem atributos para reencantar." };
   const costFragments = 20;
   const costGold = 500 * item.tier;
@@ -3667,7 +3757,7 @@ function createGameStore(runtime = {}) {
       trackQuestAction(newCharacter, action);
       set({ character: newCharacter });
       get().save();
-      if (forgeRecoveryGranted) notify("O Ferreiro separou uma Espada de Prática para concluir sua missão de aprimoramento.");
+      if (forgeRecoveryGranted) notify("O Ferreiro separou uma Espada de Pr\xE1tica para concluir sua miss\xE3o de aprimoramento.");
     },
     buyTrainingBoost: () => {
       const { character } = get();
@@ -3741,6 +3831,34 @@ function createGameStore(runtime = {}) {
         get().save();
       }
       return result;
+    },
+    refineMythreonCoins: (amount = 1) => {
+      const { character } = get();
+      if (!character) return { success: false, error: "Sem personagem." };
+      const coins = Math.max(1, Math.min(100, Math.floor(amount)));
+      const shards = coins * MYTHREON_ECONOMY.shardsPerCoin;
+      const gold = coins * MYTHREON_ECONOMY.goldPerCoin;
+      if ((character.mythreonShards ?? 0) < shards) return { success: false, error: `Voc\xEA precisa de ${shards} Shards.` };
+      if (character.gold < gold) return { success: false, error: `Refinar custa ${gold.toLocaleString("pt-BR")} gold.` };
+      const next = { ...character, mythreonShards: (character.mythreonShards ?? 0) - shards, mythreonCoins: (character.mythreonCoins ?? 0) + coins, gold: character.gold - gold };
+      set({ character: next });
+      get().save();
+      notify(`\u2728 ${coins} Mythreon Coin${coins > 1 ? "s" : ""} refinada(s).`);
+      return { success: true, coins };
+    },
+    buyMythreonOffer: (offerId) => {
+      const { character } = get();
+      const offer = getMythreonOffer(offerId);
+      if (!character || !offer) return { success: false, error: "Oferta inv\xE1lida." };
+      if ((character.mythreonCoins ?? 0) < offer.priceCoins) return { success: false, error: `Voc\xEA precisa de ${offer.priceCoins} Mythreon Coins.` };
+      const next = JSON.parse(JSON.stringify(character));
+      const item = makeEquipment(offer.templateId, offer.templateId === "FRAGMENTO_EPICO" ? "EPICO" : "LENDARIO");
+      if (!item || !addItem(next.inventory, item)) return { success: false, error: "Bolsa cheia. Libere um espa\xE7o antes de comprar." };
+      next.mythreonCoins = (next.mythreonCoins ?? 0) - offer.priceCoins;
+      set({ character: next });
+      get().save();
+      notify(`${offer.name} foi entregue na mochila.`);
+      return { success: true };
     },
     depositItem: (uid) => {
       const { character } = get();
@@ -3997,6 +4115,16 @@ function executeGame(world, action, args = []) {
       if (!["FRAGMENTO_COMUM", "FRAGMENTO_RARO"].includes(id)) throw Error("Receita inv\xE1lida.");
       result = s.forgeFragments(id);
       if (!result?.success) throw Error(result?.error ?? "N\xE3o foi poss\xEDvel fundir os fragmentos.");
+    } else if (action === "refineMythreonCoins") {
+      const amount = args[0] === void 0 ? 1 : Number(args[0]);
+      if (!Number.isInteger(amount) || amount < 1 || amount > 100) throw Error("Quantidade de Coins inv\xE1lida.");
+      result = s.refineMythreonCoins(amount);
+      if (!result?.success) throw Error(result?.error ?? "N\xE3o foi poss\xEDvel refinar a energia.");
+    } else if (action === "buyMythreonOffer") {
+      const id = uid(args[0]);
+      if (!getMythreonOffer(id)) throw Error("Oferta inv\xE1lida.");
+      result = s.buyMythreonOffer(id);
+      if (!result?.success) throw Error(result?.error ?? "N\xE3o foi poss\xEDvel concluir a compra.");
     } else throw Error("A\xE7\xE3o n\xE3o permitida.");
     if (action === "activateBuff") store.getState().character.onlineBalloonUntil = void 0;
     if (action === "upgradeItem" && result?.success) world.counters.forges++;
