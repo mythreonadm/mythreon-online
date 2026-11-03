@@ -28,7 +28,7 @@ Salve cada ícone em `public/assets/items/` com o nome exato indicado. O jogo us
 ### Relíquias únicas
 
 - `UNICO_ANEL_GUARDIA.png` — Anel da Guarda Eterna. Prompt: anel de ouro antigo com um pequeno escudo azul no aro e uma gema verde de proteção; silhueta circular nítida.
-- `UNICO_BRASA_ETERNA.png` — Brasa Eterna. Prompt: joia em forma de brasa vermelha e dourada presa num aro negro, chama pequena contida no cristal.
+- `UNICO_BRASA_ETERNA.png` — Brasa Eterna (PULSEIRA). Prompt: pulseira/bracelete de metal negro com uma brasa vermelha e dourada presa no centro, chama pequena contida num cristal, silhueta claramente de pulso e não de anel.
 - `UNICO_CORACAO_GRANITO.png` — Coração de Granito. Prompt: coração mineral cinza de granito com fissura verde brilhante, pesado e protetor.
 - `UNICO_ESCAMA_LEVIATA.png` — Escama do Leviatã. Prompt: escama azul-petróleo iridescente com borda prateada e gotas de água, formato de escudo pequeno.
 - `UNICO_OLHO_ASTERION.png` — Olho de Asterion. Prompt: elmo compacto com uma única gema ocular dourada e marcas de estrela, relíquia das ruínas.
@@ -37,3 +37,11 @@ Salve cada ícone em `public/assets/items/` com o nome exato indicado. O jogo us
 ## Consistência ao gerar
 
 Use o prompt-base junto da descrição específica. Gere um arquivo individual por item. Mantenha a mesma escala aparente, perspectiva 3/4, contorno escuro e iluminação; cada objeto deve ocupar cerca de 70% do quadro para ficar consistente na mochila, no personagem, no Ferreiro e na Wiki.
+
+## Artes de mapas e monstros das rotas laterais
+
+Salve em `public/assets/monsters/`: `SAPO_MIASMA.png`, `LIBELULA_LAMINA.png`, `CIPO_MEMORIA.png`, `CROCODILO_SILTE.png`, `MATRIARCA_LODO.png`, `ESCARAVELHO_VITREO.png`, `ESPECTRO_SOLAR.png`, `SERPENTE_MIRAGEM.png`, `GOLEM_OBSIDIANA.png` e `SENTINELA_ZENITE.png`.
+
+Use o prompt-base, trocando a descrição por: “sprite individual de [nome], corpo inteiro, pose de combate idle, fundo transparente, sem cenário”.
+
+Fundos: `public/assets/backgrounds/swamp.png` (pântano luminoso de raízes, veneno e água turva) e `public/assets/backgrounds/desert.png` (deserto de vidro, ruínas solares e miragens). Para versões animadas, use o mesmo nome com `.gif`; o jogo prefere o GIF e recua para PNG.
