@@ -13,6 +13,7 @@ import { ItemModal } from "./ItemModal";
 import { Item } from "../types";
 import { ELEMENTS } from "../data/elementalChart";
 import { getGearScore } from "../engine/gearScore";
+import { CharacterCustomization } from "./CharacterCustomization";
 
 const SLOTS: { key: SlotType; label: string; icon: string; column: number; row: number }[] = [
   { key: "CAPACETE", label: "Capacete", icon: "🎩", column: 2, row: 1 },
@@ -65,7 +66,7 @@ export function Personagem() {
 
   const handleUnequipMatriz = () => {
     if (!character.activeRace) return;
-    if (confirm("Desequipar a Matriz? Você perderá todos os bônus de raça. Isso libera o slot para usar Pets.")) {
+    if (confirm("Desequipar a Matriz? Você perderá os bônus dela, mas o Pet continuará ativo.")) {
       unequipRace();
     }
   };
@@ -109,6 +110,7 @@ export function Personagem() {
       </div>
 
       <StatAllocation />
+      <CharacterCustomization />
 
       {inspectItem && <ItemModal item={inspectItem} equipped={slotPicker ? character.equipped[slotPicker] : undefined} onEquip={() => {
         const res = useGameStore.getState().equip(inspectItem.uid);
@@ -236,7 +238,7 @@ export function Personagem() {
             )}
 
             <div className="mt-3 space-y-1">
-              <div className="text-[10px] text-purple-400 uppercase font-bold">🐾 Besta Divina</div>
+              <div className="text-[10px] text-purple-400 uppercase font-bold">🐾 Pet</div>
               <div className="bg-arcane-bg p-2 rounded border border-purple-900/30 text-xs text-center text-gray-400">
                 {activeBeast ? <span className="text-purple-200">{activeBeast.emoji} {activeBeast.name} acompanha sua jornada.</span> : "Nenhum pet ativo. Abra Pets para incubar ovos e ativar um companheiro."}
               </div>
@@ -245,12 +247,7 @@ export function Personagem() {
 
           <div className="bg-arcane-panel border border-arcane-border rounded-xl p-4 shadow-lg">
             <h2 className="text-lg font-bold text-arcane-gold mb-3 border-b border-arcane-border pb-2">🔮 Matriz</h2>
-            {activeBeast ? (
-              <div className="text-center text-purple-200 text-xs py-4">
-                {activeBeast.emoji} Ressonância ativa: <strong>{activeBeast.name}</strong>
-                <p className="text-[10px] text-gray-500 mt-1">A Matriz continua guardada na sua coleção.</p>
-              </div>
-            ) : character.activeRace ? (
+            {character.activeRace ? (
               <>
                 <div className="text-xs text-gray-400 mb-2">
                   Raça ativa: <span className="text-white font-bold">{character.activeRace.name}</span>
@@ -262,14 +259,15 @@ export function Personagem() {
                   ❌ Desequipar Matriz
                 </button>
                 <p className="text-[10px] text-gray-500 italic mt-2 text-center">
-                  Desequipar libera o slot para usar Pets.
+                  A Matriz permanece equipada enquanto seu Pet acompanha você.
                 </p>
               </>
             ) : (
               <div className="text-center text-gray-500 italic text-xs py-4">
-                Nenhuma Matriz equipada — slot livre para Pets.
+                Nenhuma Matriz equipada — escolha uma Matriz na aba Matriz.
               </div>
             )}
+            {activeBeast && <div className="mt-3 rounded border border-purple-900/30 bg-arcane-bg p-2 text-center text-xs text-purple-200">{activeBeast.emoji} Pet ativo: <strong>{activeBeast.name}</strong><p className="mt-1 text-[10px] text-gray-500">A Matriz e o Pet atuam juntos.</p></div>}
           </div>
         </div>
       </div>

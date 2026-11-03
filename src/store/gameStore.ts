@@ -36,6 +36,7 @@ export interface GameState {
   finishIntro: () => void;
   unlockZone: (id: string) => {success:boolean;error?:string};
   newGame: (name: string, appearance?: CharacterAppearance) => void;
+  updateAppearance: (appearance: CharacterAppearance) => { success: boolean; error?: string };
   loadFromSave: () => boolean;
   save: () => void;
   spendStatPoint: (stat: keyof CharacterSkills) => boolean;
@@ -143,6 +144,16 @@ return create<GameState>((set, get) => ({
     trackRaceDiscovery(char, races);
     set({ character: char, races, currentZoneId: "BOSQUE_LYSS" });
     get().save();
+  },
+
+  updateAppearance: (appearance) => {
+    const { character } = get();
+    if (!character) return { success: false, error: "Personagem indisponível." };
+    const next = JSON.parse(JSON.stringify(character));
+    next.appearance = appearance;
+    set({ character: next });
+    get().save();
+    return { success: true };
   },
 
   loadFromSave: () => {
@@ -405,7 +416,7 @@ return create<GameState>((set, get) => ({
   equipRace: (race) => {
     const { character } = get(); if (!character) return;
     const newCharacter = JSON.parse(JSON.stringify(character));
-    newCharacter.raceId = race.id; newCharacter.activeRace = race; newCharacter.activeDivineBeastId = undefined;
+    newCharacter.raceId = race.id; newCharacter.activeRace = race;
     trackQuestAction(newCharacter, "EQUIP_RACE");
     recalcStats(newCharacter); set({ character: newCharacter }); get().save();
   },
@@ -428,8 +439,6 @@ return create<GameState>((set, get) => ({
     }
     const newCharacter = JSON.parse(JSON.stringify(character));
     newCharacter.activeDivineBeastId = id;
-    newCharacter.raceId = undefined;
-    newCharacter.activeRace = undefined;
     recalcStats(newCharacter);
     set({ character: newCharacter });
     get().save();

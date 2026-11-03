@@ -4,6 +4,7 @@
 
 - [[docs/conhecimento/00 - Fonte de conhecimento|Fonte de conhecimento de Mythreon]] — Índice autoral e fonte de entrada para o conhecimento durável do projeto.
 - [[docs/conhecimento/01 - Estado e pendencias|Estado e pendências]] — Estado resumido do produto, cobertura documental e próximo trabalho.
+- [[docs/conhecimento/Auditoria-Backlog-2026-11-03|Auditoria de backlog — Mythreon Online]] — a revisar
 - [[docs/conhecimento/balanceamento-antes|Auditoria balanceamento-antes]] — a revisar
 - [[docs/conhecimento/Balanceamento-Combate-Economia|Balanceamento de combate e economia]] — Fórmulas revisadas e evidências da auditoria de combate e economia.
 - [[docs/conhecimento/balanceamento-depois|Auditoria balanceamento-depois]] — a revisar

@@ -10,6 +10,7 @@
 
 - [src/ui/AccessIcon.tsx](../src/ui/AccessIcon.tsx) — AccessIconName, AccessIcon
 - [src/ui/Attributes.tsx](../src/ui/Attributes.tsx) — Attributes
+- [src/ui/CharacterCustomization.tsx](../src/ui/CharacterCustomization.tsx) — CharacterCustomization
 - [src/ui/CharacterPanel.tsx](../src/ui/CharacterPanel.tsx) — CharacterPanel
 - [src/ui/CommerceBenefits.tsx](../src/ui/CommerceBenefits.tsx) — CommerceBenefits
 - [src/ui/DailyCalendar.tsx](../src/ui/DailyCalendar.tsx) — DailyCalendar

@@ -3459,6 +3459,15 @@ function createGameStore(runtime = {}) {
       set({ character: char, races, currentZoneId: "BOSQUE_LYSS" });
       get().save();
     },
+    updateAppearance: (appearance) => {
+      const { character } = get();
+      if (!character) return { success: false, error: "Personagem indispon\xEDvel." };
+      const next = JSON.parse(JSON.stringify(character));
+      next.appearance = appearance;
+      set({ character: next });
+      get().save();
+      return { success: true };
+    },
     loadFromSave: () => {
       const save = loadGame();
       if (!save) return false;
@@ -3723,7 +3732,6 @@ function createGameStore(runtime = {}) {
       const newCharacter = JSON.parse(JSON.stringify(character));
       newCharacter.raceId = race.id;
       newCharacter.activeRace = race;
-      newCharacter.activeDivineBeastId = void 0;
       trackQuestAction(newCharacter, "EQUIP_RACE");
       recalcStats(newCharacter);
       set({ character: newCharacter });
@@ -3747,8 +3755,6 @@ function createGameStore(runtime = {}) {
       }
       const newCharacter = JSON.parse(JSON.stringify(character));
       newCharacter.activeDivineBeastId = id;
-      newCharacter.raceId = void 0;
-      newCharacter.activeRace = void 0;
       recalcStats(newCharacter);
       set({ character: newCharacter });
       get().save();
@@ -4402,6 +4408,15 @@ function executeGame(world, action, args = []) {
       const slots = ["CAPACETE", "ARMADURA", "LUVAS", "CALCAS", "BOTAS", "COLAR", "ANEL_I", "ANEL_II", "PULSEIRA", "ARMA_PRINCIPAL", "OFF_HAND", "MUNICAO", "BACKPACK"];
       if (!slots.includes(String(args[0]))) throw Error("Slot inv\xE1lido.");
       result = s.unequip(args[0]);
+    } else if (action === "updateAppearance") {
+      const value = args[0];
+      if (!value || typeof value !== "object" || Array.isArray(value)) throw Error("Apar\xEAncia inv\xE1lida.");
+      const allowed = { body: ["MASCULINO", "FEMININO"], skin: ["CLARA", "MORENA", "ESCURA", "AZUL_ESSENCIA"], hair: ["CURTO", "LONGO", "TRANCAS", "ARCANO"], hairColor: ["NEGRO", "CASTANHO", "RUIVO", "PRATEADO", "AZUL"], outfit: ["VIAJANTE", "GUARDIAO", "MISTICO"], outfitColor: ["OCRE", "AZUL", "VIOLETA", "VERDE"] };
+      for (const [key, values] of Object.entries(allowed)) {
+        if (!values.includes(String(value[key]))) throw Error("Op\xE7\xE3o de apar\xEAncia inv\xE1lida.");
+      }
+      result = s.updateAppearance(value);
+      if (!result?.success) throw Error(result?.error ?? "N\xE3o foi poss\xEDvel salvar a apar\xEAncia.");
     } else if (action === "equipRace") {
       const id = typeof args[0] === "string" ? args[0] : args[0]?.id;
       const race = s.races.find((r) => r.id === id);

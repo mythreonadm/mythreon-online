@@ -6,6 +6,7 @@
 
 - [[docs/conhecimento/00 - Fonte de conhecimento|Fonte de conhecimento de Mythreon]]
 - [[docs/conhecimento/01 - Estado e pendencias|Estado e pendências]]
+- [[docs/conhecimento/Auditoria-Backlog-2026-11-03|Auditoria de backlog — Mythreon Online]]
 - [[docs/conhecimento/balanceamento-antes|Auditoria balanceamento-antes]]
 - [[docs/conhecimento/Balanceamento-Combate-Economia|Balanceamento de combate e economia]]
 - [[docs/conhecimento/balanceamento-depois|Auditoria balanceamento-depois]]
@@ -33,6 +34,7 @@
 - [docs/PROMPT_DOCUMENTACAO_MYTHREON.md](../docs/PROMPT_DOCUMENTACAO_MYTHREON.md)
 - [docs/conhecimento/00 - Fonte de conhecimento.md](../docs/conhecimento/00 - Fonte de conhecimento.md)
 - [docs/conhecimento/01 - Estado e pendencias.md](../docs/conhecimento/01 - Estado e pendencias.md)
+- [docs/conhecimento/Auditoria-Backlog-2026-11-03.md](../docs/conhecimento/Auditoria-Backlog-2026-11-03.md)
 - [docs/conhecimento/Balanceamento-Combate-Economia.md](../docs/conhecimento/Balanceamento-Combate-Economia.md)
 - [docs/conhecimento/Comunidade-no-Registro-de-Combate-2026-11-03.md](../docs/conhecimento/Comunidade-no-Registro-de-Combate-2026-11-03.md)
 - [docs/conhecimento/Contas-Online-e-Social.md](../docs/conhecimento/Contas-Online-e-Social.md)
