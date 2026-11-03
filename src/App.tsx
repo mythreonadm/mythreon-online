@@ -206,8 +206,8 @@ useEffect(() => {
         </div>
       </header>
 
-      <nav className="game-nav bg-arcane-panel/80 backdrop-blur border-b border-arcane-border sticky top-[73px] z-40">
-        <div className="max-w-7xl mx-auto flex overflow-x-auto">
+      <nav className="game-nav bg-arcane-panel/80 backdrop-blur border-b border-arcane-border sticky top-[73px] z-40" aria-label="Navegação principal de Mythreon">
+        <div className="max-w-7xl mx-auto flex flex-wrap justify-center gap-1 px-2 py-1.5">
           {(["zona", "personagem", "backpack", "depot", "matriz", "pets", "laboratorio", "shop", "loja", "missoes", "duelos", "wiki", "online", "ranking"] as Tab[]).map((t) => (
             <button
               key={t}
@@ -219,13 +219,13 @@ useEffect(() => {
               title={!canUseTab(character,t) ? "Liberado conforme sua iniciação. Siga a missão atual." : t === "loja" && isTickRunning ? "Saia da caça para acessar o Ferreiro" : undefined}
               aria-disabled={t === "loja" && isTickRunning}
               aria-current={tab === t ? "page" : undefined}
-              className={`nav-tab relative flex items-center gap-2 px-4 py-4 font-bold text-sm whitespace-nowrap transition-colors ${
+              className={`nav-tab relative flex items-center gap-2 rounded-lg px-3 py-2.5 font-bold text-sm whitespace-nowrap transition-colors ${
                 t === "loja" && isTickRunning ? "cursor-not-allowed text-gray-600 opacity-50" : tab === t
                   ? "text-arcane-gold border-b-2 border-arcane-gold bg-arcane-border/30"
                   : "text-gray-400 hover:text-white"
               }`}
             >
-              <span className="relative"><AccessIcon name={TAB_ICONS[t]} className="nav-tab-icon" />{t === "missoes" && tutorialSignal && <span aria-hidden="true" className={`absolute -right-2 -top-2 grid h-4 min-w-4 place-items-center rounded-full px-1 text-[9px] font-black text-white shadow ${tutorialSignal.type === "claim" ? "bg-red-600 animate-pulse" : "bg-amber-500"}`}>{tutorialSignal.type === "claim" ? "!" : "?"}</span>}</span>
+              <span className="nav-tab-icon-wrap relative"><AccessIcon name={TAB_ICONS[t]} className="nav-tab-icon" />{t === "missoes" && tutorialSignal && <span aria-hidden="true" className={`absolute -right-2 -top-2 grid h-4 min-w-4 place-items-center rounded-full px-1 text-[9px] font-black text-white shadow ${tutorialSignal.type === "claim" ? "bg-red-600 animate-pulse" : "bg-amber-500"}`}>{tutorialSignal.type === "claim" ? "!" : "?"}</span>}</span>
               {TAB_LABELS[t]}
             </button>
           ))}
