@@ -138,6 +138,9 @@ export interface Zone {
 
 export interface Inventory { backpack: Backpack; items: Item[]; }
 
+export interface FarmPlot { id: string; seedId?: string; plantedAt?: number; readyAt?: number; wateredAt?: number; }
+export interface FarmState { plots: FarmPlot[]; unlockedPlots: number; lastActionAt: number; }
+
 export interface CharacterSkills {
   melee: number; defense: number; magic: number; distance: number; soul: number;
 }
@@ -262,6 +265,7 @@ export interface Character {
   
   depot: Item[];       // NOVO
   depotMax: number;    // NOVO
+  farm?: FarmState;
 }
 
 export interface HuntLootEntry {

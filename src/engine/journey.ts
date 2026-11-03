@@ -7,7 +7,7 @@ export function canUseTab(c: Character, tab: string): boolean {
  if (!isGuided(c)) return true;
  if (!c.introSeen) return tab === 'missoes';
  const done = c.quests.completed;
- const stages: Record<string,string> = {zona:'TUT_WIKI',matriz:'TUT_1',personagem:'TUT_2',backpack:'TUT_2',depot:'TUT_1',loja:'TUT_3',pets:'TUT_SELL',shop:'TUT_SELL',laboratorio:'TUT_TRAIN'};
+ const stages: Record<string,string> = {zona:'TUT_WIKI',matriz:'TUT_1',personagem:'TUT_2',backpack:'TUT_2',depot:'TUT_1',loja:'TUT_3',pets:'TUT_SELL',fazenda:'TUT_SELL',shop:'TUT_SELL',laboratorio:'TUT_TRAIN'};
  if (tab === 'missoes' || tab === 'wiki') return true;
  return !!stages[tab] && done.includes(stages[tab]);
 }

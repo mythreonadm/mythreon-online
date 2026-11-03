@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { onlineAction, refreshSocial, useOnlineState } from "../online/controller";
 import { useGameStore } from "../store/gameStore";
+import { displayItemChatText } from "./itemChat";
 
 type Channel = "global" | "trade" | "help";
 const labels: Record<Channel, string> = { global: "Chat Mundial", trade: "Chat de Trade", help: "Chat de Help" };
@@ -12,6 +13,19 @@ export function CombatCommunity() {
   const [channel, setChannel] = useState<Channel>("global");
   const [body, setBody] = useState("");
   const [localError, setLocalError] = useState("");
+
+  useEffect(() => {
+    const receiveItemLink = (event: Event) => {
+      const detail = (event as CustomEvent<{ link?: string }>).detail;
+      if (!detail?.link) return;
+      const link = detail.link;
+      setChannel("global");
+      setBody(current => current ? `${current} ${link}` : link);
+      setLocalError("");
+    };
+    window.addEventListener("mythreon:item-link", receiveItemLink);
+    return () => window.removeEventListener("mythreon:item-link", receiveItemLink);
+  }, []);
 
   useEffect(() => { if (active) void refreshSocial(); }, [active]);
 
@@ -48,7 +62,7 @@ export function CombatCommunity() {
     <div className="online-chat-log !h-48" role="log" aria-label={labels[channel]}>
       {messages.map((message: any) => <article key={message.id} className="border-b border-white/5 py-2">
         <div className="text-[11px]"><strong className="text-arcane-gold">{message.sender_name}</strong><span className="ml-2 text-gray-500">{date(message.created_at)}</span></div>
-        <p className="mt-1 whitespace-pre-wrap break-words text-sm text-gray-200">{message.body}</p>
+        <p className="mt-1 whitespace-pre-wrap break-words text-sm text-gray-200">{displayItemChatText(message.body)}</p>
       </article>)}
       {!messages.length && <p className="text-sm text-gray-500">Nenhuma mensagem neste canal ainda.</p>}
     </div>

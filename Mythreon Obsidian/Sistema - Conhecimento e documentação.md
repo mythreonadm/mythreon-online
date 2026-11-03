@@ -10,13 +10,17 @@
 - [[docs/conhecimento/Balanceamento-Combate-Economia|Balanceamento de combate e economia]]
 - [[docs/conhecimento/balanceamento-depois|Auditoria balanceamento-depois]]
 - [[docs/conhecimento/balanceamento-preparado|Auditoria balanceamento-preparado]]
+- [[docs/conhecimento/Comunidade-no-Registro-de-Combate-2026-11-03|Comunidade no Registro de Combate — 2026-11-03]]
 - [[docs/conhecimento/Contas-Online-e-Social|Contas online, ranking e comunidade]]
 - [[docs/conhecimento/Conteudo do Pantano de Veyra|Conteúdo do Pântano de Veyra]]
 - [[docs/conhecimento/Correção-Flechas-Revisão-2026-11-03|Revisão de flechas e mapa de pendências — 2026-11-03]]
+- [[docs/conhecimento/Fazenda-Sistema-Completo-2026-11-03|Fazenda de Lyss — sistema completo]]
 - [[docs/conhecimento/Jornada-Lore-Biomas|Jornada, lore e biomas]]
 - [[docs/conhecimento/Laboratorio-de-Builds-e-Windows|Laboratório de Builds e Windows]]
+- [[docs/conhecimento/Linkar-Itens-no-Chat-2026-11-03|Linkar itens no chat]]
 - [[docs/conhecimento/Operacao do Cerebro e Obsidian|Operação do Cérebro e Obsidian]]
 - [[docs/conhecimento/Pets-Atividades-Boss-Diario|Pets, atividades e Boss Diário]]
+- [[docs/conhecimento/Pets-Ovos-Migracao-2026-11-03|Migração de Bestas Divinas para Pets e Ovos]]
 - [[docs/conhecimento/Registro de problemas|Registro de problemas]]
 - [[docs/conhecimento/Sem título|Sem título]]
 - [[docs/conhecimento/Shop-Premium-Beasts|Shop, premium e Divine Beasts]]
@@ -30,13 +34,17 @@
 - [docs/conhecimento/00 - Fonte de conhecimento.md](../docs/conhecimento/00 - Fonte de conhecimento.md)
 - [docs/conhecimento/01 - Estado e pendencias.md](../docs/conhecimento/01 - Estado e pendencias.md)
 - [docs/conhecimento/Balanceamento-Combate-Economia.md](../docs/conhecimento/Balanceamento-Combate-Economia.md)
+- [docs/conhecimento/Comunidade-no-Registro-de-Combate-2026-11-03.md](../docs/conhecimento/Comunidade-no-Registro-de-Combate-2026-11-03.md)
 - [docs/conhecimento/Contas-Online-e-Social.md](../docs/conhecimento/Contas-Online-e-Social.md)
 - [docs/conhecimento/Conteudo do Pantano de Veyra.md](../docs/conhecimento/Conteudo do Pantano de Veyra.md)
 - [docs/conhecimento/Correção-Flechas-Revisão-2026-11-03.md](../docs/conhecimento/Correção-Flechas-Revisão-2026-11-03.md)
+- [docs/conhecimento/Fazenda-Sistema-Completo-2026-11-03.md](../docs/conhecimento/Fazenda-Sistema-Completo-2026-11-03.md)
 - [docs/conhecimento/Jornada-Lore-Biomas.md](../docs/conhecimento/Jornada-Lore-Biomas.md)
 - [docs/conhecimento/Laboratorio-de-Builds-e-Windows.md](../docs/conhecimento/Laboratorio-de-Builds-e-Windows.md)
+- [docs/conhecimento/Linkar-Itens-no-Chat-2026-11-03.md](../docs/conhecimento/Linkar-Itens-no-Chat-2026-11-03.md)
 - [docs/conhecimento/Operacao do Cerebro e Obsidian.md](../docs/conhecimento/Operacao do Cerebro e Obsidian.md)
 - [docs/conhecimento/Pets-Atividades-Boss-Diario.md](../docs/conhecimento/Pets-Atividades-Boss-Diario.md)
+- [docs/conhecimento/Pets-Ovos-Migracao-2026-11-03.md](../docs/conhecimento/Pets-Ovos-Migracao-2026-11-03.md)
 - [docs/conhecimento/Registro de problemas.md](../docs/conhecimento/Registro de problemas.md)
 - [docs/conhecimento/Sem título 1.base](../docs/conhecimento/Sem título 1.base)
 - [docs/conhecimento/Sem título 2.base](../docs/conhecimento/Sem título 2.base)

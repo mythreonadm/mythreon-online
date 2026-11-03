@@ -64,6 +64,7 @@ export function createNewCharacter(name: string, appearance?: CharacterAppearanc
     divineBeastAttackTimerMs: 0,
     depot: [],
     depotMax: 300,
+    farm: { plots: Array.from({ length: 4 }, (_, index) => ({ id: `plot-${index + 1}` })), unlockedPlots: 4, lastActionAt: Date.now() },
   };
 }
 
@@ -147,6 +148,7 @@ export function loadGame(): SaveFile | null {
       
       // Migração para o Depot
       if (!data.character.depot) data.character.depot = [];
+      if (!data.character.farm || !Array.isArray(data.character.farm.plots)) data.character.farm = { plots: Array.from({ length: 4 }, (_, index) => ({ id: `plot-${index + 1}` })), unlockedPlots: 4, lastActionAt: Date.now() };
       // Migra saves antigos: itens não empilháveis (especialmente flechas) são sempre unidades únicas.
       if (Array.isArray(data.character.inventory?.items)) {
         const normalized: any[] = [];

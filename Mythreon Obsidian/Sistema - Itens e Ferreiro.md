@@ -152,6 +152,7 @@
 - [public/assets/items/VARINHA_T4.png](../public/assets/items/VARINHA_T4.png)
 - [public/assets/items/VARINHA_T5.png](../public/assets/items/VARINHA_T5.png)
 - [public/assets/items/prancha-assets-fase-3.png](../public/assets/items/prancha-assets-fase-3.png)
+- [public/assets/items/prancha-mythreon-fazenda.png](../public/assets/items/prancha-mythreon-fazenda.png)
 - [public/assets/items/prancha-mythreon-ovos-baus-ferreiro.png](../public/assets/items/prancha-mythreon-ovos-baus-ferreiro.png)
 - [public/assets/items/prancha-mythreon-pesca-mineracao.png](../public/assets/items/prancha-mythreon-pesca-mineracao.png)
 - [src/data/backpacks.ts](../src/data/backpacks.ts) — BACKPACKS, DEFAULT_BACKPACK
@@ -168,6 +169,7 @@
 - [src/ui/ItemIcon.tsx](../src/ui/ItemIcon.tsx) — ItemIcon
 - [src/ui/ItemModal.tsx](../src/ui/ItemModal.tsx) — ItemModal
 - [src/ui/Shop.tsx](../src/ui/Shop.tsx) — Shop
+- [src/ui/itemChat.ts](../src/ui/itemChat.ts) — createItemChatLink, emitItemChatLink, parseItemChatLink, displayItemChatText
 - [src/ui/itemRarity.ts](../src/ui/itemRarity.ts) — RARITY_FRAME, rarityArtClass
 
 ## Relações encontradas

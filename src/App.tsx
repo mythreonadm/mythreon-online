@@ -22,6 +22,7 @@ import { Quests } from "./ui/Quests";
 import { Wiki } from "./ui/Wiki";
 import { Duelos } from "./ui/Duelos";
 import { DivineBeasts } from "./ui/DivineBeasts";
+import { Farm } from "./ui/Farm";
 import { AudioManager } from "./ui/AudioManager";
 import { OfflineModal } from "./ui/OfflineModal";
 import { DeathScreen } from "./ui/DeathScreen";
@@ -38,16 +39,16 @@ import { checkQuestCompletion } from "./engine/questEngine";
 import { ZONES } from "./data/zones";
 import type { CharacterAppearance } from "./types";
 
-type Tab = "zona" | "personagem" | "backpack" | "depot" | "matriz" | "pets" | "laboratorio" | "shop" | "loja" | "missoes" | "duelos" | "wiki" | "online" | "ranking";
+type Tab = "zona" | "personagem" | "backpack" | "depot" | "matriz" | "pets" | "fazenda" | "laboratorio" | "shop" | "loja" | "missoes" | "duelos" | "wiki" | "online" | "ranking";
 
 const TAB_LABELS: Record<Tab, string> = {
-  online:"Comunidade",ranking:"Ranking", zona: "Explorar", personagem: "Personagem", backpack: "Mochila", depot: "Depósito",
-  matriz: "Matriz", pets: "Bestas Divinas", laboratorio: "Laboratório", shop: "Shop", loja: "Ferreiro", missoes: "Jornadas", duelos: "Duelo", wiki: "Arquivo",
+  online:"Comunidade",ranking:"Ranking", zona: "Explorar", personagem: "Personagem", backpack: "Mochila", depot: "Depósito", fazenda: "Fazenda",
+  matriz: "Matriz", pets: "Pets", laboratorio: "Laboratório", shop: "Shop", loja: "Ferreiro", missoes: "Jornadas", duelos: "Duelo", wiki: "Arquivo",
 };
 
 const TAB_ICONS: Record<Tab, AccessIconName> = {
   online:"quest",ranking:"archive", zona: "explore", personagem: "character", backpack: "backpack", depot: "depot",
-  matriz: "matrix", laboratorio: "matrix", shop: "shop", loja: "shop", missoes: "quest", duelos: "duel", wiki: "archive",
+  matriz: "matrix", fazenda: "farm", laboratorio: "matrix", shop: "shop", loja: "shop", missoes: "quest", duelos: "duel", wiki: "archive",
   pets: "pet",
 };
 
@@ -220,7 +221,7 @@ useEffect(() => {
 
       <nav className="game-nav bg-arcane-panel/80 backdrop-blur border-b border-arcane-border sticky top-[73px] z-40" aria-label="Navegação principal de Mythreon">
         <div className="max-w-7xl mx-auto flex flex-nowrap justify-start gap-1 overflow-x-auto px-2 py-1.5 md:flex-wrap md:justify-center md:overflow-visible">
-          {(["zona", "personagem", "backpack", "depot", "matriz", "pets", "laboratorio", "shop", "loja", "missoes", "duelos", "wiki", "online", "ranking"] as Tab[]).map((t) => (
+          {(["zona", "personagem", "backpack", "depot", "matriz", "pets", "fazenda", "laboratorio", "shop", "loja", "missoes", "duelos", "wiki", "online", "ranking"] as Tab[]).map((t) => (
             <button
               key={t}
               onClick={() => {
@@ -258,6 +259,7 @@ useEffect(() => {
         {tab === "depot" && <Depot />} {/* NOVO */}
         {tab === "matriz" && <MatrixView />}
         {tab === "pets" && <DivineBeasts />}
+        {tab === "fazenda" && <Farm />}
         {tab === "laboratorio" && <BuildLab />}
         {tab === "loja" && <Shop key="ferreiro" />}
 {tab === "shop" && <><CommerceBenefits /><Shop key="shop" storefront /></>}

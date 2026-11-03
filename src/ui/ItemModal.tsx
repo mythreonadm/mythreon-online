@@ -4,6 +4,7 @@ import { STAT_NAMES } from "../data/affixes";
 import { getItemScore } from "../engine/itemCompare";
 import { ItemIcon } from "./ItemIcon"; // NOVO
 import { ELEMENTS } from "../data/elementalChart";
+import { emitItemChatLink } from "./itemChat";
 
 interface Props {
   item: Item;
@@ -161,6 +162,15 @@ export function ItemModal({ item, equipped, onEquip, onClose, onDeposit, readOnl
               📥 Enviar ao Depot
             </button>
           )}
+
+          <button
+            type="button"
+            onClick={() => emitItemChatLink(item)}
+            className="w-full rounded-lg border border-arcane-cyan/40 bg-arcane-cyan/10 py-2 font-bold text-arcane-cyan transition hover:bg-arcane-cyan/20"
+            title="Insere um link deste item no chat aberto"
+          >
+            🔗 Linkar no chat
+          </button>
 
           <button onClick={onClose} className="w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 rounded-lg">
             Fechar

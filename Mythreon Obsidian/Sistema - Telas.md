@@ -15,6 +15,7 @@
 - [src/ui/DailyCalendar.tsx](../src/ui/DailyCalendar.tsx) — DailyCalendar
 - [src/ui/DeathScreen.tsx](../src/ui/DeathScreen.tsx) — DeathScreen
 - [src/ui/Equipment.tsx](../src/ui/Equipment.tsx) — Equipment
+- [src/ui/Farm.tsx](../src/ui/Farm.tsx) — Farm
 - [src/ui/JourneyGuide.tsx](../src/ui/JourneyGuide.tsx) — JourneyGuide
 - [src/ui/LandingPage.tsx](../src/ui/LandingPage.tsx) — LandingPage
 - [src/ui/OfflineModal.tsx](../src/ui/OfflineModal.tsx) — OfflineModal

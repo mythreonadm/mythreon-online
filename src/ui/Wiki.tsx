@@ -25,7 +25,7 @@ type Section = "journey" | "history" | "beasts" | "monsters" | "zones" | "equipm
 const SECTION_META: { id: Section; label: string; icon: string; color: string }[] = [
   { id: "journey", label: "Jornada e Biomas", icon: "🗺️", color: "text-arcane-gold" },
   { id: "history", label: "História", icon: "📜", color: "text-arcane-gold" },
-  { id: "beasts", label: "Bestas Divinas", icon: "🐾", color: "text-arcane-gold" },
+  { id: "beasts", label: "Pets e Ovos", icon: "🐾", color: "text-arcane-gold" },
   { id: "monsters", label: "Monstros", icon: "👹", color: "text-red-400" },
   { id: "zones", label: "Zonas", icon: "🗺️", color: "text-green-400" },
   { id: "equipment", label: "Equipamentos", icon: "⚔️", color: "text-arcane-cyan" },
@@ -144,11 +144,11 @@ function DivineBeastsWikiSection({ search }: { search: string }) {
   return <div className="space-y-5">
     <div className="rounded-xl border border-arcane-gold/30 bg-[radial-gradient(ellipse_at_top_right,rgba(201,160,77,.12),transparent_55%),#10151a] p-5">
       <h2 className="text-xl font-black text-arcane-gold">Ecos vivos do Primeiro Canto</h2>
-      <p className="mt-2 text-sm leading-relaxed text-gray-300">As Bestas Divinas são memórias vivas da Essência, despertadas nos guardiões de Mythreon. Elas representam o Caminho da Ressonância: vínculo, adaptação e cooperação com forças que já habitavam o mundo. O vínculo é uma escolha de evolução e identidade; na mecânica atual, a criatura ativa ocupa o espaço de Ressonância compartilhado com a Matriz, enquanto as demais permanecem na coleção.</p>
+      <p className="mt-2 text-sm leading-relaxed text-gray-300">As Bestas Divinas são os pets de Mythreon: memórias vivas da Essência que despertam a partir de ovos. Cada pet acompanha o herói, ataca em sua própria cadência e soma seus bônus à Matriz, enquanto os demais permanecem na coleção.</p>
       <div className="mt-3 grid gap-2 sm:grid-cols-3 text-xs">
         <div className="rounded-lg border border-white/10 bg-black/20 p-3"><strong className="text-gray-200">Formação</strong><p className="mt-1 text-gray-400">Moldadores canalizam Dhor, Prime e Chronos para resistir, estruturar e fortalecer.</p></div>
         <div className="rounded-lg border border-white/10 bg-black/20 p-3"><strong className="text-red-300">Ruptura</strong><p className="mt-1 text-gray-400">Condutores aceleram a Essência com Kaelor, Raan e Voro para atacar e romper limites.</p></div>
-        <div className="rounded-lg border border-arcane-gold/30 bg-arcane-gold/5 p-3"><strong className="text-arcane-gold">Ressonância</strong><p className="mt-1 text-gray-400">Tecelões conectam Lyss, Emohna e Veyra; Bestas Divinas manifestam esse caminho pelo vínculo com ecos vivos.</p></div>
+        <div className="rounded-lg border border-arcane-gold/30 bg-arcane-gold/5 p-3"><strong className="text-arcane-gold">Pets e Ressonância</strong><p className="mt-1 text-gray-400">Tecelões conectam Lyss, Emohna e Veyra. Os ovos guardam ecos vivos; ao eclodirem, os pets manifestam esse caminho ao lado da Matriz.</p></div>
       </div>
       <p className="mt-3 text-[11px] text-gray-500">Cada chefe regional pode revelar um eco ainda não descoberto: 12% de chance por vitória. Cada vínculo é único; a criatura pode ser ativada ou guardada sem perder a coleção.</p>
     </div>
@@ -160,7 +160,7 @@ function DivineBeastsWikiSection({ search }: { search: string }) {
             <BeastWikiImage sprite={beast.sprite} name={beast.name} emoji={beast.emoji} />
             <div className="min-w-0"><div className="text-[9px] font-bold uppercase tracking-widest text-arcane-gold">{beast.region} · {beast.rarity}</div><h3 className="mt-1 text-lg font-black text-white">{beast.name}</h3><p className="text-xs text-gray-400">{beast.title}</p><p className="mt-2 text-[10px] text-gray-500">Guardião: {bossNames[beast.bossId] ?? beast.bossId}</p></div>
           </div>
-          <div className="space-y-3 p-3"><p className="text-xs leading-relaxed text-gray-300">{beast.lore}</p><p className="text-[11px] italic leading-relaxed text-gray-500">{beast.bond}</p><div className="flex flex-wrap gap-1.5">{stats.map(([key, value]) => <span key={key} className="rounded border border-emerald-900/40 bg-emerald-950/20 px-2 py-1 text-[10px] font-bold text-emerald-300">+{percentStats.has(key) ? `${(Number(value) * 100).toFixed(0)}%` : value} {statNames[key] ?? key}</span>)}</div><div className="border-t border-white/5 pt-2 text-[10px] text-gray-500">Vínculo possível ao derrotar o chefe regional · 12% por vitória</div></div>
+          <div className="space-y-3 p-3"><p className="text-xs leading-relaxed text-gray-300">{beast.lore}</p><p className="text-[11px] italic leading-relaxed text-gray-500">{beast.bond}</p><div className="flex flex-wrap gap-1.5">{stats.map(([key, value]) => <span key={key} className="rounded border border-emerald-900/40 bg-emerald-950/20 px-2 py-1 text-[10px] font-bold text-emerald-300">+{percentStats.has(key) ? `${(Number(value) * 100).toFixed(0)}%` : value} {statNames[key] ?? key}</span>)}</div><div className="border-t border-white/5 pt-2 text-[10px] text-gray-500">Pet possível ao derrotar o chefe regional · 12% por vitória</div></div>
         </article>;
       })}
     </div>
@@ -646,9 +646,9 @@ function ChapterContent({ chapter }: { chapter: number }) {
             <li><strong className="text-arcane-gold">Floravelle</strong>, a Mariposa dos Brotos, carrega o eco de Lyss.</li>
             <li><strong className="text-arcane-gold">Aeralis</strong>, a Raia-Celeste das Correntes, carrega o eco de Nyr.</li>
           </ul>
-          <H>O Vínculo</H>
-          <P>Uma Besta Divina não é capturada nem obrigada a obedecer. Quando um viajante vence o guardião de uma região, a Essência pode reconhecer naquela jornada uma frequência compatível. Se a criatura aceitar, forma-se um vínculo — um encontro de vontades associado à Lei do Vínculo, Emohna.</P>
-          <P>Uma Matriz e uma Besta Divina ocupam o mesmo espaço de Ressonância. A Matriz canaliza um padrão de Leis; a Besta compartilha sua própria memória viva. O viajante pode escolher qual dessas presenças conduzirá sua força. A escolha pode ser desfeita, e nenhuma descoberta é perdida.</P>
+          <H>O despertar dos Pets</H>
+          <P>Uma Besta Divina não é capturada nem obrigada a obedecer. O viajante encontra um Ovo de Besta, aguarda a incubação e descobre qual memória viva aceitou acompanhá-lo. A raridade do ovo define as chances de eclosão.</P>
+          <P>A Matriz e o pet atuam juntos. A Matriz canaliza um padrão de Leis; o pet compartilha sua memória viva, desfere seu ataque a cada 5 segundos e aplica seus bônus. Alimentação e humor mantêm o companheiro em seu melhor estado.</P>
           <Q>Não caminham atrás de nós. Caminham conosco. E, enquanto houver memória, nenhum vínculo desaparece por completo.</Q>
         </div>
       );

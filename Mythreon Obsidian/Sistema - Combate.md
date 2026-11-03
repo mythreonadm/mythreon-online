@@ -5,14 +5,17 @@
 ## Conhecimento relacionado
 
 - [[docs/conhecimento/Balanceamento-Combate-Economia|Balanceamento de combate e economia]]
+- [[docs/conhecimento/Comunidade-no-Registro-de-Combate-2026-11-03|Comunidade no Registro de Combate — 2026-11-03]]
 
 ## Código e recursos
 
 - [docs/conhecimento/Balanceamento-Combate-Economia.md](../docs/conhecimento/Balanceamento-Combate-Economia.md)
+- [docs/conhecimento/Comunidade-no-Registro-de-Combate-2026-11-03.md](../docs/conhecimento/Comunidade-no-Registro-de-Combate-2026-11-03.md)
 - [src/data/beastCombat.ts](../src/data/beastCombat.ts) — getBeastCombat, beastGrowth
 - [src/engine/cardArena.ts](../src/engine/cardArena.ts) — ArenaSize, ArenaStrategy, ArenaFighter, ArenaLogEntry, ArenaBattleResult, toFighter, makeOpponentDeck, simulateArenaDuel
 - [src/engine/combat.ts](../src/engine/combat.ts) — buildProfile, processTick
 - [src/ui/ArenaDuelos.tsx](../src/ui/ArenaDuelos.tsx) — ArenaDuelos
+- [src/ui/CombatCommunity.tsx](../src/ui/CombatCommunity.tsx) — CombatCommunity
 - [src/ui/CombatLog.tsx](../src/ui/CombatLog.tsx) — CombatLog
 - [src/ui/CombatLogCompact.tsx](../src/ui/CombatLogCompact.tsx) — CombatLogCompact
 - [src/ui/Duelos.tsx](../src/ui/Duelos.tsx) — Duelos

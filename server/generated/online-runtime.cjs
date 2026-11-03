@@ -818,7 +818,7 @@ function canUseTab(c, tab) {
   if (!isGuided(c)) return true;
   if (!c.introSeen) return tab === "missoes";
   const done = c.quests.completed;
-  const stages = { zona: "TUT_WIKI", matriz: "TUT_1", personagem: "TUT_2", backpack: "TUT_2", depot: "TUT_1", loja: "TUT_3", pets: "TUT_SELL", shop: "TUT_SELL", laboratorio: "TUT_TRAIN" };
+  const stages = { zona: "TUT_WIKI", matriz: "TUT_1", personagem: "TUT_2", backpack: "TUT_2", depot: "TUT_1", loja: "TUT_3", pets: "TUT_SELL", fazenda: "TUT_SELL", shop: "TUT_SELL", laboratorio: "TUT_TRAIN" };
   if (tab === "missoes" || tab === "wiki") return true;
   return !!stages[tab] && done.includes(stages[tab]);
 }
@@ -1084,7 +1084,7 @@ var QUESTS = [
     objectives: [{ type: "SELL", count: 1, description: "Venda 1 item ao Ferreiro" }],
     rewards: { gold: 100, xp: 25 }
   },
-  { id: "TUT_PATHS", name: "Escolher quem se tornar", giver: "Anci\xE3 Seraphine", category: "TUTORIAL", minLevel: 1, requires: ["TUT_SELL"], description: "A Matriz transforma sua linhagem. As Bestas Divinas substituem essa transforma\xE7\xE3o por um v\xEDnculo. Examine seus atributos em Personagem, conhe\xE7a as Bestas Divinas e veja os recursos por gold no Shop. Voc\xEA n\xE3o precisa comprar nem possuir uma Besta para concluir.", objectives: [{ type: "VISIT_CHARACTER", count: 1, description: "Veja seus atributos em Personagem" }, { type: "VISIT_BEASTS", count: 1, description: "Conhe\xE7a as Bestas Divinas" }, { type: "VISIT_SHOP", count: 1, description: "Conhe\xE7a o Shop, sem obriga\xE7\xE3o de comprar" }], rewards: { gold: 50, xp: 20 } },
+  { id: "TUT_PATHS", name: "Escolher quem se tornar", giver: "Anci\xE3 Seraphine", category: "TUTORIAL", minLevel: 1, requires: ["TUT_SELL"], description: "A Matriz transforma sua linhagem. Os pets nascem de Ovos de Besta Divina e lutam ao seu lado. Examine seus atributos em Personagem, conhe\xE7a a Incubadora de Pets e veja os recursos por gold no Shop. Voc\xEA n\xE3o precisa comprar nem possuir um pet para concluir.", objectives: [{ type: "VISIT_CHARACTER", count: 1, description: "Veja seus atributos em Personagem" }, { type: "VISIT_BEASTS", count: 1, description: "Conhe\xE7a os Pets e os Ovos de Besta" }, { type: "VISIT_SHOP", count: 1, description: "Conhe\xE7a o Shop, sem obriga\xE7\xE3o de comprar" }], rewards: { gold: 50, xp: 20 } },
   { id: "TUT_TRAIN", name: "Disciplina antes da for\xE7a", giver: "Guardi\xE3 Mirelle", category: "TUTORIAL", minLevel: 1, requires: ["TUT_PATHS"], description: "Na Casa em Explorar, clique em Treinar, escolha uma habilidade e pratique por 30 segundos. Treinar troca tempo de ca\xE7a por for\xE7a permanente; n\xE3o fornece XP de personagem. A inicia\xE7\xE3o pausa o treino ao cumprir o objetivo.", objectives: [{ type: "TRAIN", count: 30, description: "Treine uma habilidade por 30 segundos" }], rewards: { gold: 50, xp: 20 } },
   { id: "TUT_LAB", name: "Preparar antes de arriscar", giver: "Arquivista Sinax", category: "TUTORIAL", minLevel: 1, requires: ["TUT_TRAIN"], description: "Conhe\xE7a o Laborat\xF3rio de Builds. Ele estima resultados de combate com seu personagem e ajuda a planejar equipamentos, treino e sustento. As proje\xE7\xF5es n\xE3o liberam mapas nem garantem vit\xF3rias.", objectives: [{ type: "VISIT_LAB", count: 1, description: "Visite o Laborat\xF3rio de Builds" }], rewards: { gold: 50, xp: 20 } },
   {
@@ -1730,7 +1730,8 @@ function createNewCharacter(name, appearance) {
     divineBeastNeeds: {},
     divineBeastAttackTimerMs: 0,
     depot: [],
-    depotMax: 300
+    depotMax: 300,
+    farm: { plots: Array.from({ length: 4 }, (_, index) => ({ id: `plot-${index + 1}` })), unlockedPlots: 4, lastActionAt: Date.now() }
   };
 }
 function saveGame(char, races) {
@@ -1812,6 +1813,7 @@ function loadGame() {
       if (!data.character.divineBeastNeeds || typeof data.character.divineBeastNeeds !== "object") data.character.divineBeastNeeds = {};
       if (!Number.isFinite(data.character.divineBeastAttackTimerMs)) data.character.divineBeastAttackTimerMs = 0;
       if (!data.character.depot) data.character.depot = [];
+      if (!data.character.farm || !Array.isArray(data.character.farm.plots)) data.character.farm = { plots: Array.from({ length: 4 }, (_, index) => ({ id: `plot-${index + 1}` })), unlockedPlots: 4, lastActionAt: Date.now() };
       if (Array.isArray(data.character.inventory?.items)) {
         const normalized = [];
         for (const item of data.character.inventory.items) {
@@ -3347,6 +3349,18 @@ function withdrawMany(char, uids) {
   return { moved, error };
 }
 
+// src/data/farm.ts
+var FARM_SEEDS = [
+  { id: "SEMENTE_CENOURA", name: "Semente de Cenoura", icon: "\u{1F955}", growMs: 5 * 6e4, yieldId: "COLHEITA_CENOURA", yieldName: "Cenoura", yieldIcon: "\u{1F955}", yieldQty: 2, cost: 30 },
+  { id: "SEMENTE_MELANCIA", name: "Semente de Melancia", icon: "\u{1F349}", growMs: 15 * 6e4, yieldId: "COLHEITA_MELANCIA", yieldName: "Melancia", yieldIcon: "\u{1F349}", yieldQty: 2, cost: 90 },
+  { id: "SEMENTE_TRIGO", name: "Semente de Trigo", icon: "\u{1F33E}", growMs: 30 * 6e4, yieldId: "COLHEITA_TRIGO", yieldName: "Trigo de Lyss", yieldIcon: "\u{1F33E}", yieldQty: 3, cost: 160 },
+  { id: "SEMENTE_LUMINA", name: "Semente Lumina", icon: "\u2728", growMs: 60 * 6e4, yieldId: "COLHEITA_LUMINA", yieldName: "Fruto Lumina", yieldIcon: "\u{1F506}", yieldQty: 2, cost: 400 }
+];
+var farmSeed = (id) => FARM_SEEDS.find((seed) => seed.id === id);
+function farmYield(seed) {
+  return { uid: `farm-${seed.yieldId}-${Date.now()}-${Math.random()}`, templateId: seed.yieldId, name: seed.yieldName, category: "MATERIAL", tier: 1, rarity: "COMUM", stats: {}, affixes: [], upgradeLevel: 0, stackable: true, maxStack: 999, quantity: seed.yieldQty, icon: seed.yieldIcon };
+}
+
 // src/store/gameStore.ts
 function recordHuntMetrics(character, zoneId, result) {
   const previous = character.huntStatsByZone?.[zoneId] ?? {
@@ -3838,6 +3852,61 @@ function createGameStore(runtime = {}) {
       get().save();
       return { success: true };
     },
+    plantFarmSeed: (plotId, seedId) => {
+      const { character } = get();
+      if (!character) return { success: false, error: "Personagem indispon\xEDvel." };
+      const seed = farmSeed(seedId);
+      if (!seed) return { success: false, error: "Semente inv\xE1lida." };
+      const next = JSON.parse(JSON.stringify(character));
+      next.farm ??= { plots: [], unlockedPlots: 4, lastActionAt: Date.now() };
+      const plot = next.farm.plots.find((entry) => entry.id === plotId);
+      if (!plot || next.farm.plots.indexOf(plot) >= next.farm.unlockedPlots) return { success: false, error: "Canteiro bloqueado." };
+      if (plot.seedId) return { success: false, error: "Este canteiro j\xE1 est\xE1 plantado." };
+      if (next.gold < seed.cost) return { success: false, error: "Gold insuficiente para comprar esta semente." };
+      next.gold -= seed.cost;
+      plot.seedId = seed.id;
+      plot.plantedAt = Date.now();
+      plot.readyAt = Date.now() + seed.growMs;
+      plot.wateredAt = Date.now();
+      next.farm.lastActionAt = Date.now();
+      set({ character: next });
+      get().save();
+      return { success: true };
+    },
+    harvestFarmPlot: (plotId) => {
+      const { character } = get();
+      if (!character) return { success: false, error: "Personagem indispon\xEDvel." };
+      const next = JSON.parse(JSON.stringify(character));
+      const plot = next.farm?.plots?.find((entry) => entry.id === plotId);
+      const seed = plot?.seedId ? farmSeed(plot.seedId) : void 0;
+      if (!plot || !seed) return { success: false, error: "N\xE3o h\xE1 cultivo neste canteiro." };
+      if (!plot.readyAt || Date.now() < plot.readyAt) return { success: false, error: "A planta\xE7\xE3o ainda est\xE1 crescendo." };
+      addItem(next.inventory, farmYield(seed));
+      plot.seedId = void 0;
+      plot.plantedAt = void 0;
+      plot.readyAt = void 0;
+      plot.wateredAt = void 0;
+      next.farm.lastActionAt = Date.now();
+      set({ character: next });
+      get().save();
+      return { success: true, quantity: seed.yieldQty };
+    },
+    unlockFarmPlot: () => {
+      const { character } = get();
+      if (!character) return { success: false, error: "Personagem indispon\xEDvel." };
+      const next = JSON.parse(JSON.stringify(character));
+      next.farm ??= { plots: [], unlockedPlots: 4, lastActionAt: Date.now() };
+      const max = 12;
+      if (next.farm.unlockedPlots >= max) return { success: false, error: "Todos os terrenos j\xE1 foram liberados." };
+      const cost = 500 * next.farm.unlockedPlots;
+      if (next.gold < cost) return { success: false, error: `Voc\xEA precisa de ${cost.toLocaleString("pt-BR")} gold.` };
+      next.gold -= cost;
+      next.farm.unlockedPlots += 1;
+      next.farm.plots.push({ id: `plot-${next.farm.unlockedPlots}` });
+      set({ character: next });
+      get().save();
+      return { success: true };
+    },
     salvageAll: (maxRarity) => {
       const { character } = get();
       if (!character) return;
@@ -4273,7 +4342,7 @@ function executeGame(world, action, args = []) {
     if (s.isTickRunning && ["sellItem", "sellSelected", "salvageAll", "salvageSelected", "upgradeItem", "rerollItem"].includes(action)) throw Error("Saia da ca\xE7a para acessar o Ferreiro.");
     if (action === "activateBuff" && (!s.isTickRunning || !s.character?.onlineBalloonUntil || s.character.onlineBalloonUntil < now)) throw Error("Este eco de b\xF4nus expirou. Aguarde outro durante a ca\xE7a.");
     const zero = ["finishIntro", "clearOfflineReport", "clearDeathReport", "startHealing", "cancelHealing", "stopHunting", "stopTraining", "unequipRace", "unequipDivineBeast", "activateBuff", "buyTrainingBoost", "buyBless", "refreshCompendium"];
-    const strings = ["unlockZone", "setActiveEnemy", "setCurrentZone", "acceptQuest", "claimQuest", "upgradeItem", "rerollItem", "depositItem", "withdrawItem", "discardItem"];
+    const strings = ["unlockZone", "setActiveEnemy", "setCurrentZone", "acceptQuest", "claimQuest", "upgradeItem", "rerollItem", "depositItem", "withdrawItem", "discardItem", "plantFarmSeed", "harvestFarmPlot"];
     const uid = (v) => {
       if (typeof v !== "string" || v.length < 1 || v.length > 128) throw Error("Identificador inv\xE1lido.");
       return v;
@@ -4283,11 +4352,15 @@ function executeGame(world, action, args = []) {
       result = s[action]();
     } else if (strings.includes(action)) {
       const id = uid(args[0]);
-      if (["upgradeItem", "rerollItem"].includes(action)) {
-        const item = s.character.inventory.items.find((i) => i.uid === id);
-        if (!item || !["ARMA", "ARMADURA", "JOIA", "PULSEIRA", "ESCUDO", "FLECHA"].includes(item.category)) throw Error("Escolha um equipamento v\xE1lido para o Ferreiro.");
+      if (action === "plantFarmSeed") {
+        result = s.plantFarmSeed(id, uid(args[1]));
+      } else {
+        if (["upgradeItem", "rerollItem"].includes(action)) {
+          const item = s.character.inventory.items.find((i) => i.uid === id);
+          if (!item || !["ARMA", "ARMADURA", "JOIA", "PULSEIRA", "ESCUDO", "FLECHA"].includes(item.category)) throw Error("Escolha um equipamento v\xE1lido para o Ferreiro.");
+        }
+        result = s[action](id);
       }
-      result = s[action](id);
     } else if (action === "startHunting") {
       const zone = uid(args[0]);
       if (!ZONES[zone]) throw Error("Mapa inv\xE1lido.");
@@ -4356,6 +4429,9 @@ function executeGame(world, action, args = []) {
       const quantity = args[1] ?? 1;
       if (!Number.isInteger(quantity) || Number(quantity) < 1 || Number(quantity) > 999) throw Error("Quantidade inv\xE1lida.");
       s.sellItem(uid(args[0]), Number(quantity));
+    } else if (action === "unlockFarmPlot") {
+      result = s.unlockFarmPlot();
+      if (!result?.success) throw Error(result?.error ?? "N\xE3o foi poss\xEDvel expandir a fazenda.");
     } else if (action === "sellSelected") {
       if (!Array.isArray(args[0]) || args[0].length > 300) throw Error("Sele\xE7\xE3o inv\xE1lida.");
       s.sellSelected([...new Set(args[0].map(uid))]);
@@ -4678,7 +4754,8 @@ async function handleWorld(db, owner, request) {
         const recent = await db.query("select created_at from public.world_messages where sender_owner=$1 order by created_at desc limit 1", [owner]);
         if (recent.rows[0] && Date.now() - new Date(recent.rows[0].created_at).getTime() < ONLINE_RULES.messageCooldownMs) throw Error("Aguarde um instante antes da pr\xF3xima mensagem.");
         const body = text(p.body, 500), target = p.target ? await byName(db, p.target) : null;
-        await db.query("insert into public.world_messages(id,sender_id,sender_owner,sender_name,recipient_id,recipient_owner,body) values($1,$2,$3,$4,$5,$6,$7)", [(0, import_node_crypto2.randomUUID)(), actor.id, owner, actor.name, target?.id ?? null, target?.owner_id ?? null, body]);
+        const channel = target ? "global" : ["global", "trade", "help"].includes(String(p.channel)) ? String(p.channel) : "global";
+        await db.query("insert into public.world_messages(id,sender_id,sender_owner,sender_name,recipient_id,recipient_owner,body,channel) values($1,$2,$3,$4,$5,$6,$7,$8)", [(0, import_node_crypto2.randomUUID)(), actor.id, owner, actor.name, target?.id ?? null, target?.owner_id ?? null, body, channel]);
       } else if (op === "friend.invite") {
         const target = await byName(db, p.target);
         if (target.id === actor.id) throw Error("Escolha outro personagem.");
@@ -4724,8 +4801,8 @@ async function handleWorld(db, owner, request) {
   if (op === "social.read") {
     if (!current) throw Error("Selecione um personagem.");
     const friends = (await db.query("select f.*,a.name as inviter_name,b.name as invitee_name,a.online_at as inviter_online_at,b.online_at as invitee_online_at from public.world_friends f join public.world_characters a on a.id=f.inviter_id join public.world_characters b on b.id=f.invitee_id where f.inviter_id=$1 or f.invitee_id=$1 order by f.created_at desc", [id])).rows;
-    const globalMessages = (await db.query("select id,sender_id,sender_name,recipient_id,body,created_at from public.world_messages where recipient_id is null order by created_at desc limit 50")).rows;
-    const privateMessages = (await db.query("select m.id,m.sender_id,m.sender_name,m.recipient_id,r.name as recipient_name,m.body,m.created_at from public.world_messages m left join public.world_characters r on r.id=m.recipient_id where m.recipient_id is not null and (m.sender_id=$1 or m.recipient_id=$1) order by m.created_at desc limit 100", [id])).rows;
+    const globalMessages = (await db.query("select id,sender_id,sender_name,recipient_id,body,channel,created_at from public.world_messages where recipient_id is null order by created_at desc limit 150")).rows;
+    const privateMessages = (await db.query("select m.id,m.sender_id,m.sender_name,m.recipient_id,r.name as recipient_name,m.body,m.channel,m.created_at from public.world_messages m left join public.world_characters r on r.id=m.recipient_id where m.recipient_id is not null and (m.sender_id=$1 or m.recipient_id=$1) order by m.created_at desc limit 100", [id])).rows;
     const messages = [...globalMessages, ...privateMessages].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
     const mail = (await db.query("select m.*,r.name as recipient_name from public.world_mail m join public.world_characters r on r.id=m.recipient_id where m.sender_id=$1 or m.recipient_id=$1 order by (m.recipient_id=$1 and m.claimed_at is null) desc,case when m.recipient_id=$1 and m.claimed_at is null then m.created_at end asc,m.created_at desc limit 100", [id])).rows;
     const trades = (await db.query("select t.*,a.name as a_name,b.name as b_name from public.world_trades t join public.world_characters a on a.id=t.a_id join public.world_characters b on b.id=t.b_id where t.a_id=$1 or t.b_id=$1 order by t.created_at desc limit 20", [id])).rows;
