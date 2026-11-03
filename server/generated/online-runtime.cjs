@@ -3804,6 +3804,8 @@ function executeGame(world, action, args = []) {
       const power = args[0] === 1 || args[0] === 0.5 || args[0] === 1.5 ? args[0] : 1.5;
       result = s.armSpecialCombo(power);
       if (!result?.success) throw Error(result?.error ?? "N\xE3o foi poss\xEDvel armar o combo.");
+      s.tick();
+      world.lastAdvanceAt = now;
     } else if (action === "unequip") {
       const slots = ["CAPACETE", "ARMADURA", "LUVAS", "CALCAS", "BOTAS", "COLAR", "ANEL_I", "ANEL_II", "PULSEIRA", "ARMA_PRINCIPAL", "OFF_HAND", "MUNICAO", "BACKPACK"];
       if (!slots.includes(String(args[0]))) throw Error("Slot inv\xE1lido.");
