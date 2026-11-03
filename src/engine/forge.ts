@@ -2,9 +2,18 @@ import { Character, Item } from "../types";
 import { removeItem, countByTemplate, canAddItem, addItem } from "./inventory";
 import { recalcStats } from "./stats";
 import { generateRandomAffixes } from "./drops";
-import { FRAGMENT_TEMPLATES, createItem } from "../data/items";
+import { FRAGMENT_TEMPLATES, ALL_ITEM_TEMPLATES, createItem } from "../data/items";
 
 export const FORGE_CATEGORIES = ["ARMA", "ARMADURA", "JOIA", "PULSEIRA", "ESCUDO", "FLECHA"] as const;
+
+function hydrateLegacyStats(item: Item) {
+  const template = ALL_ITEM_TEMPLATES[item.templateId];
+  if (!template) return;
+  for (const [key, value] of Object.entries(template.stats ?? {})) {
+    const current = Number((item.stats as any)?.[key]);
+    if (!Number.isFinite(current) || current === 0) (item.stats as any)[key] = Math.round(Number(value) * Math.pow(1.1, item.upgradeLevel ?? 0) * 100) / 100;
+  }
+}
 
 // ─── CUSTO DE UPGRADE (+1, +2...) ───
 export function getUpgradeCost(item: Item): { fragments: number; gold: number; fragmentType: string } {
@@ -48,6 +57,7 @@ export function upgradeItemLevel(char: Character, itemUid: string): { success: b
   const item = char.inventory.items.find(i => i.uid === itemUid);
   if (!item) return { success: false, error: "Item não encontrado no inventário." };
   if (!FORGE_CATEGORIES.includes(item.category as typeof FORGE_CATEGORIES[number])) return { success: false, error: "Escolha um equipamento válido para o Ferreiro." };
+  hydrateLegacyStats(item);
   if (item.upgradeLevel >= 10) return { success: false, error: "O item já atingiu o nível máximo (+10)." };
 
   const cost = getUpgradeCost(item);

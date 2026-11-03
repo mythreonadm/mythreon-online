@@ -21,6 +21,16 @@ export function AudioManager() {
   }, []);
 
   useEffect(() => {
+    const syncSettings = () => {
+      const muted = localStorage.getItem("mythreon_mute") === "true";
+      setIsMuted(muted);
+      if (audioRef.current) audioRef.current.muted = muted;
+    };
+    window.addEventListener("mythreon-settings-change", syncSettings);
+    return () => window.removeEventListener("mythreon-settings-change", syncSettings);
+  }, []);
+
+  useEffect(() => {
     if (audioRef.current) audioRef.current.volume = Math.max(0, Math.min(1, volume));
     localStorage.setItem("mythreon_volume", String(volume));
   }, [volume]);

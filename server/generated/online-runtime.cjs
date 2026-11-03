@@ -1215,7 +1215,15 @@ function getPoolForCategory(category) {
 // src/engine/drops.ts
 var RARITY_ORDER = ["COMUM", "INCOMUM", "RARO", "EPICO", "LENDARIO"];
 var RARITY_MULT = { COMUM: 1, INCOMUM: 1.3, RARO: 1.7, EPICO: 2.2, LENDARIO: 3 };
-var AFFIX_COUNT = { COMUM: 0, INCOMUM: 1, RARO: 2, EPICO: 3, LENDARIO: 3 };
+var PERCENT_AFFIX_RANGES = {
+  COMUM: { crit: [.005, .015], critDmg: [.05, .1], hit: [.005, .015], spd: [.005, .015], luck: [.005, .015], dge: [.005, .015], blk: [.005, .015], resFisico: [.005, .015], resMagico: [.005, .015] },
+  INCOMUM: { crit: [.012, .025], critDmg: [.08, .15], hit: [.012, .025], spd: [.012, .025], luck: [.012, .025], dge: [.012, .025], blk: [.012, .025], resFisico: [.012, .025], resMagico: [.012, .025] },
+  RARO: { crit: [.02, .04], critDmg: [.12, .22], hit: [.02, .04], spd: [.02, .04], luck: [.02, .04], dge: [.02, .04], blk: [.02, .04], resFisico: [.02, .04], resMagico: [.02, .04] },
+  EPICO: { crit: [.035, .06], critDmg: [.18, .3], hit: [.035, .06], spd: [.035, .06], luck: [.035, .06], dge: [.035, .06], blk: [.035, .06], resFisico: [.035, .06], resMagico: [.035, .06] },
+  LENDARIO: { crit: [.055, .09], critDmg: [.25, .4], hit: [.055, .09], spd: [.055, .09], luck: [.055, .09], dge: [.055, .09], blk: [.055, .09], resFisico: [.055, .09], resMagico: [.055, .09] }
+};
+var AFFIX_COUNT = { COMUM: 1, INCOMUM: 1, RARO: 2, EPICO: 3, LENDARIO: 4 };
+var FLAT_AFFIX_MULT = { COMUM: .8, INCOMUM: 1, RARO: 1.35, EPICO: 1.75, LENDARIO: 2.2 };
 function rollRarity(bonus = 0) {
   const r = Math.random() / (1 + clamp(bonus, 0, 1));
   if (r < 2e-3) return "LENDARIO";
@@ -1245,8 +1253,11 @@ function generateRandomAffixes(category, rarity, tier) {
       }
     }
     usedStats.add(selected.stat);
-    const tierMult = 1 + (tier - 1) * 0.5;
-    const rawValue = (selected.minBase + Math.random() * (selected.maxBase - selected.minBase)) * tierMult;
+    const tierMult = selected.isPercent ? 1 + (tier - 1) * 0.12 : 1 + (tier - 1) * 0.35;
+    const rarityRange = selected.isPercent ? PERCENT_AFFIX_RANGES[rarity]?.[selected.stat] : void 0;
+    const min = rarityRange?.[0] ?? selected.minBase;
+    const max = rarityRange?.[1] ?? selected.maxBase;
+    const rawValue = (min + Math.random() * (max - min)) * tierMult * (selected.isPercent ? 1 : FLAT_AFFIX_MULT[rarity]);
     const value = selected.isPercent ? Math.round(rawValue * 100) / 100 : Math.round(rawValue);
     chosen.push({
       law: "PRIME",
@@ -1740,6 +1751,15 @@ function loadGame() {
         if (item.templateId === "UNICO_BRASA_ETERNA") {
           item.category = "PULSEIRA";
           item.slot = "PULSEIRA";
+        }
+      }
+      for (const item of [...data.character.inventory?.items ?? [], ...data.character.depot ?? [], ...Object.values(data.character.equipped ?? {})]) {
+        const template = ALL_ITEM_TEMPLATES[item.templateId];
+        if (!template) continue;
+        item.stats ??= {};
+        for (const [key, value] of Object.entries(template.stats ?? {})) {
+          const current = Number(item.stats[key]);
+          if (!Number.isFinite(current) || current === 0) item.stats[key] = Math.round(Number(value) * Math.pow(1.1, item.upgradeLevel ?? 0) * 100) / 100;
         }
       }
       const equipped = data.character.equipped ?? {};
@@ -3015,6 +3035,11 @@ function upgradeItemLevel(char, itemUid) {
   const item = char.inventory.items.find((i) => i.uid === itemUid);
   if (!item) return { success: false, error: "Item n\xE3o encontrado no invent\xE1rio." };
   if (!["ARMA", "ARMADURA", "JOIA", "PULSEIRA", "ESCUDO", "FLECHA"].includes(item.category)) return { success: false, error: "Escolha um equipamento v\xE1lido para o Ferreiro." };
+  const template = ALL_ITEM_TEMPLATES[item.templateId];
+  if (template) for (const [key, value] of Object.entries(template.stats ?? {})) {
+    const current = Number(item.stats?.[key]);
+    if (!Number.isFinite(current) || current === 0) item.stats[key] = Math.round(Number(value) * Math.pow(1.1, item.upgradeLevel ?? 0) * 100) / 100;
+  }
   if (item.upgradeLevel >= 10) return { success: false, error: "O item j\xE1 atingiu o n\xEDvel m\xE1ximo (+10)." };
   const cost = getUpgradeCost(item);
   const fragmentsOwned = countByTemplate(char.inventory, cost.fragmentType);
@@ -3796,9 +3821,19 @@ function freshWorld(name, id) {
   return { character, races: [], isTickRunning: false, isTraining: false, healingUntil: null, deathReport: null, lastTickResult: null, lastAdvanceAt: Date.now(), counters: { forges: 0, syntheses: 0, trades: 0, bosses: 0 } };
 }
 function normalizeLegacyItems(character) {
-  for (const item of [...character.inventory?.items ?? [], ...character.depot ?? []]) if (item.templateId === "UNICO_BRASA_ETERNA") {
-    item.category = "PULSEIRA";
-    item.slot = "PULSEIRA";
+  for (const item of [...character.inventory?.items ?? [], ...character.depot ?? [], ...Object.values(character.equipped ?? {})]) {
+    if (item.templateId === "UNICO_BRASA_ETERNA") {
+      item.category = "PULSEIRA";
+      item.slot = "PULSEIRA";
+    }
+    const template = ALL_ITEM_TEMPLATES[item.templateId];
+    if (template) {
+      item.stats ??= {};
+      for (const [key, value] of Object.entries(template.stats ?? {})) {
+        const current = Number(item.stats[key]);
+        if (!Number.isFinite(current) || current === 0) item.stats[key] = Math.round(Number(value) * Math.pow(1.1, item.upgradeLevel ?? 0) * 100) / 100;
+      }
+    }
   }
   const equipped = character.equipped ?? {};
   for (const key of ["ANEL_I", "ANEL_II"]) {

@@ -2,7 +2,7 @@ let lastSfxAt = 0;
 
 /** Efeitos curtos de combate, respeitando o mute/volume da interface. */
 export function playCombatSfx(kind: "hit" | "beast" = "hit") {
-  if (typeof window === "undefined" || localStorage.getItem("mythreon_mute") === "true") return;
+  if (typeof window === "undefined" || localStorage.getItem("mythreon_mute") === "true" || localStorage.getItem("mythreon_sfx_enabled") === "false") return;
   const now = Date.now();
   if (now - lastSfxAt < 180) return;
   lastSfxAt = now;
@@ -41,7 +41,7 @@ const ATTACK_SFX: Record<string, AttackSfxProfile> = {
 
 /** Efeito procedural por componente de Ataque; não depende de arquivos de áudio externos. */
 export function playAttackSfx(attackId?: string, combo = false) {
-  if (typeof window === "undefined" || localStorage.getItem("mythreon_mute") === "true") return;
+  if (typeof window === "undefined" || localStorage.getItem("mythreon_mute") === "true" || localStorage.getItem("mythreon_sfx_enabled") === "false") return;
   const Ctx = window.AudioContext;
   if (!Ctx) return;
   try {

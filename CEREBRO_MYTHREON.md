@@ -7,6 +7,27 @@
 **Idioma de colaboração com o criador:** português do Brasil  
 **Estado:** protótipo jogável em evolução; mudanças locais podem ainda não ter sido enviadas ao Git/Vercel.
 
+## Configurações de apresentação e compatibilidade — 2026-11-03
+
+- O cabeçalho mantém `Sair da conta` no extremo direito e oferece a engrenagem `Configurações`.
+- Preferências persistentes no navegador: `mythreon_video_mode` (`auto`, `compat`, `reduced`), `mythreon_animations_enabled`, `mythreon_effects_enabled`, `mythreon_mute`, `mythreon_sfx_enabled` e `mythreon_volume`.
+- O modo **Compatibilidade** evita depender da animação de projétil/CSS e exibe um marcador `✦ HIT` no local do impacto, mantendo números de dano e os dois impactos de combo visíveis.
+- O modo **Econômico** reduz animações sem remover os resultados de combate. Sons de ataque podem ser desligados separadamente da música.
+- A engrenagem é o ponto oficial para orientar jogadores que não enxergam efeitos em alguns navegadores, GPUs ou celulares.
+
+## Fluidez do mundo online — 2026-11-03
+
+- Ações online agora usam atualização otimista: a interface aplica a prévia local imediatamente e enfileira a confirmação do servidor em segundo plano, mantendo a ordem dos comandos.
+- O estado visual não fica congelado durante uma requisição comum. `pending` fica reservado para recuperação de uma operação incerta (queda/timeout), não para cada clique.
+- Uma leitura completa de segurança é feita em segundo plano a cada hora; a leitura curta de atividade continua independente para manter caça e treino atualizados.
+- Em caso de falha incerta, a operação continua registrada em `localStorage` com o mesmo `requestId`, permitindo repetição idempotente sem duplicar a ação.
+
+## Gear Score, inventário e troca — 2026-11-03
+
+- `src/engine/gearScore.ts` centraliza o Gear Score: equipamento, afixos, atributos derivados, skills, maestria/tempo de treino, nível, bônus da Matriz, resistências e vínculo de Divine Beast entram em uma pontuação arredondada para comparação de progressão. É uma métrica de orientação, não substitui o cálculo real de dano.
+- O Gear Score aparece no painel superior e no cabeçalho da aba Personagem. Ícones da Mochila e do Depósito foram ampliados para leitura melhor em desktop e celular.
+- A troca agora apresenta uma `Bag de envio`: itens selecionados ficam separados em uma área visual própria, podem ser removidos antes do envio e o lado do outro jogador continua visível via atualização social em tempo real. A confirmação dupla e a reserva server-side permanecem obrigatórias.
+
 ## Continuidade — Pântano de Veyra e conteúdo de mobs — 2026-11-03
 
 - O Pântano de Veyra agora possui uma linha própria de progressão: cinco componentes de Ataque (A16–A20), cinco Suportes (S14–S18), duas Passivas (P13–P14), cinco materiais de drop e oito equipamentos de tier 3.
@@ -357,3 +378,11 @@ Recuperação do tutorial: se `TUT_FORGE` estiver ativa e o personagem não tive
 ## Refúgio visual e seleção de mapas — 2026-11-03
 
 A tela inicial de Explorar representa a cabana-base do aventureiro: interior mobiliado com lareira, mesa de mapas, armas, poções, cama e baús, em vez de um fundo abstrato. Asset gerado: `public/assets/backgrounds/cabana.png`. Os cards de caça agora usam a miniatura do tema de cada mapa, exibem a faixa `Nível mínimo–máximo` e mantêm o bloqueio por missão/nível. A navegação superior pode rolar horizontalmente em telas estreitas, sem exigir arrastar a página inteira. Arquivos: `src/ui/Zone.tsx`, `src/App.tsx`. Próximo passo visual: substituir gradientes/emoji restantes por artes específicas de cada bioma quando forem aprovadas.
+
+Atualização: clicar no card do mapa agora abre uma ficha modal sobre a miniatura do bioma, com criaturas, atributos básicos, drops conhecidos, elementos, vantagens e desvantagens. A entrada na caça só ocorre pelo botão de confirmação dentro da ficha; mapas bloqueados continuam informativos, mas não podem ser iniciados.
+
+## Balanceamento de afixos e correção de upgrades legados — 2026-11-03
+
+Itens antigos de flecha podiam ter `stats: {}` porque foram criados antes da flecha receber atributos. O Ferreiro agora hidrata os atributos-base pelo template e reaplica os multiplicadores dos níveis já existentes antes de aplicar o próximo upgrade; isso corrige flechas +1/+2 sem resetar progresso. A mesma proteção vale para qualquer equipamento legado com estatística ausente.
+
+As faixas percentuais de afixos foram centralizadas em `src/data/affixes.ts` e aplicadas por `src/engine/drops.ts`: comum 0,5–1,5%, incomum 1,2–2,5%, raro 2–4%, épico 3,5–6% e lendário 5,5–9% (tier acrescenta até 48% sobre a faixa). Dano crítico usa faixas próprias maiores: 5–10%, 8–15%, 12–22%, 18–30% e 25–40%. Afixos inteiros escalam separadamente por raridade para evitar que HP/armadura explodam; comuns passaram a ter um único afixo pequeno, incomuns um, raros dois, épicos três e lendários quatro. O runtime online gerado foi sincronizado manualmente enquanto o esbuild continua bloqueado pelo OneDrive. Revalidar por simulação antes de declarar equilíbrio final.

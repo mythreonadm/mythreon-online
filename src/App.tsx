@@ -32,6 +32,7 @@ import { closeLocalAccountSession, getLocalAccountSession, type LocalAccount } f
 import { activateSaveAccount } from "./engine/save";
 import { getTutorialQuestSignal } from "./utils/questSignals";
 import { QuestTracker } from "./ui/QuestTracker";
+import { SettingsPanel } from "./ui/SettingsPanel";
 import { QUESTS } from "./data/quests";
 import { checkQuestCompletion } from "./engine/questEngine";
 import { ZONES } from "./data/zones";
@@ -58,6 +59,7 @@ function GameApp({onlineAccount,onSwitchCharacter}:{onlineAccount?:LocalAccount;
   const [debug, setDebugState] = useState(isDebug());
   const [focusQuestId, setFocusQuestId] = useState<string | null>(null);
   const [trackedQuestId, setTrackedQuestId] = useState<string | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [account, setAccount] = useState<LocalAccount | null>(() => onlineAccount ?? getLocalAccountSession());
   const tutorialSignal = character ? getTutorialQuestSignal(character) : null;
 
@@ -200,9 +202,12 @@ useEffect(() => {
             </div>
           </div>
           <CharacterPanel />
-          {!onlineAccount&&<button className="online-button-secondary" onClick={()=>downloadSaveBackup(character,useGameStore.getState().races)}>Baixar backup</button>}
-          {onSwitchCharacter&&<button onClick={onSwitchCharacter} className="online-button-secondary">Personagens</button>}
-          <button onClick={logout} className="rounded-lg border border-arcane-border px-3 py-2 text-xs text-gray-300 hover:border-arcane-gold hover:text-arcane-gold">Sair da conta</button>
+          <div className="ml-auto flex items-center gap-2">
+            {!onlineAccount&&<button className="online-button-secondary" onClick={()=>downloadSaveBackup(character,useGameStore.getState().races)}>Baixar backup</button>}
+            {onSwitchCharacter&&<button onClick={onSwitchCharacter} className="online-button-secondary">Personagens</button>}
+            <button onClick={() => setSettingsOpen(true)} className="rounded-lg border border-arcane-border px-3 py-2 text-base text-gray-200 hover:border-arcane-gold hover:text-arcane-gold" title="Configurações" aria-label="Abrir configurações">⚙️</button>
+            <button onClick={logout} className="rounded-lg border border-red-500/50 px-3 py-2 text-xs text-red-200 hover:border-red-400 hover:bg-red-950/40">Sair da conta</button>
+          </div>
         </div>
       </header>
 
@@ -234,6 +239,7 @@ useEffect(() => {
 
       <JourneyGuide openQuest={openQuest} followQuest={trackQuest} />
       <QuestTracker onSelect={trackQuest} />
+      <SettingsPanel open={settingsOpen} onClose={() => setSettingsOpen(false)} />
 
       <main className={`game-main max-w-7xl mx-auto p-4 mt-4 ${online.pending ? "pointer-events-none opacity-70" : ""}`} aria-busy={online.pending}>
         <fieldset disabled={online.pending} className="min-w-0 border-0 p-0 m-0">

@@ -4,12 +4,13 @@ import { ALL_COMPONENTS } from "../data/components";
 import { ALL_EQUIPMENT_TEMPLATES, ALL_ITEM_TEMPLATES, ARROW_TEMPLATES, UNIQUE_TEMPLATES, createItem } from "../data/items";
 import { BACKPACKS } from "../data/backpacks";
 import { generateId } from "../utils/id";
-import { getPoolForCategory, AffixPoolDef } from "../data/affixes";
+import { getPoolForCategory, AffixPoolDef, PERCENT_AFFIX_RANGES } from "../data/affixes";
 import { ELEMENTS } from "../data/elementalChart";
 
 export const RARITY_ORDER: Rarity[] = ["COMUM", "INCOMUM", "RARO", "EPICO", "LENDARIO"];
 export const RARITY_MULT: Record<Rarity, number> = { COMUM: 1.0, INCOMUM: 1.3, RARO: 1.7, EPICO: 2.2, LENDARIO: 3.0 };
-const AFFIX_COUNT: Record<Rarity, number> = { COMUM: 0, INCOMUM: 1, RARO: 2, EPICO: 3, LENDARIO: 3 };
+const AFFIX_COUNT: Record<Rarity, number> = { COMUM: 1, INCOMUM: 1, RARO: 2, EPICO: 3, LENDARIO: 4 };
+const FLAT_AFFIX_MULT: Record<Rarity, number> = { COMUM: 0.8, INCOMUM: 1, RARO: 1.35, EPICO: 1.75, LENDARIO: 2.2 };
 
 export function rollRarity(bonus = 0): Rarity {
   const r = Math.random() / (1 + clamp(bonus, 0, 1));
@@ -44,9 +45,13 @@ export function generateRandomAffixes(category: string, rarity: Rarity, tier: nu
 
     usedStats.add(selected.stat);
 
-    // Valor base escalado pelo Tier
-    const tierMult = 1 + (tier - 1) * 0.5;
-    const rawValue = (selected.minBase + Math.random() * (selected.maxBase - selected.minBase)) * tierMult;
+    // Percentuais usam faixas explícitas por raridade; valores inteiros escalam
+    // suavemente por tier e raridade para não tornar um afixo raro obrigatório.
+    const tierMult = selected.isPercent ? 1 + (tier - 1) * 0.12 : 1 + (tier - 1) * 0.35;
+    const rarityRange = selected.isPercent ? PERCENT_AFFIX_RANGES[rarity]?.[selected.stat] : undefined;
+    const min = rarityRange?.[0] ?? selected.minBase;
+    const max = rarityRange?.[1] ?? selected.maxBase;
+    const rawValue = (min + Math.random() * (max - min)) * tierMult * (selected.isPercent ? 1 : FLAT_AFFIX_MULT[rarity]);
     
     // Arredonda dependendo do tipo (percentual ou número inteiro)
     const value = selected.isPercent ? Math.round(rawValue * 100) / 100 : Math.round(rawValue);

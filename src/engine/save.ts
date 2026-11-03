@@ -3,6 +3,7 @@ import { DEFAULT_BACKPACK } from "../data/backpacks";
 import { getBaseStats, xpToNextLevel, recalcStats } from "./stats";
 import { makeEquipment } from "./drops";
 import { addItem } from "./inventory";
+import { ALL_ITEM_TEMPLATES } from "../data/items";
 
 const LEGACY_SAVE_KEY = "mythreon_save_v1";
 const MIGRATION_KEY = "mythreon_save_account_migrated_v1";
@@ -147,6 +148,17 @@ export function loadGame(): SaveFile | null {
       for (const item of [...(data.character.inventory?.items ?? []), ...(data.character.depot ?? [])]) {
         if (item.category === "COMPONENTE" && item.stackable) item.maxStack = 999;
         if (item.templateId === "UNICO_BRASA_ETERNA") { item.category = "PULSEIRA"; item.slot = "PULSEIRA"; }
+      }
+      // Hidrata atributos de equipamentos criados por versões antigas e
+      // preserva os níveis de upgrade já aplicados (incluindo flechas).
+      for (const item of [...(data.character.inventory?.items ?? []), ...(data.character.depot ?? []), ...Object.values(data.character.equipped ?? {})] as any[]) {
+        const template = ALL_ITEM_TEMPLATES[item.templateId];
+        if (!template) continue;
+        item.stats ??= {};
+        for (const [key, value] of Object.entries(template.stats ?? {})) {
+          const current = Number(item.stats[key]);
+          if (!Number.isFinite(current) || current === 0) item.stats[key] = Math.round(Number(value) * Math.pow(1.1, item.upgradeLevel ?? 0) * 100) / 100;
+        }
       }
       // A Brasa Eterna era criada como anel em versões antigas. Corrige também itens equipados.
       const equipped = data.character.equipped ?? {};

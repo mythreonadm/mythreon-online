@@ -75,6 +75,13 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
   const [comboBurst, setComboBurst] = useState(false);
   const [comboFeedback, setComboFeedback] = useState<"idle" | "good" | "bad">("idle");
   const [showLootConfig, setShowLootConfig] = useState<string | null>(null);
+  const [mapPreviewZoneId, setMapPreviewZoneId] = useState<string | null>(null);
+  const [videoMode, setVideoMode] = useState<"auto" | "compat" | "reduced">(() => {
+    if (typeof window === "undefined") return "auto";
+    return (localStorage.getItem("mythreon_video_mode") as "auto" | "compat" | "reduced") || "auto";
+  });
+  const [animationsEnabled, setAnimationsEnabled] = useState(() => typeof window === "undefined" || localStorage.getItem("mythreon_animations_enabled") !== "false");
+  const [effectsEnabled, setEffectsEnabled] = useState(() => typeof window === "undefined" || localStorage.getItem("mythreon_effects_enabled") !== "false");
   
   const balloonTimeout = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const magicCooldownTicks = Math.max(4, Math.ceil(ATTACK_SKILL_COOLDOWN - (character ? buildProfile(character).cdReduce : 0)));
@@ -82,6 +89,16 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
   useEffect(() => {
     const timer = window.setInterval(() => setComboClock(Date.now()), 250);
     return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const syncSettings = () => {
+      setVideoMode((localStorage.getItem("mythreon_video_mode") as "auto" | "compat" | "reduced") || "auto");
+      setAnimationsEnabled(localStorage.getItem("mythreon_animations_enabled") !== "false");
+      setEffectsEnabled(localStorage.getItem("mythreon_effects_enabled") !== "false");
+    };
+    window.addEventListener("mythreon-settings-change", syncSettings);
+    return () => window.removeEventListener("mythreon-settings-change", syncSettings);
   }, []);
 
   const handleComboKey = (key: string) => {
@@ -192,11 +209,12 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
     if (isTickRunning && lastTickResult && (lastTickResult.attacked || lastTickResult.usedMp)) {
       playCombatSfx(activeBond && lastTickResult.log?.some(line => line.includes(activeBond.name)) ? "beast" : "hit");
       playAttackSfx(character.activeRace?.ataqueId, !!lastTickResult.comboHitDamage);
-      setIsAttacking(true); setShowProjectile(true);
+      const canAnimate = animationsEnabled && effectsEnabled && videoMode !== "reduced";
+      setIsAttacking(canAnimate); setShowProjectile(canAnimate && videoMode !== "compat");
       if (lastTickResult.lastDamage) {
         setTimeout(() => { setIsHurt(true); setFloatingDamage(lastTickResult.lastDamage!); }, 250); 
       }
-      const timer1 = setTimeout(() => { setIsAttacking(false); setShowProjectile(false); }, 600);
+      const timer1 = setTimeout(() => { setIsAttacking(false); setShowProjectile(false); }, canAnimate ? 600 : 150);
       const timer2 = setTimeout(() => { setIsHurt(false); setFloatingDamage(null); }, 1000);
       if (lastTickResult.comboHitDamage) {
         setComboBurst(true);
@@ -205,7 +223,7 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
       }
       return () => { clearTimeout(timer1); clearTimeout(timer2); };
     }
-  }, [lastTickResult, isTickRunning]);
+  }, [lastTickResult, isTickRunning, animationsEnabled, effectsEnabled, videoMode]);
 
   if (!isTickRunning && !isTraining) {
     const skillsList: { key: keyof CharacterSkills, name: string, icon: string, desc: string }[] = [
@@ -262,7 +280,7 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
                       const trackedQuest = QUESTS.find(q => q.id === trackedQuestId);
                       const highlightsZone = !!trackedQuest?.zoneId && trackedQuest.zoneId === z.id && trackedQuest.objectives.some(obj => ["KILL", "KILL_BOSS", "COLLECT"].includes(obj.type));
                       return (
-                        <div key={z.id} className="min-w-48 max-w-sm"><button disabled={isLocked} onClick={() => startHunting(z.id)} className={`group relative min-h-36 w-full overflow-hidden rounded-xl border text-left font-bold transition-all ${highlightsZone && !isLocked ? "border-2 border-arcane-gold ring-2 ring-arcane-gold/50 shadow-[0_0_24px_rgba(201,160,77,.45)]" : "border-white/10"} ${isLocked ? "cursor-not-allowed grayscale" : "text-white shadow-lg hover:-translate-y-1 hover:border-arcane-gold"}`}>
+                        <div key={z.id} className="min-w-48 max-w-sm"><button onClick={() => setMapPreviewZoneId(z.id)} className={`group relative min-h-36 w-full overflow-hidden rounded-xl border text-left font-bold transition-all ${highlightsZone && !isLocked ? "border-2 border-arcane-gold ring-2 ring-arcane-gold/50 shadow-[0_0_24px_rgba(201,160,77,.45)]" : "border-white/10"} ${isLocked ? "cursor-not-allowed grayscale" : "text-white shadow-lg hover:-translate-y-1 hover:border-arcane-gold"}`}>
                           <AssetImage src={mapBackground(z.theme)} alt={`Mapa ${z.name}`} className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
                           <span className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-black/10" />
                           <span className="relative flex h-full min-h-36 flex-col justify-end p-3"><span className="text-[10px] uppercase tracking-widest text-arcane-cyan">Mapa {z.tier}</span><span className="text-sm md:text-base">Caçar em {z.name}</span><span className="mt-1 text-[10px] font-semibold text-arcane-gold">Nível {z.minLevel}–{z.maxLevel}</span></span>
@@ -284,6 +302,31 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
                       )
                   })}
                 </div>
+                {mapPreviewZoneId && (() => {
+                  const preview = ZONES[mapPreviewZoneId];
+                  if (!preview) return null;
+                  const unlocked = character.level >= preview.minLevel && canEnterZone(character, preview.id);
+                  const dropIds = Array.from(new Set(preview.enemies.flatMap(enemy => [enemy.componentId, enemy.essenceId, enemy.materialDropId, ...(enemy.equipmentDropIds ?? []), enemy.uniqueDropId].filter(Boolean) as string[])));
+                  const elements = Array.from(new Set(preview.enemies.map(enemy => enemy.element).filter(Boolean)));
+                  const resistances = Array.from(new Set(preview.enemies.flatMap(enemy => Object.entries(enemy.elementalResistances ?? {}).filter(([, value]) => value > 0).map(([element]) => element))));
+                  return <div className="fixed inset-0 z-[100] grid place-items-center bg-black/75 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={`Informações de ${preview.name}`} onClick={() => setMapPreviewZoneId(null)}>
+                    <div className="relative max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-arcane-gold/60 bg-arcane-panel shadow-2xl" onClick={event => event.stopPropagation()}>
+                      <AssetImage src={mapBackground(preview.theme)} alt="" className="absolute inset-0 h-56 w-full object-cover opacity-45" />
+                      <div className="absolute inset-0 h-56 bg-gradient-to-b from-black/10 to-arcane-panel" />
+                      <div className="relative p-5 md:p-7">
+                        <button onClick={() => setMapPreviewZoneId(null)} className="absolute right-4 top-4 rounded-full bg-black/60 px-3 py-1 text-lg text-white hover:text-arcane-gold" aria-label="Fechar">×</button>
+                        <div className="min-h-36 pt-10"><p className="text-xs font-black uppercase tracking-[.25em] text-arcane-cyan">Mapa {preview.tier} · Nível {preview.minLevel}–{preview.maxLevel}</p><h2 className="mt-1 text-3xl font-black text-arcane-gold">{preview.name}</h2><p className="mt-1 text-sm text-gray-300">Conheça os perigos e recompensas antes de iniciar a caçada.</p></div>
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <section className="rounded-xl border border-white/10 bg-black/30 p-4"><h3 className="mb-2 font-bold text-white">🐾 Criaturas do mapa</h3><div className="grid gap-2 sm:grid-cols-2">{preview.enemies.map(enemy => <div key={enemy.id} className="rounded-lg border border-white/10 bg-black/25 p-2"><div className="font-bold text-arcane-gold">{enemy.emoji} {enemy.name}</div><div className="text-[11px] text-gray-400">Nível mínimo {enemy.minLevel ?? preview.minLevel} · dificuldade {enemy.difficulty}/5</div><div className="text-[11px] text-gray-300">HP {enemy.hp} · ATK {enemy.atk} · DEF {enemy.arm}</div></div>)}</div></section>
+                          <section className="rounded-xl border border-white/10 bg-black/30 p-4"><h3 className="mb-2 font-bold text-white">🎁 Drops revelados</h3><div className="grid grid-cols-2 gap-2">{dropIds.map(id => { const item = ALL_ITEM_TEMPLATES[id]; return item ? <div key={id} className="flex items-center gap-2 rounded-lg border border-white/10 bg-black/25 p-2 text-xs text-gray-200"><span className="text-lg">{item.icon}</span><span className="truncate">{item.name}</span></div> : null; })}</div><p className="mt-2 text-[10px] text-gray-500">Os detalhes de autoloot são liberados pelo bestiário conforme seus abates.</p></section>
+                          <section className="rounded-xl border border-emerald-500/20 bg-emerald-950/15 p-4"><h3 className="mb-2 font-bold text-emerald-200">✦ Vantagens</h3><ul className="space-y-1 text-xs text-emerald-100"><li>• Faixa de nível adequada: {preview.minLevel}–{preview.maxLevel}</li><li>• Elementos encontrados: {elements.length ? elements.join(", ") : "físico"}</li><li>• Boa fonte de XP, ouro e componentes da região</li></ul></section>
+                          <section className="rounded-xl border border-red-500/20 bg-red-950/15 p-4"><h3 className="mb-2 font-bold text-red-200">⚠ Desvantagens</h3><ul className="space-y-1 text-xs text-red-100"><li>• Resistências inimigas: {resistances.length ? resistances.join(", ") : "nenhuma conhecida"}</li><li>• Inimigos de dificuldade alta podem exigir treino e poções</li><li>• A mochila cheia pode fazer drops serem perdidos</li></ul></section>
+                        </div>
+                        <div className="mt-5 flex flex-wrap justify-end gap-2"><button onClick={() => setMapPreviewZoneId(null)} className="rounded-lg border border-white/15 px-4 py-2 text-sm text-gray-300 hover:border-white/40">Voltar</button><button disabled={!unlocked} onClick={() => { setMapPreviewZoneId(null); startHunting(preview.id); }} className="rounded-lg bg-arcane-purple px-5 py-2 font-bold text-white disabled:cursor-not-allowed disabled:opacity-40">{unlocked ? `Entrar em ${preview.name}` : "Mapa bloqueado"}</button></div>
+                      </div>
+                    </div>
+                  </div>;
+                })()}
               </div>
             )}
 
@@ -501,8 +544,10 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
               </div>
             </div>
 
-            {showProjectile && (
-              <div className="absolute left-[30%] top-1/2 -translate-y-1/2 text-4xl md:text-6xl projectile z-30">{spellEmoji}</div>
+            {(showProjectile || (effectsEnabled && videoMode === "compat" && (lastTickResult?.lastDamage || lastTickResult?.comboHitDamage))) && (
+              <div className={videoMode === "compat" ? "absolute left-[54%] top-[48%] -translate-y-1/2 z-30 rounded-full border-2 border-amber-300 bg-amber-500/20 px-3 py-1 text-sm font-black text-amber-100 shadow-[0_0_22px_rgba(251,191,36,.9)]" : "absolute left-[30%] top-1/2 -translate-y-1/2 text-4xl md:text-6xl projectile z-30"} aria-label="Impacto do ataque">
+                {videoMode === "compat" ? "✦ HIT" : spellEmoji}
+              </div>
             )}
 
             {currentMob && (
