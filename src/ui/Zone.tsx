@@ -246,30 +246,11 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,rgba(4,8,10,.58)_100%)] pointer-events-none" />
           
           <div className="z-10 mx-auto w-full max-w-4xl">
-            <div className="mb-6 flex justify-center gap-3">
-              {(character.hp < character.hpMax || character.mp < character.mpMax) ? (
-                healingUntil ? (
-                  <button disabled className="bg-gray-800 text-arcane-cyan px-4 md:px-6 py-2 rounded-lg font-bold animate-pulse border border-arcane-cyan/50 text-sm md:text-base">
-                    🧘 Meditando... {healTimer}s
-                  </button>
-                ) : (
-                  <button onClick={startHealing} className="bg-green-700 hover:bg-green-600 text-white px-4 md:px-6 py-2 rounded-lg font-bold shadow-[0_0_15px_rgba(34,197,94,0.5)] text-sm md:text-base">
-                    🧘 Meditar (15s)
-                  </button>
-                )
-              ) : <button disabled className="cursor-default rounded-lg border border-green-500/30 bg-green-950/30 px-4 py-2 text-sm font-bold text-green-300">💚 HP e MP completos</button>}
-            </div>
-
-            <div className="flex justify-center gap-2 md:gap-4 mb-8">
-              <button onClick={() => setHouseTab("maps")} className={`px-4 md:px-6 py-2 rounded-lg font-bold transition-all text-sm md:text-base ${houseTab === "maps" ? "bg-arcane-gold text-black" : "bg-gray-800 text-gray-400"}`}>🗺️ Mapas</button>
-              <button onClick={() => setHouseTab("train")} className={`px-4 md:px-6 py-2 rounded-lg font-bold transition-all text-sm md:text-base ${houseTab === "train" ? "bg-arcane-gold text-black" : "bg-gray-800 text-gray-400"}`}>🏋️ Treinar</button>
-            </div>
+            <div className="mb-8 text-center"><div className="mb-2 text-4xl font-black tracking-[.22em] text-arcane-gold drop-shadow-[0_0_15px_rgba(201,160,77,0.7)]">REFÚGIO DA ESSÊNCIA</div><h2 className="text-2xl md:text-3xl font-bold text-arcane-gold">Comece uma nova aventura</h2><p className="mx-auto mt-2 max-w-xl text-sm text-gray-300">Conheça uma nova área, escolha seu próximo destino e deixe a Essência registrar sua história.</p><div className="mt-4 flex justify-center gap-2"><button onClick={() => setHouseTab("maps")} className="rounded-lg bg-arcane-gold px-4 py-2 text-sm font-bold text-black">✦ Conhecer áreas</button><button onClick={() => setHouseTab("train")} className="rounded-lg border border-white/20 bg-black/30 px-4 py-2 text-sm font-bold text-gray-200">⚔️ Preparar evolução</button></div>{(character.hp < character.hpMax || character.mp < character.mpMax) && <div className="mt-3">{healingUntil ? <span className="text-sm font-bold text-arcane-cyan">🧘 Meditando no Refúgio… {healTimer}s</span> : <button onClick={startHealing} className="rounded-full border border-emerald-400/50 bg-emerald-900/50 px-4 py-2 text-sm font-bold text-emerald-100 hover:bg-emerald-800">🧘 Recuperar no Refúgio (15s)</button>}</div>}</div>
 
             {houseTab === "maps" && (
               <div className="flex flex-col items-center animate-fade-in">
-                <div className="mb-4 text-center text-4xl font-black tracking-[.22em] text-arcane-gold drop-shadow-[0_0_15px_rgba(201,160,77,0.7)]">REFÚGIO DA ESSÊNCIA</div>
-                <h2 className="text-2xl md:text-3xl font-bold text-arcane-gold mb-2 text-center">Sua Cabana Aconchegante</h2>
-                <p className="text-gray-400 mb-8 text-center max-w-md text-sm md:text-base px-4">Descanse para recuperar HP, ou escolha uma zona para explorar.</p>
+                <p className="mb-4 text-center text-xs uppercase tracking-[.2em] text-arcane-cyan">Rotas conhecidas da Cúpula Sinax</p>
                 <div className="mx-auto grid w-full max-w-4xl grid-cols-1 gap-4 md:grid-cols-2">
                   {Object.values(ZONES).map(z => {
                       const isLocked = character.level < z.minLevel || !canEnterZone(character,z.id);

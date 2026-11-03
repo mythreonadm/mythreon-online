@@ -1,4 +1,4 @@
-import { Character, Race, SaveFile, CharacterSkills, CardInstance } from "../types";
+import { Character, Race, SaveFile, CharacterSkills, CardInstance, CharacterAppearance } from "../types";
 import { DEFAULT_BACKPACK } from "../data/backpacks";
 import { getBaseStats, xpToNextLevel, recalcStats } from "./stats";
 import { makeEquipment } from "./drops";
@@ -20,12 +20,13 @@ export function activateSaveAccount(accountId?: string) {
   SAVE_KEY = accountKey;
 }
 
-export function createNewCharacter(name: string): Character {
+export function createNewCharacter(name: string, appearance?: CharacterAppearance): Character {
   const base = getBaseStats(1);
   const zeroSkills: CharacterSkills = { melee: 0, defense: 0, magic: 0, distance: 0, soul: 0 };
   return {
     id: Math.random().toString(), name, level: 1, xp: 0, xpToNext: xpToNextLevel(1), gold: 0,
     hp: base.hp!, hpMax: base.hp!, mp: base.mp!, mpMax: base.mp!, baseStats: base,
+    appearance: appearance ?? { body: "MASCULINO", skin: "MORENA", hair: "CURTO", hairColor: "NEGRO", outfit: "VIAJANTE", outfitColor: "OCRE" },
     mythreonShards: 0, mythreonCoins: 0,
     equipped: {}, inventory: { backpack: { ...DEFAULT_BACKPACK }, items: [] }, killsInZone: 0,
     currentZoneId: "BOSQUE_LYSS", premium: false, lastTick: Date.now(),

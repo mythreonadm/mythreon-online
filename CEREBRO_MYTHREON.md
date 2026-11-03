@@ -403,3 +403,17 @@ Refino atual: `100 Shards + 25.000 gold = 1 Mythreon Coin`. O preço alto funcio
 Arquivos: `src/data/mythreonEconomy.ts`, `src/types/index.ts`, `src/engine/combat.ts`, `src/engine/save.ts`, `src/store/gameStore.ts`, `src/ui/Shop.tsx`, `src/ui/CombatLog.tsx`, `server/game.ts`, `server/generated/online-runtime.cjs`. O painel Mercado Negro foi criado como área reservada; anúncios globais entre personagens ainda exigem a próxima migração transacional (`world_market_listings`) e não devem ser anunciados como ativos até essa etapa.
 
 Regras de segurança: o cliente só envia quantidade/ID; o servidor valida refino, oferta, saldo e itens. Não colocar chaves Supabase em VITE_. Testes executados após a implementação: `npm run typecheck` e `node --check server/generated/online-runtime.cjs`. Ainda falta commit/push e deploy pelo usuário.
+
+## Refúgio narrativo e identidade do aventureiro — 2026-11-03
+
+A tela pós-morte retorna ao Refúgio com o botão `🧘 Meditar e renascer no Refúgio`. Os controles antigos de Meditar/Mapas foram retirados da fileira superior da cabana; a entrada agora usa linguagem de descoberta: “Comece uma nova aventura”, “Conhecer áreas” e “Preparar evolução”. As cartas de mapa continuam sendo o ponto de entrada das caçadas.
+
+A criação local de personagem passou a guardar `CharacterAppearance`: corpo, pele, cabelo, cor do cabelo e roupa inicial. O estado humano continua usando a linhagem humana existente no mapa; a aparência é persistida para receber sprites pixel-art compostos posteriormente. A criação online ainda mantém o fluxo anterior e deve receber o mesmo editor visual em uma etapa seguinte, com validação server-side dos valores permitidos.
+
+## Trade seguro, auditoria e estatísticas — 2026-11-03
+
+As trocas continuam usando escrow: itens e gold são retirados da origem antes da confirmação, ficam reservados na oferta e só são entregues depois que os dois lados confirmam a mesma revisão. O servidor trava os personagens e a troca dentro da transação do request, aplica idempotência por `request_id`, impede itens vinculados e devolve reservas em cancelamento/expiração.
+
+Foi criada a migration `supabase/migrations/003_trade_audit.sql`. A tabela `world_trade_transactions` registra cada lado concluído com `trade_id`, vendedor, comprador, owners, gold recebido, taxa, snapshot dos itens, itens da contraparte, quantidade e horário. A view `world_trade_item_stats` calcula eventos de venda, unidades vendidas, preço médio, mínimo, máximo e última venda por `templateId`. A tabela é privada por RLS; apenas participantes autenticados consultam seu histórico, e a API do servidor é a única escritora.
+
+`server/world.ts` grava duas linhas de auditoria por troca concluída e devolve `tradeHistory` e `tradeStats` no `social.read`. O banco publica mudanças de `world_trade_transactions` em Realtime após a migration 003. Executar as migrations em ordem antes de testar produção; sem a 003, o runtime antigo não deve receber trocas novas.

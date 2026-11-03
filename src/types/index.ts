@@ -133,6 +133,15 @@ export interface CharacterSkills {
   melee: number; defense: number; magic: number; distance: number; soul: number;
 }
 
+export interface CharacterAppearance {
+  body: "MASCULINO" | "FEMININO";
+  skin: "CLARA" | "MORENA" | "ESCURA" | "AZUL_ESSENCIA";
+  hair: "CURTO" | "LONGO" | "TRANCAS" | "ARCANO";
+  hairColor: "NEGRO" | "CASTANHO" | "RUIVO" | "PRATEADO" | "AZUL";
+  outfit: "VIAJANTE" | "GUARDIAO" | "MISTICO";
+  outfitColor: "OCRE" | "AZUL" | "VIOLETA" | "VERDE";
+}
+
 export type QuestObjectiveType = "KILL" | "KILL_BOSS" | "COLLECT" | "REACH_LEVEL" | "EARN_GOLD" | "SYNTHESIZE" | "EQUIP_RACE" | "CONFIGURE_POTIONS" | "SELL" | "SALVAGE" | "FORGE" | "VISIT_WIKI" | "VISIT_MATRIX" | "VISIT_FORGE" | "VISIT_BACKPACK" | "VISIT_CHARACTER" | "VISIT_BEASTS" | "VISIT_SHOP" | "VISIT_LAB" | "VISIT_DEPOT" | "TRAIN" | "UNLOCK_ZONE" | "DISCOVER_TOTAL" | "DISCOVER_NAMED";
 export type QuestCategory = "TUTORIAL" | "HISTORIA" | "CACA" | "COLETA" | "DESAFIO" | "REPETIVEL" | "COMPENDIO";
 
@@ -162,6 +171,7 @@ export interface DeathReportData {
 export interface Character {
   id: string; name: string; level: number; xp: number; xpToNext: number; gold: number;
   hp: number; hpMax: number; mp: number; mpMax: number; baseStats: ItemStats;
+  appearance?: CharacterAppearance;
   mythreonShards?: number; mythreonCoins?: number;
   equipped: Partial<Record<SlotType, Item>>; inventory: Inventory;
   raceId?: string; activeRace?: Race; killsInZone: number; currentZoneId?: string;

@@ -3,7 +3,7 @@ import { getAvailableQuests } from '../utils/questSignals';
 import { checkQuestCompletion } from '../engine/questEngine';
 import { applyTraining } from "../engine/training";
 import { create } from "zustand";
-import { Character, Race, TickResult, CharacterSkills, OfflineReportData, BuffVialTemplate, DeathReportData, HuntZoneStats, DivineBeastId, QuestObjectiveType } from "../types";
+import { Character, Race, TickResult, CharacterSkills, OfflineReportData, BuffVialTemplate, DeathReportData, HuntZoneStats, DivineBeastId, QuestObjectiveType, CharacterAppearance } from "../types";
 import { ZONES } from "../data/zones";
 import { createNewCharacter, loadGame, saveGame } from "../engine/save";
 import { processTick } from "../engine/combat";
@@ -34,7 +34,7 @@ export interface GameState {
 
   finishIntro: () => void;
   unlockZone: (id: string) => {success:boolean;error?:string};
-  newGame: (name: string) => void;
+  newGame: (name: string, appearance?: CharacterAppearance) => void;
   loadFromSave: () => boolean;
   save: () => void;
   spendStatPoint: (stat: keyof CharacterSkills) => boolean;
@@ -115,8 +115,8 @@ return create<GameState>((set, get) => ({
 
   finishIntro: () => { const c=get().character; if(!c)return; set({character:{...c,introSeen:true}}); get().save(); },
   unlockZone: id => { const c=get().character; if(!c)return {success:false}; const next=structuredClone(c); const result=unlockJourneyZone(next,id); if(result.success){set({character:next});get().save();} return result; },
-  newGame: (name) => {
-    const char = createNewCharacter(name);
+  newGame: (name, appearance) => {
+    const char = createNewCharacter(name, appearance);
     const races: Race[] = [];
     trackRaceDiscovery(char, races);
     set({ character: char, races, currentZoneId: "BOSQUE_LYSS" });

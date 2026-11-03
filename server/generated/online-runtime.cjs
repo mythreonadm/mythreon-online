@@ -1654,7 +1654,7 @@ for (const zone of Object.values(ZONES)) {
 // src/engine/save.ts
 var LEGACY_SAVE_KEY = "mythreon_save_v1";
 var SAVE_KEY = LEGACY_SAVE_KEY;
-function createNewCharacter(name) {
+function createNewCharacter(name, appearance) {
   const base = getBaseStats(1);
   const zeroSkills = { melee: 0, defense: 0, magic: 0, distance: 0, soul: 0 };
   return {
@@ -1669,6 +1669,7 @@ function createNewCharacter(name) {
     mp: base.mp,
     mpMax: base.mp,
     baseStats: base,
+    appearance: appearance ?? { body: "MASCULINO", skin: "MORENA", hair: "CURTO", hairColor: "NEGRO", outfit: "VIAJANTE", outfitColor: "OCRE" },
     mythreonShards: 0,
     mythreonCoins: 0,
     equipped: {},
@@ -3311,8 +3312,8 @@ function createGameStore(runtime = {}) {
       }
       return result;
     },
-    newGame: (name) => {
-      const char = createNewCharacter(name);
+    newGame: (name, appearance) => {
+      const char = createNewCharacter(name, appearance);
       const races = [];
       trackRaceDiscovery(char, races);
       set({ character: char, races, currentZoneId: "BOSQUE_LYSS" });
@@ -3937,8 +3938,8 @@ function createGameStore(runtime = {}) {
 var useGameStore = createGameStore();
 
 // server/game.ts
-function freshWorld(name, id) {
-  const character = createNewCharacter(name);
+function freshWorld(name, id, appearance) {
+  const character = createNewCharacter(name, appearance);
   character.id = id;
   return { character, races: [], isTickRunning: false, isTraining: false, healingUntil: null, deathReport: null, lastTickResult: null, lastAdvanceAt: Date.now(), counters: { forges: 0, syntheses: 0, trades: 0, bosses: 0 } };
 }
@@ -4365,6 +4366,8 @@ async function handleWorld(db, owner, request) {
             await commitCharacter(db, a);
             await commitCharacter(db, b);
             await db.query("insert into public.world_ledger(id,operation_id,kind,sender_id,recipient_id,gold,fee,items) values($1,$2,$3,$4,$5,$6,$7,$8)", [(0, import_node_crypto2.randomUUID)(), request.requestId, "trade", a.id, b.id, offerA.gold + offerB.gold, offerA.fee + offerB.fee, JSON.stringify({ a: offerA.items, b: offerB.items })]);
+            const quantity = (items) => items.reduce((sum, item) => sum + Math.max(1, Number(item.quantity) || 1), 0);
+            await db.query("insert into public.world_trade_transactions(id,trade_id,seller_character_id,seller_owner_id,buyer_character_id,buyer_owner_id,gold_price,fee_gold,items,counterparty_items,item_count) values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11),($12,$2,$5,$6,$3,$4,$13,$14,$15,$16,$17) on conflict(trade_id,seller_character_id,buyer_character_id) do nothing", [(0, import_node_crypto2.randomUUID)(), t.id, a.id, t.a_owner, b.id, t.b_owner, offerB.gold, offerA.fee, JSON.stringify(offerA.items), JSON.stringify(offerB.items), quantity(offerA.items), (0, import_node_crypto2.randomUUID)(), offerA.gold, offerB.fee, JSON.stringify(offerB.items), JSON.stringify(offerA.items), quantity(offerB.items)]);
             await db.query("update public.world_trades set status='completed',ready_a=true,ready_b=true,revision=revision+1 where id=$1", [t.id]);
             receipt = { tradeId: t.id, status: "completed" };
           } else {
@@ -4439,9 +4442,11 @@ async function handleWorld(db, owner, request) {
     const messages = [...globalMessages, ...privateMessages].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
     const mail = (await db.query("select m.*,r.name as recipient_name from public.world_mail m join public.world_characters r on r.id=m.recipient_id where m.sender_id=$1 or m.recipient_id=$1 order by (m.recipient_id=$1 and m.claimed_at is null) desc,case when m.recipient_id=$1 and m.claimed_at is null then m.created_at end asc,m.created_at desc limit 100", [id])).rows;
     const trades = (await db.query("select t.*,a.name as a_name,b.name as b_name from public.world_trades t join public.world_characters a on a.id=t.a_id join public.world_characters b on b.id=t.b_id where t.a_id=$1 or t.b_id=$1 order by t.created_at desc limit 20", [id])).rows;
+    const tradeHistory = (await db.query("select tx.*,s.name as seller_name,b.name as buyer_name from public.world_trade_transactions tx join public.world_characters s on s.id=tx.seller_character_id join public.world_characters b on b.id=tx.buyer_character_id where tx.seller_character_id=$1 or tx.buyer_character_id=$1 order by tx.completed_at desc limit 50", [id])).rows;
+    const tradeStats = (await db.query("select * from public.world_trade_item_stats order by units_sold desc,template_id limit 200")).rows;
     const online = (await db.query("select id,name from public.world_characters where online_at>now()-interval '90 seconds' order by name limit 200")).rows;
     const onlineTotal = Number((await db.query("select count(*)::int as count from public.world_characters where online_at>now()-interval '90 seconds'")).rows[0].count);
-    social = { friends, messages, mail, trades, online, onlineTotal };
+    social = { friends, messages, mail, trades, tradeHistory, tradeStats, online, onlineTotal };
   }
   return { ok: true, ...receipt, characters: list, current, social };
 }

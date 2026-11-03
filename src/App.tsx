@@ -36,6 +36,7 @@ import { SettingsPanel } from "./ui/SettingsPanel";
 import { QUESTS } from "./data/quests";
 import { checkQuestCompletion } from "./engine/questEngine";
 import { ZONES } from "./data/zones";
+import type { CharacterAppearance } from "./types";
 
 type Tab = "zona" | "personagem" | "backpack" | "depot" | "matriz" | "pets" | "laboratorio" | "shop" | "loja" | "missoes" | "duelos" | "wiki" | "online" | "ranking";
 
@@ -56,6 +57,7 @@ function GameApp({onlineAccount,onSwitchCharacter}:{onlineAccount?:LocalAccount;
   const [tab, setTab] = useState<Tab>("zona");
   const { character, loadFromSave, newGame, startHunting, stopHunting, recordQuestAction, isTickRunning, setCurrentZone } = useGameStore();
   const [name, setName] = useState("");
+  const [appearance, setAppearance] = useState<CharacterAppearance>({body:"MASCULINO",skin:"MORENA",hair:"CURTO",hairColor:"NEGRO",outfit:"VIAJANTE",outfitColor:"OCRE"});
   const [debug, setDebugState] = useState(isDebug());
   const [focusQuestId, setFocusQuestId] = useState<string | null>(null);
   const [trackedQuestId, setTrackedQuestId] = useState<string | null>(null);
@@ -155,6 +157,11 @@ useEffect(() => {
           </div>
           <p className="text-arcane-cyan text-center mb-2 text-sm italic">“A Essência registra tudo.”</p>
           <div className="text-center text-xs text-gray-500 mb-6">Conta: {account.email} · <button className="text-arcane-gold hover:underline" onClick={logout}>Sair</button></div>
+          <div className="mb-5 rounded-xl border border-arcane-border bg-black/20 p-4">
+            <p className="mb-3 text-sm font-bold text-arcane-gold">Vista do seu primeiro eco</p>
+            <div className="mb-4 flex justify-center"><div className="grid h-24 w-24 place-items-center rounded-full border border-arcane-gold/40 bg-gradient-to-b from-arcane-purple/30 to-black text-5xl shadow-[0_0_25px_rgba(201,160,77,.25)]">{appearance.body === "FEMININO" ? "🧝‍♀️" : "🧝‍♂️"}</div></div>
+            <div className="grid grid-cols-2 gap-2 text-xs"><label className="text-gray-300">Corpo<select value={appearance.body} onChange={e=>setAppearance({...appearance,body:e.target.value as CharacterAppearance["body"]})} className="mt-1 w-full rounded border border-arcane-border bg-arcane-bg p-2 text-white"><option value="MASCULINO">Masculino</option><option value="FEMININO">Feminino</option></select></label><label className="text-gray-300">Pele<select value={appearance.skin} onChange={e=>setAppearance({...appearance,skin:e.target.value as CharacterAppearance["skin"]})} className="mt-1 w-full rounded border border-arcane-border bg-arcane-bg p-2 text-white"><option value="CLARA">Clara</option><option value="MORENA">Morena</option><option value="ESCURA">Escura</option><option value="AZUL_ESSENCIA">Azul da Essência</option></select></label><label className="text-gray-300">Cabelo<select value={appearance.hair} onChange={e=>setAppearance({...appearance,hair:e.target.value as CharacterAppearance["hair"]})} className="mt-1 w-full rounded border border-arcane-border bg-arcane-bg p-2 text-white"><option value="CURTO">Curto</option><option value="LONGO">Longo</option><option value="TRANCAS">Tranças</option><option value="ARCANO">Arcano</option></select></label><label className="text-gray-300">Cor do cabelo<select value={appearance.hairColor} onChange={e=>setAppearance({...appearance,hairColor:e.target.value as CharacterAppearance["hairColor"]})} className="mt-1 w-full rounded border border-arcane-border bg-arcane-bg p-2 text-white"><option value="NEGRO">Negro</option><option value="CASTANHO">Castanho</option><option value="RUIVO">Ruivo</option><option value="PRATEADO">Prateado</option><option value="AZUL">Azul</option></select></label><label className="col-span-2 text-gray-300">Roupa inicial<select value={appearance.outfit} onChange={e=>setAppearance({...appearance,outfit:e.target.value as CharacterAppearance["outfit"]})} className="mt-1 w-full rounded border border-arcane-border bg-arcane-bg p-2 text-white"><option value="VIAJANTE">Viajante do Refúgio</option><option value="GUARDIAO">Guardião da Cúpula</option><option value="MISTICO">Místico do Primeiro Canto</option></select></label></div>
+          </div>
           <input
             type="text"
             value={name}
@@ -163,7 +170,7 @@ useEffect(() => {
             className="w-full bg-arcane-bg border border-arcane-border rounded-lg px-4 py-3 text-white mb-6 focus:outline-none focus:border-arcane-purple"
           />
           <button
-            onClick={() => { if (name.trim()) { newGame(name.trim()); setTab("missoes"); } }}
+            onClick={() => { if (name.trim()) { newGame(name.trim(), appearance); setTab("missoes"); } }}
             className="w-full bg-arcane-purple hover:bg-arcane-purple/80 text-white rounded-lg py-3 font-bold transition-all hover:scale-105"
           >
             Começar Jornada

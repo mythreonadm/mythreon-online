@@ -28,7 +28,7 @@ export function DeathScreen() {
         </div>
         
         <button onClick={clearDeathReport} className="w-full bg-red-800 hover:bg-red-700 text-white font-bold py-3 rounded-lg transition-colors text-lg shadow-[0_0_15px_rgba(220,38,38,0.5)]">
-          Renascer na Casa
+          🧘 Meditar e renascer no Refúgio
         </button>
       </div>
     </div>
