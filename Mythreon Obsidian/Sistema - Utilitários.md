@@ -9,6 +9,7 @@
 ## Código e recursos
 
 - [src/utils/id.ts](../src/utils/id.ts) — generateId
+- [src/utils/sfx.ts](../src/utils/sfx.ts) — playCombatSfx
 - [src/utils/vitals.ts](../src/utils/vitals.ts) — vitalValue, vitalPercent, formatVital
 
 ## Relações encontradas

@@ -14,12 +14,16 @@ export async function connectCharacter(id:string){disconnectCharacter();selected
  for(const [name,value] of Object.entries(local)){if(typeof value!=='function')continue;(original as any)[name]=value;
   if(['tick','save','loadFromSave','newGame'].includes(name)){overrides[name]=()=>name==='loadFromSave'?false:undefined;continue;}
   overrides[name]=(...args:any[])=>{
+   // Handlers como onClick={stopHunting} recebem o evento React. Nunca o envie ao
+   // servidor: SyntheticEvent contém referências circulares (__reactFiber).
+   const noArg = ['stopHunting','stopTraining','finishIntro','clearOfflineReport','clearDeathReport','startHealing','cancelHealing','unequipRace','unequipDivineBeast','activateBuff','buyTrainingBoost','buyBless','refreshCompendium'].includes(name);
+   const safeArgs = noArg || (args.length === 1 && args[0] && typeof args[0] === 'object' && ('nativeEvent' in args[0] || 'currentTarget' in args[0])) ? [] : args;
    if(busy||recovery)return {success:false,error:'Aguarde a confirmação da ação atual.'};
    // Pré-validação isolada mantém a interface síncrona existente; só a resposta do servidor altera o personagem real.
    const shadow=createGameStore({server:true,persist:()=>{},notify:()=>{}});const current=useGameStore.getState();shadow.setState({character:structuredClone(current.character),races:structuredClone(current.races),currentZoneId:current.currentZoneId,isTickRunning:current.isTickRunning,isTraining:current.isTraining,healingUntil:current.healingUntil,deathReport:current.deathReport});
-   let preview:any;try{preview=(shadow.getState() as any)[name](...args);}catch{return {success:false,error:'Não foi possível validar esta ação.'};}
+   let preview:any;try{preview=(shadow.getState() as any)[name](...safeArgs);}catch{return {success:false,error:'Não foi possível validar esta ação.'};}
    if(preview?.success===false||preview===false)return preview;
-   void onlineAction('world.command',{action:name,args}).then(r=>{if(r.result?.success===false)useOnlineState.setState({error:r.result.error??'Ação não concluída.'});}).catch(()=>{});
+   void onlineAction('world.command',{action:name,args:safeArgs}).then(r=>{if(r.result?.success===false)useOnlineState.setState({error:r.result.error??'Ação não concluída.'});}).catch(()=>{});
    return preview;
   };
  }

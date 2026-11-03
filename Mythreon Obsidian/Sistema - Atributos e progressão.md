@@ -13,7 +13,7 @@
 - [public/assets/items/BACKPACK_EXPLORADOR.png](../public/assets/items/BACKPACK_EXPLORADOR.png)
 - [src/data/skills.ts](../src/data/skills.ts) — AttackSkill, ATTACK_SKILLS, ATTACK_SKILL_COOLDOWN, SupportEffect, SUPPORT_EFFECTS, PassiveEffect, PASSIVE_EFFECTS
 - [src/engine/stats.ts](../src/engine/stats.ts) — getBaseStats, recalcStats, xpToNextLevel, skillXpToNextLevel
-- [src/engine/training.ts](../src/engine/training.ts) — TRAINING_MILESTONES, masteryBonus, trainingXpNeeded, applyTraining
+- [src/engine/training.ts](../src/engine/training.ts) — TRAINING_MILESTONES, masteryBonus, trainingXpNeeded, applyTrainingDeathPenalty, applyTraining
 - [src/ui/StatAllocation.tsx](../src/ui/StatAllocation.tsx) — StatAllocation
 - [src/ui/TrainingProgress.tsx](../src/ui/TrainingProgress.tsx) — TrainingProgress
 

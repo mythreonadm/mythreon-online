@@ -397,7 +397,7 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
           🏃 Sair
         </button>
         <button onClick={() => { const result = armSpecialCombo(); if (!result.success) alert(result.error); }} className={`px-3 py-1.5 rounded-lg font-bold text-xs md:text-sm border shadow-md ${((character.comboCooldownUntil ?? 0) > Date.now()) ? "bg-gray-800 text-gray-500 border-gray-700" : "bg-purple-900/80 text-purple-200 border-purple-400/50 hover:bg-purple-700"}`} title="Ritmo da Essência: a Essência responde à precisão do aventureiro. Complete a sequência antes da janela fechar para causar 150%, 100% ou 50% do dano base.">
-          ⚡ Ritmo da Essência {comboKeys.join("+")} {comboProgress ? `(${comboProgress}/3)` : ""}
+          ⚡ Ritmo da Essência {comboKeys.join("+")} {comboProgress ? `(${comboProgress}/3)` : ""} {lastTickResult?.comboRank && <span className={lastTickResult.comboRank === "ouro" ? "text-yellow-300" : lastTickResult.comboRank === "prata" ? "text-slate-200" : "text-orange-300"}>{lastTickResult.comboRank === "ouro" ? "● Ouro" : lastTickResult.comboRank === "prata" ? "● Prata" : "● Bronze"}</span>}
         </button>
       </div>
 
@@ -459,7 +459,7 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
 
             {currentMob && (
               <div className="flex flex-col items-center relative translate-y-2 md:translate-y-4">
-                {floatingDamage !== null && <div className="damage-number text-red-500 text-3xl md:text-5xl z-50 font-black drop-shadow-[0_2px_2px_rgba(0,0,0,1)]">-{floatingDamage}</div>}
+                {lastTickResult?.comboHitDamage ? <div className="absolute -top-10 z-50 flex items-end gap-2 font-black drop-shadow-[0_2px_2px_rgba(0,0,0,1)]"><span className="damage-number text-red-500 text-3xl md:text-5xl">-{lastTickResult.comboHitDamage[0]}</span><span className="damage-number text-amber-300 text-2xl md:text-4xl">-{lastTickResult.comboHitDamage[1]}</span></div> : floatingDamage !== null && <div className="damage-number text-red-500 text-3xl md:text-5xl z-50 font-black drop-shadow-[0_2px_2px_rgba(0,0,0,1)]">-{floatingDamage}</div>}
                 
               <div className={`combat-sprite combat-sprite-enemy w-24 h-24 md:w-40 md:h-40 flex items-center justify-center relative transition-transform ${isHurt ? 'animate-shake filter drop-shadow-[0_0_20px_rgba(220,38,38,1)]' : 'animate-idle'}`}>
                   {currentMob?.sprite && !enemyImageError ? (
@@ -523,7 +523,7 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
                     <div className="flex-1 min-w-0">
                       <div className="text-[10px] md:text-xs font-bold text-white truncate">{raceSkill.desc.split(":")[0]}</div>
                       <div className={`text-[8px] md:text-[9px] font-bold ${magicReady && hasEnoughMana ? "text-green-400" : "text-red-400"}`}>
-                        {hasEnoughMana ? (magicReady ? "✓ PRONTA" : "Recarregando...") : "Sem Mana"}
+                        {hasEnoughMana ? (magicReady ? "✓ PRONTA" : `Recarregando · ${Math.max(0, magicCooldownTicks - magicCooldown) * 3}s`) : "Sem Mana"}
                       </div>
                     </div>
                   </div>

@@ -298,6 +298,8 @@ export interface TickResult {
   salvagedItems?: number;
   skillLevelUp?: string;
   usedMp?: boolean;
+  comboHitDamage?: [number, number];
+  comboRank?: "ouro" | "prata" | "bronze";
   deathData?: DeathReportData;
   cardsDropped?: CardInstance[];
   damageDealt?: number;

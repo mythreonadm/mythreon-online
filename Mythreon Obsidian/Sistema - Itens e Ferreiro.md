@@ -95,7 +95,7 @@
 - [src/data/backpacks.ts](../src/data/backpacks.ts) — BACKPACKS, DEFAULT_BACKPACK
 - [src/data/items.ts](../src/data/items.ts) — createItem, ALL_EQUIPMENT_TEMPLATES, ARROW_TEMPLATES, POTION_TEMPLATES, UNIQUE_TEMPLATES, FRAGMENT_TEMPLATES, ALL_ITEM_TEMPLATES
 - [src/engine/depot.ts](../src/engine/depot.ts) — getDepotUsedSlots, depositItem, withdrawItem, depositMany, withdrawMany
-- [src/engine/forge.ts](../src/engine/forge.ts) — getUpgradeCost, upgradeItemLevel, rerollItemAffixes
+- [src/engine/forge.ts](../src/engine/forge.ts) — getUpgradeCost, forgeFragments, upgradeItemLevel, rerollItemAffixes
 - [src/engine/inventory.ts](../src/engine/inventory.ts) — getUsedSlots, canAddItem, addItem, removeItem, countByTemplate, equipItem, unequipItem
 - [src/engine/itemCompare.ts](../src/engine/itemCompare.ts) — STAT_WEIGHTS, getItemScore, getBestTargetSlot, getEquippedForTarget, isUpgrade
 - [src/engine/salvage.ts](../src/engine/salvage.ts) — salvageItem, salvageAllEquipment, salvageSelectedEquipment
