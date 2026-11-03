@@ -70,10 +70,16 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
   const [comboKeys, setComboKeys] = useState(() => ["S", "D", "A"].sort(() => Math.random() - .5));
   const [comboProgress, setComboProgress] = useState(0);
   const [comboStartedAt, setComboStartedAt] = useState<number | null>(null);
+  const [comboClock, setComboClock] = useState(() => Date.now());
   const [showLootConfig, setShowLootConfig] = useState<string | null>(null);
   
   const balloonTimeout = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const magicCooldownTicks = Math.max(1, Math.ceil(ATTACK_SKILL_COOLDOWN - (character ? buildProfile(character).cdReduce : 0)));
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setComboClock(Date.now()), 250);
+    return () => window.clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     if (!isTickRunning) return;
@@ -396,9 +402,9 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
         <button onClick={stopHunting} className="bg-red-900/80 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs md:text-sm transition-colors border border-red-500/50 shadow-md">
           🏃 Sair
         </button>
-        <button onClick={() => { const result = armSpecialCombo(); if (!result.success) alert(result.error); }} className={`px-3 py-1.5 rounded-lg font-bold text-xs md:text-sm border shadow-md ${((character.comboCooldownUntil ?? 0) > Date.now()) ? "bg-gray-800 text-gray-500 border-gray-700" : "bg-purple-900/80 text-purple-200 border-purple-400/50 hover:bg-purple-700"}`} title="Ritmo da Essência: a Essência responde à precisão do aventureiro. Complete a sequência antes da janela fechar para causar 150%, 100% ou 50% do dano base.">
+        <span className="px-3 py-1.5 rounded-lg font-bold text-xs md:text-sm border border-purple-400/30 bg-purple-950/60 text-purple-200">
           ⚡ Ritmo da Essência {comboKeys.join("+")} {comboProgress ? `(${comboProgress}/3)` : ""} {lastTickResult?.comboRank && <span className={lastTickResult.comboRank === "ouro" ? "text-yellow-300" : lastTickResult.comboRank === "prata" ? "text-slate-200" : "text-orange-300"}>{lastTickResult.comboRank === "ouro" ? "● Ouro" : lastTickResult.comboRank === "prata" ? "● Prata" : "● Bronze"}</span>}
-        </button>
+        </span>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-[1fr_320px] gap-3 md:gap-4">
@@ -450,6 +456,15 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
                   <div className="h-full bg-green-500 rounded-full transition-all" style={{ width: `${vitalPercent(character.hp,character.hpMax)}%` }} />
                 </div>
                 <div className="text-[8px] md:text-[10px] text-gray-400 mt-0.5">{formatVital(character.hp)} / {formatVital(character.hpMax)}</div>
+              <button
+                type="button"
+                onClick={() => { const result = armSpecialCombo(); if (!result.success) alert(result.error); }}
+                disabled={(character.comboCooldownUntil ?? 0) > comboClock}
+                className={`mt-2 w-full rounded-md border px-2 py-1 text-[9px] md:text-xs font-black transition ${((character.comboCooldownUntil ?? 0) > comboClock) ? "border-gray-700 bg-gray-900 text-gray-500" : "border-purple-300 bg-purple-900/90 text-purple-100 shadow-[0_0_18px_rgba(168,85,247,.8)] animate-pulse hover:bg-purple-700"}`}
+                title="Complete a sequência de teclas para liberar o segundo impacto."
+              >
+                {((character.comboCooldownUntil ?? 0) > comboClock) ? `⏳ ${Math.ceil((character.comboCooldownUntil! - comboClock) / 1000)}s` : `⚡ COMBO ${comboKeys.join("+")}`}
+              </button>
               </div>
             </div>
 
@@ -459,7 +474,7 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
 
             {currentMob && (
               <div className="flex flex-col items-center relative translate-y-2 md:translate-y-4">
-                {lastTickResult?.comboHitDamage ? <div className="absolute -top-10 z-50 flex items-end gap-2 font-black drop-shadow-[0_2px_2px_rgba(0,0,0,1)]"><span className="damage-number text-red-500 text-3xl md:text-5xl">-{lastTickResult.comboHitDamage[0]}</span><span className="damage-number text-amber-300 text-2xl md:text-4xl">-{lastTickResult.comboHitDamage[1]}</span></div> : floatingDamage !== null && <div className="damage-number text-red-500 text-3xl md:text-5xl z-50 font-black drop-shadow-[0_2px_2px_rgba(0,0,0,1)]">-{floatingDamage}</div>}
+                {lastTickResult?.comboHitDamage ? <div className="absolute -top-16 z-50 flex items-end gap-3 font-black drop-shadow-[0_2px_2px_rgba(0,0,0,1)]" aria-label="Dois impactos do combo"><span className="damage-number text-red-500 text-3xl md:text-5xl">-{lastTickResult.comboHitDamage[0]}<small className="ml-1 block text-[9px] md:text-xs text-red-200">HIT 1</small></span><span className="damage-number text-amber-300 text-3xl md:text-5xl">-{lastTickResult.comboHitDamage[1]}<small className="ml-1 block text-[9px] md:text-xs text-amber-100">HIT 2</small></span></div> : floatingDamage !== null && <div className="damage-number text-red-500 text-3xl md:text-5xl z-50 font-black drop-shadow-[0_2px_2px_rgba(0,0,0,1)]">-{floatingDamage}</div>}
                 
               <div className={`combat-sprite combat-sprite-enemy w-24 h-24 md:w-40 md:h-40 flex items-center justify-center relative transition-transform ${isHurt ? 'animate-shake filter drop-shadow-[0_0_20px_rgba(220,38,38,1)]' : 'animate-idle'}`}>
                   {currentMob?.sprite && !enemyImageError ? (

@@ -219,10 +219,10 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
     const ignoreArmor = buffOn ? support?.ignoreArmor ?? 0 : 0;
 
     const comboReady = (char.comboReadyUntil ?? 0) > Date.now() && (char.comboCooldownUntil ?? 0) <= Date.now();
-    const strike = (multiplier = 1): number => {
+    const strike = (multiplier = 1, guaranteed = false): number => {
       result.attacked = true;
       if (debug) { result.lastDamage = 99999; return 99999; }
-      if (Math.random() > (s.hit ?? 1)) { result.lastMiss = true; return 0; }
+      if (!guaranteed && Math.random() > (s.hit ?? 1)) { result.lastMiss = true; return 0; }
       const magicWeapon = ['CAJADO', 'VARINHA'].some(key => char.equipped.ARMA_PRINCIPAL?.templateId.includes(key));
       const base = (magicWeapon ? s.matk ?? 0 : s.atk ?? 0) * atkMult * multiplier;
       let dmg = mitigatedDamage(base, enemy.arm * (1 - ignoreArmor));
@@ -240,8 +240,8 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
       // ouro = 150%, prata = 100%, bronze = 50% do golpe base.
       const primaryFactor = power === 1.5 ? 1 : power === 1 ? 0.75 : 0.35;
       const secondaryFactor = power === 1.5 ? 0.5 : power === 1 ? 0.25 : 0.15;
-      const primaryDamage = strike(primaryFactor);
-      const secondaryDamage = strike(secondaryFactor);
+      const primaryDamage = strike(primaryFactor, true);
+      const secondaryDamage = strike(secondaryFactor, true);
       dealt = primaryDamage + secondaryDamage;
       result.comboHitDamage = [Math.max(0, Math.round(primaryDamage)), Math.max(0, Math.round(secondaryDamage))];
       result.comboRank = power === 1.5 ? "ouro" : power === 1 ? "prata" : "bronze";

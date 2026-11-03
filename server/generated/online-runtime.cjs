@@ -2527,13 +2527,13 @@ function processTick(char, zone, isOffline) {
     const armMult = 1 + (buffOn ? support?.armPct ?? 0 : 0);
     const ignoreArmor = buffOn ? support?.ignoreArmor ?? 0 : 0;
     const comboReady = (char.comboReadyUntil ?? 0) > Date.now() && (char.comboCooldownUntil ?? 0) <= Date.now();
-    const strike = (multiplier = 1) => {
+    const strike = (multiplier = 1, guaranteed = false) => {
       result.attacked = true;
       if (debug2) {
         result.lastDamage = 99999;
         return 99999;
       }
-      if (Math.random() > (s.hit ?? 1)) {
+      if (!guaranteed && Math.random() > (s.hit ?? 1)) {
         result.lastMiss = true;
         return 0;
       }
@@ -2554,8 +2554,8 @@ function processTick(char, zone, isOffline) {
       const power = char.comboPower ?? 1.5;
       const primaryFactor = power === 1.5 ? 1 : power === 1 ? 0.75 : 0.35;
       const secondaryFactor = power === 1.5 ? 0.5 : power === 1 ? 0.25 : 0.15;
-      const primaryDamage = strike(primaryFactor);
-      const secondaryDamage = strike(secondaryFactor);
+      const primaryDamage = strike(primaryFactor, true);
+      const secondaryDamage = strike(secondaryFactor, true);
       dealt = primaryDamage + secondaryDamage;
       result.comboHitDamage = [Math.max(0, Math.round(primaryDamage)), Math.max(0, Math.round(secondaryDamage))];
       result.comboRank = power === 1.5 ? "ouro" : power === 1 ? "prata" : "bronze";
