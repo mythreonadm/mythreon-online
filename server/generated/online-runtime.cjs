@@ -2549,14 +2549,15 @@ function processTick(char, zone, isOffline) {
       result.lastDamage = (result.lastDamage ?? 0) + dmg;
       return dmg;
     };
-    let dealt = strike();
+    let dealt = comboReady ? 0 : strike();
     if (comboReady) {
       const power = char.comboPower ?? 1.5;
-      const baseDamage = dealt;
-      const bonusFactor = power === 1.5 ? 0.5 : power === 1 ? 0 : 0;
-      const bonusDamage = bonusFactor > 0 ? strike(bonusFactor) : 0;
-      dealt = bonusFactor > 0 ? baseDamage + bonusDamage : Math.max(1, Math.round(baseDamage * power));
-      result.comboHitDamage = [Math.max(0, Math.round(baseDamage)), Math.max(0, Math.round(bonusDamage))];
+      const primaryFactor = power === 1.5 ? 1 : power === 1 ? 0.75 : 0.35;
+      const secondaryFactor = power === 1.5 ? 0.5 : power === 1 ? 0.25 : 0.15;
+      const primaryDamage = strike(primaryFactor);
+      const secondaryDamage = strike(secondaryFactor);
+      dealt = primaryDamage + secondaryDamage;
+      result.comboHitDamage = [Math.max(0, Math.round(primaryDamage)), Math.max(0, Math.round(secondaryDamage))];
       result.comboRank = power === 1.5 ? "ouro" : power === 1 ? "prata" : "bronze";
       char.comboReadyUntil = void 0;
       char.comboCooldownUntil = Date.now() + 15e3;
