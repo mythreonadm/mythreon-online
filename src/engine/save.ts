@@ -166,6 +166,11 @@ export function loadGame(): SaveFile | null {
       // Hidrata atributos de equipamentos criados por versões antigas e
       // preserva os níveis de upgrade já aplicados (incluindo flechas).
       for (const item of [...(data.character.inventory?.items ?? []), ...(data.character.depot ?? []), ...Object.values(data.character.equipped ?? {})] as any[]) {
+        // Flechas criadas em versões antigas podem ter perdido a categoria ao migrar.
+        // Reclassificamos pelo template para que venda, descarte e desmanche funcionem.
+        if (/^FLECHA_T[1-5]$/.test(item.templateId)) {
+          item.category = "FLECHA"; item.slot = "MUNICAO"; item.stackable = false; item.maxStack = 1; item.quantity = 1;
+        }
         const template = ALL_ITEM_TEMPLATES[item.templateId];
         if (!template) continue;
         item.stats ??= {};

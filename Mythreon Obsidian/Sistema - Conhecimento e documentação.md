@@ -12,6 +12,7 @@
 - [[docs/conhecimento/balanceamento-preparado|Auditoria balanceamento-preparado]]
 - [[docs/conhecimento/Contas-Online-e-Social|Contas online, ranking e comunidade]]
 - [[docs/conhecimento/Conteudo do Pantano de Veyra|Conteúdo do Pântano de Veyra]]
+- [[docs/conhecimento/Correção-Flechas-Revisão-2026-11-03|Revisão de flechas e mapa de pendências — 2026-11-03]]
 - [[docs/conhecimento/Jornada-Lore-Biomas|Jornada, lore e biomas]]
 - [[docs/conhecimento/Laboratorio-de-Builds-e-Windows|Laboratório de Builds e Windows]]
 - [[docs/conhecimento/Operacao do Cerebro e Obsidian|Operação do Cérebro e Obsidian]]
@@ -31,6 +32,7 @@
 - [docs/conhecimento/Balanceamento-Combate-Economia.md](../docs/conhecimento/Balanceamento-Combate-Economia.md)
 - [docs/conhecimento/Contas-Online-e-Social.md](../docs/conhecimento/Contas-Online-e-Social.md)
 - [docs/conhecimento/Conteudo do Pantano de Veyra.md](../docs/conhecimento/Conteudo do Pantano de Veyra.md)
+- [docs/conhecimento/Correção-Flechas-Revisão-2026-11-03.md](../docs/conhecimento/Correção-Flechas-Revisão-2026-11-03.md)
 - [docs/conhecimento/Jornada-Lore-Biomas.md](../docs/conhecimento/Jornada-Lore-Biomas.md)
 - [docs/conhecimento/Laboratorio-de-Builds-e-Windows.md](../docs/conhecimento/Laboratorio-de-Builds-e-Windows.md)
 - [docs/conhecimento/Operacao do Cerebro e Obsidian.md](../docs/conhecimento/Operacao do Cerebro e Obsidian.md)

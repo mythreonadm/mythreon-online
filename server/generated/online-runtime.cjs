@@ -134,6 +134,7 @@ MANA_POTION_DATA.forEach((p, i) => {
   POTION_TEMPLATES[id] = createItem({ templateId: id, name: p.name, category: "POCAO", tier: i + 1, stats: { mp: p.mana }, stackable: true, maxStack: 50, icon: p.icon });
 });
 var UNIQUE_TEMPLATES = {
+  SKIN_CAPA_PRIMEIRO_CANTO: createItem({ templateId: "SKIN_CAPA_PRIMEIRO_CANTO", name: "Capa do Primeiro Canto", category: "MATERIAL", tier: 5, rarity: "LENDARIO", stats: {}, uniqueEffect: "Cosm\xE9tico exclusivo do calend\xE1rio do primeiro m\xEAs", icon: "\u{1F9E5}" }),
   UNICO_BRASA_ETERNA: createItem({ templateId: "UNICO_BRASA_ETERNA", name: "Brasa Eterna", category: "PULSEIRA", slot: "PULSEIRA", tier: 1, rarity: "LENDARIO", stats: { atk: 10, matk: 10, hp: 100 }, xpBonus: 0.1, icon: "\u{1F525}", uniqueEffect: "+10% de XP \xB7 rel\xEDquia de pulso" }),
   UNICO_CORACAO_GRANITO: createItem({ templateId: "UNICO_CORACAO_GRANITO", name: "Cora\xE7\xE3o de Granito", category: "JOIA", slot: "COLAR", tier: 2, rarity: "LENDARIO", stats: { hp: 500, arm: 25, resFisico: 0.08 }, icon: "\u{1FAA8}", uniqueEffect: "-8% de dano f\xEDsico recebido" }),
   UNICO_ESCAMA_LEVIATA: createItem({ templateId: "UNICO_ESCAMA_LEVIATA", name: "Escama do Leviat\xE3", category: "ESCUDO", slot: "OFF_HAND", tier: 3, rarity: "LENDARIO", stats: { def: 50, arm: 40, blk: 0.15, resMagico: 0.15 }, goldBonus: 0.15, icon: "\u{1F41A}", uniqueEffect: "+15% de ouro" }),
@@ -148,14 +149,21 @@ var FRAGMENT_TEMPLATES = {
   FRAGMENTO_EPICO: createItem({ templateId: "FRAGMENTO_EPICO", name: "Fragmento \xC9pico", category: "FRAGMENTO", tier: 1, rarity: "EPICO", icon: "\u{1F52E}", stackable: true, maxStack: 999, quantity: 1, stats: {} })
 };
 var DIVINE_BEAST_EGG_TEMPLATES = {
-  OVO_BESTA_T1: createItem({ templateId: "OVO_BESTA_T1", name: "Ovo de Besta Divina Comum", category: "MATERIAL", tier: 1, rarity: "COMUM", icon: "🥚", stackable: true, maxStack: 999 }),
-  OVO_BESTA_T2: createItem({ templateId: "OVO_BESTA_T2", name: "Ovo de Besta Divina Incomum", category: "MATERIAL", tier: 2, rarity: "INCOMUM", icon: "🥚", stackable: true, maxStack: 999 }),
-  OVO_BESTA_T3: createItem({ templateId: "OVO_BESTA_T3", name: "Ovo de Besta Divina Raro", category: "MATERIAL", tier: 3, rarity: "RARO", icon: "🥚", stackable: true, maxStack: 999 }),
-  OVO_BESTA_T4: createItem({ templateId: "OVO_BESTA_T4", name: "Ovo de Besta Divina Épico", category: "MATERIAL", tier: 4, rarity: "EPICO", icon: "🥚", stackable: true, maxStack: 999 }),
-  OVO_BESTA_T5: createItem({ templateId: "OVO_BESTA_T5", name: "Ovo de Besta Divina Lendário", category: "MATERIAL", tier: 5, rarity: "LENDARIO", icon: "🥚", stackable: true, maxStack: 999 })
+  OVO_BESTA_T1: createItem({ templateId: "OVO_BESTA_T1", name: "Ovo de Besta Divina Comum", category: "MATERIAL", tier: 1, rarity: "COMUM", icon: "\u{1F95A}", stackable: true, maxStack: 999 }),
+  OVO_BESTA_T2: createItem({ templateId: "OVO_BESTA_T2", name: "Ovo de Besta Divina Incomum", category: "MATERIAL", tier: 2, rarity: "INCOMUM", icon: "\u{1F95A}", stackable: true, maxStack: 999 }),
+  OVO_BESTA_T3: createItem({ templateId: "OVO_BESTA_T3", name: "Ovo de Besta Divina Raro", category: "MATERIAL", tier: 3, rarity: "RARO", icon: "\u{1F95A}", stackable: true, maxStack: 999 }),
+  OVO_BESTA_T4: createItem({ templateId: "OVO_BESTA_T4", name: "Ovo de Besta Divina \xC9pico", category: "MATERIAL", tier: 4, rarity: "EPICO", icon: "\u{1F95A}", stackable: true, maxStack: 999 }),
+  OVO_BESTA_T5: createItem({ templateId: "OVO_BESTA_T5", name: "Ovo de Besta Divina Lend\xE1rio", category: "MATERIAL", tier: 5, rarity: "LENDARIO", icon: "\u{1F95A}", stackable: true, maxStack: 999 })
 };
-var BEAST_TAMER_TEMPLATES = { RACAO_DOMADOR: createItem({ templateId: "RACAO_DOMADOR", name: "Ração Especial do Domador", category: "MATERIAL", tier: 2, rarity: "RARO", icon: "🍖", stackable: true, maxStack: 999 }) };
-var ALL_ITEM_TEMPLATES = { ...ALL_EQUIPMENT_TEMPLATES, ...SWAMP_MATERIAL_TEMPLATES, ...ARROW_TEMPLATES, ...POTION_TEMPLATES, ...UNIQUE_TEMPLATES, ...FRAGMENT_TEMPLATES, ...DIVINE_BEAST_EGG_TEMPLATES, ...BEAST_TAMER_TEMPLATES };
+var BEAST_TAMER_TEMPLATES = {
+  RACAO_DOMADOR: createItem({ templateId: "RACAO_DOMADOR", name: "Ra\xE7\xE3o Especial do Domador", category: "MATERIAL", tier: 2, rarity: "RARO", icon: "\u{1F356}", stackable: true, maxStack: 999 })
+};
+var PET_FOOD_TEMPLATES = {
+  CENOURA_PET: createItem({ templateId: "CENOURA_PET", name: "Cenoura Crocante", category: "MATERIAL", tier: 1, rarity: "COMUM", icon: "\u{1F955}", stackable: true, maxStack: 999 }),
+  FRUTA_MEL: createItem({ templateId: "FRUTA_MEL", name: "Fruta de Mel", category: "MATERIAL", tier: 1, rarity: "INCOMUM", icon: "\u{1F36F}", stackable: true, maxStack: 999 }),
+  MELANCIA_LUNAR: createItem({ templateId: "MELANCIA_LUNAR", name: "Melancia Lunar", category: "MATERIAL", tier: 2, rarity: "RARO", icon: "\u{1F349}", stackable: true, maxStack: 999 })
+};
+var ALL_ITEM_TEMPLATES = { ...ALL_EQUIPMENT_TEMPLATES, ...SWAMP_MATERIAL_TEMPLATES, ...ARROW_TEMPLATES, ...POTION_TEMPLATES, ...UNIQUE_TEMPLATES, ...FRAGMENT_TEMPLATES, ...DIVINE_BEAST_EGG_TEMPLATES, ...BEAST_TAMER_TEMPLATES, ...PET_FOOD_TEMPLATES };
 
 // src/engine/training.ts
 var TRAINING_MILESTONES = [
@@ -594,9 +602,11 @@ function recalcStats(char) {
   const fromVials = {};
   const fromBeast = {};
   const elementalResistances = {};
+  const isUsingBow = char.equipped.ARMA_PRINCIPAL?.templateId.includes("ARCO") ?? false;
   for (const slot of Object.keys(char.equipped)) {
     const item = char.equipped[slot];
     if (!item?.stats) continue;
+    if (item.category === "FLECHA" && !isUsingBow) continue;
     for (const [k, v] of Object.entries(item.stats)) fromGear[k] = (fromGear[k] || 0) + numeric(v);
     for (const affix of item.affixes ?? []) fromGear[affix.stat] = (fromGear[affix.stat] || 0) + numeric(affix.value);
     for (const [element, value] of Object.entries(item.elementalResistances ?? {})) elementalResistances[element] = (elementalResistances[element] ?? 0) + numeric(value);
@@ -626,7 +636,6 @@ function recalcStats(char) {
     for (const [k, v] of Object.entries(activeBeast.bonus)) fromBeast[k] = (fromBeast[k] ?? 0) + numeric(v);
   }
   const skills = char.skills || { melee: 0, defense: 0, magic: 0, distance: 0, soul: 0 };
-  const isUsingBow = char.equipped.ARMA_PRINCIPAL?.templateId.includes("ARCO");
   const skillAtkBonus = isUsingBow ? 0 : skills.melee * 1.5;
   const skillDistBonus = isUsingBow ? skills.distance * 1.5 : 0;
   const skillMatkBonus = skills.magic * 1.5;
@@ -1075,7 +1084,7 @@ var QUESTS = [
     objectives: [{ type: "SELL", count: 1, description: "Venda 1 item ao Ferreiro" }],
     rewards: { gold: 100, xp: 25 }
   },
-  { id: "TUT_PATHS", name: "Escolher quem se tornar", giver: "Anci\xE3 Seraphine", category: "TUTORIAL", minLevel: 1, requires: ["TUT_SELL"], description: "A Matriz transforma sua linhagem. As Divine Beasts substituem essa transforma\xE7\xE3o por um v\xEDnculo. Examine seus atributos em Personagem, conhe\xE7a as Beasts e veja os recursos por gold no Shop. Voc\xEA n\xE3o precisa comprar nem possuir uma Beast para concluir.", objectives: [{ type: "VISIT_CHARACTER", count: 1, description: "Veja seus atributos em Personagem" }, { type: "VISIT_BEASTS", count: 1, description: "Conhe\xE7a as Divine Beasts" }, { type: "VISIT_SHOP", count: 1, description: "Conhe\xE7a o Shop, sem obriga\xE7\xE3o de comprar" }], rewards: { gold: 50, xp: 20 } },
+  { id: "TUT_PATHS", name: "Escolher quem se tornar", giver: "Anci\xE3 Seraphine", category: "TUTORIAL", minLevel: 1, requires: ["TUT_SELL"], description: "A Matriz transforma sua linhagem. As Bestas Divinas substituem essa transforma\xE7\xE3o por um v\xEDnculo. Examine seus atributos em Personagem, conhe\xE7a as Bestas Divinas e veja os recursos por gold no Shop. Voc\xEA n\xE3o precisa comprar nem possuir uma Besta para concluir.", objectives: [{ type: "VISIT_CHARACTER", count: 1, description: "Veja seus atributos em Personagem" }, { type: "VISIT_BEASTS", count: 1, description: "Conhe\xE7a as Bestas Divinas" }, { type: "VISIT_SHOP", count: 1, description: "Conhe\xE7a o Shop, sem obriga\xE7\xE3o de comprar" }], rewards: { gold: 50, xp: 20 } },
   { id: "TUT_TRAIN", name: "Disciplina antes da for\xE7a", giver: "Guardi\xE3 Mirelle", category: "TUTORIAL", minLevel: 1, requires: ["TUT_PATHS"], description: "Na Casa em Explorar, clique em Treinar, escolha uma habilidade e pratique por 30 segundos. Treinar troca tempo de ca\xE7a por for\xE7a permanente; n\xE3o fornece XP de personagem. A inicia\xE7\xE3o pausa o treino ao cumprir o objetivo.", objectives: [{ type: "TRAIN", count: 30, description: "Treine uma habilidade por 30 segundos" }], rewards: { gold: 50, xp: 20 } },
   { id: "TUT_LAB", name: "Preparar antes de arriscar", giver: "Arquivista Sinax", category: "TUTORIAL", minLevel: 1, requires: ["TUT_TRAIN"], description: "Conhe\xE7a o Laborat\xF3rio de Builds. Ele estima resultados de combate com seu personagem e ajuda a planejar equipamentos, treino e sustento. As proje\xE7\xF5es n\xE3o liberam mapas nem garantem vit\xF3rias.", objectives: [{ type: "VISIT_LAB", count: 1, description: "Visite o Laborat\xF3rio de Builds" }], rewards: { gold: 50, xp: 20 } },
   {
@@ -1713,8 +1722,13 @@ function createNewCharacter(name, appearance) {
     staminaOffline: 480,
     staminaUpdatedAt: Date.now(),
     activeVials: {},
+    calendarCoupons: 0,
+    calendarClaimedDays: [],
+    calendarStreak: 0,
     cards: [],
     divineBeasts: [],
+    divineBeastNeeds: {},
+    divineBeastAttackTimerMs: 0,
     depot: [],
     depotMax: 300
   };
@@ -1787,11 +1801,16 @@ function loadGame() {
         }
       }
       if (!data.character.activeVials) data.character.activeVials = {};
+      if (!Number.isFinite(data.character.calendarCoupons)) data.character.calendarCoupons = 0;
+      if (!Array.isArray(data.character.calendarClaimedDays)) data.character.calendarClaimedDays = [];
+      if (!Number.isFinite(data.character.calendarStreak)) data.character.calendarStreak = 0;
       if (!Number.isFinite(data.character.staminaOnline)) data.character.staminaOnline = 120;
       if (!Number.isFinite(data.character.staminaOffline)) data.character.staminaOffline = 480;
       if (!Number.isFinite(data.character.staminaUpdatedAt)) data.character.staminaUpdatedAt = Date.now();
       if (!data.character.cards) data.character.cards = [];
       if (!Array.isArray(data.character.divineBeasts)) data.character.divineBeasts = [];
+      if (!data.character.divineBeastNeeds || typeof data.character.divineBeastNeeds !== "object") data.character.divineBeastNeeds = {};
+      if (!Number.isFinite(data.character.divineBeastAttackTimerMs)) data.character.divineBeastAttackTimerMs = 0;
       if (!data.character.depot) data.character.depot = [];
       if (Array.isArray(data.character.inventory?.items)) {
         const normalized = [];
@@ -1811,6 +1830,13 @@ function loadGame() {
         }
       }
       for (const item of [...data.character.inventory?.items ?? [], ...data.character.depot ?? [], ...Object.values(data.character.equipped ?? {})]) {
+        if (/^FLECHA_T[1-5]$/.test(item.templateId)) {
+          item.category = "FLECHA";
+          item.slot = "MUNICAO";
+          item.stackable = false;
+          item.maxStack = 1;
+          item.quantity = 1;
+        }
         const template = ALL_ITEM_TEMPLATES[item.templateId];
         if (!template) continue;
         item.stats ??= {};
@@ -2522,7 +2548,7 @@ function processTick(char, zone, isOffline) {
   const baseEnemy = savedTarget && char.level >= (savedTarget.minLevel ?? 1) ? savedTarget : zone.enemies.find((e) => char.level >= (e.minLevel ?? 1)) || zone.enemies[0];
   if (!baseEnemy) return result;
   const sameTarget = char.fightEnemyId === `${zone.id}:${baseEnemy.id}` || char.fightEnemyId === `${zone.id}:${baseEnemy.id}:ELITE`;
-  const isEliteEncounter = char.fightEnemyId === `${zone.id}:${baseEnemy.id}:ELITE` || (!sameTarget && !baseEnemy.isBoss && Math.random() < 0.03);
+  const isEliteEncounter = char.fightEnemyId === `${zone.id}:${baseEnemy.id}:ELITE` || !sameTarget && !baseEnemy.isBoss && Math.random() < 0.03;
   const fightId = `${zone.id}:${baseEnemy.id}${isEliteEncounter ? ":ELITE" : ""}`;
   if (char.fightEnemyId !== fightId) {
     char.fightEnemyId = fightId;
@@ -2544,8 +2570,8 @@ function processTick(char, zone, isOffline) {
       id: `${Date.now()}-${result.encounters.length}-${baseEnemy.id}`,
       timestamp: Date.now(),
       zoneId: zone.id,
-      enemyId: baseEnemy.id,
-      enemyName: baseEnemy.name,
+      enemyId: isEliteEncounter ? `${baseEnemy.id}_ELITE` : baseEnemy.id,
+      enemyName: isEliteEncounter ? `${baseEnemy.name} Elite` : baseEnemy.name,
       damageDealt: encounterDamageDealt,
       damageTaken: encounterDamageTaken,
       xp: 0,
@@ -2571,7 +2597,7 @@ function processTick(char, zone, isOffline) {
   const rewardScale = 1 + (diff - 1) * 0.2;
   const eliteMultiplier = isEliteEncounter ? 1.35 : 1;
   const enemy = { ...baseEnemy, id: isEliteEncounter ? `${baseEnemy.id}_ELITE` : baseEnemy.id, name: isEliteEncounter ? `${baseEnemy.name} Elite` : baseEnemy.name, isElite: isEliteEncounter, hp: baseEnemy.hp * diff * eliteMultiplier, atk: baseEnemy.atk * diff * eliteMultiplier, arm: baseEnemy.arm * diff * eliteMultiplier, xp: Math.round(baseEnemy.xp * rewardScale * (isEliteEncounter ? 1.8 : 1)), goldMin: Math.round(baseEnemy.goldMin * rewardScale * (isEliteEncounter ? 1.8 : 1)), goldMax: Math.round(baseEnemy.goldMax * rewardScale * (isEliteEncounter ? 1.8 : 1)) };
-  if (isEliteEncounter && char.enemyHpId !== enemy.id) result.log.push(`✨ Encontro especial: ${enemy.name}! Recompensas e drops aprimorados.`);
+  if (isEliteEncounter && char.enemyHpId !== enemy.id) result.log.push(`\u2728 Encontro especial: ${enemy.name}! Recompensas e drops aprimorados.`);
   if (char.enemyHpId !== enemy.id || char.enemyHp === void 0 || char.enemyHp <= 0) {
     char.enemyHp = enemy.hp;
     char.enemyHpId = enemy.id;
@@ -2827,7 +2853,7 @@ function processTick(char, zone, isOffline) {
         const egg = DIVINE_BEAST_EGG_TEMPLATES[`OVO_BESTA_T${Math.max(1, Math.min(5, zone.tier))}`];
         if (egg) drops.push({ ...egg, uid: `${Date.now()}-egg-${enemy.id}`, quantity: 1 });
       }
-      if ((debug2 || (enemy.isBoss || enemy.isElite) && enemy.difficulty >= 4) && (debug2 || Math.random() < (enemy.isElite ? 0.10 : 0.05))) {
+      if ((debug2 || (enemy.isBoss || enemy.isElite) && enemy.difficulty >= 4) && (debug2 || Math.random() < (enemy.isElite ? 0.1 : 0.05))) {
         const ration = BEAST_TAMER_TEMPLATES.RACAO_DOMADOR;
         drops.push({ ...ration, uid: `${Date.now()}-ration-${enemy.id}`, quantity: 1 });
       }
@@ -2839,7 +2865,7 @@ function processTick(char, zone, isOffline) {
       const ignoredLoot = new Set(char.ignoredLootTemplateIds ?? []);
       for (const d of drops) {
         loot.push({ name: d.name, icon: d.icon, quantity: d.quantity, sellValue: sellValue(d), kind: "item" });
-        if (ignoredLoot.has(d.templateId) && (char.bestiaryKills?.[enemy.id] ?? 0) >= 1000) {
+        if (ignoredLoot.has(d.templateId) && (char.bestiaryKills?.[enemy.id] ?? 0) >= 1e3) {
           result.log.push(`\u{1F9FA} Autoloot ignorou ${d.name}.`);
           continue;
         }
@@ -3208,6 +3234,59 @@ function rerollItemAffixes(char, itemUid) {
   recalcStats(char);
   return { success: true, newAffixes };
 }
+function elevateItemTier(char, itemUid) {
+  const item = char.inventory.items.find((i) => i.uid === itemUid);
+  if (!item) return { success: false, error: "Item n\xE3o encontrado." };
+  if (!FORGE_CATEGORIES.includes(item.category)) return { success: false, error: "Escolha um equipamento v\xE1lido para o Ferreiro." };
+  if (item.tier >= 5) return { success: false, error: "Este item j\xE1 est\xE1 no Tier m\xE1ximo." };
+  const nextTier = item.tier + 1;
+  const fragments = 15 * nextTier;
+  const gold = 2500 * nextTier * nextTier;
+  const owned = countByTemplate(char.inventory, "FRAGMENTO_EPICO");
+  if (owned < fragments) return { success: false, error: `Faltam Fragmentos \xC9picos. Voc\xEA tem ${owned}, precisa de ${fragments}.` };
+  if (char.gold < gold) return { success: false, error: `Ouro insuficiente. Voc\xEA tem ${char.gold}, precisa de ${gold}.` };
+  char.gold -= gold;
+  let left = fragments;
+  for (const entry of [...char.inventory.items]) {
+    if (entry.templateId !== "FRAGMENTO_EPICO" || left <= 0) continue;
+    const amount = Math.min(entry.quantity, left);
+    removeItem(char.inventory, entry.uid, amount);
+    left -= amount;
+  }
+  item.tier = nextTier;
+  for (const [key, value] of Object.entries(item.stats)) item.stats[key] = Math.round(Number(value) * 1.22 * 100) / 100;
+  item.name = item.name.replace(/ · T[1-5]$/, "") + ` \xB7 T${nextTier}`;
+  recalcStats(char);
+  return { success: true };
+}
+function rerollSpecificAffix(char, itemUid, stat) {
+  const item = char.inventory.items.find((i) => i.uid === itemUid);
+  if (!item) return { success: false, error: "Item n\xE3o encontrado." };
+  if (!FORGE_CATEGORIES.includes(item.category)) return { success: false, error: "Escolha um equipamento v\xE1lido para o Ferreiro." };
+  if (item.rarity === "COMUM") return { success: false, error: "Itens Comuns n\xE3o possuem atributos para reencantar." };
+  const costFragments = 100;
+  const costGold = 2500 * item.tier;
+  if ((char.mythreonCoins ?? 0) < 1) return { success: false, error: "\xC9 necess\xE1ria 1 Mythreon Coin para sortear um atributo espec\xEDfico." };
+  if (countByTemplate(char.inventory, "FRAGMENTO_RARO") < costFragments) return { success: false, error: `Faltam Fragmentos Raros. Voc\xEA precisa de ${costFragments}.` };
+  if (char.gold < costGold) return { success: false, error: `Ouro insuficiente. Voc\xEA precisa de ${costGold}.` };
+  const generated = generateRandomAffixes(item.category, item.rarity, item.tier);
+  const replacement = generated.find((affix) => affix.stat === stat) ?? generated[0];
+  if (!replacement) return { success: false, error: "Nenhum atributo compat\xEDvel foi encontrado." };
+  char.gold -= costGold;
+  char.mythreonCoins = (char.mythreonCoins ?? 0) - 1;
+  let left = costFragments;
+  for (const entry of [...char.inventory.items]) {
+    if (entry.templateId !== "FRAGMENTO_RARO" || left <= 0) continue;
+    const amount = Math.min(entry.quantity, left);
+    removeItem(char.inventory, entry.uid, amount);
+    left -= amount;
+  }
+  const index = item.affixes.findIndex((affix) => affix.stat === stat);
+  if (index >= 0) item.affixes[index] = replacement;
+  else item.affixes.push(replacement);
+  recalcStats(char);
+  return { success: true };
+}
 
 // src/engine/depot.ts
 function getDepotUsedSlots(char) {
@@ -3296,6 +3375,23 @@ function recordHuntMetrics(character, zoneId, result) {
     history: [...previous.history, ...encounters].slice(-100)
   };
   character.huntStatsByZone = { ...character.huntStatsByZone ?? {}, [zoneId]: updated };
+}
+var EGG_RARITY_TABLES = {
+  1: [95, 4, 1, 0, 0],
+  2: [75, 18, 6, 1, 0],
+  3: [50, 30, 15, 4, 1],
+  4: [25, 35, 25, 12, 3],
+  5: [8, 25, 35, 24, 8]
+};
+var RARITY_ORDER2 = ["COMUM", "INCOMUM", "RARO", "EPICO", "LENDARIO"];
+function rollEggRarity(tier) {
+  const roll = Math.random() * 100;
+  let cursor = 0;
+  for (const [index, chance] of (EGG_RARITY_TABLES[Math.max(1, Math.min(5, tier))] ?? EGG_RARITY_TABLES[1]).entries()) {
+    cursor += chance;
+    if (roll < cursor) return RARITY_ORDER2[index];
+  }
+  return "COMUM";
 }
 function createGameStore(runtime = {}) {
   let tickInterval = null;
@@ -3624,7 +3720,7 @@ function createGameStore(runtime = {}) {
       const { character } = get();
       if (!character) return { success: false, error: "Sem personagem" };
       if (!DIVINE_BEASTS[id] || !(character.divineBeasts ?? []).some((beast) => beast.id === id)) {
-        return { success: false, error: "Essa Divine Beast ainda n\xE3o foi vinculada." };
+        return { success: false, error: "Essa Besta Divina ainda n\xE3o foi vinculada." };
       }
       const newCharacter = JSON.parse(JSON.stringify(character));
       newCharacter.activeDivineBeastId = id;
@@ -3640,42 +3736,65 @@ function createGameStore(runtime = {}) {
       if (!character) return { success: false, error: "Sem personagem" };
       const egg = character.inventory.items.find((item) => item.uid === uid);
       if (!egg || !DIVINE_BEAST_EGG_TEMPLATES[egg.templateId]) return { success: false, error: "Escolha um Ovo de Besta Divina." };
-      const tables = { 1: [95, 4, 1, 0, 0], 2: [75, 18, 6, 1, 0], 3: [50, 30, 15, 4, 1], 4: [25, 35, 25, 12, 3], 5: [8, 25, 35, 24, 8] };
-      const rarities = ["COMUM", "INCOMUM", "RARO", "EPICO", "LENDARIO"], chances = tables[Math.max(1, Math.min(5, egg.tier))] ?? tables[1];
-      const roll = Math.random() * 100; let cursor = 0, rarity = "COMUM";
-      for (let i = 0; i < chances.length; i++) { cursor += chances[i]; if (roll < cursor) { rarity = rarities[i]; break; } }
-      const ids = Object.keys(DIVINE_BEASTS), beastId = ids[Math.floor(Math.random() * ids.length)];
-      const next = structuredClone(character); removeItem(next.inventory, uid, 1); next.divineBeasts = [...(next.divineBeasts ?? []), { id: beastId, rarity, obtainedAt: Date.now() }];
-      set({ character: next }); get().save(); notify(`O ovo eclodiu: ${DIVINE_BEASTS[beastId].name} · ${rarity}!`);
+      const rarity = rollEggRarity(egg.tier);
+      const ids = Object.keys(DIVINE_BEASTS);
+      const beastId = ids[Math.floor(Math.random() * ids.length)];
+      const next = structuredClone(character);
+      removeItem(next.inventory, uid, 1);
+      next.divineBeasts = [...next.divineBeasts ?? [], { id: beastId, rarity, obtainedAt: Date.now() }];
+      set({ character: next });
+      get().save();
+      notify(`O ovo eclodiu: ${DIVINE_BEASTS[beastId].name} \xB7 ${rarity}!`);
       return { success: true, beastId, rarity };
     },
     combineBeast: (id) => {
       const { character } = get();
       if (!character) return { success: false, error: "Sem personagem" };
-      const copies = (character.divineBeasts ?? []).filter((beast) => beast.id === id), ration = character.inventory.items.find((item) => item.templateId === "RACAO_DOMADOR");
-      if (copies.length < 4) return { success: false, error: "São necessárias 4 Bestas iguais." };
-      if (!ration) return { success: false, error: "É necessária uma Ração Especial do Domador." };
-      const rank = ["COMUM", "INCOMUM", "RARO", "EPICO", "LENDARIO"], current = Math.max(...copies.slice(0, 4).map((beast) => rank.indexOf(beast.rarity ?? "RARO")));
-      if (current >= rank.length - 1) return { success: false, error: "Esta linhagem já está no ápice lendário." };
-      const next = structuredClone(character); let removed = 0;
+      const copies = (character.divineBeasts ?? []).filter((beast) => beast.id === id);
+      const ration = character.inventory.items.find((item) => item.templateId === "RACAO_DOMADOR");
+      if (copies.length < 4) return { success: false, error: "S\xE3o necess\xE1rias 4 Bestas iguais." };
+      if (!ration) return { success: false, error: "\xC9 necess\xE1ria uma Ra\xE7\xE3o Especial do Domador." };
+      const rank = ["COMUM", "INCOMUM", "RARO", "EPICO", "LENDARIO"];
+      const current = Math.max(...copies.slice(0, 4).map((beast) => rank.indexOf(beast.rarity ?? "RARO")));
+      if (current >= rank.length - 1) return { success: false, error: "Esta linhagem j\xE1 est\xE1 no \xE1pice lend\xE1rio." };
+      const next = structuredClone(character);
+      let removed = 0;
       next.divineBeasts = (next.divineBeasts ?? []).filter((beast) => beast.id !== id || removed++ >= 4);
       removeItem(next.inventory, ration.uid, 1);
-      const rarity = rank[current + 1]; next.divineBeasts.push({ id, rarity, obtainedAt: Date.now() });
-      set({ character: next }); get().save(); notify(`A linhagem foi aprimorada para ${rarity}!`);
+      const rarity = rank[current + 1];
+      next.divineBeasts.push({ id, rarity, obtainedAt: Date.now() });
+      set({ character: next });
+      get().save();
+      notify(`A linhagem foi aprimorada para ${rarity}!`);
       return { success: true, rarity };
     },
     feedDivineBeast: (id, foodUid) => {
       const { character } = get();
       if (!character) return { success: false, error: "Nenhum personagem ativo." };
-      if (character.activeDivineBeastId !== id) return { success: false, error: "Ative esta Besta antes de alimentá-la." };
+      if (character.activeDivineBeastId !== id) return { success: false, error: "Ative esta Besta antes de aliment\xE1-la." };
       const item = character.inventory.items.find((entry) => entry.uid === foodUid);
-      if (!item) return { success: false, error: "Alimento não encontrado na mochila." };
-      const food = { CENOURA_PET: { minutes: 5, mood: 2 }, FRUTA_MEL: { minutes: 10, mood: 5 }, MELANCIA_LUNAR: { minutes: 15, mood: 8 }, RACAO_DOMADOR: { minutes: 30, mood: 12 } }[item.templateId];
-      if (!food) return { success: false, error: "Este item não é alimento para Bestas Divinas." };
-      const now = Date.now(), previous = character.divineBeastNeeds?.[id] ?? { nutrition: 0, mood: 70, updatedAt: now }, elapsedMinutes = Math.max(0, (now - previous.updatedAt) / 6e4);
-      character.divineBeastNeeds = { ...(character.divineBeastNeeds ?? {}), [id]: { nutrition: Math.max(0, Math.min(100, previous.nutrition - elapsedMinutes * .5 + food.minutes * 2)), mood: Math.max(0, Math.min(100, previous.mood - elapsedMinutes * .15 + food.mood)), updatedAt: now } };
-      if ((item.quantity ?? 1) > 1) item.quantity -= 1; else character.inventory.items = character.inventory.items.filter((entry) => entry.uid !== foodUid);
-      set({ character: { ...character } }); get().save(); return { success: true };
+      if (!item) return { success: false, error: "Alimento n\xE3o encontrado na mochila." };
+      const food = {
+        CENOURA_PET: { minutes: 5, mood: 2 },
+        FRUTA_MEL: { minutes: 10, mood: 5 },
+        MELANCIA_LUNAR: { minutes: 15, mood: 8 },
+        RACAO_DOMADOR: { minutes: 30, mood: 12 }
+      }[item.templateId];
+      if (!food) return { success: false, error: "Este item n\xE3o \xE9 alimento para Bestas Divinas." };
+      const now = Date.now();
+      const previous = character.divineBeastNeeds?.[id] ?? { nutrition: 0, mood: 70, updatedAt: now };
+      const elapsedMinutes = Math.max(0, (now - previous.updatedAt) / 6e4);
+      const needs = {
+        nutrition: Math.max(0, Math.min(100, previous.nutrition - elapsedMinutes * 0.5 + food.minutes * 2)),
+        mood: Math.max(0, Math.min(100, previous.mood - elapsedMinutes * 0.15 + food.mood)),
+        updatedAt: now
+      };
+      if ((item.quantity ?? 1) > 1) item.quantity -= 1;
+      else character.inventory.items = character.inventory.items.filter((entry) => entry.uid !== foodUid);
+      character.divineBeastNeeds = { ...character.divineBeastNeeds ?? {}, [id]: needs };
+      set({ character: { ...character } });
+      get().save();
+      return { success: true };
     },
     unequipDivineBeast: () => {
       const { character } = get();
@@ -3706,6 +3825,18 @@ function createGameStore(runtime = {}) {
       set({ character: newCharacter });
       get().save();
       notify(`Vendeu ${res.count} itens por ${res.gold.toLocaleString("pt-BR")} gold.`);
+    },
+    discardItem: (uid, qty = 1) => {
+      const { character } = get();
+      if (!character) return { success: false, error: "Personagem indispon\xEDvel." };
+      const newCharacter = JSON.parse(JSON.stringify(character));
+      const item = newCharacter.inventory.items.find((entry) => entry.uid === uid);
+      if (!item) return { success: false, error: "Item n\xE3o encontrado na mochila." };
+      if (!Number.isInteger(qty) || qty < 1 || qty > 999) return { success: false, error: "Quantidade inv\xE1lida." };
+      removeItem(newCharacter.inventory, uid, Math.min(qty, item.quantity));
+      set({ character: newCharacter });
+      get().save();
+      return { success: true };
     },
     salvageAll: (maxRarity) => {
       const { character } = get();
@@ -3888,31 +4019,22 @@ function createGameStore(runtime = {}) {
     elevateItemTier: (uid) => {
       const { character } = get();
       if (!character) return { success: false, error: "Sem personagem" };
-      const next = JSON.parse(JSON.stringify(character)), item = next.inventory.items.find((entry) => entry.uid === uid);
-      if (!item) return { success: false, error: "Item não encontrado." };
-      if (!["ARMA", "ARMADURA", "JOIA", "PULSEIRA", "ESCUDO", "FLECHA"].includes(item.category)) return { success: false, error: "Escolha um equipamento válido para o Ferreiro." };
-      if (item.tier >= 5) return { success: false, error: "Este item já está no Tier máximo." };
-      const tier = item.tier + 1, fragments = 15 * tier, gold = 2500 * tier * tier;
-      if (countByTemplate(next.inventory, "FRAGMENTO_EPICO") < fragments) return { success: false, error: `Faltam Fragmentos Épicos. Você precisa de ${fragments}.` };
-      if (next.gold < gold) return { success: false, error: `Ouro insuficiente. Você precisa de ${gold}.` };
-      next.gold -= gold; let left = fragments;
-      for (const entry of [...next.inventory.items]) if (entry.templateId === "FRAGMENTO_EPICO" && left > 0) { const amount = Math.min(entry.quantity, left); removeItem(next.inventory, entry.uid, amount); left -= amount; }
-      item.tier = tier; for (const [key, value] of Object.entries(item.stats ?? {})) item.stats[key] = Math.round(Number(value) * 1.22 * 100) / 100;
-      item.name = item.name.replace(/ · T[1-5]$/, "") + ` · T${tier}`; recalcStats(next); set({ character: next }); get().save(); return { success: true };
+      const next = structuredClone(character);
+      const result = elevateItemTier(next, uid);
+      if (!result.success) return result;
+      set({ character: next });
+      get().save();
+      return result;
     },
     rerollSpecificAffix: (uid, stat) => {
       const { character } = get();
       if (!character) return { success: false, error: "Sem personagem" };
-      const next = JSON.parse(JSON.stringify(character)), item = next.inventory.items.find((entry) => entry.uid === uid);
-      if (!item || item.rarity === "COMUM") return { success: false, error: "Escolha um equipamento não comum." };
-      if ((next.mythreonCoins ?? 0) < 1) return { success: false, error: "É necessária 1 Mythreon Coin." };
-      if (countByTemplate(next.inventory, "FRAGMENTO_RARO") < 100) return { success: false, error: "São necessários 100 Fragmentos Raros." };
-      const gold = 2500 * item.tier; if (next.gold < gold) return { success: false, error: `Ouro insuficiente. Você precisa de ${gold}.` };
-      next.gold -= gold; next.mythreonCoins -= 1; let left = 100;
-      for (const entry of [...next.inventory.items]) if (entry.templateId === "FRAGMENTO_RARO" && left > 0) { const amount = Math.min(entry.quantity, left); removeItem(next.inventory, entry.uid, amount); left -= amount; }
-      const generated = generateRandomAffixes(item.category, item.rarity, item.tier), replacement = generated.find((affix) => affix.stat === stat) ?? generated[0];
-      if (!replacement) return { success: false, error: "Nenhum atributo compatível foi encontrado." };
-      const index = item.affixes.findIndex((affix) => affix.stat === stat); if (index >= 0) item.affixes[index] = replacement; else item.affixes.push(replacement); recalcStats(next); set({ character: next }); get().save(); return { success: true };
+      const next = structuredClone(character);
+      const result = rerollSpecificAffix(next, uid, stat);
+      if (!result.success) return result;
+      set({ character: next });
+      get().save();
+      return result;
     },
     forgeFragments: (fromTemplateId) => {
       const { character } = get();
@@ -3956,18 +4078,42 @@ function createGameStore(runtime = {}) {
     buyCalendarCoupon: () => {
       const { character } = get();
       if (!character) return { success: false, error: "Sem personagem." };
-      if ((character.mythreonCoins ?? 0) < 1) return { success: false, error: "Você precisa de 1 Mythreon Coin por cupom." };
+      if ((character.mythreonCoins ?? 0) < 1) return { success: false, error: "Voc\xEA precisa de 1 Mythreon Coin por cupom." };
       const next = { ...character, mythreonCoins: (character.mythreonCoins ?? 0) - 1, calendarCoupons: (character.calendarCoupons ?? 0) + 1 };
-      set({ character: next }); get().save(); return { success: true };
+      set({ character: next });
+      get().save();
+      notify("Cupom de resgate do calend\xE1rio adquirido.");
+      return { success: true };
     },
     claimDailyCalendar: () => {
-      const { character } = get(); if (!character) return { success: false, error: "Sem personagem." };
-      const today = new Date().toISOString().slice(0, 10); if ((character.calendarClaimedDays ?? []).includes(today)) return { success: false, error: "A recompensa de hoje já foi resgatada." };
+      const { character } = get();
+      if (!character) return { success: false, error: "Sem personagem." };
+      const today = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+      if ((character.calendarClaimedDays ?? []).includes(today)) return { success: false, error: "A recompensa de hoje j\xE1 foi resgatada." };
       if ((character.calendarCoupons ?? 0) < 1) return { success: false, error: "Adquira um Cupom de Resgate com Mythreon Coin." };
-      const yesterday = new Date(Date.now() - 864e5).toISOString().slice(0, 10), streak = character.calendarLastClaimDay === yesterday ? (character.calendarStreak ?? 0) + 1 : 1;
-      const next = { ...character, calendarCoupons: (character.calendarCoupons ?? 0) - 1, calendarClaimedDays: [...(character.calendarClaimedDays ?? []).filter((day) => day.slice(0, 7) === today.slice(0, 7)), today], calendarLastClaimDay: today, calendarStreak: streak, gold: character.gold + 500 + streak * 250 };
-      if (streak >= 30) next.calendarSkinUnlocked = true;
-      set({ character: next }); get().save(); return { success: true, reward: `${(500 + streak * 250).toLocaleString("pt-BR")} gold${streak >= 30 ? " + Capa do Primeiro Canto" : ""}` };
+      const yesterday = new Date(Date.now() - 864e5).toISOString().slice(0, 10);
+      const streak = character.calendarLastClaimDay === yesterday ? (character.calendarStreak ?? 0) + 1 : 1;
+      const next = structuredClone(character);
+      next.calendarCoupons = (next.calendarCoupons ?? 0) - 1;
+      next.calendarClaimedDays = [...(next.calendarClaimedDays ?? []).filter((day) => day.slice(0, 7) === today.slice(0, 7)), today];
+      next.calendarLastClaimDay = today;
+      next.calendarStreak = streak;
+      const rewardGold = 500 + streak * 250;
+      next.gold += rewardGold;
+      let reward = `${rewardGold.toLocaleString("pt-BR")} gold`;
+      if (streak % 7 === 0) {
+        const fragment = createItem({ ...FRAGMENT_TEMPLATES.FRAGMENTO_RARO, quantity: 3 });
+        addItem(next.inventory, fragment);
+        reward += " + 3 Fragmentos Raros";
+      }
+      if (streak >= 30 && !next.inventory.items.some((item) => item.templateId === "SKIN_CAPA_PRIMEIRO_CANTO") && !next.depot.some((item) => item.templateId === "SKIN_CAPA_PRIMEIRO_CANTO")) {
+        addItem(next.inventory, createItem({ ...UNIQUE_TEMPLATES.SKIN_CAPA_PRIMEIRO_CANTO }));
+        reward += " + Capa do Primeiro Canto";
+      }
+      set({ character: next });
+      get().save();
+      notify(`Calend\xE1rio: ${reward}`);
+      return { success: true, reward };
     },
     depositItem: (uid) => {
       const { character } = get();
@@ -4051,6 +4197,17 @@ function freshWorld(name, id, appearance) {
   character.id = id;
   return { character, races: [], isTickRunning: false, isTraining: false, healingUntil: null, deathReport: null, lastTickResult: null, lastAdvanceAt: Date.now(), counters: { forges: 0, syntheses: 0, trades: 0, bosses: 0 } };
 }
+function normalizeArrowItems(character) {
+  for (const item of [...character.inventory?.items ?? [], ...character.depot ?? [], ...Object.values(character.equipped ?? {})]) {
+    if (/^FLECHA_T[1-5]$/.test(item.templateId)) {
+      item.category = "FLECHA";
+      item.slot = "MUNICAO";
+      item.stackable = false;
+      item.maxStack = 1;
+      item.quantity = 1;
+    }
+  }
+}
 function normalizeLegacyItems(character) {
   for (const item of [...character.inventory?.items ?? [], ...character.depot ?? [], ...Object.values(character.equipped ?? {})]) {
     if (item.templateId === "UNICO_BRASA_ETERNA") {
@@ -4082,6 +4239,7 @@ function normalizeLegacyItems(character) {
   }
 }
 function executeGame(world, action, args = []) {
+  normalizeArrowItems(world.character);
   normalizeLegacyItems(world.character);
   const expectedXp = xpToNextLevel(world.character.level);
   if (world.character.xpToNext !== expectedXp) {
@@ -4115,7 +4273,7 @@ function executeGame(world, action, args = []) {
     if (s.isTickRunning && ["sellItem", "sellSelected", "salvageAll", "salvageSelected", "upgradeItem", "rerollItem"].includes(action)) throw Error("Saia da ca\xE7a para acessar o Ferreiro.");
     if (action === "activateBuff" && (!s.isTickRunning || !s.character?.onlineBalloonUntil || s.character.onlineBalloonUntil < now)) throw Error("Este eco de b\xF4nus expirou. Aguarde outro durante a ca\xE7a.");
     const zero = ["finishIntro", "clearOfflineReport", "clearDeathReport", "startHealing", "cancelHealing", "stopHunting", "stopTraining", "unequipRace", "unequipDivineBeast", "activateBuff", "buyTrainingBoost", "buyBless", "refreshCompendium"];
-    const strings = ["unlockZone", "setActiveEnemy", "setCurrentZone", "acceptQuest", "claimQuest", "upgradeItem", "rerollItem", "depositItem", "withdrawItem"];
+    const strings = ["unlockZone", "setActiveEnemy", "setCurrentZone", "acceptQuest", "claimQuest", "upgradeItem", "rerollItem", "depositItem", "withdrawItem", "discardItem"];
     const uid = (v) => {
       if (typeof v !== "string" || v.length < 1 || v.length > 128) throw Error("Identificador inv\xE1lido.");
       return v;
@@ -4167,25 +4325,25 @@ function executeGame(world, action, args = []) {
       result = s.equipDivineBeast(uid(args[0]));
     } else if (action === "hatchEgg") {
       result = s.hatchEgg(uid(args[0]));
-      if (!result?.success) throw Error(result?.error ?? "Não foi possível eclodir o ovo.");
+      if (!result?.success) throw Error(result?.error ?? "N\xE3o foi poss\xEDvel eclodir o ovo.");
     } else if (action === "combineBeast") {
       result = s.combineBeast(uid(args[0]));
-      if (!result?.success) throw Error(result?.error ?? "Não foi possível aprimorar a linhagem.");
+      if (!result?.success) throw Error(result?.error ?? "N\xE3o foi poss\xEDvel aprimorar a linhagem.");
     } else if (action === "feedDivineBeast") {
       result = s.feedDivineBeast(uid(args[0]), uid(args[1]));
-      if (!result?.success) throw Error(result?.error ?? "Não foi possível alimentar a Besta.");
+      if (!result?.success) throw Error(result?.error ?? "N\xE3o foi poss\xEDvel alimentar a Besta.");
     } else if (action === "elevateItemTier") {
       result = s.elevateItemTier(uid(args[0]));
-      if (!result?.success) throw Error(result?.error ?? "Não foi possível elevar o Tier.");
+      if (!result?.success) throw Error(result?.error ?? "N\xE3o foi poss\xEDvel elevar o Tier.");
     } else if (action === "rerollSpecificAffix") {
       result = s.rerollSpecificAffix(uid(args[0]), uid(args[1]));
-      if (!result?.success) throw Error(result?.error ?? "Não foi possível sortear o atributo.");
+      if (!result?.success) throw Error(result?.error ?? "N\xE3o foi poss\xEDvel sortear o atributo.");
     } else if (action === "buyCalendarCoupon") {
       result = s.buyCalendarCoupon();
-      if (!result?.success) throw Error(result?.error ?? "Não foi possível comprar o cupom.");
+      if (!result?.success) throw Error(result?.error ?? "N\xE3o foi poss\xEDvel comprar o cupom.");
     } else if (action === "claimDailyCalendar") {
       result = s.claimDailyCalendar();
-      if (!result?.success) throw Error(result?.error ?? "Não foi possível resgatar a recompensa.");
+      if (!result?.success) throw Error(result?.error ?? "N\xE3o foi poss\xEDvel resgatar a recompensa.");
     } else if (action === "synthesize") {
       result = s.synthesize(uid(args[0]), uid(args[1]), uid(args[2]));
       if (result?.success) world.counters.syntheses++;
@@ -4295,7 +4453,7 @@ var RANKING_METRICS = [
   ["defense", "Treino de defesa"],
   ["soul", "Treino da alma"],
   ["quests", "Miss\xF5es conclu\xEDdas"],
-  ["beasts", "Divine Beasts"],
+  ["beasts", "Bestas Divinas"],
   ["cards", "Cartas"],
   ["salvaged", "Itens desmontados"],
   ["forges", "Aprimoramentos"],

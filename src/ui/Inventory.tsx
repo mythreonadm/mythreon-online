@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import { useGameStore } from "../store/gameStore";
-import { getUsedSlots, removeItem } from "../engine/inventory";
+import { getUsedSlots } from "../engine/inventory";
 import { ItemModal } from "./ItemModal";
 import { Item } from "../types";
 
 export function Inventory() {
-  const { character, equip, save } = useGameStore();
+  const { character, equip, discardItem } = useGameStore();
   const [filter, setFilter] = useState<string>("all");
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   
@@ -26,10 +26,8 @@ export function Inventory() {
   const handleDiscard = (e: React.MouseEvent, uid: string) => {
     e.stopPropagation();
     if (window.confirm("Tem certeza que deseja jogar este item fora?")) {
-      const newCharacter = JSON.parse(JSON.stringify(character));
-      removeItem(newCharacter.inventory, uid);
-      useGameStore.setState({ character: newCharacter });
-      save();
+      const result = discardItem(uid);
+      if (!result.success) alert(result.error);
     }
   };
 

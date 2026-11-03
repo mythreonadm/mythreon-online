@@ -12,6 +12,7 @@
 - [src/ui/Attributes.tsx](../src/ui/Attributes.tsx) — Attributes
 - [src/ui/CharacterPanel.tsx](../src/ui/CharacterPanel.tsx) — CharacterPanel
 - [src/ui/CommerceBenefits.tsx](../src/ui/CommerceBenefits.tsx) — CommerceBenefits
+- [src/ui/DailyCalendar.tsx](../src/ui/DailyCalendar.tsx) — DailyCalendar
 - [src/ui/DeathScreen.tsx](../src/ui/DeathScreen.tsx) — DeathScreen
 - [src/ui/Equipment.tsx](../src/ui/Equipment.tsx) — Equipment
 - [src/ui/JourneyGuide.tsx](../src/ui/JourneyGuide.tsx) — JourneyGuide

@@ -1,7 +1,7 @@
 import { RARITY_FRAME } from './itemRarity';
 import React, { useState, useMemo } from "react";
 import { useGameStore } from "../store/gameStore";
-import { getUsedSlots, removeItem } from "../engine/inventory";
+import { getUsedSlots } from "../engine/inventory";
 import { getItemScore, isUpgrade, getEquippedForTarget } from "../engine/itemCompare";
 import { ItemModal } from "./ItemModal";
 import { ItemIcon } from "./ItemIcon"; // NOVO
@@ -17,7 +17,7 @@ const RARITY_ORDER: Record<Rarity, number> = {
 type SortBy = "rarity" | "score" | "name";
 
 export function Backpack() {
-  const { character, equip, save, depositItem, depositMany, sellSelected } = useGameStore();
+  const { character, equip, discardItem, depositItem, depositMany, sellSelected } = useGameStore();
   const online = useOnlineState(state => state.active);
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
@@ -48,10 +48,8 @@ export function Backpack() {
   const handleDiscard = (e: React.MouseEvent, uid: string) => {
     e.stopPropagation();
     if (window.confirm("Tem certeza que deseja jogar este item fora?")) {
-      const newCharacter = JSON.parse(JSON.stringify(character));
-      removeItem(newCharacter.inventory, uid);
-      useGameStore.setState({ character: newCharacter });
-      save();
+      const result = discardItem(uid);
+      if (!result.success) alert(result.error);
     }
   };
 

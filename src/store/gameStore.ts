@@ -63,6 +63,7 @@ export interface GameState {
   unequipDivineBeast: () => void;
   sellItem: (uid: string, qty?: number) => void;
   sellSelected: (uids: string[]) => void;
+  discardItem: (uid: string, qty?: number) => { success: boolean; error?: string };
   salvageAll: (maxRarity: any) => void;
   salvageSelected: (uids: string[]) => void;
   updateSettings: (settings: any) => void;
@@ -520,6 +521,17 @@ return create<GameState>((set, get) => ({
     if (!res.count) return;
     trackQuestAction(newCharacter, "SELL", res.count);
     set({ character: newCharacter }); get().save(); notify(`Vendeu ${res.count} itens por ${res.gold.toLocaleString("pt-BR")} gold.`);
+  },
+
+  discardItem: (uid, qty = 1) => {
+    const { character } = get(); if (!character) return { success: false, error: "Personagem indisponível." };
+    const newCharacter = JSON.parse(JSON.stringify(character));
+    const item = newCharacter.inventory.items.find((entry: any) => entry.uid === uid);
+    if (!item) return { success: false, error: "Item não encontrado na mochila." };
+    if (!Number.isInteger(qty) || qty < 1 || qty > 999) return { success: false, error: "Quantidade inválida." };
+    removeItem(newCharacter.inventory, uid, Math.min(qty, item.quantity));
+    set({ character: newCharacter }); get().save();
+    return { success: true };
   },
 
   salvageAll: (maxRarity) => {

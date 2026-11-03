@@ -28,8 +28,9 @@ No SQL Editor do seu projeto, execute nesta ordem os arquivos da pasta do jogo:
 
 1. supabase/migrations/001_online_world.sql
 2. supabase/migrations/002_realtime.sql
+3. supabase/migrations/003_trade_audit.sql
 
-Essas duas migrações já foram aplicadas no projeto real. Elas criam contas, personagens, ranking, mensagens, amigos, correio, trocas e histórico de transações. As políticas RLS restringem leituras privadas. O navegador não recebe permissão para escrever gold, inventário, mensagens ou ranking diretamente nas tabelas; operações passam pela API autenticada.
+As duas primeiras migrações criam contas, personagens, ranking, mensagens, amigos, correio e trocas. A terceira cria a auditoria de trocas e a view de estatísticas. As políticas RLS restringem leituras privadas. O navegador não recebe permissão para escrever gold, inventário, mensagens ou ranking diretamente nas tabelas; operações passam pela API autenticada.
 
 A segunda migração ativa as notificações Realtime das quatro tabelas sociais. Não execute estes arquivos em um banco de outro projeto.
 
