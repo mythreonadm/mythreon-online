@@ -75,7 +75,7 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
   const [showLootConfig, setShowLootConfig] = useState<string | null>(null);
   
   const balloonTimeout = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-  const magicCooldownTicks = Math.max(1, Math.ceil(ATTACK_SKILL_COOLDOWN - (character ? buildProfile(character).cdReduce : 0)));
+  const magicCooldownTicks = Math.max(4, Math.ceil(ATTACK_SKILL_COOLDOWN - (character ? buildProfile(character).cdReduce : 0)));
 
   useEffect(() => {
     const timer = window.setInterval(() => setComboClock(Date.now()), 250);

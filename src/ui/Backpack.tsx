@@ -7,6 +7,7 @@ import { ItemModal } from "./ItemModal";
 import { ItemIcon } from "./ItemIcon"; // NOVO
 import { Item, Rarity } from "../types";
 import { sellValue } from "../engine/shop";
+import { onlineAction, useOnlineState } from "../online/controller";
 
 
 const RARITY_ORDER: Record<Rarity, number> = {
@@ -17,6 +18,7 @@ type SortBy = "rarity" | "score" | "name";
 
 export function Backpack() {
   const { character, equip, save, depositItem, depositMany, sellSelected } = useGameStore();
+  const online = useOnlineState(state => state.active);
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortBy>("rarity");
@@ -100,22 +102,34 @@ export function Backpack() {
     }
   };
 
-  const equipBestPowerItems = () => {
+  const equipBestPowerItems = async () => {
     if (!window.confirm("Equipar automaticamente os itens com maior potência estimada por slot? Essa escolha considera uma pontuação geral e pode não combinar com os atributos da sua build.")) return;
     const candidates = [...character.inventory.items].filter(item => item.slot).sort((a, b) => getItemScore(b) - getItemScore(a));
     let equippedCount = 0;
+    const usedRingUids = new Set<string>();
     for (const item of candidates) {
       const current = useGameStore.getState().character;
       if (!current || !item.slot) continue;
       if (item.slot === "BACKPACK") {
-        if ((item.slots ?? 0) > current.inventory.backpack.slots && useGameStore.getState().equip(item.uid).success) equippedCount++;
+        if ((item.slots ?? 0) > current.inventory.backpack.slots) {
+          const result = online ? await onlineAction('world.command', { action: 'equip', args: [item.uid, false] }) : useGameStore.getState().equip(item.uid);
+          if (online ? result?.result?.success !== false : result?.success) equippedCount++;
+        }
         continue;
       }
-      const slot = item.slot === "ANEL_I"
-        ? (!current.equipped.ANEL_I ? "ANEL_I" : !current.equipped.ANEL_II ? "ANEL_II" : getItemScore(current.equipped.ANEL_I) <= getItemScore(current.equipped.ANEL_II) ? "ANEL_I" : "ANEL_II")
-        : item.slot;
+      if (item.slot === "ANEL_I") {
+        if (usedRingUids.has(item.uid)) continue;
+        const ringSlot = !current.equipped.ANEL_I ? "ANEL_I" : !current.equipped.ANEL_II ? "ANEL_II" : getItemScore(current.equipped.ANEL_I) <= getItemScore(current.equipped.ANEL_II) ? "ANEL_I" : "ANEL_II";
+        const ringScore = getItemScore(current.equipped[ringSlot]);
+        if (getItemScore(item) <= ringScore) continue;
+        const result = online ? await onlineAction('world.command', { action: 'equip', args: [item.uid, false] }) : useGameStore.getState().equip(item.uid);
+        if (online ? result?.result?.success !== false : result?.success) { equippedCount++; usedRingUids.add(item.uid); }
+        continue;
+      }
+      const slot = item.slot;
       if (getItemScore(item) > getItemScore(current.equipped[slot])) {
-        if (useGameStore.getState().equip(item.uid).success) equippedCount++;
+        const result = online ? await onlineAction('world.command', { action: 'equip', args: [item.uid, false] }) : useGameStore.getState().equip(item.uid);
+        if (online ? result?.result?.success !== false : result?.success) equippedCount++;
       }
     }
     alert(equippedCount ? `${equippedCount} item(ns) equipado(s) por maior potência estimada. Revise a sinergia dos atributos da sua build.` : "Nenhum item da mochila superou o equipamento atual por potência estimada.");

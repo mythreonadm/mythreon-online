@@ -117,7 +117,7 @@ MANA_POTION_DATA.forEach((p, i) => {
   POTION_TEMPLATES[id] = createItem({ templateId: id, name: p.name, category: "POCAO", tier: i + 1, stats: { mp: p.mana }, stackable: true, maxStack: 50, icon: p.icon });
 });
 var UNIQUE_TEMPLATES = {
-  UNICO_BRASA_ETERNA: createItem({ templateId: "UNICO_BRASA_ETERNA", name: "Brasa Eterna", category: "JOIA", slot: "ANEL_I", tier: 1, rarity: "LENDARIO", stats: { atk: 10, matk: 10, hp: 100 }, xpBonus: 0.1, icon: "\u{1F525}", uniqueEffect: "+10% de XP" }),
+  UNICO_BRASA_ETERNA: createItem({ templateId: "UNICO_BRASA_ETERNA", name: "Brasa Eterna", category: "PULSEIRA", slot: "PULSEIRA", tier: 1, rarity: "LENDARIO", stats: { atk: 10, matk: 10, hp: 100 }, xpBonus: 0.1, icon: "\u{1F525}", uniqueEffect: "+10% de XP \xB7 rel\xEDquia de pulso" }),
   UNICO_CORACAO_GRANITO: createItem({ templateId: "UNICO_CORACAO_GRANITO", name: "Cora\xE7\xE3o de Granito", category: "JOIA", slot: "COLAR", tier: 2, rarity: "LENDARIO", stats: { hp: 500, arm: 25, resFisico: 0.08 }, icon: "\u{1FAA8}", uniqueEffect: "-8% de dano f\xEDsico recebido" }),
   UNICO_ESCAMA_LEVIATA: createItem({ templateId: "UNICO_ESCAMA_LEVIATA", name: "Escama do Leviat\xE3", category: "ESCUDO", slot: "OFF_HAND", tier: 3, rarity: "LENDARIO", stats: { def: 50, arm: 40, blk: 0.15, resMagico: 0.15 }, goldBonus: 0.15, icon: "\u{1F41A}", uniqueEffect: "+15% de ouro" }),
   UNICO_OLHO_ASTERION: createItem({ templateId: "UNICO_OLHO_ASTERION", name: "Olho de Asterion", category: "ARMADURA", slot: "CAPACETE", tier: 4, rarity: "LENDARIO", stats: { arm: 100, hp: 1500, crit: 0.1, hit: 0.1 }, rareDropBonus: 0.15, dropBonus: 0.05, icon: "\u{1F441}\uFE0F", uniqueEffect: "+15% de raridade alta" }),
@@ -282,7 +282,7 @@ var ATTACK_SKILLS = {
   A14: { mult: 2.2, pierce: 0.3, manaCost: 18, lifesteal: 0.4, desc: "Devorar: Drena vida do alvo." },
   A15: { mult: 3, pierce: 0.6, manaCost: 25, desc: "Julgamento Estelar: Dano sagrado devastador." }
 };
-var ATTACK_SKILL_COOLDOWN = 3;
+var ATTACK_SKILL_COOLDOWN = 4;
 var SUPPORT_EFFECTS = {
   S1: { cd: 5, healPct: 0.15, desc: "B\xEAn\xE7\xE3o de Lyss: Cura 15% do HP a cada 15s." },
   S2: { cd: 6, dur: 3, atkPct: 0.15, armPct: 0.15, desc: "V\xEDnculo: +15% ATK/ARM por 9s a cada 18s." },
@@ -1737,6 +1737,24 @@ function loadGame() {
       if (data.character.depotMax === void 0) data.character.depotMax = 300;
       for (const item of [...data.character.inventory?.items ?? [], ...data.character.depot ?? []]) {
         if (item.category === "COMPONENTE" && item.stackable) item.maxStack = 999;
+        if (item.templateId === "UNICO_BRASA_ETERNA") {
+          item.category = "PULSEIRA";
+          item.slot = "PULSEIRA";
+        }
+      }
+      const equipped = data.character.equipped ?? {};
+      for (const key of ["ANEL_I", "ANEL_II"]) {
+        if (equipped[key]?.templateId !== "UNICO_BRASA_ETERNA") continue;
+        const brasa = equipped[key];
+        brasa.category = "PULSEIRA";
+        brasa.slot = "PULSEIRA";
+        if (!equipped.PULSEIRA) {
+          equipped.PULSEIRA = brasa;
+          delete equipped[key];
+        } else {
+          (data.character.inventory.items ??= []).push({ ...brasa, uid: `${brasa.uid}-pulseira` });
+          delete equipped[key];
+        }
       }
     }
     if (data.character) recalcStats(data.character);
@@ -2463,7 +2481,8 @@ function processTick(char, zone, isOffline) {
   const race = char.activeRace;
   const support = race ? SUPPORT_EFFECTS[race.suporteId] : void 0;
   const skill = race ? ATTACK_SKILLS[race.ataqueId] : void 0;
-  const skillCd = Math.max(1, Math.ceil(ATTACK_SKILL_COOLDOWN - prof.cdReduce));
+  const skillCd = Math.max(4, Math.ceil(ATTACK_SKILL_COOLDOWN - prof.cdReduce));
+  const earlyDamageScale = char.level <= 15 ? 0.82 : char.level <= 25 ? 0.9 : 1;
   const hpPotId = char.autoHpPotionEnabled ? char.autoHpPotionId || null : null;
   const hpPotPct = char.autoHpPotionPercent || 50;
   const mpPotId = char.autoMpPotionEnabled ? char.autoMpPotionId || null : null;
@@ -2555,7 +2574,7 @@ function processTick(char, zone, isOffline) {
         return 0;
       }
       const magicWeapon = ["CAJADO", "VARINHA"].some((key) => char.equipped.ARMA_PRINCIPAL?.templateId.includes(key));
-      const base = (magicWeapon ? s.matk ?? 0 : s.atk ?? 0) * atkMult * multiplier;
+      const base = (magicWeapon ? s.matk ?? 0 : s.atk ?? 0) * atkMult * multiplier * earlyDamageScale;
       let dmg = mitigatedDamage(base, enemy.arm * (1 - ignoreArmor));
       if (Math.random() < (s.crit ?? 0)) {
         dmg *= 1 + clamp(s.critDmg ?? 0.5, 0, 1.5);
@@ -2594,7 +2613,7 @@ function processTick(char, zone, isOffline) {
       if (playerMp >= manaCost) {
         playerMp -= manaCost;
         result.usedMp = true;
-        const raw = ((s.matk ?? 0) + (s.atk ?? 0) * 0.5) * skill.mult * (1 + prof.skillDmgPct);
+        const raw = ((s.matk ?? 0) + (s.atk ?? 0) * 0.5) * skill.mult * (1 + prof.skillDmgPct) * earlyDamageScale;
         const armor = enemy.arm * (1 - skill.pierce) * (1 - ignoreArmor);
         const baseSkillDamage = Math.round(mitigatedDamage(raw, armor));
         const skillElement = attackElement(race?.ataqueId);
@@ -2632,7 +2651,7 @@ function processTick(char, zone, isOffline) {
     if (bond && t % bond.cooldown === 0 && playerMp >= bond.mana && !debug2) {
       playerMp -= bond.mana;
       result.usedMp = true;
-      const raw = ((s.atk ?? 0) + (s.matk ?? 0)) * 0.5 * bond.multiplier;
+      const raw = ((s.atk ?? 0) + (s.matk ?? 0)) * 0.5 * bond.multiplier * earlyDamageScale;
       const resistance = Math.max(0, Math.min(BALANCE.resistanceCap, enemy.elementalResistances?.[bond.element] ?? 0));
       const damage = Math.max(1, Math.round(mitigatedDamage(raw, enemy.arm * 0.5) * elementMultiplier(bond.element, enemy.element) * (1 - resistance)));
       dealt += damage;
@@ -3762,7 +3781,28 @@ function freshWorld(name, id) {
   character.id = id;
   return { character, races: [], isTickRunning: false, isTraining: false, healingUntil: null, deathReport: null, lastTickResult: null, lastAdvanceAt: Date.now(), counters: { forges: 0, syntheses: 0, trades: 0, bosses: 0 } };
 }
+function normalizeLegacyItems(character) {
+  for (const item of [...character.inventory?.items ?? [], ...character.depot ?? []]) if (item.templateId === "UNICO_BRASA_ETERNA") {
+    item.category = "PULSEIRA";
+    item.slot = "PULSEIRA";
+  }
+  const equipped = character.equipped ?? {};
+  for (const key of ["ANEL_I", "ANEL_II"]) {
+    const item = equipped[key];
+    if (item?.templateId !== "UNICO_BRASA_ETERNA") continue;
+    item.category = "PULSEIRA";
+    item.slot = "PULSEIRA";
+    if (!equipped.PULSEIRA) {
+      equipped.PULSEIRA = item;
+      delete equipped[key];
+    } else {
+      (character.inventory.items ??= []).push({ ...item, uid: `${item.uid}-pulseira` });
+      delete equipped[key];
+    }
+  }
+}
 function executeGame(world, action, args = []) {
+  normalizeLegacyItems(world.character);
   const expectedXp = xpToNextLevel(world.character.level);
   if (world.character.xpToNext !== expectedXp) {
     world.character.xp = Math.floor(world.character.xp / Math.max(1, world.character.xpToNext) * expectedXp);

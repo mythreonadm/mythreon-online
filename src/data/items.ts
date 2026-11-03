@@ -88,7 +88,7 @@ MANA_POTION_DATA.forEach((p, i) => {
 
 // ─── ÚNICOS ───
 export const UNIQUE_TEMPLATES: Record<string, Item> = {
-  UNICO_BRASA_ETERNA: createItem({ templateId: "UNICO_BRASA_ETERNA", name: "Brasa Eterna", category: "JOIA", slot: "ANEL_I", tier: 1, rarity: "LENDARIO", stats: { atk: 10, matk: 10, hp: 100 }, xpBonus: 0.10, icon: "🔥", uniqueEffect: "+10% de XP" }),
+  UNICO_BRASA_ETERNA: createItem({ templateId: "UNICO_BRASA_ETERNA", name: "Brasa Eterna", category: "PULSEIRA", slot: "PULSEIRA", tier: 1, rarity: "LENDARIO", stats: { atk: 10, matk: 10, hp: 100 }, xpBonus: 0.10, icon: "🔥", uniqueEffect: "+10% de XP · relíquia de pulso" }),
   UNICO_CORACAO_GRANITO: createItem({ templateId: "UNICO_CORACAO_GRANITO", name: "Coração de Granito", category: "JOIA", slot: "COLAR", tier: 2, rarity: "LENDARIO", stats: { hp: 500, arm: 25, resFisico: 0.08 }, icon: "🪨", uniqueEffect: "-8% de dano físico recebido" }),
   UNICO_ESCAMA_LEVIATA: createItem({ templateId: "UNICO_ESCAMA_LEVIATA", name: "Escama do Leviatã", category: "ESCUDO", slot: "OFF_HAND", tier: 3, rarity: "LENDARIO", stats: { def: 50, arm: 40, blk: 0.15, resMagico: 0.15 }, goldBonus: 0.15, icon: "🐚", uniqueEffect: "+15% de ouro" }),
   UNICO_OLHO_ASTERION: createItem({ templateId: "UNICO_OLHO_ASTERION", name: "Olho de Asterion", category: "ARMADURA", slot: "CAPACETE", tier: 4, rarity: "LENDARIO", stats: { arm: 100, hp: 1500, crit: 0.10, hit: 0.10 }, rareDropBonus: 0.15, dropBonus: 0.05, icon: "👁️", uniqueEffect: "+15% de raridade alta" }),

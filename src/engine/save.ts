@@ -146,6 +146,15 @@ export function loadGame(): SaveFile | null {
       // Atualiza stacks antigos de componentes salvos antes do limite 999.
       for (const item of [...(data.character.inventory?.items ?? []), ...(data.character.depot ?? [])]) {
         if (item.category === "COMPONENTE" && item.stackable) item.maxStack = 999;
+        if (item.templateId === "UNICO_BRASA_ETERNA") { item.category = "PULSEIRA"; item.slot = "PULSEIRA"; }
+      }
+      // A Brasa Eterna era criada como anel em versões antigas. Corrige também itens equipados.
+      const equipped = data.character.equipped ?? {};
+      for (const key of ["ANEL_I", "ANEL_II"] as const) {
+        if (equipped[key]?.templateId !== "UNICO_BRASA_ETERNA") continue;
+        const brasa = equipped[key]; brasa.category = "PULSEIRA"; brasa.slot = "PULSEIRA";
+        if (!equipped.PULSEIRA) { equipped.PULSEIRA = brasa; delete equipped[key]; }
+        else { (data.character.inventory.items ??= []).push({ ...brasa, uid: `${brasa.uid}-pulseira` }); delete equipped[key]; }
       }
     }
     // Derived limits are rebuilt from level + current bonuses, never trusted from an old cache.

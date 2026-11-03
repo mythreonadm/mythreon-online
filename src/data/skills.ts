@@ -26,7 +26,7 @@ export const ATTACK_SKILLS: Record<string, AttackSkill> = {
   A15:{ mult: 3.0, pierce: 0.6, manaCost: 25, desc: "Julgamento Estelar: Dano sagrado devastador." },
 };
 
-export const ATTACK_SKILL_COOLDOWN = 3; // A cada 3 ticks (9s)
+export const ATTACK_SKILL_COOLDOWN = 4; // A cada 4 ticks (12s), mínimo efetivo de 10s
 
 export interface SupportEffect {
   cd: number; dur?: number; healPct?: number; atkPct?: number; armPct?: number;

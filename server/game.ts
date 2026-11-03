@@ -7,7 +7,9 @@ import {ZONES} from '../src/data/zones';
 import type {Character,Race} from '../src/types';
 export interface WorldState { character:Character; races:Race[]; isTickRunning:boolean; isTraining:boolean; healingUntil:number|null; deathReport:GameState['deathReport']; lastTickResult:GameState['lastTickResult']; lastAdvanceAt:number; counters:{forges:number;syntheses:number;trades:number;bosses:number}; }
 export function freshWorld(name:string,id:string):WorldState {const character=createNewCharacter(name);character.id=id;return {character,races:[],isTickRunning:false,isTraining:false,healingUntil:null,deathReport:null,lastTickResult:null,lastAdvanceAt:Date.now(),counters:{forges:0,syntheses:0,trades:0,bosses:0}};}
+function normalizeLegacyItems(character:Character){for(const item of [...(character.inventory?.items??[]),...(character.depot??[])])if(item.templateId==='UNICO_BRASA_ETERNA'){item.category='PULSEIRA';item.slot='PULSEIRA';}const equipped=character.equipped??{};for(const key of ['ANEL_I','ANEL_II'] as const){const item=equipped[key];if(item?.templateId!=='UNICO_BRASA_ETERNA')continue;item.category='PULSEIRA';item.slot='PULSEIRA';if(!equipped.PULSEIRA){equipped.PULSEIRA=item;delete equipped[key];}else{(character.inventory.items??=[]).push({...item,uid:`${item.uid}-pulseira`});delete equipped[key];}}}
 export function executeGame(world:WorldState,action?:string,args:unknown[]=[]):{world:WorldState;result:unknown;messages:string[]} {
+ normalizeLegacyItems(world.character);
  const expectedXp=xpToNextLevel(world.character.level);if(world.character.xpToNext!==expectedXp){world.character.xp=Math.floor(world.character.xp/Math.max(1,world.character.xpToNext)*expectedXp);world.character.xpToNext=expectedXp;}
  world.counters??={forges:0,syntheses:0,trades:0,bosses:0};world.counters.bosses??=0;
  const messages:string[]=[]; const store=createGameStore({server:true,persist:()=>{},notify:m=>messages.push(m)});

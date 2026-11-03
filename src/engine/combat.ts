@@ -147,7 +147,8 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
   const race = char.activeRace;
   const support = race ? SUPPORT_EFFECTS[race.suporteId] : undefined;
   const skill = race ? ATTACK_SKILLS[race.ataqueId] : undefined;
-  const skillCd = Math.max(1, Math.ceil(ATTACK_SKILL_COOLDOWN - prof.cdReduce));
+  const skillCd = Math.max(4, Math.ceil(ATTACK_SKILL_COOLDOWN - prof.cdReduce));
+  const earlyDamageScale = char.level <= 15 ? 0.82 : char.level <= 25 ? 0.90 : 1;
   
   const hpPotId = char.autoHpPotionEnabled ? char.autoHpPotionId || null : null;
   const hpPotPct = char.autoHpPotionPercent || 50;
@@ -224,7 +225,7 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
       if (debug) { result.lastDamage = 99999; return 99999; }
       if (!guaranteed && Math.random() > (s.hit ?? 1)) { result.lastMiss = true; return 0; }
       const magicWeapon = ['CAJADO', 'VARINHA'].some(key => char.equipped.ARMA_PRINCIPAL?.templateId.includes(key));
-      const base = (magicWeapon ? s.matk ?? 0 : s.atk ?? 0) * atkMult * multiplier;
+      const base = (magicWeapon ? s.matk ?? 0 : s.atk ?? 0) * atkMult * multiplier * earlyDamageScale;
       let dmg = mitigatedDamage(base, enemy.arm * (1 - ignoreArmor));
       if (Math.random() < (s.crit ?? 0)) { dmg *= 1 + clamp(s.critDmg ?? 0.5, 0, 1.5); result.lastCrit = true; }
       if (support?.executeBonus && enemyHp < enemy.hp * 0.4) dmg *= 1 + support.executeBonus;
@@ -261,7 +262,7 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
       if (playerMp >= manaCost) {
         playerMp -= manaCost;
         result.usedMp = true;
-        const raw = ((s.matk ?? 0) + (s.atk ?? 0) * 0.5) * skill.mult * (1 + prof.skillDmgPct);
+        const raw = ((s.matk ?? 0) + (s.atk ?? 0) * 0.5) * skill.mult * (1 + prof.skillDmgPct) * earlyDamageScale;
         const armor = enemy.arm * (1 - skill.pierce) * (1 - ignoreArmor);
         const baseSkillDamage = Math.round(mitigatedDamage(raw, armor));
         const skillElement = attackElement(race?.ataqueId);
@@ -300,7 +301,7 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
     if (bond && t % bond.cooldown === 0 && playerMp >= bond.mana && !debug) {
       playerMp -= bond.mana;
       result.usedMp = true;
-      const raw = ((s.atk ?? 0) + (s.matk ?? 0)) * 0.5 * bond.multiplier;
+      const raw = ((s.atk ?? 0) + (s.matk ?? 0)) * 0.5 * bond.multiplier * earlyDamageScale;
       const resistance = Math.max(0, Math.min(BALANCE.resistanceCap, enemy.elementalResistances?.[bond.element] ?? 0));
       const damage = Math.max(1, Math.round(mitigatedDamage(raw, enemy.arm * 0.5) * elementMultiplier(bond.element, enemy.element) * (1 - resistance)));
       dealt += damage; elementalThisTick += damage;
