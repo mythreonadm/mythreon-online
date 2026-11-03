@@ -111,3 +111,12 @@ ZONES.DESERTO_KAELOR = {id:'DESERTO_KAELOR',name:'Deserto de Kaelor',tier:4,minL
  {id:'SENTINELA_ZENITE',name:'Sentinela do Zênite',hp:2600,atk:155,arm:52,xp:3100,goldMin:1000,goldMax:1600,componentId:'A15',componentChance:1,essenceId:'S10',essenceChance:.3,element:'FOGO',damageType:'MAGICO',elementalResistances:{FOGO:.4,METAL:.2},isBoss:true,difficulty:5,minLevel:68,emoji:'🔆'}
 ]};
 for (const zone of [ZONES.PANTANO_VEYRA,ZONES.DESERTO_KAELOR]) for (const enemy of zone.enemies) enemy.sprite='/assets/monsters/'+enemy.id+'.png';
+
+// Ordem oficial dos alvos: progressão por nível, depois dificuldade, com chefes sempre no fim.
+// Isso evita que um mob de 3 estrelas apareça antes de um mob de 2 estrelas de nível maior.
+for (const zone of Object.values(ZONES)) {
+  zone.enemies.sort((a, b) => {
+    if (a.isBoss !== b.isBoss) return a.isBoss ? 1 : -1;
+    return (a.minLevel ?? 1) - (b.minLevel ?? 1) || a.difficulty - b.difficulty || a.name.localeCompare(b.name);
+  });
+}

@@ -649,7 +649,7 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
                   <span className="text-xl md:text-2xl">{e.emoji}</span>
                   {isQuestTarget && <span className="text-[8px] font-black text-arcane-gold">QUEST</span>}
                   <span className="text-[8px] md:text-[10px] text-yellow-400">{'⭐'.repeat(e.difficulty)}</span>
-                  {locked && <span className="text-[8px] text-red-500 font-bold">Nv {e.minLevel}</span>}
+                  <span className={`text-[8px] font-bold ${locked ? "text-red-500" : "text-cyan-300"}`}>Nv {e.minLevel ?? 1}</span>
                </button>
              )
           })}

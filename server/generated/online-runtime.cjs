@@ -1588,6 +1588,12 @@ ZONES.DESERTO_KAELOR = { id: "DESERTO_KAELOR", name: "Deserto de Kaelor", tier: 
   { id: "SENTINELA_ZENITE", name: "Sentinela do Z\xEAnite", hp: 2600, atk: 155, arm: 52, xp: 3100, goldMin: 1e3, goldMax: 1600, componentId: "A15", componentChance: 1, essenceId: "S10", essenceChance: 0.3, element: "FOGO", damageType: "MAGICO", elementalResistances: { FOGO: 0.4, METAL: 0.2 }, isBoss: true, difficulty: 5, minLevel: 68, emoji: "\u{1F506}" }
 ] };
 for (const zone of [ZONES.PANTANO_VEYRA, ZONES.DESERTO_KAELOR]) for (const enemy of zone.enemies) enemy.sprite = "/assets/monsters/" + enemy.id + ".png";
+for (const zone of Object.values(ZONES)) {
+  zone.enemies.sort((a, b) => {
+    if (a.isBoss !== b.isBoss) return a.isBoss ? 1 : -1;
+    return (a.minLevel ?? 1) - (b.minLevel ?? 1) || a.difficulty - b.difficulty || a.name.localeCompare(b.name);
+  });
+}
 
 // src/engine/save.ts
 var LEGACY_SAVE_KEY = "mythreon_save_v1";
