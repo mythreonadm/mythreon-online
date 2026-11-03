@@ -42,7 +42,7 @@ type Tab = "zona" | "personagem" | "backpack" | "depot" | "matriz" | "pets" | "l
 
 const TAB_LABELS: Record<Tab, string> = {
   online:"Comunidade",ranking:"Ranking", zona: "Explorar", personagem: "Personagem", backpack: "Mochila", depot: "Depósito",
-  matriz: "Matriz", pets: "Divine Beasts", laboratorio: "Laboratório", shop: "Shop", loja: "Ferreiro", missoes: "Jornadas", duelos: "Duelo", wiki: "Arquivo",
+  matriz: "Matriz", pets: "Bestas Divinas", laboratorio: "Laboratório", shop: "Shop", loja: "Ferreiro", missoes: "Jornadas", duelos: "Duelo", wiki: "Arquivo",
 };
 
 const TAB_ICONS: Record<Tab, AccessIconName> = {

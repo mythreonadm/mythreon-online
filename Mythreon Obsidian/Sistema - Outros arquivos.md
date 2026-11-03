@@ -33,6 +33,7 @@
 - [imagens/image_5f23237d.jpg](../imagens/image_5f23237d.jpg)
 - [imagens/pulseiras e itens unicos](../imagens/pulseiras e itens unicos)
 - [imagens/unicos e pulsieras](../imagens/unicos e pulsieras)
+- [imagens/videos/humanoxfalcaoxbosque.heic](../imagens/videos/humanoxfalcaoxbosque.heic)
 - [index.html](../index.html)
 - [package-lock.json](../package-lock.json)
 - [postcss.config.js](../postcss.config.js)
@@ -55,6 +56,7 @@
 - [src/vite-env.d.ts](../src/vite-env.d.ts)
 - [supabase/migrations/001_online_world.sql](../supabase/migrations/001_online_world.sql)
 - [supabase/migrations/002_realtime.sql](../supabase/migrations/002_realtime.sql)
+- [supabase/migrations/003_trade_audit.sql](../supabase/migrations/003_trade_audit.sql)
 - [tsconfig.json](../tsconfig.json)
 - [tsconfig.node.json](../tsconfig.node.json)
 - [tsconfig.server.json](../tsconfig.server.json)
@@ -66,6 +68,7 @@
 - [[Mythreon Obsidian/Sistema - Motor do jogo|Motor do jogo]]
 - [[Mythreon Obsidian/Sistema - Dados do jogo|Dados do jogo]]
 - [[Mythreon Obsidian/Sistema - Telas|Telas]]
+- [[Mythreon Obsidian/Sistema - Itens e Ferreiro|Itens e Ferreiro]]
 - [[Mythreon Obsidian/Sistema - Interface|Interface]]
 - [[Mythreon Obsidian/Sistema - Contas e saves|Contas e saves]]
 - [[Mythreon Obsidian/Sistema - Estado|Estado]]

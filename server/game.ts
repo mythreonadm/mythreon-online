@@ -40,6 +40,9 @@ export function executeGame(world:WorldState,action?:string,args:unknown[]=[]):{
   else if(action==='unequip'){const slots=['CAPACETE','ARMADURA','LUVAS','CALCAS','BOTAS','COLAR','ANEL_I','ANEL_II','PULSEIRA','ARMA_PRINCIPAL','OFF_HAND','MUNICAO','BACKPACK'];if(!slots.includes(String(args[0])))throw Error('Slot inválido.');result=s.unequip(args[0]);}
   else if(action==='equipRace'){const id=typeof args[0]==='string'?args[0]:(args[0] as any)?.id;const race=s.races.find(r=>r.id===id);if(!race)throw Error('Matriz não descoberta.');s.equipRace(race);}
   else if(action==='equipDivineBeast'){result=s.equipDivineBeast(uid(args[0]) as any);}
+  else if(action==='hatchEgg'){result=s.hatchEgg(uid(args[0]));if(!(result as any)?.success)throw Error((result as any)?.error??'Não foi possível eclodir o ovo.');}
+  else if(action==='combineBeast'){result=s.combineBeast(uid(args[0]) as any);if(!(result as any)?.success)throw Error((result as any)?.error??'Não foi possível aprimorar a linhagem.');}
+  else if(action==='feedDivineBeast'){result=s.feedDivineBeast(uid(args[0]) as any, uid(args[1]));if(!(result as any)?.success)throw Error((result as any)?.error??'Não foi possível alimentar a Besta.');}
   else if(action==='synthesize'){result=s.synthesize(uid(args[0]),uid(args[1]),uid(args[2]));if((result as any)?.success)world.counters.syntheses++;}
   else if(action==='useVial'){const id=typeof args[0]==='string'?args[0]:(args[0] as any)?.id;const vial=typeof id==='string'&&Object.hasOwn(VIALS,id)?VIALS[id]:undefined;if(!vial)throw Error('Vial inválido.');s.useVial(vial);}
   else if(action==='sellItem'){const quantity=args[1]??1;if(!Number.isInteger(quantity)||Number(quantity)<1||Number(quantity)>999)throw Error('Quantidade inválida.');s.sellItem(uid(args[0]),Number(quantity));}

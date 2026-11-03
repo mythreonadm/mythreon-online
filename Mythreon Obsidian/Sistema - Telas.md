@@ -20,6 +20,7 @@
 - [src/ui/OnlineCommunity.tsx](../src/ui/OnlineCommunity.tsx) — OnlineNotice, OnlineRanking, OnlineCommunity, OnlineTradeWindow
 - [src/ui/Personagem.tsx](../src/ui/Personagem.tsx) — Personagem
 - [src/ui/QuantityModal.tsx](../src/ui/QuantityModal.tsx) — QuantityModal
+- [src/ui/SettingsPanel.tsx](../src/ui/SettingsPanel.tsx) — SettingsPanel
 - [src/ui/WorldJourney.tsx](../src/ui/WorldJourney.tsx) — PassageContract, WorldJourney
 
 ## Relações encontradas

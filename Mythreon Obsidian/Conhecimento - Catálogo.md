@@ -13,7 +13,9 @@
 - [[docs/conhecimento/Jornada-Lore-Biomas|Jornada, lore e biomas]] — Introdução guiada, economia inicial gradual e travessias por NPC ligam a lore aos sete biomas.
 - [[docs/conhecimento/Laboratorio-de-Builds-e-Windows|Laboratório de Builds e Windows]] — Laboratório isolado de combate e primeira distribuição Windows de desenvolvimento.
 - [[docs/conhecimento/Operacao do Cerebro e Obsidian|Operação do Cérebro e Obsidian]] — Como iniciar, conferir, escrever e recuperar o conhecimento do Mythreon.
+- [[docs/conhecimento/Pets-Atividades-Boss-Diario|Pets, atividades e Boss Diário]] — em desenvolvimento
 - [[docs/conhecimento/Registro de problemas|Registro de problemas]] — Problemas de documentação, sincronização e continuidade com suas evidências.
+- [[docs/conhecimento/Sem título|Sem título]] — a revisar
 - [[docs/conhecimento/Shop-Premium-Beasts|Shop, premium e Divine Beasts]] — a revisar
 - [[docs/conhecimento/Treino-e-Diferenciais-Mythreon|Disciplina e um mundo que se lembra]] — Treino implementado e propostas de identidade própria fundamentadas em pesquisa de idle games.
 

@@ -147,7 +147,15 @@ var FRAGMENT_TEMPLATES = {
   FRAGMENTO_RARO: createItem({ templateId: "FRAGMENTO_RARO", name: "Fragmento Raro", category: "FRAGMENTO", tier: 1, rarity: "RARO", icon: "\u{1F48E}", stackable: true, maxStack: 999, quantity: 1, stats: {} }),
   FRAGMENTO_EPICO: createItem({ templateId: "FRAGMENTO_EPICO", name: "Fragmento \xC9pico", category: "FRAGMENTO", tier: 1, rarity: "EPICO", icon: "\u{1F52E}", stackable: true, maxStack: 999, quantity: 1, stats: {} })
 };
-var ALL_ITEM_TEMPLATES = { ...ALL_EQUIPMENT_TEMPLATES, ...SWAMP_MATERIAL_TEMPLATES, ...ARROW_TEMPLATES, ...POTION_TEMPLATES, ...UNIQUE_TEMPLATES, ...FRAGMENT_TEMPLATES };
+var DIVINE_BEAST_EGG_TEMPLATES = {
+  OVO_BESTA_T1: createItem({ templateId: "OVO_BESTA_T1", name: "Ovo de Besta Divina Comum", category: "MATERIAL", tier: 1, rarity: "COMUM", icon: "🥚", stackable: true, maxStack: 999 }),
+  OVO_BESTA_T2: createItem({ templateId: "OVO_BESTA_T2", name: "Ovo de Besta Divina Incomum", category: "MATERIAL", tier: 2, rarity: "INCOMUM", icon: "🥚", stackable: true, maxStack: 999 }),
+  OVO_BESTA_T3: createItem({ templateId: "OVO_BESTA_T3", name: "Ovo de Besta Divina Raro", category: "MATERIAL", tier: 3, rarity: "RARO", icon: "🥚", stackable: true, maxStack: 999 }),
+  OVO_BESTA_T4: createItem({ templateId: "OVO_BESTA_T4", name: "Ovo de Besta Divina Épico", category: "MATERIAL", tier: 4, rarity: "EPICO", icon: "🥚", stackable: true, maxStack: 999 }),
+  OVO_BESTA_T5: createItem({ templateId: "OVO_BESTA_T5", name: "Ovo de Besta Divina Lendário", category: "MATERIAL", tier: 5, rarity: "LENDARIO", icon: "🥚", stackable: true, maxStack: 999 })
+};
+var BEAST_TAMER_TEMPLATES = { RACAO_DOMADOR: createItem({ templateId: "RACAO_DOMADOR", name: "Ração Especial do Domador", category: "MATERIAL", tier: 2, rarity: "RARO", icon: "🍖", stackable: true, maxStack: 999 }) };
+var ALL_ITEM_TEMPLATES = { ...ALL_EQUIPMENT_TEMPLATES, ...SWAMP_MATERIAL_TEMPLATES, ...ARROW_TEMPLATES, ...POTION_TEMPLATES, ...UNIQUE_TEMPLATES, ...FRAGMENT_TEMPLATES, ...DIVINE_BEAST_EGG_TEMPLATES, ...BEAST_TAMER_TEMPLATES };
 
 // src/engine/training.ts
 var TRAINING_MILESTONES = [
@@ -547,7 +555,7 @@ function getBeastCombat(char) {
   if (!id || char.activeRace || !(char.divineBeasts ?? []).some((b) => b.id === id)) return null;
   const beast = DIVINE_BEASTS[id];
   const [name, element] = ATTACKS[id];
-  return { beast, name, element, cooldown: 3, mana: 8 + Math.floor(char.level * 0.5), multiplier: 2.4 };
+  return { beast, name, element, cooldown: 2, cooldownSeconds: 5, mana: 8 + Math.floor(char.level * 0.5), multiplier: 2.4 };
 }
 function beastGrowth(level) {
   return { hp: 60 + level * 6, mp: 30 + level * 3, atk: 6 + level, matk: 6 + level, arm: 3 + Math.floor(level * 0.6), hpRegen: 1 + Math.floor(level / 15), mpRegen: 2 + Math.floor(level / 15) };
@@ -2513,7 +2521,9 @@ function processTick(char, zone, isOffline) {
   const savedTarget = zone.enemies.find((e) => e.id === char.activeEnemyId);
   const baseEnemy = savedTarget && char.level >= (savedTarget.minLevel ?? 1) ? savedTarget : zone.enemies.find((e) => char.level >= (e.minLevel ?? 1)) || zone.enemies[0];
   if (!baseEnemy) return result;
-  const fightId = `${zone.id}:${baseEnemy.id}`;
+  const sameTarget = char.fightEnemyId === `${zone.id}:${baseEnemy.id}` || char.fightEnemyId === `${zone.id}:${baseEnemy.id}:ELITE`;
+  const isEliteEncounter = char.fightEnemyId === `${zone.id}:${baseEnemy.id}:ELITE` || (!sameTarget && !baseEnemy.isBoss && Math.random() < 0.03);
+  const fightId = `${zone.id}:${baseEnemy.id}${isEliteEncounter ? ":ELITE" : ""}`;
   if (char.fightEnemyId !== fightId) {
     char.fightEnemyId = fightId;
     char.fightDamageDealt = 0;
@@ -2559,10 +2569,12 @@ function processTick(char, zone, isOffline) {
   };
   const diff = baseEnemy.difficulty || 1;
   const rewardScale = 1 + (diff - 1) * 0.2;
-  const enemy = { ...baseEnemy, hp: baseEnemy.hp * diff, atk: baseEnemy.atk * diff, arm: baseEnemy.arm * diff, xp: Math.round(baseEnemy.xp * rewardScale), goldMin: Math.round(baseEnemy.goldMin * rewardScale), goldMax: Math.round(baseEnemy.goldMax * rewardScale) };
-  if (char.enemyHpId !== baseEnemy.id || char.enemyHp === void 0 || char.enemyHp <= 0) {
+  const eliteMultiplier = isEliteEncounter ? 1.35 : 1;
+  const enemy = { ...baseEnemy, id: isEliteEncounter ? `${baseEnemy.id}_ELITE` : baseEnemy.id, name: isEliteEncounter ? `${baseEnemy.name} Elite` : baseEnemy.name, isElite: isEliteEncounter, hp: baseEnemy.hp * diff * eliteMultiplier, atk: baseEnemy.atk * diff * eliteMultiplier, arm: baseEnemy.arm * diff * eliteMultiplier, xp: Math.round(baseEnemy.xp * rewardScale * (isEliteEncounter ? 1.8 : 1)), goldMin: Math.round(baseEnemy.goldMin * rewardScale * (isEliteEncounter ? 1.8 : 1)), goldMax: Math.round(baseEnemy.goldMax * rewardScale * (isEliteEncounter ? 1.8 : 1)) };
+  if (isEliteEncounter && char.enemyHpId !== enemy.id) result.log.push(`✨ Encontro especial: ${enemy.name}! Recompensas e drops aprimorados.`);
+  if (char.enemyHpId !== enemy.id || char.enemyHp === void 0 || char.enemyHp <= 0) {
     char.enemyHp = enemy.hp;
-    char.enemyHpId = baseEnemy.id;
+    char.enemyHpId = enemy.id;
   }
   let enemyHp = Math.min(char.enemyHp, enemy.hp);
   let playerHp = char.hp;
@@ -2811,6 +2823,14 @@ function processTick(char, zone, isOffline) {
         bondedBeastName = beast.name;
       }
       const drops = rollDrops(enemy, zone, char, { dropBonus: prof.dropPct, rareBonus: prof.rarePct + (char.baseStats.luck ?? 0), force: debug2 });
+      if ((debug2 || enemy.isBoss || enemy.isElite) && (debug2 || Math.random() < (enemy.isElite ? 0.12 : 0.08))) {
+        const egg = DIVINE_BEAST_EGG_TEMPLATES[`OVO_BESTA_T${Math.max(1, Math.min(5, zone.tier))}`];
+        if (egg) drops.push({ ...egg, uid: `${Date.now()}-egg-${enemy.id}`, quantity: 1 });
+      }
+      if ((debug2 || (enemy.isBoss || enemy.isElite) && enemy.difficulty >= 4) && (debug2 || Math.random() < (enemy.isElite ? 0.10 : 0.05))) {
+        const ration = BEAST_TAMER_TEMPLATES.RACAO_DOMADOR;
+        drops.push({ ...ration, uid: `${Date.now()}-ration-${enemy.id}`, quantity: 1 });
+      }
       if (debug2 || char.killsInZone % 10 === 0 || enemy.isBoss) drops.push(rollAmbient(zone));
       const autoSell = char.autoSell ?? null;
       const autoSalvage = char.autoSalvage ?? null;
@@ -2819,7 +2839,7 @@ function processTick(char, zone, isOffline) {
       const ignoredLoot = new Set(char.ignoredLootTemplateIds ?? []);
       for (const d of drops) {
         loot.push({ name: d.name, icon: d.icon, quantity: d.quantity, sellValue: sellValue(d), kind: "item" });
-        if (ignoredLoot.has(d.templateId) && (char.bestiaryKills?.[enemy.id] ?? 0) >= 100) {
+        if (ignoredLoot.has(d.templateId) && (char.bestiaryKills?.[enemy.id] ?? 0) >= 1000) {
           result.log.push(`\u{1F9FA} Autoloot ignorou ${d.name}.`);
           continue;
         }
@@ -2889,6 +2909,7 @@ function processTick(char, zone, isOffline) {
       result.log.push(`Voc\xEA derrotou o ${enemy.name} (${diff}\u2B50)! (+${g} ouro, +${xpGained} XP)`);
       if (bondedBeastName) result.log.push(`\u{1F43E} Resson\xE2ncia Divina! ${bondedBeastName} criou um v\xEDnculo com voc\xEA.`);
       enemyHp = enemy.hp;
+      char.fightEnemyId = void 0;
     } else {
       const e = support;
       const dodgedBySkill = !!e?.dodgeEvery && t % e.dodgeEvery === 0;
@@ -2946,7 +2967,7 @@ function processTick(char, zone, isOffline) {
   char.hp = Math.max(0, Math.min(char.hpMax, playerHp));
   char.mp = Math.max(0, Math.min(char.mpMax, playerMp));
   char.enemyHp = enemyHp;
-  char.enemyHpId = baseEnemy.id;
+  char.enemyHpId = enemy.id;
   char.lastTick = Date.now();
   result.log = result.log.slice(-10);
   result.combatDurationMs = simulatedTicks * TICK_MS;
@@ -3614,6 +3635,48 @@ function createGameStore(runtime = {}) {
       get().save();
       return { success: true };
     },
+    hatchEgg: (uid) => {
+      const { character } = get();
+      if (!character) return { success: false, error: "Sem personagem" };
+      const egg = character.inventory.items.find((item) => item.uid === uid);
+      if (!egg || !DIVINE_BEAST_EGG_TEMPLATES[egg.templateId]) return { success: false, error: "Escolha um Ovo de Besta Divina." };
+      const tables = { 1: [95, 4, 1, 0, 0], 2: [75, 18, 6, 1, 0], 3: [50, 30, 15, 4, 1], 4: [25, 35, 25, 12, 3], 5: [8, 25, 35, 24, 8] };
+      const rarities = ["COMUM", "INCOMUM", "RARO", "EPICO", "LENDARIO"], chances = tables[Math.max(1, Math.min(5, egg.tier))] ?? tables[1];
+      const roll = Math.random() * 100; let cursor = 0, rarity = "COMUM";
+      for (let i = 0; i < chances.length; i++) { cursor += chances[i]; if (roll < cursor) { rarity = rarities[i]; break; } }
+      const ids = Object.keys(DIVINE_BEASTS), beastId = ids[Math.floor(Math.random() * ids.length)];
+      const next = structuredClone(character); removeItem(next.inventory, uid, 1); next.divineBeasts = [...(next.divineBeasts ?? []), { id: beastId, rarity, obtainedAt: Date.now() }];
+      set({ character: next }); get().save(); notify(`O ovo eclodiu: ${DIVINE_BEASTS[beastId].name} · ${rarity}!`);
+      return { success: true, beastId, rarity };
+    },
+    combineBeast: (id) => {
+      const { character } = get();
+      if (!character) return { success: false, error: "Sem personagem" };
+      const copies = (character.divineBeasts ?? []).filter((beast) => beast.id === id), ration = character.inventory.items.find((item) => item.templateId === "RACAO_DOMADOR");
+      if (copies.length < 4) return { success: false, error: "São necessárias 4 Bestas iguais." };
+      if (!ration) return { success: false, error: "É necessária uma Ração Especial do Domador." };
+      const rank = ["COMUM", "INCOMUM", "RARO", "EPICO", "LENDARIO"], current = Math.max(...copies.slice(0, 4).map((beast) => rank.indexOf(beast.rarity ?? "RARO")));
+      if (current >= rank.length - 1) return { success: false, error: "Esta linhagem já está no ápice lendário." };
+      const next = structuredClone(character); let removed = 0;
+      next.divineBeasts = (next.divineBeasts ?? []).filter((beast) => beast.id !== id || removed++ >= 4);
+      removeItem(next.inventory, ration.uid, 1);
+      const rarity = rank[current + 1]; next.divineBeasts.push({ id, rarity, obtainedAt: Date.now() });
+      set({ character: next }); get().save(); notify(`A linhagem foi aprimorada para ${rarity}!`);
+      return { success: true, rarity };
+    },
+    feedDivineBeast: (id, foodUid) => {
+      const { character } = get();
+      if (!character) return { success: false, error: "Nenhum personagem ativo." };
+      if (character.activeDivineBeastId !== id) return { success: false, error: "Ative esta Besta antes de alimentá-la." };
+      const item = character.inventory.items.find((entry) => entry.uid === foodUid);
+      if (!item) return { success: false, error: "Alimento não encontrado na mochila." };
+      const food = { CENOURA_PET: { minutes: 5, mood: 2 }, FRUTA_MEL: { minutes: 10, mood: 5 }, MELANCIA_LUNAR: { minutes: 15, mood: 8 }, RACAO_DOMADOR: { minutes: 30, mood: 12 } }[item.templateId];
+      if (!food) return { success: false, error: "Este item não é alimento para Bestas Divinas." };
+      const now = Date.now(), previous = character.divineBeastNeeds?.[id] ?? { nutrition: 0, mood: 70, updatedAt: now }, elapsedMinutes = Math.max(0, (now - previous.updatedAt) / 6e4);
+      character.divineBeastNeeds = { ...(character.divineBeastNeeds ?? {}), [id]: { nutrition: Math.max(0, Math.min(100, previous.nutrition - elapsedMinutes * .5 + food.minutes * 2)), mood: Math.max(0, Math.min(100, previous.mood - elapsedMinutes * .15 + food.mood)), updatedAt: now } };
+      if ((item.quantity ?? 1) > 1) item.quantity -= 1; else character.inventory.items = character.inventory.items.filter((entry) => entry.uid !== foodUid);
+      set({ character: { ...character } }); get().save(); return { success: true };
+    },
     unequipDivineBeast: () => {
       const { character } = get();
       if (!character) return;
@@ -3789,7 +3852,7 @@ function createGameStore(runtime = {}) {
     buyBless: () => {
       const { character } = get();
       if (!character) return;
-      const price = character.level * 5e3;
+      const price = Math.max(100, character.level * 250);
       if (character.gold < price) return warn("Ouro insuficiente para comprar Bless.");
       const newChar = JSON.parse(JSON.stringify(character));
       newChar.gold -= price;
@@ -4057,6 +4120,15 @@ function executeGame(world, action, args = []) {
       s.equipRace(race);
     } else if (action === "equipDivineBeast") {
       result = s.equipDivineBeast(uid(args[0]));
+    } else if (action === "hatchEgg") {
+      result = s.hatchEgg(uid(args[0]));
+      if (!result?.success) throw Error(result?.error ?? "Não foi possível eclodir o ovo.");
+    } else if (action === "combineBeast") {
+      result = s.combineBeast(uid(args[0]));
+      if (!result?.success) throw Error(result?.error ?? "Não foi possível aprimorar a linhagem.");
+    } else if (action === "feedDivineBeast") {
+      result = s.feedDivineBeast(uid(args[0]), uid(args[1]));
+      if (!result?.success) throw Error(result?.error ?? "Não foi possível alimentar a Besta.");
     } else if (action === "synthesize") {
       result = s.synthesize(uid(args[0]), uid(args[1]), uid(args[2]));
       if (result?.success) world.counters.syntheses++;

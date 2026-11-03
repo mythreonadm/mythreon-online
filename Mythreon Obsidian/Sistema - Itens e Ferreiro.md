@@ -19,6 +19,7 @@
 - [public/assets/items/ARCO_T3.png](../public/assets/items/ARCO_T3.png)
 - [public/assets/items/ARCO_T4.png](../public/assets/items/ARCO_T4.png)
 - [public/assets/items/ARCO_T5.png](../public/assets/items/ARCO_T5.png)
+- [public/assets/items/ASA_LAMINA.png](../public/assets/items/ASA_LAMINA.png)
 - [public/assets/items/BACKPACK_ARCANA.png](../public/assets/items/BACKPACK_ARCANA.png)
 - [public/assets/items/BACKPACK_EXPLORADOR.png](../public/assets/items/BACKPACK_EXPLORADOR.png)
 - [public/assets/items/BACKPACK_NORMAL.png](../public/assets/items/BACKPACK_NORMAL.png)
@@ -49,6 +50,8 @@
 - [public/assets/items/COLAR_T3.png](../public/assets/items/COLAR_T3.png)
 - [public/assets/items/COLAR_T4.png](../public/assets/items/COLAR_T4.png)
 - [public/assets/items/COLAR_T5.png](../public/assets/items/COLAR_T5.png)
+- [public/assets/items/COROA_LODO.png](../public/assets/items/COROA_LODO.png)
+- [public/assets/items/DENTE_SILTE.png](../public/assets/items/DENTE_SILTE.png)
 - [public/assets/items/ESCUDO_T1.png](../public/assets/items/ESCUDO_T1.png)
 - [public/assets/items/ESCUDO_T2.png](../public/assets/items/ESCUDO_T2.png)
 - [public/assets/items/ESCUDO_T3.png](../public/assets/items/ESCUDO_T3.png)
@@ -77,6 +80,7 @@
 - [public/assets/items/MACHADO_T3.png](../public/assets/items/MACHADO_T3.png)
 - [public/assets/items/MACHADO_T4.png](../public/assets/items/MACHADO_T4.png)
 - [public/assets/items/MACHADO_T5.png](../public/assets/items/MACHADO_T5.png)
+- [public/assets/items/NO_MEMORIA.png](../public/assets/items/NO_MEMORIA.png)
 - [public/assets/items/PEITORAL_T1.png](../public/assets/items/PEITORAL_T1.png)
 - [public/assets/items/PEITORAL_T2.png](../public/assets/items/PEITORAL_T2.png)
 - [public/assets/items/PEITORAL_T3.png](../public/assets/items/PEITORAL_T3.png)
@@ -97,6 +101,7 @@
 - [public/assets/items/PULSEIRA_T3.png](../public/assets/items/PULSEIRA_T3.png)
 - [public/assets/items/PULSEIRA_T4.png](../public/assets/items/PULSEIRA_T4.png)
 - [public/assets/items/PULSEIRA_T5.png](../public/assets/items/PULSEIRA_T5.png)
+- [public/assets/items/RESINA_MIASMA.png](../public/assets/items/RESINA_MIASMA.png)
 - [public/assets/items/UNICO_ANEL_GUARDIA.png](../public/assets/items/UNICO_ANEL_GUARDIA.png)
 - [public/assets/items/UNICO_BRASA_ETERNA.png](../public/assets/items/UNICO_BRASA_ETERNA.png)
 - [public/assets/items/UNICO_CORACAO_GRANITO.png](../public/assets/items/UNICO_CORACAO_GRANITO.png)
@@ -109,10 +114,11 @@
 - [public/assets/items/VARINHA_T3.png](../public/assets/items/VARINHA_T3.png)
 - [public/assets/items/VARINHA_T4.png](../public/assets/items/VARINHA_T4.png)
 - [public/assets/items/VARINHA_T5.png](../public/assets/items/VARINHA_T5.png)
+- [public/assets/items/prancha-assets-fase-3.png](../public/assets/items/prancha-assets-fase-3.png)
 - [src/data/backpacks.ts](../src/data/backpacks.ts) — BACKPACKS, DEFAULT_BACKPACK
-- [src/data/items.ts](../src/data/items.ts) — createItem, SWAMP_EQUIPMENT_TEMPLATES, ALL_EQUIPMENT_TEMPLATES, SWAMP_MATERIAL_TEMPLATES, ARROW_TEMPLATES, POTION_TEMPLATES, UNIQUE_TEMPLATES, FRAGMENT_TEMPLATES, ALL_ITEM_TEMPLATES
+- [src/data/items.ts](../src/data/items.ts) — createItem, SWAMP_EQUIPMENT_TEMPLATES, ALL_EQUIPMENT_TEMPLATES, SWAMP_MATERIAL_TEMPLATES, ARROW_TEMPLATES, POTION_TEMPLATES, UNIQUE_TEMPLATES, FRAGMENT_TEMPLATES, DIVINE_BEAST_EGG_TEMPLATES, BEAST_TAMER_TEMPLATES, PET_FOOD_TEMPLATES, ALL_ITEM_TEMPLATES
 - [src/engine/depot.ts](../src/engine/depot.ts) — getDepotUsedSlots, depositItem, withdrawItem, depositMany, withdrawMany
-- [src/engine/forge.ts](../src/engine/forge.ts) — getUpgradeCost, forgeFragments, upgradeItemLevel, rerollItemAffixes
+- [src/engine/forge.ts](../src/engine/forge.ts) — FORGE_CATEGORIES, getUpgradeCost, forgeFragments, upgradeItemLevel, rerollItemAffixes
 - [src/engine/inventory.ts](../src/engine/inventory.ts) — getUsedSlots, canAddItem, addItem, removeItem, countByTemplate, equipItem, unequipItem
 - [src/engine/itemCompare.ts](../src/engine/itemCompare.ts) — STAT_WEIGHTS, getItemScore, getBestTargetSlot, getEquippedForTarget, isUpgrade
 - [src/engine/salvage.ts](../src/engine/salvage.ts) — salvageItem, salvageAllEquipment, salvageSelectedEquipment

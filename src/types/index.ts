@@ -95,6 +95,13 @@ export interface DivineBeastTemplate {
 export interface DivineBeastInstance {
   id: DivineBeastId;
   obtainedAt: number;
+  rarity?: Rarity;
+}
+
+export interface DivineBeastNeeds {
+  nutrition: number;
+  mood: number;
+  updatedAt: number;
 }
 
 export interface Backpack {
@@ -118,6 +125,8 @@ export interface Enemy {
   materialChance?: number;
   sprite?: string; emoji?: string;
   difficulty: 1 | 2 | 3 | 4 | 5;
+  /** Variante especial rara, com melhor recompensa e bestiário separado. */
+  isElite?: boolean;
 }
 
 export interface Zone {
@@ -237,6 +246,8 @@ export interface Character {
   arenaRareRewardDay?: string;
   divineBeasts?: DivineBeastInstance[];
   activeDivineBeastId?: DivineBeastId;
+  divineBeastNeeds?: Partial<Record<DivineBeastId, DivineBeastNeeds>>;
+  divineBeastAttackTimerMs?: number;
   huntStatsByZone?: Record<string, HuntZoneStats>;
   fightEnemyId?: string;
   fightDamageDealt?: number;

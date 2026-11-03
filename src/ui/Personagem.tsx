@@ -236,9 +236,9 @@ export function Personagem() {
             )}
 
             <div className="mt-3 space-y-1">
-              <div className="text-[10px] text-purple-400 uppercase font-bold">🐾 Divine Beast</div>
+              <div className="text-[10px] text-purple-400 uppercase font-bold">🐾 Besta Divina</div>
               <div className="bg-arcane-bg p-2 rounded border border-purple-900/30 text-xs text-center text-gray-400">
-                {activeBeast ? <span className="text-purple-200">{activeBeast.emoji} {activeBeast.name} acompanha sua jornada.</span> : "Nenhum vínculo ativo. Descubra uma Beast no menu Divine Beasts."}
+                {activeBeast ? <span className="text-purple-200">{activeBeast.emoji} {activeBeast.name} acompanha sua jornada.</span> : "Nenhum vínculo ativo. Descubra uma Besta Divina no menu Bestas Divinas."}
               </div>
             </div>
           </div>

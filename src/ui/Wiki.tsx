@@ -25,7 +25,7 @@ type Section = "journey" | "history" | "beasts" | "monsters" | "zones" | "equipm
 const SECTION_META: { id: Section; label: string; icon: string; color: string }[] = [
   { id: "journey", label: "Jornada e Biomas", icon: "🗺️", color: "text-arcane-gold" },
   { id: "history", label: "História", icon: "📜", color: "text-arcane-gold" },
-  { id: "beasts", label: "Divine Beasts", icon: "🐾", color: "text-arcane-gold" },
+  { id: "beasts", label: "Bestas Divinas", icon: "🐾", color: "text-arcane-gold" },
   { id: "monsters", label: "Monstros", icon: "👹", color: "text-red-400" },
   { id: "zones", label: "Zonas", icon: "🗺️", color: "text-green-400" },
   { id: "equipment", label: "Equipamentos", icon: "⚔️", color: "text-arcane-cyan" },
@@ -144,11 +144,11 @@ function DivineBeastsWikiSection({ search }: { search: string }) {
   return <div className="space-y-5">
     <div className="rounded-xl border border-arcane-gold/30 bg-[radial-gradient(ellipse_at_top_right,rgba(201,160,77,.12),transparent_55%),#10151a] p-5">
       <h2 className="text-xl font-black text-arcane-gold">Ecos vivos do Primeiro Canto</h2>
-      <p className="mt-2 text-sm leading-relaxed text-gray-300">As Divine Beasts são memórias vivas da Essência, despertadas nos guardiões de Mythreon. Elas representam o Caminho da Ressonância: vínculo, adaptação e cooperação com forças que já habitavam o mundo. O vínculo é uma escolha de evolução e identidade; na mecânica atual, a criatura ativa ocupa o espaço de Ressonância compartilhado com a Matriz, enquanto as demais permanecem na coleção.</p>
+      <p className="mt-2 text-sm leading-relaxed text-gray-300">As Bestas Divinas são memórias vivas da Essência, despertadas nos guardiões de Mythreon. Elas representam o Caminho da Ressonância: vínculo, adaptação e cooperação com forças que já habitavam o mundo. O vínculo é uma escolha de evolução e identidade; na mecânica atual, a criatura ativa ocupa o espaço de Ressonância compartilhado com a Matriz, enquanto as demais permanecem na coleção.</p>
       <div className="mt-3 grid gap-2 sm:grid-cols-3 text-xs">
         <div className="rounded-lg border border-white/10 bg-black/20 p-3"><strong className="text-gray-200">Formação</strong><p className="mt-1 text-gray-400">Moldadores canalizam Dhor, Prime e Chronos para resistir, estruturar e fortalecer.</p></div>
         <div className="rounded-lg border border-white/10 bg-black/20 p-3"><strong className="text-red-300">Ruptura</strong><p className="mt-1 text-gray-400">Condutores aceleram a Essência com Kaelor, Raan e Voro para atacar e romper limites.</p></div>
-        <div className="rounded-lg border border-arcane-gold/30 bg-arcane-gold/5 p-3"><strong className="text-arcane-gold">Ressonância</strong><p className="mt-1 text-gray-400">Tecelões conectam Lyss, Emohna e Veyra; Divine Beasts manifestam esse caminho pelo vínculo com ecos vivos.</p></div>
+        <div className="rounded-lg border border-arcane-gold/30 bg-arcane-gold/5 p-3"><strong className="text-arcane-gold">Ressonância</strong><p className="mt-1 text-gray-400">Tecelões conectam Lyss, Emohna e Veyra; Bestas Divinas manifestam esse caminho pelo vínculo com ecos vivos.</p></div>
       </div>
       <p className="mt-3 text-[11px] text-gray-500">Cada chefe regional pode revelar um eco ainda não descoberto: 12% de chance por vitória. Cada vínculo é único; a criatura pode ser ativada ou guardada sem perder a coleção.</p>
     </div>
@@ -627,7 +627,7 @@ function ChapterContent({ chapter }: { chapter: number }) {
           <Q>Nem toda memória quer ser guardada em um arquivo. Algumas escolhem continuar vivas — e caminhar ao lado de alguém.</Q>
           <H>O Nome que os Mortais Deram</H>
           <P>Depois da Grande Ruptura, os Arquivistas encontraram doze ressonâncias vivas. Cinco surgiram nas grandes regiões conhecidas; outras sete carregavam traços das Consciências Primordiais. Nenhuma delas era uma Consciência em si, e nenhuma era um dos doze Primordiais ligados ao teste de Apolossaurus. Eram ecos menores, vivos e ainda assim impossíveis de explicar.</P>
-          <P>Os povos passaram a chamá-las de <strong className="text-arcane-gold">Divine Beasts</strong>. O nome não significa que sejam deuses. É apenas a palavra que encontraram para descrever seres cuja presença parece antiga como o mundo.</P>
+          <P>Os povos passaram a chamá-las de <strong className="text-arcane-gold">Bestas Divinas</strong>. O nome não significa que sejam deuses. É apenas a palavra que encontraram para descrever seres cuja presença parece antiga como o mundo.</P>
           <H>Os Cinco Ecos Regionais</H>
           <ul className="list-disc list-inside text-gray-300 space-y-2 mb-4 pl-4">
             <li><strong className="text-arcane-gold">Elarion</strong>, o Cervo das Raízes Luminosas, guarda a persistência de Lyss.</li>
@@ -647,8 +647,8 @@ function ChapterContent({ chapter }: { chapter: number }) {
             <li><strong className="text-arcane-gold">Aeralis</strong>, a Raia-Celeste das Correntes, carrega o eco de Nyr.</li>
           </ul>
           <H>O Vínculo</H>
-          <P>Uma Divine Beast não é capturada nem obrigada a obedecer. Quando um viajante vence o guardião de uma região, a Essência pode reconhecer naquela jornada uma frequência compatível. Se a criatura aceitar, forma-se um vínculo — um encontro de vontades associado à Lei do Vínculo, Emohna.</P>
-          <P>Uma Matriz e uma Divine Beast ocupam o mesmo espaço de Ressonância. A Matriz canaliza um padrão de Leis; a Beast compartilha sua própria memória viva. O viajante pode escolher qual dessas presenças conduzirá sua força. A escolha pode ser desfeita, e nenhuma descoberta é perdida.</P>
+          <P>Uma Besta Divina não é capturada nem obrigada a obedecer. Quando um viajante vence o guardião de uma região, a Essência pode reconhecer naquela jornada uma frequência compatível. Se a criatura aceitar, forma-se um vínculo — um encontro de vontades associado à Lei do Vínculo, Emohna.</P>
+          <P>Uma Matriz e uma Besta Divina ocupam o mesmo espaço de Ressonância. A Matriz canaliza um padrão de Leis; a Besta compartilha sua própria memória viva. O viajante pode escolher qual dessas presenças conduzirá sua força. A escolha pode ser desfeita, e nenhuma descoberta é perdida.</P>
           <Q>Não caminham atrás de nós. Caminham conosco. E, enquanto houver memória, nenhum vínculo desaparece por completo.</Q>
         </div>
       );
@@ -711,7 +711,7 @@ function MonstersSection({ search }: { search: string }) {
               {m.essenceId && <div>💎 Essência: <span className="text-arcane-cyan">{SUPORTES[m.essenceId]?.name || m.essenceId}</span> ({((m.essenceChance || 0) * 100).toFixed(0)}%)</div>}
               {m.uniqueDropId && <div className="text-yellow-400">🏆 Único: {UNIQUE_TEMPLATES[m.uniqueDropId]?.name} ({((m.uniqueDropChance || 0) * 100).toFixed(1)}%)</div>}
               {m.backpackDrop && <div className="text-emerald-300">🎒 Mochila: {BACKPACKS[m.backpackDrop]?.name} ({((m.backpackChance || 0) * 100).toFixed(1)}%)</div>}
-              {m.isBoss && <div className="text-arcane-gold">🐾 Divine Beast: 12% enquanto houver ecos não descobertos para este chefe</div>}
+              {m.isBoss && <div className="text-arcane-gold">🐾 Besta Divina: 12% enquanto houver ecos não descobertos para este chefe</div>}
             </div>
           </div>
         ))}
@@ -1121,7 +1121,7 @@ function BalanceSection() {
   return <div className="space-y-5">
     <div className="rounded-xl border border-amber-300/30 bg-[radial-gradient(ellipse_at_top_right,rgba(245,158,11,.12),transparent_55%),#10151a] p-5">
       <h2 className="text-xl font-black text-amber-200">📊 Como o poder é calculado</h2>
-      <p className="mt-2 text-sm leading-relaxed text-gray-300">Esta página reúne os multiplicadores que o jogo usa para gerar drops, afixos e Gear Score. O tier do equipamento aumenta os valores base; a raridade define o multiplicador e a quantidade de afixos. O valor final exibido no personagem soma atributos equipados, matriz, treino, resistência, Divine Beast e bônus de evolução.</p>
+      <p className="mt-2 text-sm leading-relaxed text-gray-300">Esta página reúne os multiplicadores que o jogo usa para gerar drops, afixos e Gear Score. O tier do equipamento aumenta os valores base; a raridade define o multiplicador e a quantidade de afixos. O valor final exibido no personagem soma atributos equipados, matriz, treino, resistência, Besta Divina e bônus de evolução.</p>
       <div className="mt-4 grid gap-2 sm:grid-cols-3">
         <div className="rounded-lg border border-white/10 bg-black/20 p-3"><strong className="text-white">Power</strong><p className="mt-1 text-xs text-gray-400">Ataque, magia, defesa, armadura e vida convertidos em valor de combate.</p></div>
         <div className="rounded-lg border border-white/10 bg-black/20 p-3"><strong className="text-white">Gear Score</strong><p className="mt-1 text-xs text-gray-400">Soma ponderada do equipamento, upgrades e afixos ativos.</p></div>

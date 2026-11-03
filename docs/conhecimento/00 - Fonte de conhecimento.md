@@ -21,6 +21,7 @@ As notas abaixo são as fontes preservadas para decisões, explicações e proce
 | Artes que ainda faltam produzir | [[docs/ARTE_ITENS_PENDENTES|Lista de artes e prompts]] |
 | Como operar e recuperar a memória do projeto | [[docs/conhecimento/Operacao do Cerebro e Obsidian|Operação do Cérebro e Obsidian]] |
 | Problemas conhecidos e correções | [[docs/conhecimento/Registro de problemas|Registro de problemas]] |
+| Pets, atividades e Boss Diário | [[docs/conhecimento/Pets-Atividades-Boss-Diario|Pets, atividades e Boss Diário]] |
 | Contexto, arquitetura e decisões anteriores | [[CEREBRO_MYTHREON|Cérebro e registro de continuidade]] |
 
 ## Evidências de balanceamento

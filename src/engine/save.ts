@@ -57,6 +57,8 @@ export function createNewCharacter(name: string, appearance?: CharacterAppearanc
     activeVials: {},
     cards: [],
     divineBeasts: [],
+    divineBeastNeeds: {},
+    divineBeastAttackTimerMs: 0,
     depot: [],
     depotMax: 300,
   };
@@ -134,6 +136,8 @@ export function loadGame(): SaveFile | null {
       // Migração para cartas
       if (!data.character.cards) data.character.cards = [];
       if (!Array.isArray(data.character.divineBeasts)) data.character.divineBeasts = [];
+      if (!data.character.divineBeastNeeds || typeof data.character.divineBeastNeeds !== "object") data.character.divineBeastNeeds = {};
+      if (!Number.isFinite(data.character.divineBeastAttackTimerMs)) data.character.divineBeastAttackTimerMs = 0;
       
       // Migração para o Depot
       if (!data.character.depot) data.character.depot = [];

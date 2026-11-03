@@ -26,6 +26,7 @@
 - [[Mythreon Obsidian/Sistema - Missões|Missões]]
 - [[Mythreon Obsidian/Sistema - Contas e saves|Contas e saves]]
 - [[Mythreon Obsidian/Sistema - Estado|Estado]]
+- [[Mythreon Obsidian/Sistema - Tipos|Tipos]]
 - [[Mythreon Obsidian/Sistema - Artes e recursos|Artes e recursos]]
 - [[Mythreon Obsidian/Sistema - Mundo e História|Mundo e História]]
 

@@ -10,7 +10,7 @@ import { ATTACK_SKILLS, ATTACK_SKILL_COOLDOWN, SUPPORT_EFFECTS, PASSIVE_EFFECTS 
 import { rollCardDrop, CARD_TEMPLATES } from "../data/cards";
 import { getBeastCombat } from "../data/beastCombat";
 import { DIVINE_BEASTS } from "../data/divineBeasts";
-import { POTION_TEMPLATES } from "../data/items";
+import { POTION_TEMPLATES, DIVINE_BEAST_EGG_TEMPLATES, BEAST_TAMER_TEMPLATES } from "../data/items";
 import { VIALS } from "../data/vials";
 import { getPotionUsePrice } from "../data/potionEconomy";
 import { DEFAULT_BACKPACK } from "../data/backpacks";
@@ -100,7 +100,9 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
     : zone.enemies.find(e => char.level >= (e.minLevel ?? 1)) || zone.enemies[0];
   if (!baseEnemy) return result;
 
-  const fightId = `${zone.id}:${baseEnemy.id}`;
+  const sameTarget = char.fightEnemyId === `${zone.id}:${baseEnemy.id}` || char.fightEnemyId === `${zone.id}:${baseEnemy.id}:ELITE`;
+  const isEliteEncounter = char.fightEnemyId === `${zone.id}:${baseEnemy.id}:ELITE` || (!sameTarget && !baseEnemy.isBoss && Math.random() < 0.03);
+  const fightId = `${zone.id}:${baseEnemy.id}${isEliteEncounter ? ":ELITE" : ""}`;
   if (char.fightEnemyId !== fightId) {
     char.fightEnemyId = fightId;
     char.fightDamageDealt = 0;
@@ -119,7 +121,7 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
     if (encounterDamageDealt <= 0 && encounterDamageTaken <= 0) return;
     result.encounters!.push({
       id: `${Date.now()}-${result.encounters!.length}-${baseEnemy.id}`,
-      timestamp: Date.now(), zoneId: zone.id, enemyId: baseEnemy.id, enemyName: baseEnemy.name,
+      timestamp: Date.now(), zoneId: zone.id, enemyId: isEliteEncounter ? `${baseEnemy.id}_ELITE` : baseEnemy.id, enemyName: isEliteEncounter ? `${baseEnemy.name} Elite` : baseEnemy.name,
       damageDealt: encounterDamageDealt, damageTaken: encounterDamageTaken, xp: 0, gold: 0, soldGold: 0,
       goldSpentPotions: encounterPotionGoldSpent, lootValue: 0, loot: [], outcome: "death",
       damageBreakdown: structuredClone(encounterDamageBreakdown), damageTakenBreakdown: structuredClone(encounterDamageTakenBreakdown),
@@ -138,10 +140,12 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
   // A dificuldade continua aumentando a pressão de combate, mas não multiplica linearmente XP e ouro.
   // Isso reduz o avanço acelerado causado por criaturas com muitas estrelas sem tirar a recompensa do desafio.
   const rewardScale = 1 + (diff - 1) * 0.20;
-  const enemy = { ...baseEnemy, hp: baseEnemy.hp * diff, atk: baseEnemy.atk * diff, arm: baseEnemy.arm * diff, xp: Math.round(baseEnemy.xp * rewardScale), goldMin: Math.round(baseEnemy.goldMin * rewardScale), goldMax: Math.round(baseEnemy.goldMax * rewardScale) };
+  const eliteMultiplier = isEliteEncounter ? 1.35 : 1;
+  const enemy = { ...baseEnemy, id: isEliteEncounter ? `${baseEnemy.id}_ELITE` : baseEnemy.id, name: isEliteEncounter ? `${baseEnemy.name} Elite` : baseEnemy.name, isElite: isEliteEncounter, hp: baseEnemy.hp * diff * eliteMultiplier, atk: baseEnemy.atk * diff * eliteMultiplier, arm: baseEnemy.arm * diff * eliteMultiplier, xp: Math.round(baseEnemy.xp * rewardScale * (isEliteEncounter ? 1.8 : 1)), goldMin: Math.round(baseEnemy.goldMin * rewardScale * (isEliteEncounter ? 1.8 : 1)), goldMax: Math.round(baseEnemy.goldMax * rewardScale * (isEliteEncounter ? 1.8 : 1)) };
+  if (isEliteEncounter && char.enemyHpId !== enemy.id) result.log.push(`✨ Encontro especial: ${enemy.name}! Recompensas e drops aprimorados.`);
 
-  if (char.enemyHpId !== baseEnemy.id || char.enemyHp === undefined || char.enemyHp <= 0) {
-    char.enemyHp = enemy.hp; char.enemyHpId = baseEnemy.id;
+  if (char.enemyHpId !== enemy.id || char.enemyHp === undefined || char.enemyHp <= 0) {
+    char.enemyHp = enemy.hp; char.enemyHpId = enemy.id;
   }
   let enemyHp = Math.min(char.enemyHp, enemy.hp);
   let playerHp = char.hp;
@@ -380,6 +384,16 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
       // ─── FIM DO DROP DE CARTA ───
       
       const drops = rollDrops(enemy, zone, char, { dropBonus: prof.dropPct, rareBonus: prof.rarePct + (char.baseStats.luck ?? 0), force: debug });
+      // Ovos entram como recompensa rara dos guardiões. Encontros especiais
+      // poderão usar a mesma tabela quando forem adicionados ao bestiário.
+      if ((debug || enemy.isBoss || enemy.isElite) && (debug || Math.random() < (enemy.isElite ? 0.12 : 0.08))) {
+        const egg = DIVINE_BEAST_EGG_TEMPLATES[`OVO_BESTA_T${Math.max(1, Math.min(5, zone.tier))}`];
+        if (egg) drops.push({ ...egg, uid: `${Date.now()}-egg-${enemy.id}`, quantity: 1 });
+      }
+      if ((debug || ((enemy.isBoss || enemy.isElite) && enemy.difficulty >= 4)) && (debug || Math.random() < (enemy.isElite ? 0.10 : 0.05))) {
+        const ration = BEAST_TAMER_TEMPLATES.RACAO_DOMADOR;
+        drops.push({ ...ration, uid: `${Date.now()}-ration-${enemy.id}`, quantity: 1 });
+      }
       if (debug || char.killsInZone % 10 === 0 || enemy.isBoss) drops.push(rollAmbient(zone));
       
       const autoSell = char.autoSell ?? null;
@@ -390,7 +404,7 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
 
       for (const d of drops) {
         loot.push({ name: d.name, icon: d.icon, quantity: d.quantity, sellValue: sellValue(d), kind: "item" });
-        if (ignoredLoot.has(d.templateId) && (char.bestiaryKills?.[enemy.id] ?? 0) >= 100) {
+      if (ignoredLoot.has(d.templateId) && (char.bestiaryKills?.[enemy.id] ?? 0) >= 1000) {
           result.log.push(`🧺 Autoloot ignorou ${d.name}.`);
           continue;
         }
@@ -435,6 +449,8 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
       result.log.push(`Você derrotou o ${enemy.name} (${diff}⭐)! (+${g} ouro, +${xpGained} XP)`);
       if (bondedBeastName) result.log.push(`🐾 Ressonância Divina! ${bondedBeastName} criou um vínculo com você.`);
       enemyHp = enemy.hp;
+      // O próximo encontro rola novamente a chance de variante Elite.
+      char.fightEnemyId = undefined;
     } else {
       const e = support;
       const dodgedBySkill = !!e?.dodgeEvery && t % e.dodgeEvery === 0;
@@ -491,7 +507,7 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
   char.staminaUpdatedAt = Date.now();
   char.hp = Math.max(0, Math.min(char.hpMax, playerHp));
   char.mp = Math.max(0, Math.min(char.mpMax, playerMp));
-  char.enemyHp = enemyHp; char.enemyHpId = baseEnemy.id;
+  char.enemyHp = enemyHp; char.enemyHpId = enemy.id;
   char.lastTick = Date.now();
   result.log = result.log.slice(-10);
   result.combatDurationMs = simulatedTicks * TICK_MS;

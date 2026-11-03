@@ -15,7 +15,9 @@
 - [[docs/conhecimento/Jornada-Lore-Biomas|Jornada, lore e biomas]]
 - [[docs/conhecimento/Laboratorio-de-Builds-e-Windows|Laboratório de Builds e Windows]]
 - [[docs/conhecimento/Operacao do Cerebro e Obsidian|Operação do Cérebro e Obsidian]]
+- [[docs/conhecimento/Pets-Atividades-Boss-Diario|Pets, atividades e Boss Diário]]
 - [[docs/conhecimento/Registro de problemas|Registro de problemas]]
+- [[docs/conhecimento/Sem título|Sem título]]
 - [[docs/conhecimento/Shop-Premium-Beasts|Shop, premium e Divine Beasts]]
 - [[docs/conhecimento/Treino-e-Diferenciais-Mythreon|Disciplina e um mundo que se lembra]]
 
@@ -32,9 +34,12 @@
 - [docs/conhecimento/Jornada-Lore-Biomas.md](../docs/conhecimento/Jornada-Lore-Biomas.md)
 - [docs/conhecimento/Laboratorio-de-Builds-e-Windows.md](../docs/conhecimento/Laboratorio-de-Builds-e-Windows.md)
 - [docs/conhecimento/Operacao do Cerebro e Obsidian.md](../docs/conhecimento/Operacao do Cerebro e Obsidian.md)
+- [docs/conhecimento/Pets-Atividades-Boss-Diario.md](../docs/conhecimento/Pets-Atividades-Boss-Diario.md)
 - [docs/conhecimento/Registro de problemas.md](../docs/conhecimento/Registro de problemas.md)
 - [docs/conhecimento/Sem título 1.base](../docs/conhecimento/Sem título 1.base)
+- [docs/conhecimento/Sem título 2.base](../docs/conhecimento/Sem título 2.base)
 - [docs/conhecimento/Sem título.base](../docs/conhecimento/Sem título.base)
+- [docs/conhecimento/Sem título.md](../docs/conhecimento/Sem título.md)
 - [docs/conhecimento/Shop-Premium-Beasts.md](../docs/conhecimento/Shop-Premium-Beasts.md)
 - [docs/conhecimento/Treino-e-Diferenciais-Mythreon.md](../docs/conhecimento/Treino-e-Diferenciais-Mythreon.md)
 - [docs/conhecimento/balanceamento-antes.json](../docs/conhecimento/balanceamento-antes.json)

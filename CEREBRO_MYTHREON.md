@@ -417,3 +417,11 @@ As trocas continuam usando escrow: itens e gold são retirados da origem antes d
 Foi criada a migration `supabase/migrations/003_trade_audit.sql`. A tabela `world_trade_transactions` registra cada lado concluído com `trade_id`, vendedor, comprador, owners, gold recebido, taxa, snapshot dos itens, itens da contraparte, quantidade e horário. A view `world_trade_item_stats` calcula eventos de venda, unidades vendidas, preço médio, mínimo, máximo e última venda por `templateId`. A tabela é privada por RLS; apenas participantes autenticados consultam seu histórico, e a API do servidor é a única escritora.
 
 `server/world.ts` grava duas linhas de auditoria por troca concluída e devolve `tradeHistory` e `tradeStats` no `social.read`. O banco publica mudanças de `world_trade_transactions` em Realtime após a migration 003. Executar as migrations em ordem antes de testar produção; sem a 003, o runtime antigo não deve receber trocas novas.
+
+## Pets, atividades e Boss Diário — 2026-11-03
+
+Implementada a primeira camada de vocação das Bestas Divinas: ovos T1–T5, eclosão, fusão de quatro cópias com Ração do Domador, encontros Elite e estado persistente de nutrição/humor. O ataque da Besta usa cadência-alvo de 5 segundos; fome e humor baixo reduzem o dano sem substituir Matriz ou Treino. Saves antigos recebem `divineBeastNeeds` e `divineBeastAttackTimerMs` por migração.
+
+Arquivos desta rodada: `src/types/index.ts`, `src/engine/save.ts`, `src/store/gameStore.ts`, `src/data/items.ts`, `src/data/beastCombat.ts`, `src/engine/combat.ts`, `src/ui/DivineBeasts.tsx`, `server/game.ts`, `server/generated/online-runtime.cjs` e `docs/conhecimento/Pets-Atividades-Boss-Diario.md`.
+
+Baú por tempo online, recompensa diária, cards, mineração, pesca e Boss cooperativo estão especificados como próximas camadas. O Boss Diário não deve ser anunciado como pronto enquanto não houver autoridade de servidor, transações idempotentes, RLS, rate limit e testes de concorrência; o cliente não pode decidir HP, dano ou loot.

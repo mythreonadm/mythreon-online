@@ -123,4 +123,24 @@ export const FRAGMENT_TEMPLATES: Record<string, Item> = {
   FRAGMENTO_EPICO: createItem({ templateId: "FRAGMENTO_EPICO", name: "Fragmento Épico", category: "FRAGMENTO", tier: 1, rarity: "EPICO", icon: "🔮", stackable: true, maxStack: 999, quantity: 1, stats: {} }),
 };
 
-export const ALL_ITEM_TEMPLATES: Record<string, Item> = { ...ALL_EQUIPMENT_TEMPLATES, ...SWAMP_MATERIAL_TEMPLATES, ...ARROW_TEMPLATES, ...POTION_TEMPLATES, ...UNIQUE_TEMPLATES, ...FRAGMENT_TEMPLATES };
+// Ovos de Besta Divina: a raridade do ovo controla a distribuição da raridade
+// recebida. Eles são materiais consumíveis, não ocupam slots de equipamento.
+export const DIVINE_BEAST_EGG_TEMPLATES: Record<string, Item> = {
+  OVO_BESTA_T1: createItem({ templateId: "OVO_BESTA_T1", name: "Ovo de Besta Divina Comum", category: "MATERIAL", tier: 1, rarity: "COMUM", icon: "🥚", stackable: true, maxStack: 999 }),
+  OVO_BESTA_T2: createItem({ templateId: "OVO_BESTA_T2", name: "Ovo de Besta Divina Incomum", category: "MATERIAL", tier: 2, rarity: "INCOMUM", icon: "🥚", stackable: true, maxStack: 999 }),
+  OVO_BESTA_T3: createItem({ templateId: "OVO_BESTA_T3", name: "Ovo de Besta Divina Raro", category: "MATERIAL", tier: 3, rarity: "RARO", icon: "🥚", stackable: true, maxStack: 999 }),
+  OVO_BESTA_T4: createItem({ templateId: "OVO_BESTA_T4", name: "Ovo de Besta Divina Épico", category: "MATERIAL", tier: 4, rarity: "EPICO", icon: "🥚", stackable: true, maxStack: 999 }),
+  OVO_BESTA_T5: createItem({ templateId: "OVO_BESTA_T5", name: "Ovo de Besta Divina Lendário", category: "MATERIAL", tier: 5, rarity: "LENDARIO", icon: "🥚", stackable: true, maxStack: 999 }),
+};
+
+export const BEAST_TAMER_TEMPLATES: Record<string, Item> = {
+  RACAO_DOMADOR: createItem({ templateId: "RACAO_DOMADOR", name: "Ração Especial do Domador", category: "MATERIAL", tier: 2, rarity: "RARO", icon: "🍖", stackable: true, maxStack: 999 }),
+};
+
+export const PET_FOOD_TEMPLATES: Record<string, Item> = {
+  CENOURA_PET: createItem({ templateId: "CENOURA_PET", name: "Cenoura Crocante", category: "MATERIAL", tier: 1, rarity: "COMUM", icon: "🥕", stackable: true, maxStack: 999 }),
+  FRUTA_MEL: createItem({ templateId: "FRUTA_MEL", name: "Fruta de Mel", category: "MATERIAL", tier: 1, rarity: "INCOMUM", icon: "🍯", stackable: true, maxStack: 999 }),
+  MELANCIA_LUNAR: createItem({ templateId: "MELANCIA_LUNAR", name: "Melancia Lunar", category: "MATERIAL", tier: 2, rarity: "RARO", icon: "🍉", stackable: true, maxStack: 999 }),
+};
+
+export const ALL_ITEM_TEMPLATES: Record<string, Item> = { ...ALL_EQUIPMENT_TEMPLATES, ...SWAMP_MATERIAL_TEMPLATES, ...ARROW_TEMPLATES, ...POTION_TEMPLATES, ...UNIQUE_TEMPLATES, ...FRAGMENT_TEMPLATES, ...DIVINE_BEAST_EGG_TEMPLATES, ...BEAST_TAMER_TEMPLATES, ...PET_FOOD_TEMPLATES };

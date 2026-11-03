@@ -14,7 +14,7 @@ export function getBeastCombat(char: Character) {
  if (!id || char.activeRace || !(char.divineBeasts ?? []).some(b => b.id === id)) return null;
  const beast = DIVINE_BEASTS[id];
  const [name, element] = ATTACKS[id];
- return { beast, name, element, cooldown: 3, mana: 8 + Math.floor(char.level * 0.5), multiplier: 2.4 };
+ return { beast, name, element, cooldown: 2, cooldownSeconds: 5, mana: 8 + Math.floor(char.level * 0.5), multiplier: 2.4 };
 }
 export function beastGrowth(level: number): ItemStats {
  return { hp: 60 + level * 6, mp: 30 + level * 3, atk: 6 + level, matk: 6 + level, arm: 3 + Math.floor(level * 0.6), hpRegen: 1 + Math.floor(level / 15), mpRegen: 2 + Math.floor(level / 15) };

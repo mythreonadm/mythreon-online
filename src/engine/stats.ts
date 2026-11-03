@@ -35,9 +35,11 @@ export function recalcStats(char: Character): void {
   const elementalResistances: Character["elementalResistances"] = {};
 
   // 1. Soma os stats de Equipamentos e Afixos
+  const isUsingBow = char.equipped.ARMA_PRINCIPAL?.templateId.includes("ARCO") ?? false;
   for (const slot of Object.keys(char.equipped)) {
     const item = char.equipped[slot as keyof typeof char.equipped];
     if (!item?.stats) continue;
+    if (item.category === "FLECHA" && !isUsingBow) continue;
     for (const [k, v] of Object.entries(item.stats)) fromGear[k] = (fromGear[k] || 0) + numeric(v);
     for (const affix of item.affixes ?? []) fromGear[affix.stat] = (fromGear[affix.stat] || 0) + numeric(affix.value);
     for (const [element, value] of Object.entries(item.elementalResistances ?? {})) elementalResistances[element as keyof typeof elementalResistances] = (elementalResistances[element as keyof typeof elementalResistances] ?? 0) + numeric(value);
@@ -75,8 +77,6 @@ export function recalcStats(char: Character): void {
 
   // 5. Skills de Treino
   const skills = char.skills || { melee: 0, defense: 0, magic: 0, distance: 0, soul: 0 };
-  const isUsingBow = char.equipped.ARMA_PRINCIPAL?.templateId.includes("ARCO");
-
   const skillAtkBonus = (isUsingBow ? 0 : skills.melee * 1.5);
   const skillDistBonus = isUsingBow ? skills.distance * 1.5 : 0;
   const skillMatkBonus = skills.magic * 1.5;

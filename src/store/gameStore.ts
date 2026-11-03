@@ -3,7 +3,7 @@ import { getAvailableQuests } from '../utils/questSignals';
 import { checkQuestCompletion } from '../engine/questEngine';
 import { applyTraining } from "../engine/training";
 import { create } from "zustand";
-import { Character, Race, TickResult, CharacterSkills, OfflineReportData, BuffVialTemplate, DeathReportData, HuntZoneStats, DivineBeastId, QuestObjectiveType, CharacterAppearance } from "../types";
+import { Character, Race, TickResult, CharacterSkills, OfflineReportData, BuffVialTemplate, DeathReportData, HuntZoneStats, DivineBeastId, QuestObjectiveType, CharacterAppearance, Rarity, DivineBeastNeeds } from "../types";
 import { ZONES } from "../data/zones";
 import { createNewCharacter, loadGame, saveGame } from "../engine/save";
 import { processTick } from "../engine/combat";
@@ -16,7 +16,7 @@ import { salvageAllEquipment, salvageSelectedEquipment } from "../engine/salvage
 import { updateQuestProgress, claimQuestReward, trackRaceDiscovery, trackQuestAction } from "../engine/questEngine";
 import { upgradeItemLevel, rerollItemAffixes, forgeFragments } from "../engine/forge";
 import { depositItem as engineDeposit, withdrawItem as engineWithdraw, depositMany as engineDepositMany, withdrawMany as engineWithdrawMany } from "../engine/depot";
-import { FRAGMENT_TEMPLATES } from "../data/items";
+import { FRAGMENT_TEMPLATES, DIVINE_BEAST_EGG_TEMPLATES } from "../data/items";
 import { DIVINE_BEASTS } from "../data/divineBeasts";
 import { QUESTS } from "../data/quests";
 import { getMythreonOffer, MYTHREON_ECONOMY } from "../data/mythreonEconomy";
@@ -57,6 +57,9 @@ export interface GameState {
   equipRace: (race: Race) => void;
   unequipRace: () => void;
   equipDivineBeast: (id: DivineBeastId) => { success: boolean; error?: string };
+  hatchEgg: (uid: string) => { success: boolean; beastId?: DivineBeastId; rarity?: Rarity; error?: string };
+  combineBeast: (id: DivineBeastId) => { success: boolean; rarity?: Rarity; error?: string };
+  feedDivineBeast: (id: DivineBeastId, foodUid: string) => { success: boolean; error?: string };
   unequipDivineBeast: () => void;
   sellItem: (uid: string, qty?: number) => void;
   sellSelected: (uids: string[]) => void;
@@ -104,6 +107,16 @@ function recordHuntMetrics(character: Character, zoneId: string, result: TickRes
     history: [...previous.history, ...encounters].slice(-100),
   };
   character.huntStatsByZone = { ...(character.huntStatsByZone ?? {}), [zoneId]: updated };
+}
+
+const EGG_RARITY_TABLES: Record<number, [number, number, number, number, number]> = {
+  1: [95, 4, 1, 0, 0], 2: [75, 18, 6, 1, 0], 3: [50, 30, 15, 4, 1], 4: [25, 35, 25, 12, 3], 5: [8, 25, 35, 24, 8],
+};
+const RARITY_ORDER: Rarity[] = ["COMUM", "INCOMUM", "RARO", "EPICO", "LENDARIO"];
+function rollEggRarity(tier: number): Rarity {
+  const roll = Math.random() * 100; let cursor = 0;
+  for (const [index, chance] of (EGG_RARITY_TABLES[Math.max(1, Math.min(5, tier))] ?? EGG_RARITY_TABLES[1]).entries()) { cursor += chance; if (roll < cursor) return RARITY_ORDER[index]; }
+  return "COMUM";
 }
 
 export function createGameStore(runtime: {server?: boolean; persist?: (character: Character,races: Race[])=>void; notify?: (message:string)=>void} = {}) {
@@ -402,7 +415,7 @@ return create<GameState>((set, get) => ({
     const { character } = get();
     if (!character) return { success: false, error: "Sem personagem" };
     if (!DIVINE_BEASTS[id] || !(character.divineBeasts ?? []).some(beast => beast.id === id)) {
-      return { success: false, error: "Essa Divine Beast ainda não foi vinculada." };
+      return { success: false, error: "Essa Besta Divina ainda não foi vinculada." };
     }
     const newCharacter = JSON.parse(JSON.stringify(character));
     newCharacter.activeDivineBeastId = id;
@@ -411,6 +424,70 @@ return create<GameState>((set, get) => ({
     recalcStats(newCharacter);
     set({ character: newCharacter });
     get().save();
+    return { success: true };
+  },
+
+  hatchEgg: (uid) => {
+    const { character } = get();
+    if (!character) return { success: false, error: "Sem personagem" };
+    const egg = character.inventory.items.find(item => item.uid === uid);
+    if (!egg || !DIVINE_BEAST_EGG_TEMPLATES[egg.templateId]) return { success: false, error: "Escolha um Ovo de Besta Divina." };
+    const rarity = rollEggRarity(egg.tier);
+    const ids = Object.keys(DIVINE_BEASTS) as DivineBeastId[];
+    const beastId = ids[Math.floor(Math.random() * ids.length)];
+    const next = structuredClone(character);
+    removeItem(next.inventory, uid, 1);
+    next.divineBeasts = [...(next.divineBeasts ?? []), { id: beastId, rarity, obtainedAt: Date.now() }];
+    set({ character: next }); get().save();
+    notify(`O ovo eclodiu: ${DIVINE_BEASTS[beastId].name} · ${rarity}!`);
+    return { success: true, beastId, rarity };
+  },
+
+  combineBeast: (id) => {
+    const { character } = get();
+    if (!character) return { success: false, error: "Sem personagem" };
+    const copies = (character.divineBeasts ?? []).filter(beast => beast.id === id);
+    const ration = character.inventory.items.find(item => item.templateId === "RACAO_DOMADOR");
+    if (copies.length < 4) return { success: false, error: "São necessárias 4 Bestas iguais." };
+    if (!ration) return { success: false, error: "É necessária uma Ração Especial do Domador." };
+    const rank: Rarity[] = ["COMUM", "INCOMUM", "RARO", "EPICO", "LENDARIO"];
+    const current = Math.max(...copies.slice(0, 4).map(beast => rank.indexOf(beast.rarity ?? "RARO")));
+    if (current >= rank.length - 1) return { success: false, error: "Esta linhagem já está no ápice lendário." };
+    const next = structuredClone(character);
+    let removed = 0;
+    next.divineBeasts = (next.divineBeasts ?? []).filter(beast => beast.id !== id || removed++ >= 4);
+    removeItem(next.inventory, ration.uid, 1);
+    const rarity = rank[current + 1];
+    next.divineBeasts.push({ id, rarity, obtainedAt: Date.now() });
+    set({ character: next }); get().save();
+    notify(`A linhagem foi aprimorada para ${rarity}!`);
+    return { success: true, rarity };
+  },
+
+  feedDivineBeast: (id, foodUid) => {
+    const { character } = get();
+    if (!character) return { success: false, error: "Nenhum personagem ativo." };
+    if (character.activeDivineBeastId !== id) return { success: false, error: "Ative esta Besta antes de alimentá-la." };
+    const item = character.inventory.items.find(entry => entry.uid === foodUid);
+    if (!item) return { success: false, error: "Alimento não encontrado na mochila." };
+    const food = ({
+      CENOURA_PET: { minutes: 5, mood: 2 },
+      FRUTA_MEL: { minutes: 10, mood: 5 },
+      MELANCIA_LUNAR: { minutes: 15, mood: 8 },
+      RACAO_DOMADOR: { minutes: 30, mood: 12 },
+    } as Record<string, { minutes: number; mood: number }>)[item.templateId];
+    if (!food) return { success: false, error: "Este item não é alimento para Bestas Divinas." };
+    const now = Date.now();
+    const previous = character.divineBeastNeeds?.[id] ?? { nutrition: 0, mood: 70, updatedAt: now };
+    const elapsedMinutes = Math.max(0, (now - previous.updatedAt) / 60000);
+    const needs: DivineBeastNeeds = {
+      nutrition: Math.max(0, Math.min(100, previous.nutrition - elapsedMinutes * 0.5 + food.minutes * 2)),
+      mood: Math.max(0, Math.min(100, previous.mood - elapsedMinutes * 0.15 + food.mood)),
+      updatedAt: now,
+    };
+    if ((item.quantity ?? 1) > 1) item.quantity -= 1; else character.inventory.items = character.inventory.items.filter(entry => entry.uid !== foodUid);
+    character.divineBeastNeeds = { ...(character.divineBeastNeeds ?? {}), [id]: needs };
+    set({ character: { ...character } }); get().save();
     return { success: true };
   },
 
@@ -573,7 +650,7 @@ return create<GameState>((set, get) => ({
 
   buyBless: () => {
     const { character } = get(); if (!character) return;
-    const price = character.level * 5000;
+      const price = Math.max(100, character.level * 250);
     if (character.gold < price) return warn("Ouro insuficiente para comprar Bless.");
     const newChar = JSON.parse(JSON.stringify(character));
     newChar.gold -= price;

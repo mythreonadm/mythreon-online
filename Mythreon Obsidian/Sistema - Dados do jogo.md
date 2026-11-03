@@ -8,9 +8,10 @@
 
 ## Código e recursos
 
-- [src/data/affixes.ts](../src/data/affixes.ts) — AffixPoolDef, WEAPON_AFFIXES, ARMOR_AFFIXES, SHIELD_AFFIXES, JEWELRY_AFFIXES, getPoolForCategory, STAT_NAMES
+- [src/data/affixes.ts](../src/data/affixes.ts) — AffixPoolDef, PERCENT_AFFIX_RANGES, WEAPON_AFFIXES, ARMOR_AFFIXES, SHIELD_AFFIXES, JEWELRY_AFFIXES, getPoolForCategory, STAT_NAMES
 - [src/data/balance.ts](../src/data/balance.ts) — BALANCE, clamp, mitigatedDamage
 - [src/data/cards.ts](../src/data/cards.ts) — TRAITS, CARD_TEMPLATES, getCardStats, createCardInstance, rollCardDrop
+- [src/data/mythreonEconomy.ts](../src/data/mythreonEconomy.ts) — MYTHREON_ECONOMY, MythreonOffer, MYTHREON_OFFERS, getMythreonOffer, shardChance
 - [src/data/potionEconomy.ts](../src/data/potionEconomy.ts) — getPotionUsePrice
 - [src/data/vials.ts](../src/data/vials.ts) — VIALS
 - [src/data/worldJourney.ts](../src/data/worldJourney.ts) — JourneyChapter, JOURNEY_CHAPTERS

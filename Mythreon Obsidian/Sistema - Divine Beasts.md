@@ -4,10 +4,12 @@
 
 ## Conhecimento relacionado
 
+- [[docs/conhecimento/Pets-Atividades-Boss-Diario|Pets, atividades e Boss Diário]]
 - [[docs/conhecimento/Shop-Premium-Beasts|Shop, premium e Divine Beasts]]
 
 ## Código e recursos
 
+- [docs/conhecimento/Pets-Atividades-Boss-Diario.md](../docs/conhecimento/Pets-Atividades-Boss-Diario.md)
 - [docs/conhecimento/Shop-Premium-Beasts.md](../docs/conhecimento/Shop-Premium-Beasts.md)
 - [public/assets/pets/divine-beast-aster.png](../public/assets/pets/divine-beast-aster.png)
 - [public/assets/pets/divine-beast-asterion.png](../public/assets/pets/divine-beast-asterion.png)
