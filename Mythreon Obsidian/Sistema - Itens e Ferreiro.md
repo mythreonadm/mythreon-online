@@ -59,6 +59,11 @@
 - [public/assets/items/ESPADA_T3.png](../public/assets/items/ESPADA_T3.png)
 - [public/assets/items/ESPADA_T4.png](../public/assets/items/ESPADA_T4.png)
 - [public/assets/items/ESPADA_T5.png](../public/assets/items/ESPADA_T5.png)
+- [public/assets/items/FLECHA_T1.png](../public/assets/items/FLECHA_T1.png)
+- [public/assets/items/FLECHA_T2.png](../public/assets/items/FLECHA_T2.png)
+- [public/assets/items/FLECHA_T3.png](../public/assets/items/FLECHA_T3.png)
+- [public/assets/items/FLECHA_T4.png](../public/assets/items/FLECHA_T4.png)
+- [public/assets/items/FLECHA_T5.png](../public/assets/items/FLECHA_T5.png)
 - [public/assets/items/FRAGMENTO_COMUM.png](../public/assets/items/FRAGMENTO_COMUM.png)
 - [public/assets/items/FRAGMENTO_EPICO.png](../public/assets/items/FRAGMENTO_EPICO.png)
 - [public/assets/items/FRAGMENTO_RARO.png](../public/assets/items/FRAGMENTO_RARO.png)
@@ -87,13 +92,25 @@
 - [public/assets/items/POCAO_VIDA_3.png](../public/assets/items/POCAO_VIDA_3.png)
 - [public/assets/items/POCAO_VIDA_4.png](../public/assets/items/POCAO_VIDA_4.png)
 - [public/assets/items/POCAO_VIDA_5.png](../public/assets/items/POCAO_VIDA_5.png)
+- [public/assets/items/PULSEIRA_T1.png](../public/assets/items/PULSEIRA_T1.png)
+- [public/assets/items/PULSEIRA_T2.png](../public/assets/items/PULSEIRA_T2.png)
+- [public/assets/items/PULSEIRA_T3.png](../public/assets/items/PULSEIRA_T3.png)
+- [public/assets/items/PULSEIRA_T4.png](../public/assets/items/PULSEIRA_T4.png)
+- [public/assets/items/PULSEIRA_T5.png](../public/assets/items/PULSEIRA_T5.png)
+- [public/assets/items/UNICO_ANEL_GUARDIA.png](../public/assets/items/UNICO_ANEL_GUARDIA.png)
+- [public/assets/items/UNICO_BRASA_ETERNA.png](../public/assets/items/UNICO_BRASA_ETERNA.png)
+- [public/assets/items/UNICO_CORACAO_GRANITO.png](../public/assets/items/UNICO_CORACAO_GRANITO.png)
+- [public/assets/items/UNICO_ESCAMA_LEVIATA.png](../public/assets/items/UNICO_ESCAMA_LEVIATA.png)
+- [public/assets/items/UNICO_OLHO_ASTERION.png](../public/assets/items/UNICO_OLHO_ASTERION.png)
+- [public/assets/items/UNICO_PRESA_DEVORADOR.png](../public/assets/items/UNICO_PRESA_DEVORADOR.png)
+- [public/assets/items/UNICO_SIGILO_INICIACAO.png](../public/assets/items/UNICO_SIGILO_INICIACAO.png)
 - [public/assets/items/VARINHA_T1.png](../public/assets/items/VARINHA_T1.png)
 - [public/assets/items/VARINHA_T2.png](../public/assets/items/VARINHA_T2.png)
 - [public/assets/items/VARINHA_T3.png](../public/assets/items/VARINHA_T3.png)
 - [public/assets/items/VARINHA_T4.png](../public/assets/items/VARINHA_T4.png)
 - [public/assets/items/VARINHA_T5.png](../public/assets/items/VARINHA_T5.png)
 - [src/data/backpacks.ts](../src/data/backpacks.ts) — BACKPACKS, DEFAULT_BACKPACK
-- [src/data/items.ts](../src/data/items.ts) — createItem, ALL_EQUIPMENT_TEMPLATES, ARROW_TEMPLATES, POTION_TEMPLATES, UNIQUE_TEMPLATES, FRAGMENT_TEMPLATES, ALL_ITEM_TEMPLATES
+- [src/data/items.ts](../src/data/items.ts) — createItem, SWAMP_EQUIPMENT_TEMPLATES, ALL_EQUIPMENT_TEMPLATES, SWAMP_MATERIAL_TEMPLATES, ARROW_TEMPLATES, POTION_TEMPLATES, UNIQUE_TEMPLATES, FRAGMENT_TEMPLATES, ALL_ITEM_TEMPLATES
 - [src/engine/depot.ts](../src/engine/depot.ts) — getDepotUsedSlots, depositItem, withdrawItem, depositMany, withdrawMany
 - [src/engine/forge.ts](../src/engine/forge.ts) — getUpgradeCost, forgeFragments, upgradeItemLevel, rerollItemAffixes
 - [src/engine/inventory.ts](../src/engine/inventory.ts) — getUsedSlots, canAddItem, addItem, removeItem, countByTemplate, equipItem, unequipItem
@@ -116,6 +133,7 @@
 - [[Mythreon Obsidian/Sistema - Dados do jogo|Dados do jogo]]
 - [[Mythreon Obsidian/Sistema - Telas|Telas]]
 - [[Mythreon Obsidian/Sistema - Conhecimento e documentação|Conhecimento e documentação]]
+- [[Mythreon Obsidian/Sistema - Outros arquivos|Outros arquivos]]
 - [[Mythreon Obsidian/Sistema - Estado|Estado]]
 - [[Mythreon Obsidian/Sistema - Atributos e progressão|Atributos e progressão]]
 - [[Mythreon Obsidian/Sistema - Tipos|Tipos]]

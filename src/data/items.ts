@@ -54,7 +54,26 @@ function buildTemplates(): Record<string, Item> {
   return out;
 }
 
-export const ALL_EQUIPMENT_TEMPLATES: Record<string, Item> = buildTemplates();
+export const SWAMP_EQUIPMENT_TEMPLATES: Record<string, Item> = {
+  CAPUZ_MIASMA_T3: createItem({ templateId: "CAPUZ_MIASMA_T3", name: "Capuz do Miasma", category: "ARMADURA", slot: "CAPACETE", tier: 3, stats: { arm: 22, hp: 240, mp: 60, resMagico: 0.04 }, icon: "☣️" }),
+  MANTO_MEMORIA_T3: createItem({ templateId: "MANTO_MEMORIA_T3", name: "Manto da Memória", category: "ARMADURA", slot: "ARMADURA", tier: 3, stats: { arm: 32, hp: 360, matk: 25 }, icon: "🧥" }),
+  LUVAS_LAMINA_T3: createItem({ templateId: "LUVAS_LAMINA_T3", name: "Luvas da Lâmina", category: "ARMADURA", slot: "LUVAS", tier: 3, stats: { arm: 14, atk: 22, hit: 0.04 }, icon: "🪽" }),
+  BOTAS_SILTE_T3: createItem({ templateId: "BOTAS_SILTE_T3", name: "Botas do Silte", category: "ARMADURA", slot: "BOTAS", tier: 3, stats: { arm: 15, spd: 0.14, dge: 0.03 }, icon: "🥾" }),
+  PULSEIRA_VEYRA_T3: createItem({ templateId: "PULSEIRA_VEYRA_T3", name: "Pulseira da Matriarca", category: "PULSEIRA", slot: "PULSEIRA", tier: 3, stats: { hp: 120, mp: 100, hpRegen: 4, mpRegen: 5, resMagico: 0.04 }, icon: "🪷" }),
+  ARCO_LIBELULA_T3: createItem({ templateId: "ARCO_LIBELULA_T3", name: "Arco da Libélula", category: "ARMA", slot: "ARMA_PRINCIPAL", tier: 3, stats: { atk: 68, hit: 0.08, spd: 0.05 }, icon: "🏹" }),
+  ESCUDO_CARAPACA_VEYRA_T3: createItem({ templateId: "ESCUDO_CARAPACA_VEYRA_T3", name: "Escudo de Carapaça", category: "ESCUDO", slot: "OFF_HAND", tier: 3, stats: { def: 26, arm: 15, blk: 0.11, resFisico: 0.04 }, icon: "🛡️" }),
+  COLAR_RAIZ_MEMORIA_T3: createItem({ templateId: "COLAR_RAIZ_MEMORIA_T3", name: "Colar da Raiz-Memória", category: "JOIA", slot: "COLAR", tier: 3, stats: { hp: 210, mp: 140, resMagico: 0.05, hpRegen: 2 }, icon: "🌿" }),
+};
+
+export const ALL_EQUIPMENT_TEMPLATES: Record<string, Item> = { ...buildTemplates(), ...SWAMP_EQUIPMENT_TEMPLATES };
+
+export const SWAMP_MATERIAL_TEMPLATES: Record<string, Item> = {
+  RESINA_MIASMA: createItem({ templateId: "RESINA_MIASMA", name: "Resina de Miasma", category: "MATERIAL", tier: 3, rarity: "COMUM", icon: "🧪", stackable: true, maxStack: 999 }),
+  ASA_LAMINA: createItem({ templateId: "ASA_LAMINA", name: "Asa Laminada", category: "MATERIAL", tier: 3, rarity: "COMUM", icon: "🪽", stackable: true, maxStack: 999 }),
+  NO_MEMORIA: createItem({ templateId: "NO_MEMORIA", name: "Nó de Memória", category: "MATERIAL", tier: 3, rarity: "RARO", icon: "🪢", stackable: true, maxStack: 999 }),
+  DENTE_SILTE: createItem({ templateId: "DENTE_SILTE", name: "Dente de Silte", category: "MATERIAL", tier: 3, rarity: "RARO", icon: "🦷", stackable: true, maxStack: 999 }),
+  COROA_LODO: createItem({ templateId: "COROA_LODO", name: "Coroa de Lodo", category: "MATERIAL", tier: 3, rarity: "EPICO", icon: "👑", stackable: true, maxStack: 999 }),
+};
 
 // Munição de T1 a T5. As flechas são equipáveis e ficam como preparação de build;
 // ainda não são consumidas pela caça automática.
@@ -104,4 +123,4 @@ export const FRAGMENT_TEMPLATES: Record<string, Item> = {
   FRAGMENTO_EPICO: createItem({ templateId: "FRAGMENTO_EPICO", name: "Fragmento Épico", category: "FRAGMENTO", tier: 1, rarity: "EPICO", icon: "🔮", stackable: true, maxStack: 999, quantity: 1, stats: {} }),
 };
 
-export const ALL_ITEM_TEMPLATES: Record<string, Item> = { ...ALL_EQUIPMENT_TEMPLATES, ...ARROW_TEMPLATES, ...POTION_TEMPLATES, ...UNIQUE_TEMPLATES, ...FRAGMENT_TEMPLATES };
+export const ALL_ITEM_TEMPLATES: Record<string, Item> = { ...ALL_EQUIPMENT_TEMPLATES, ...SWAMP_MATERIAL_TEMPLATES, ...ARROW_TEMPLATES, ...POTION_TEMPLATES, ...UNIQUE_TEMPLATES, ...FRAGMENT_TEMPLATES };

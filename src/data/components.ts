@@ -16,6 +16,11 @@ export const ATAQUES: Record<string, ComponentTemplate> = {
   A13: { id: "A13", name: "Fragmento de Tempestade", type: "ATAQUE", law: "KAELOR", icon: "⚡", skillName: "Descarga", skillDescription: "Dano de trovão em cadeia" },
   A14: { id: "A14", name: "Presa de Verme-Abissal", type: "ATAQUE", law: "NOCTHAR", icon: "🪱", skillName: "Devorar", skillDescription: "Dano + drena vida" },
   A15: { id: "A15", name: "Fragmento de Asterion", type: "ATAQUE", law: "ASTER", icon: "☄️", skillName: "Julgamento Estelar", skillDescription: "Dano sagrado devastador" },
+  A16: { id: "A16", name: "Glândula de Miasma", type: "ATAQUE", law: "VEYRA", icon: "🧪", skillName: "Névoa Tóxica", skillDescription: "Dano de veneno + corrosão" },
+  A17: { id: "A17", name: "Asa de Libélula-Lâmina", type: "ATAQUE", law: "RAAN", icon: "🪽", skillName: "Corte Prismático", skillDescription: "Dano de vento + precisão" },
+  A18: { id: "A18", name: "Nó de Memória", type: "ATAQUE", law: "VEYRA", icon: "🪢", skillName: "Laço da Memória", skillDescription: "Dano psíquico + eco" },
+  A19: { id: "A19", name: "Dente de Silte", type: "ATAQUE", law: "NOCTHAR", icon: "🦷", skillName: "Mordida Lodosa", skillDescription: "Dano de água + lentidão" },
+  A20: { id: "A20", name: "Coroa da Matriarca", type: "ATAQUE", law: "VEYRA", icon: "👑", skillName: "Dilúvio de Lodo", skillDescription: "Dano de veneno em área" },
 };
 
 export const SUPORTES: Record<string, ComponentTemplate> = {
@@ -32,6 +37,11 @@ export const SUPORTES: Record<string, ComponentTemplate> = {
   S11: { id: "S11", name: "Núcleo de Prime", type: "SUPORTE", law: "PRIME", icon: "☯️", skillName: "Equilíbrio", skillDescription: "Buff ATK/DEF permanente" },
   S12: { id: "S12", name: "Núcleo de Synthes", type: "SUPORTE", law: "SYNTHES", icon: "🔗", skillName: "Fusão", skillDescription: "Rouba vida dos golpes" },
   S13: { id: "S13", name: "Núcleo de Voro", type: "SUPORTE", law: "VORO", icon: "🩸", skillName: "Predação", skillDescription: "Mais dano em alvos feridos" },
+  S14: { id: "S14", name: "Núcleo de Miasma", type: "SUPORTE", law: "VEYRA", icon: "☣️", skillName: "Véu Contaminado", skillDescription: "Resistência a veneno" },
+  S15: { id: "S15", name: "Núcleo de Lâmina", type: "SUPORTE", law: "RAAN", icon: "🌀", skillName: "Corrente Cortante", skillDescription: "Precisão e velocidade" },
+  S16: { id: "S16", name: "Núcleo de Memória", type: "SUPORTE", law: "VEYRA", icon: "📜", skillName: "Revelação Profunda", skillDescription: "Revela fraquezas e aumenta XP" },
+  S17: { id: "S17", name: "Núcleo de Silte", type: "SUPORTE", law: "NOCTHAR", icon: "🌊", skillName: "Couraça de Lodo", skillDescription: "Escudo contra água e físico" },
+  S18: { id: "S18", name: "Núcleo da Matriarca", type: "SUPORTE", law: "VEYRA", icon: "🌱", skillName: "Raiz Regeneradora", skillDescription: "Regeneração de vida e mana" },
 };
 
 export const PASSIVAS: Record<string, ComponentTemplate> = {
@@ -47,6 +57,8 @@ export const PASSIVAS: Record<string, ComponentTemplate> = {
   P10: { id: "P10", name: "Passiva da Biblioteca", type: "PASSIVA", law: "VEYRA", icon: "🏛️", skillName: "Erudição", skillDescription: "+XP" },
   P11: { id: "P11", name: "Passiva das Ruínas", type: "PASSIVA", law: "VEYRA", icon: "🏚️", skillName: "Eco", skillDescription: "+Drops raros" },
   P12: { id: "P12", name: "Passiva da Forja", type: "PASSIVA", law: "SYNTHES", icon: "⚒️", skillName: "Forja", skillDescription: "+Crafting" },
+  P13: { id: "P13", name: "Passiva do Pântano", type: "PASSIVA", law: "VEYRA", icon: "🪷", skillName: "Resiliência", skillDescription: "+Resistência a veneno e água" },
+  P14: { id: "P14", name: "Passiva da Resina", type: "PASSIVA", law: "VEYRA", icon: "🟢", skillName: "Crescimento", skillDescription: "+Regeneração e vida máxima" },
 };
 
 export const ALL_COMPONENTS: Record<string, ComponentTemplate> = { ...ATAQUES, ...SUPORTES, ...PASSIVAS };

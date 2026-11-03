@@ -24,6 +24,11 @@ export const ATTACK_SKILLS: Record<string, AttackSkill> = {
   A13:{ mult: 2.6, pierce: 0.5, manaCost: 22, desc: "Descarga: Dano de trovão em cadeia." },
   A14:{ mult: 2.2, pierce: 0.3, manaCost: 18, lifesteal: 0.4, desc: "Devorar: Drena vida do alvo." },
   A15:{ mult: 3.0, pierce: 0.6, manaCost: 25, desc: "Julgamento Estelar: Dano sagrado devastador." },
+  A16:{ mult: 2.1, pierce: 0.25, manaCost: 16, desc: "Névoa Tóxica: Dano de veneno e corrosão." },
+  A17:{ mult: 2.3, pierce: 0.45, manaCost: 17, desc: "Corte Prismático: Dano de vento e precisão." },
+  A18:{ mult: 2.2, pierce: 0.35, manaCost: 18, desc: "Laço da Memória: Dano psíquico e eco." },
+  A19:{ mult: 2.4, pierce: 0.30, manaCost: 19, desc: "Mordida Lodosa: Dano de água e lentidão." },
+  A20:{ mult: 3.2, pierce: 0.55, manaCost: 28, desc: "Dilúvio de Lodo: Dano de veneno em área." },
 };
 
 export const ATTACK_SKILL_COOLDOWN = 4; // A cada 4 ticks (12s), mínimo efetivo de 10s

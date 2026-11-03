@@ -22,7 +22,7 @@ import { ItemIcon } from "./ItemIcon";
 import { getBeastCombat } from "../data/beastCombat";
 import { QUESTS } from "../data/quests";
 import { ALL_ITEM_TEMPLATES } from "../data/items";
-import { playCombatSfx } from "../utils/sfx";
+import { playAttackSfx, playCombatSfx } from "../utils/sfx";
 
 interface ZoneViewProps { onOpenQuest: (questId: string) => void; trackedQuestId?: string | null; }
 
@@ -190,6 +190,7 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
   useEffect(() => {
     if (isTickRunning && lastTickResult && (lastTickResult.attacked || lastTickResult.usedMp)) {
       playCombatSfx(activeBond && lastTickResult.log?.some(line => line.includes(activeBond.name)) ? "beast" : "hit");
+      playAttackSfx(character.activeRace?.ataqueId, !!lastTickResult.comboHitDamage);
       setIsAttacking(true); setShowProjectile(true);
       if (lastTickResult.lastDamage) {
         setTimeout(() => { setIsHurt(true); setFloatingDamage(lastTickResult.lastDamage!); }, 250); 

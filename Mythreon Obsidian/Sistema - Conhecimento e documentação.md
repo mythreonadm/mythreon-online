@@ -11,6 +11,7 @@
 - [[docs/conhecimento/balanceamento-depois|Auditoria balanceamento-depois]]
 - [[docs/conhecimento/balanceamento-preparado|Auditoria balanceamento-preparado]]
 - [[docs/conhecimento/Contas-Online-e-Social|Contas online, ranking e comunidade]]
+- [[docs/conhecimento/Conteudo do Pantano de Veyra|Conteúdo do Pântano de Veyra]]
 - [[docs/conhecimento/Jornada-Lore-Biomas|Jornada, lore e biomas]]
 - [[docs/conhecimento/Laboratorio-de-Builds-e-Windows|Laboratório de Builds e Windows]]
 - [[docs/conhecimento/Operacao do Cerebro e Obsidian|Operação do Cérebro e Obsidian]]
@@ -27,6 +28,7 @@
 - [docs/conhecimento/01 - Estado e pendencias.md](../docs/conhecimento/01 - Estado e pendencias.md)
 - [docs/conhecimento/Balanceamento-Combate-Economia.md](../docs/conhecimento/Balanceamento-Combate-Economia.md)
 - [docs/conhecimento/Contas-Online-e-Social.md](../docs/conhecimento/Contas-Online-e-Social.md)
+- [docs/conhecimento/Conteudo do Pantano de Veyra.md](../docs/conhecimento/Conteudo do Pantano de Veyra.md)
 - [docs/conhecimento/Jornada-Lore-Biomas.md](../docs/conhecimento/Jornada-Lore-Biomas.md)
 - [docs/conhecimento/Laboratorio-de-Builds-e-Windows.md](../docs/conhecimento/Laboratorio-de-Builds-e-Windows.md)
 - [docs/conhecimento/Operacao do Cerebro e Obsidian.md](../docs/conhecimento/Operacao do Cerebro e Obsidian.md)
@@ -42,6 +44,7 @@
 - [docs/conhecimento/balanceamento-preparado.json](../docs/conhecimento/balanceamento-preparado.json)
 - [docs/conhecimento/balanceamento-preparado.md](../docs/conhecimento/balanceamento-preparado.md)
 - [experimental/12 - Prompt Universal de Documentação.md](../experimental/12 - Prompt Universal de Documentação.md)
+- [public/assets/monsters/GOLEM_OBSIDIANA.png](../public/assets/monsters/GOLEM_OBSIDIANA.png)
 - [scripts/brain-check.mjs](../scripts/brain-check.mjs) — answer, next, latest
 - [scripts/brain-core.mjs](../scripts/brain-core.mjs) — TEXT_EXTENSIONS, isIgnored, warning, scanPaths, collectFile, atomicWrite, acquireWatchLock, renderVault
 - [scripts/brain-service.mjs](../scripts/brain-service.mjs)
@@ -54,6 +57,7 @@
 - [[Mythreon Obsidian/Sistema - Divine Beasts|Divine Beasts]]
 - [[Mythreon Obsidian/Sistema - Itens e Ferreiro|Itens e Ferreiro]]
 - [[Mythreon Obsidian/Sistema - Atributos e progressão|Atributos e progressão]]
+- [[Mythreon Obsidian/Sistema - Artes e recursos|Artes e recursos]]
 - [[Mythreon Obsidian/Sistema - Windows|Windows]]
 - [[Mythreon Obsidian/Sistema - Mundo e História|Mundo e História]]
 

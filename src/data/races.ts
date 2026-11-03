@@ -41,18 +41,18 @@ export const NAMED_RACES: Race[] = [
 
 export const SUPPORT_TITLES: Record<string, string> = {
   S1: "do Vigor", S2: "do Vínculo", S3: "da Aurora", S4: "do Véu", S5: "do Ritmo", S6: "da Revelação",
-  S7: "do Baluarte", S8: "do Passo", S9: "da Adaptação", S10: "do Cálculo", S11: "do Equilíbrio", S12: "da Fusão", S13: "da Predação",
+  S7: "do Baluarte", S8: "do Passo", S9: "da Adaptação", S10: "do Cálculo", S11: "do Equilíbrio", S12: "da Fusão", S13: "da Predação", S14: "do Miasma", S15: "da Lâmina", S16: "da Memória", S17: "do Silte", S18: "da Matriarca",
 };
 
 export const PASSIVE_SUFFIXES: Record<string, string> = {
   P1: "Eterna", P2: "de Granito", P3: "Elemental", P4: "Veloz", P5: "Sagrada", P6: "Nebulosa",
-  P7: "Furiosa", P8: "Acelerada", P9: "Cruel", P10: "Erudita", P11: "Rara", P12: "Áurea",
+  P7: "Furiosa", P8: "Acelerada", P9: "Cruel", P10: "Erudita", P11: "Rara", P12: "Áurea", P13: "do Pântano", P14: "da Resina",
 };
 
 const ATAQUE_NOMES_CURTOS: Record<string, string> = {
   A1: "Presa de Lobo", A2: "Ferrão de Vespa", A3: "Chama de Espectro", A4: "Garra de Urso", A5: "Peçonha de Serpente",
   A6: "Lâmina de Bandido", A7: "Espinho de Planta", A8: "Mandíbula de Hiena", A9: "Núcleo de Golem", A10: "Pena de Falcão",
-  A11: "Cristal de Gelo", A12: "Tentáculo Abissal", A13: "Fragmento de Tempestade", A14: "Presa de Verme", A15: "Fragmento de Asterion",
+  A11: "Cristal de Gelo", A12: "Tentáculo Abissal", A13: "Fragmento de Tempestade", A14: "Presa de Verme", A15: "Fragmento de Asterion", A16: "Glândula de Miasma", A17: "Asa de Libélula", A18: "Nó de Memória", A19: "Dente de Silte", A20: "Coroa da Matriarca",
 };
 
 export function generateRaceName(ataqueId: string, suporteId: string, passivaId: string): string {
@@ -130,6 +130,6 @@ export function findNamedRace(ataqueId: string, suporteId: string, passivaId: st
 }
 
 export const MATRIX_STATS = {
-  totalAtaques: 15, totalSuportes: 13, totalPassivas: 12,
-  totalCombinacoes: 15 * 13 * 12, totalNomeadas: 33, totalSobrenomes: 13 * 12,
+  totalAtaques: 20, totalSuportes: 18, totalPassivas: 14,
+  totalCombinacoes: 20 * 18 * 14, totalNomeadas: 33, totalSobrenomes: 18 * 14,
 };

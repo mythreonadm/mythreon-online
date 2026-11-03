@@ -85,6 +85,31 @@ export const LINEAGES: Record<string, Lineage> = {
     id: "ASTERIANO", name: "Asteriano", attackId: "A15", 
     sprite: "/assets/players/asteriano.png", emoji: "☄️", 
     description: "Humanoide celestial com armadura dourada.", color: "text-arcane-gold" 
+  },
+  A16: {
+    id: "MIASMIDEO", name: "Miasmídeo", attackId: "A16",
+    sprite: "/assets/players/miasmideo.png", emoji: "🐸",
+    description: "Humanoide anfíbio coberto por placas de miasma e bolsas venenosas.", color: "text-lime-300"
+  },
+  A17: {
+    id: "LIBELUNIANO", name: "Libeluniano", attackId: "A17",
+    sprite: "/assets/players/libeluniano.png", emoji: "🪽",
+    description: "Humanoide alado com asas laminadas e lâminas de vento.", color: "text-cyan-300"
+  },
+  A18: {
+    id: "MEMORIANO", name: "Memoriano", attackId: "A18",
+    sprite: "/assets/players/memoriano.png", emoji: "🌿",
+    description: "Humanoide enraizado, capaz de guardar memórias na própria seiva.", color: "text-violet-300"
+  },
+  A19: {
+    id: "SILTEANO", name: "Silteano", attackId: "A19",
+    sprite: "/assets/players/silteano.png", emoji: "🐊",
+    description: "Humanoide crocodiliano revestido por carapaça de água e silte.", color: "text-amber-300"
+  },
+  A20: {
+    id: "MATRIARCAL", name: "Matriarcal do Lodo", attackId: "A20",
+    sprite: "/assets/players/matriarcal.png", emoji: "🌳",
+    description: "Forma humanoide coroada pelas raízes da Matriarca e pela resina da Ruptura.", color: "text-emerald-300"
   }
 };
 

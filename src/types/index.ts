@@ -112,6 +112,10 @@ export interface Enemy {
   element?: Element;
   elementalResistances?: Partial<Record<Element, number>>;
   protectionRingChance?: number;
+  /** Drop opcional específico da região, usado por rotas laterais como Veyra. */
+  equipmentDropIds?: string[];
+  materialDropId?: string;
+  materialChance?: number;
   sprite?: string; emoji?: string;
   difficulty: 1 | 2 | 3 | 4 | 5;
 }

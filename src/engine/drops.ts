@@ -87,6 +87,12 @@ export function makeComponent(templateId: string): Item {
   return createItem({ templateId: t.id, name: t.name, category: "COMPONENTE", tier: 1, componentType: t.type, law: t.law, icon: t.icon, stackable: true, maxStack: 999, quantity: 1, upgradeLevel: 0 });
 }
 
+export function makeMaterial(templateId: string): Item | null {
+  const t = ALL_ITEM_TEMPLATES[templateId];
+  if (!t || t.category !== "MATERIAL") return null;
+  return { ...t, uid: generateId(), stats: { ...t.stats }, quantity: 1, upgradeLevel: 0 };
+}
+
 export function makeBackpack(key: string, tier: 1 | 2 | 3 | 4 | 5 = 1): Item | null {
   const bp = BACKPACKS[key];
   if (!bp) return null;
@@ -109,6 +115,10 @@ export function rollDrops(enemy: Enemy, zone: Zone, _char: Character, mods: Drop
   const progressionScale = enemy.isBoss ? 1 : 0.68;
   if (chance(enemy.componentChance * progressionScale)) drops.push(makeComponent(enemy.componentId));
   if (enemy.essenceId && chance((enemy.essenceChance ?? 0) * (enemy.isBoss ? 1 : 0.58))) drops.push(makeComponent(enemy.essenceId));
+  if (enemy.materialDropId && chance(enemy.materialChance ?? 0.35)) {
+    const material = makeMaterial(enemy.materialDropId);
+    if (material) drops.push(material);
+  }
 
   if (chance(enemy.isBoss ? 0.25 : 0.08)) {
     const arrow = ARROW_TEMPLATES[`FLECHA_T${zone.tier}`];
@@ -116,7 +126,9 @@ export function rollDrops(enemy: Enemy, zone: Zone, _char: Character, mods: Drop
   }
 
   if (chance(enemy.isBoss ? BALANCE.bossEquipmentDrop : BALANCE.equipmentDrop)) {
-    const pool = Object.values(ALL_EQUIPMENT_TEMPLATES).filter((t) => t.tier === zone.tier);
+    const pool = enemy.equipmentDropIds?.length
+      ? enemy.equipmentDropIds.map(id => ALL_EQUIPMENT_TEMPLATES[id]).filter(Boolean)
+      : Object.values(ALL_EQUIPMENT_TEMPLATES).filter((t) => t.tier === zone.tier);
     if (pool.length > 0) {
       const base = pool[Math.floor(Math.random() * pool.length)];
       const eq = makeEquipment(base.templateId, rollRarity(mods.rareBonus + (enemy.isBoss ? 0.5 : 0)));

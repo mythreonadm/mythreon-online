@@ -7,6 +7,17 @@
 **Idioma de colaboração com o criador:** português do Brasil  
 **Estado:** protótipo jogável em evolução; mudanças locais podem ainda não ter sido enviadas ao Git/Vercel.
 
+## Continuidade — Pântano de Veyra e conteúdo de mobs — 2026-11-03
+
+- O Pântano de Veyra agora possui uma linha própria de progressão: cinco componentes de Ataque (A16–A20), cinco Suportes (S14–S18), duas Passivas (P13–P14), cinco materiais de drop e oito equipamentos de tier 3.
+- Cada mob de Veyra foi ligado ao seu componente, essência, material e pool de equipamento correspondente. A Matriarca do Lodo permanece chefe e concentra a Pulseira da Matriarca e o material Coroa de Lodo.
+- O drop de equipamento aceita `equipmentDropIds`; materiais regionais usam `materialDropId`/`materialChance`. Zonas antigas continuam usando o pool geral por tier.
+- Pranchas de arte para recorte manual estão em `imagens/pantano/`: `PANTANO_VEYRA_LOOT_SHEET.png`, `PANTANO_VEYRA_EQUIPAMENTOS_SHEET.png` e `PANTANO_VEYRA_MATRIZES_SHEET.png`.
+- As pranchas são referências de recorte; os ícones individuais ainda devem ser exportados para `public/assets/items/` com os IDs dos templates quando o criador concluir a transparência.
+- Validação: `npm run typecheck` passou. Git/OneDrive ainda pode exigir `git add` manual dos PNGs por bloqueio de `index.lock`.
+- As novas formas humanoides A16–A20 foram registradas em `src/data/lineages.ts`; as artes esperadas são `miasmideo.png`, `libeluniano.png`, `memoriano.png`, `silteano.png` e `matriarcal.png` em `public/assets/players/`.
+- O combate ganhou efeitos sonoros procedurais por componente de Ataque (`A1–A20`) e uma camada especial para o combo, em `src/utils/sfx.ts`; não exige arquivos de áudio adicionais e respeita mute/volume.
+
 ---
 
 ## 1. Instruções para a próxima IA

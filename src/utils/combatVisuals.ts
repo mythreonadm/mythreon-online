@@ -10,6 +10,11 @@ export function getSpellEffect(ataqueId: string) {
     case "A8": return "🦴";
     case "A9": return "🪨";
     case "A10": return "🪶";
+    case "A16": return "☣️";
+    case "A17": return "🪽";
+    case "A18": return "🪢";
+    case "A19": return "🦷";
+    case "A20": return "👑";
     default: return "✨";
   }
 }

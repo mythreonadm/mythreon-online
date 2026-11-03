@@ -8,7 +8,7 @@
 
 ## Código e recursos
 
-- [src/engine/drops.ts](../src/engine/drops.ts) — RARITY_ORDER, RARITY_MULT, rollRarity, generateRandomAffixes, makeEquipment, makeComponent, makeBackpack, rollAmbient, DropMods, rollDrops
+- [src/engine/drops.ts](../src/engine/drops.ts) — RARITY_ORDER, RARITY_MULT, rollRarity, generateRandomAffixes, makeEquipment, makeComponent, makeMaterial, makeBackpack, rollAmbient, DropMods, rollDrops
 - [src/engine/journey.ts](../src/engine/journey.ts) — isGuided, canUseTab, canEnterZone, canTutorialHunt, unlockJourneyZone
 
 ## Relações encontradas
