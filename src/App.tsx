@@ -207,7 +207,7 @@ useEffect(() => {
       </header>
 
       <nav className="game-nav bg-arcane-panel/80 backdrop-blur border-b border-arcane-border sticky top-[73px] z-40" aria-label="Navegação principal de Mythreon">
-        <div className="max-w-7xl mx-auto flex flex-wrap justify-center gap-1 px-2 py-1.5">
+        <div className="max-w-7xl mx-auto flex flex-nowrap justify-start gap-1 overflow-x-auto px-2 py-1.5 md:flex-wrap md:justify-center md:overflow-visible">
           {(["zona", "personagem", "backpack", "depot", "matriz", "pets", "laboratorio", "shop", "loja", "missoes", "duelos", "wiki", "online", "ranking"] as Tab[]).map((t) => (
             <button
               key={t}

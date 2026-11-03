@@ -8,6 +8,7 @@ import { ZONES } from "../data/zones";
 import { createNewCharacter, loadGame, saveGame } from "../engine/save";
 import { processTick } from "../engine/combat";
 import { equipItem, unequipItem, addItem, removeItem } from "../engine/inventory";
+import { makeEquipment } from "../engine/drops";
 import { recalcStats, skillXpToNextLevel } from "../engine/stats";
 import { findNamedRace, generateRaceName, generateRaceId, generateRaceBonus } from "../data/races";
 import { sellItem, sellSelectedItems } from "../engine/shop";
@@ -523,8 +524,24 @@ return create<GameState>((set, get) => ({
     });
     if (!hasPendingTutorialAction) return;
     const newCharacter = JSON.parse(JSON.stringify(character));
+    let forgeRecoveryGranted = false;
+    // Recuperação segura para veteranos que desmontaram/venderam todo o equipamento
+    // antes de concluir TUT_FORGE. Ao reabrir o Ferreiro, entrega uma espada de
+    // prática apenas se não houver nenhum equipamento aprimorável na mochila.
+    if (action === "VISIT_FORGE" && newCharacter.quests?.active.TUT_FORGE) {
+      const forgeable = newCharacter.inventory.items.some((item: any) => ["ARMA", "ARMADURA", "JOIA", "PULSEIRA", "ESCUDO", "FLECHA"].includes(item.category));
+      if (!forgeable) {
+        const starter = makeEquipment("ESPADA_T1", "COMUM");
+        if (starter) {
+          starter.quantity = 1;
+          addItem(newCharacter.inventory, starter);
+          forgeRecoveryGranted = true;
+        }
+      }
+    }
     trackQuestAction(newCharacter, action);
     set({ character: newCharacter }); get().save();
+    if (forgeRecoveryGranted) notify("O Ferreiro separou uma Espada de Prática para concluir sua missão de aprimoramento.");
   },
 
   buyTrainingBoost: () => {

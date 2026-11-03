@@ -27,6 +27,7 @@ import { playAttackSfx, playCombatSfx } from "../utils/sfx";
 interface ZoneViewProps { onOpenQuest: (questId: string) => void; trackedQuestId?: string | null; }
 
 const metricNumber = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 0 });
+const mapBackground = (theme: string) => `/assets/backgrounds/${theme}.png`;
 function describeDamageBreakdown(records: HuntEncounterRecord[], received = false) {
   const summary: DamageBreakdown = { physical: 0, elemental: {}, lifestealHealing: 0 };
   for (const record of records) {
@@ -221,10 +222,10 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
           {backpackFull ? "🎒 Bolsa cheia! Novos itens não poderão ser coletados." : `⚠️ Bolsa quase cheia: ${backpackUsed}/${backpackCapacity} espaços ocupados.`}
           <span className="ml-2 font-normal text-xs opacity-80">Visite o Depósito ou o Ferreiro antes de continuar.</span>
         </div>}
-        <div className="bg-arcane-panel border border-arcane-border rounded-xl p-4 md:p-8 shadow-lg flex flex-col items-center min-h-[400px] relative overflow-hidden">
-          <div className="absolute inset-0 opacity-10 flex flex-wrap gap-10 p-10 pointer-events-none">
-            <span className="text-9xl">🏠</span><span className="text-9xl">🪵</span>
-          </div>
+        <div className="relative min-h-[400px] overflow-hidden rounded-xl border border-arcane-border bg-arcane-panel p-4 shadow-lg md:p-8">
+          <AssetImage src="/assets/backgrounds/cabana.png" alt="Interior da cabana de Mythreon" className="absolute inset-0 h-full w-full object-cover object-center opacity-65" />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(8,14,16,.32),rgba(8,14,16,.78)_72%,rgba(8,14,16,.96))]" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,rgba(4,8,10,.58)_100%)] pointer-events-none" />
           
           <div className="z-10 w-full max-w-4xl">
             <div className="flex flex-col md:flex-row justify-center gap-3 mb-6">
@@ -252,7 +253,7 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
 
             {houseTab === "maps" && (
               <div className="flex flex-col items-center animate-fade-in">
-                <div className="text-[80px] md:text-[100px] leading-none mb-4 drop-shadow-[0_0_15px_rgba(201,160,77,0.5)] animate-idle">🛏️</div>
+                <div className="mb-4 text-center text-4xl font-black tracking-[.22em] text-arcane-gold drop-shadow-[0_0_15px_rgba(201,160,77,0.7)]">REFÚGIO DA ESSÊNCIA</div>
                 <h2 className="text-2xl md:text-3xl font-bold text-arcane-gold mb-2 text-center">Sua Cabana Aconchegante</h2>
                 <p className="text-gray-400 mb-8 text-center max-w-md text-sm md:text-base px-4">Descanse para recuperar HP, ou escolha uma zona para explorar.</p>
                 <div className="grid grid-cols-1 md:flex md:flex-wrap gap-3 justify-center w-full max-w-2xl">
@@ -261,9 +262,10 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
                       const trackedQuest = QUESTS.find(q => q.id === trackedQuestId);
                       const highlightsZone = !!trackedQuest?.zoneId && trackedQuest.zoneId === z.id && trackedQuest.objectives.some(obj => ["KILL", "KILL_BOSS", "COLLECT"].includes(obj.type));
                       return (
-                        <div key={z.id} className="min-w-48 max-w-sm"><button disabled={isLocked} onClick={() => startHunting(z.id)} className={`px-4 md:px-6 py-3 md:py-4 rounded-xl font-bold flex flex-col items-center transition-all ${highlightsZone && !isLocked ? "border-2 border-arcane-gold ring-2 ring-arcane-gold/50 shadow-[0_0_24px_rgba(201,160,77,.45)]" : ""} ${isLocked ? "bg-gray-900 text-gray-600 cursor-not-allowed" : "bg-arcane-purple hover:bg-arcane-purple/80 text-white shadow-lg hover:scale-105"}`}>
-                          <span className="text-2xl mb-1">⚔️</span>
-                          <span className="text-sm md:text-base">Caçar em {z.name}</span>
+                        <div key={z.id} className="min-w-48 max-w-sm"><button disabled={isLocked} onClick={() => startHunting(z.id)} className={`group relative min-h-36 w-full overflow-hidden rounded-xl border text-left font-bold transition-all ${highlightsZone && !isLocked ? "border-2 border-arcane-gold ring-2 ring-arcane-gold/50 shadow-[0_0_24px_rgba(201,160,77,.45)]" : "border-white/10"} ${isLocked ? "cursor-not-allowed grayscale" : "text-white shadow-lg hover:-translate-y-1 hover:border-arcane-gold"}`}>
+                          <AssetImage src={mapBackground(z.theme)} alt={`Mapa ${z.name}`} className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                          <span className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-black/10" />
+                          <span className="relative flex h-full min-h-36 flex-col justify-end p-3"><span className="text-[10px] uppercase tracking-widest text-arcane-cyan">Mapa {z.tier}</span><span className="text-sm md:text-base">Caçar em {z.name}</span><span className="mt-1 text-[10px] font-semibold text-arcane-gold">Nível {z.minLevel}–{z.maxLevel}</span></span>
                           {highlightsZone && <span className="mt-1 text-[9px] font-black uppercase tracking-wider text-arcane-gold">◆ Objetivo da missão</span>}
                           {isLocked && <span className="text-[10px] font-normal mt-1">Nível {z.minLevel} · {!canEnterZone(character,z.id) ? "Missão e entrega ao NPC" : "Nível necessário"}</span>}
                         </button>
