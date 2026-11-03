@@ -26,6 +26,7 @@
 - [[docs/conhecimento/Sem título|Sem título]]
 - [[docs/conhecimento/Shop-Premium-Beasts|Shop, premium e Divine Beasts]]
 - [[docs/conhecimento/Treino-e-Diferenciais-Mythreon|Disciplina e um mundo que se lembra]]
+- [[docs/conhecimento/Tutorial-Storytelling-Videos-2026-11-03|Tutorial cinematográfico — Storytelling de Mythreon]]
 
 ## Código e recursos
 
@@ -54,6 +55,7 @@
 - [docs/conhecimento/Sem título.md](../docs/conhecimento/Sem título.md)
 - [docs/conhecimento/Shop-Premium-Beasts.md](../docs/conhecimento/Shop-Premium-Beasts.md)
 - [docs/conhecimento/Treino-e-Diferenciais-Mythreon.md](../docs/conhecimento/Treino-e-Diferenciais-Mythreon.md)
+- [docs/conhecimento/Tutorial-Storytelling-Videos-2026-11-03.md](../docs/conhecimento/Tutorial-Storytelling-Videos-2026-11-03.md)
 - [docs/conhecimento/balanceamento-antes.json](../docs/conhecimento/balanceamento-antes.json)
 - [docs/conhecimento/balanceamento-antes.md](../docs/conhecimento/balanceamento-antes.md)
 - [docs/conhecimento/balanceamento-depois.json](../docs/conhecimento/balanceamento-depois.json)
@@ -73,6 +75,7 @@
 - [[Mythreon Obsidian/Sistema - Combate|Combate]]
 - [[Mythreon Obsidian/Sistema - Divine Beasts|Divine Beasts]]
 - [[Mythreon Obsidian/Sistema - Itens e Ferreiro|Itens e Ferreiro]]
+- [[Mythreon Obsidian/Sistema - Missões|Missões]]
 - [[Mythreon Obsidian/Sistema - Atributos e progressão|Atributos e progressão]]
 - [[Mythreon Obsidian/Sistema - Artes e recursos|Artes e recursos]]
 - [[Mythreon Obsidian/Sistema - Windows|Windows]]

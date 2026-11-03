@@ -372,6 +372,16 @@ var VIALS = {
 };
 
 // src/data/divineBeasts.ts
+var DIVINE_BEAST_SELL_VALUES = {
+  COMUM: 150,
+  INCOMUM: 450,
+  RARO: 1200,
+  EPICO: 3500,
+  LENDARIO: 12e3
+};
+function divineBeastSellValue(rarity) {
+  return DIVINE_BEAST_SELL_VALUES[rarity ?? "COMUM"];
+}
 var DIVINE_BEASTS = {
   LYSS_STAG: {
     id: "LYSS_STAG",
@@ -3793,14 +3803,17 @@ function createGameStore(runtime = {}) {
       if (!character) return { success: false, error: "Sem personagem" };
       const copies = (character.divineBeasts ?? []).filter((beast) => beast.id === id);
       const ration = character.inventory.items.find((item) => item.templateId === "RACAO_DOMADOR");
-      if (copies.length < 4) return { success: false, error: "S\xE3o necess\xE1rias 4 Bestas iguais." };
+      if (copies.length < 5) return { success: false, error: "S\xE3o necess\xE1rias 4 c\xF3pias excedentes no cativeiro; o melhor exemplar \xE9 preservado." };
       if (!ration) return { success: false, error: "\xC9 necess\xE1ria uma Ra\xE7\xE3o Especial do Domador." };
       const rank = ["COMUM", "INCOMUM", "RARO", "EPICO", "LENDARIO"];
-      const current = Math.max(...copies.slice(0, 4).map((beast) => rank.indexOf(beast.rarity ?? "RARO")));
-      if (current >= rank.length - 1) return { success: false, error: "Esta linhagem j\xE1 est\xE1 no \xE1pice lend\xE1rio." };
       const next = structuredClone(character);
-      let removed = 0;
-      next.divineBeasts = (next.divineBeasts ?? []).filter((beast) => beast.id !== id || removed++ >= 4);
+      const indexed = (next.divineBeasts ?? []).map((beast, index) => ({ beast, index })).filter((entry) => entry.beast.id === id);
+      indexed.sort((a, b) => rank.indexOf(b.beast.rarity ?? "COMUM") - rank.indexOf(a.beast.rarity ?? "COMUM") || b.beast.obtainedAt - a.beast.obtainedAt);
+      const captive = indexed.slice(1);
+      const current = Math.max(...captive.slice(0, 4).map((entry) => rank.indexOf(entry.beast.rarity ?? "COMUM")));
+      if (current >= rank.length - 1) return { success: false, error: "Esta linhagem j\xE1 est\xE1 no \xE1pice lend\xE1rio." };
+      const consume = new Set(captive.slice(0, 4).map((entry) => entry.index));
+      next.divineBeasts = (next.divineBeasts ?? []).filter((_, index) => !consume.has(index));
       removeItem(next.inventory, ration.uid, 1);
       const rarity = rank[current + 1];
       next.divineBeasts.push({ id, rarity, obtainedAt: Date.now() });
@@ -3808,6 +3821,25 @@ function createGameStore(runtime = {}) {
       get().save();
       notify(`A linhagem foi aprimorada para ${rarity}!`);
       return { success: true, rarity };
+    },
+    sellDivineBeast: (id) => {
+      const { character } = get();
+      if (!character) return { success: false, error: "Sem personagem" };
+      const copies = (character.divineBeasts ?? []).filter((beast) => beast.id === id);
+      if (copies.length < 2) return { success: false, error: "O melhor exemplar precisa permanecer na cole\xE7\xE3o. Encontre outra c\xF3pia para vender." };
+      const rank = ["COMUM", "INCOMUM", "RARO", "EPICO", "LENDARIO"];
+      const next = structuredClone(character);
+      const indexed = (next.divineBeasts ?? []).map((beast, index) => ({ beast, index })).filter((entry) => entry.beast.id === id);
+      indexed.sort((a, b) => rank.indexOf(a.beast.rarity ?? "COMUM") - rank.indexOf(b.beast.rarity ?? "COMUM") || a.beast.obtainedAt - b.beast.obtainedAt);
+      const candidate = indexed[0];
+      if (!candidate) return { success: false, error: "Pet n\xE3o encontrado no cativeiro." };
+      const gold = divineBeastSellValue(candidate.beast.rarity);
+      next.divineBeasts = (next.divineBeasts ?? []).filter((_, index) => index !== candidate.index);
+      next.gold += gold;
+      set({ character: next });
+      get().save();
+      notify(`Pet enviado ao Mercado do Domador por ${gold.toLocaleString("pt-BR")} gold.`);
+      return { success: true, gold };
     },
     feedDivineBeast: (id, foodUid) => {
       const { character } = get();
@@ -4473,6 +4505,9 @@ function executeGame(world, action, args = []) {
     } else if (action === "combineBeast") {
       result = s.combineBeast(uid(args[0]));
       if (!result?.success) throw Error(result?.error ?? "N\xE3o foi poss\xEDvel aprimorar a linhagem.");
+    } else if (action === "sellDivineBeast") {
+      result = s.sellDivineBeast(uid(args[0]));
+      if (!result?.success) throw Error(result?.error ?? "N\xE3o foi poss\xEDvel vender o pet.");
     } else if (action === "feedDivineBeast") {
       result = s.feedDivineBeast(uid(args[0]), uid(args[1]));
       if (!result?.success) throw Error(result?.error ?? "N\xE3o foi poss\xEDvel alimentar a Besta.");

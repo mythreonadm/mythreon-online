@@ -1,4 +1,16 @@
-import { DivineBeastId, DivineBeastTemplate } from "../types";
+import { DivineBeastId, DivineBeastTemplate, Rarity } from "../types";
+
+export const DIVINE_BEAST_SELL_VALUES: Record<Rarity, number> = {
+  COMUM: 150,
+  INCOMUM: 450,
+  RARO: 1200,
+  EPICO: 3500,
+  LENDARIO: 12000,
+};
+
+export function divineBeastSellValue(rarity?: Rarity) {
+  return DIVINE_BEAST_SELL_VALUES[rarity ?? "COMUM"];
+}
 
 // Ecos vivos do Primeiro Canto. Cada guardião responde à ressonância de sua região.
 // A chance é aplicada somente ao chefe regional e a criatura só pode ser obtida uma vez.

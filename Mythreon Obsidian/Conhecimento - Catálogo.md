@@ -24,5 +24,6 @@
 - [[docs/conhecimento/Sem título|Sem título]] — a revisar
 - [[docs/conhecimento/Shop-Premium-Beasts|Shop, premium e Divine Beasts]] — a revisar
 - [[docs/conhecimento/Treino-e-Diferenciais-Mythreon|Disciplina e um mundo que se lembra]] — Treino implementado e propostas de identidade própria fundamentadas em pesquisa de idle games.
+- [[docs/conhecimento/Tutorial-Storytelling-Videos-2026-11-03|Tutorial cinematográfico — Storytelling de Mythreon]] — a revisar
 
 [[docs/conhecimento/00 - Fonte de conhecimento|Voltar à fonte]]

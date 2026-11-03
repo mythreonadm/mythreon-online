@@ -17,7 +17,7 @@ import { updateQuestProgress, claimQuestReward, trackRaceDiscovery, trackQuestAc
 import { upgradeItemLevel, rerollItemAffixes, forgeFragments, elevateItemTier, rerollSpecificAffix } from "../engine/forge";
 import { depositItem as engineDeposit, withdrawItem as engineWithdraw, depositMany as engineDepositMany, withdrawMany as engineWithdrawMany } from "../engine/depot";
 import { FRAGMENT_TEMPLATES, DIVINE_BEAST_EGG_TEMPLATES, UNIQUE_TEMPLATES, createItem } from "../data/items";
-import { DIVINE_BEASTS } from "../data/divineBeasts";
+import { divineBeastSellValue, DIVINE_BEASTS } from "../data/divineBeasts";
 import { QUESTS } from "../data/quests";
 import { getMythreonOffer, MYTHREON_ECONOMY } from "../data/mythreonEconomy";
 import { farmSeed, farmYield, FARM_SEEDS, farmExpansionCost, farmRecipe, farmRecipeOutput, FARM_RECIPES } from "../data/farm";
@@ -61,6 +61,7 @@ export interface GameState {
   equipDivineBeast: (id: DivineBeastId) => { success: boolean; error?: string };
   hatchEgg: (uid: string) => { success: boolean; beastId?: DivineBeastId; rarity?: Rarity; error?: string };
   combineBeast: (id: DivineBeastId) => { success: boolean; rarity?: Rarity; error?: string };
+  sellDivineBeast: (id: DivineBeastId) => { success: boolean; gold?: number; error?: string };
   feedDivineBeast: (id: DivineBeastId, foodUid: string) => { success: boolean; error?: string };
   unequipDivineBeast: () => void;
   sellItem: (uid: string, qty?: number) => void;
@@ -467,20 +468,42 @@ return create<GameState>((set, get) => ({
     if (!character) return { success: false, error: "Sem personagem" };
     const copies = (character.divineBeasts ?? []).filter(beast => beast.id === id);
     const ration = character.inventory.items.find(item => item.templateId === "RACAO_DOMADOR");
-    if (copies.length < 4) return { success: false, error: "São necessárias 4 Bestas iguais." };
+    if (copies.length < 5) return { success: false, error: "São necessárias 4 cópias excedentes no cativeiro; o melhor exemplar é preservado." };
     if (!ration) return { success: false, error: "É necessária uma Ração Especial do Domador." };
     const rank: Rarity[] = ["COMUM", "INCOMUM", "RARO", "EPICO", "LENDARIO"];
-    const current = Math.max(...copies.slice(0, 4).map(beast => rank.indexOf(beast.rarity ?? "RARO")));
-    if (current >= rank.length - 1) return { success: false, error: "Esta linhagem já está no ápice lendário." };
     const next = structuredClone(character);
-    let removed = 0;
-    next.divineBeasts = (next.divineBeasts ?? []).filter(beast => beast.id !== id || removed++ >= 4);
+    const indexed = (next.divineBeasts ?? []).map((beast, index) => ({ beast, index })).filter(entry => entry.beast.id === id);
+    indexed.sort((a, b) => (rank.indexOf(b.beast.rarity ?? "COMUM") - rank.indexOf(a.beast.rarity ?? "COMUM")) || (b.beast.obtainedAt - a.beast.obtainedAt));
+    const captive = indexed.slice(1);
+    const current = Math.max(...captive.slice(0, 4).map(entry => rank.indexOf(entry.beast.rarity ?? "COMUM")));
+    if (current >= rank.length - 1) return { success: false, error: "Esta linhagem já está no ápice lendário." };
+    const consume = new Set(captive.slice(0, 4).map(entry => entry.index));
+    next.divineBeasts = (next.divineBeasts ?? []).filter((_, index) => !consume.has(index));
     removeItem(next.inventory, ration.uid, 1);
     const rarity = rank[current + 1];
     next.divineBeasts.push({ id, rarity, obtainedAt: Date.now() });
     set({ character: next }); get().save();
     notify(`A linhagem foi aprimorada para ${rarity}!`);
     return { success: true, rarity };
+  },
+
+  sellDivineBeast: (id) => {
+    const { character } = get();
+    if (!character) return { success: false, error: "Sem personagem" };
+    const copies = (character.divineBeasts ?? []).filter(beast => beast.id === id);
+    if (copies.length < 2) return { success: false, error: "O melhor exemplar precisa permanecer na coleção. Encontre outra cópia para vender." };
+    const rank: Rarity[] = ["COMUM", "INCOMUM", "RARO", "EPICO", "LENDARIO"];
+    const next = structuredClone(character);
+    const indexed = (next.divineBeasts ?? []).map((beast, index) => ({ beast, index })).filter(entry => entry.beast.id === id);
+    indexed.sort((a, b) => (rank.indexOf(a.beast.rarity ?? "COMUM") - rank.indexOf(b.beast.rarity ?? "COMUM")) || (a.beast.obtainedAt - b.beast.obtainedAt));
+    const candidate = indexed[0];
+    if (!candidate) return { success: false, error: "Pet não encontrado no cativeiro." };
+    const gold = divineBeastSellValue(candidate.beast.rarity);
+    next.divineBeasts = (next.divineBeasts ?? []).filter((_, index) => index !== candidate.index);
+    next.gold += gold;
+    set({ character: next }); get().save();
+    notify(`Pet enviado ao Mercado do Domador por ${gold.toLocaleString("pt-BR")} gold.`);
+    return { success: true, gold };
   },
 
   feedDivineBeast: (id, foodUid) => {

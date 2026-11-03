@@ -44,6 +44,7 @@ export function executeGame(world:WorldState,action?:string,args:unknown[]=[]):{
   else if(action==='equipDivineBeast'){result=s.equipDivineBeast(uid(args[0]) as any);}
   else if(action==='hatchEgg'){result=s.hatchEgg(uid(args[0]));if(!(result as any)?.success)throw Error((result as any)?.error??'Não foi possível eclodir o ovo.');}
   else if(action==='combineBeast'){result=s.combineBeast(uid(args[0]) as any);if(!(result as any)?.success)throw Error((result as any)?.error??'Não foi possível aprimorar a linhagem.');}
+  else if(action==='sellDivineBeast'){result=s.sellDivineBeast(uid(args[0]) as any);if(!(result as any)?.success)throw Error((result as any)?.error??'Não foi possível vender o pet.');}
   else if(action==='feedDivineBeast'){result=s.feedDivineBeast(uid(args[0]) as any, uid(args[1]));if(!(result as any)?.success)throw Error((result as any)?.error??'Não foi possível alimentar a Besta.');}
   else if(action==='elevateItemTier'){result=s.elevateItemTier(uid(args[0]));if(!(result as any)?.success)throw Error((result as any)?.error??'Não foi possível elevar o Tier.');}
   else if(action==='rerollSpecificAffix'){result=s.rerollSpecificAffix(uid(args[0]), uid(args[1]) as any);if(!(result as any)?.success)throw Error((result as any)?.error??'Não foi possível sortear o atributo.');}

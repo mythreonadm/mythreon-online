@@ -1,9 +1,9 @@
 import { beastGrowth, getBeastCombat } from "../data/beastCombat";
 import React, { useState } from "react";
 import { AssetImage } from "./AssetImage";
-import { DIVINE_BEASTS, DIVINE_BEAST_ORDER } from "../data/divineBeasts";
+import { divineBeastSellValue, DIVINE_BEASTS, DIVINE_BEAST_ORDER } from "../data/divineBeasts";
 import { useGameStore } from "../store/gameStore";
-import { DivineBeastTemplate, ItemStats } from "../types";
+import { DivineBeastInstance, DivineBeastTemplate, ItemStats, Rarity } from "../types";
 import { ZONES } from "../data/zones";
 import { DIVINE_BEAST_EGG_TEMPLATES } from "../data/items";
 
@@ -12,10 +12,20 @@ const STAT_LABELS: Partial<Record<keyof ItemStats, string>> = {
   crit: "Crítico", hit: "Precisão", dge: "Esquiva", spd: "Vel. ataque", blk: "Bloqueio", resMagico: "Res. mágica", hpRegen: "Regen. de vida",
 };
 const numberFormat = new Intl.NumberFormat("pt-BR");
+const RARITY_ORDER: Rarity[] = ["COMUM", "INCOMUM", "RARO", "EPICO", "LENDARIO"];
+const rarityRank = (rarity?: Rarity) => RARITY_ORDER.indexOf(rarity ?? "COMUM");
+function bestPetIndex(instances: DivineBeastInstance[]) {
+  return instances.reduce((best, instance, index) => {
+    if (!instances[best]) return index;
+    const score = rarityRank(instance.rarity) - rarityRank(instances[best].rarity);
+    return score > 0 || (score === 0 && instance.obtainedAt > instances[best].obtainedAt) ? index : best;
+  }, 0);
+}
 
 export function DivineBeasts() {
-  const { character, equipDivineBeast, unequipDivineBeast, hatchEgg, combineBeast, feedDivineBeast } = useGameStore();
+  const { character, equipDivineBeast, unequipDivineBeast, hatchEgg, combineBeast, sellDivineBeast, feedDivineBeast } = useGameStore();
   const [message, setMessage] = useState("");
+  const [petTab, setPetTab] = useState<"descobertos" | "cativeiro">("descobertos");
   if (!character) return null;
   const owned = character.divineBeasts ?? [];
   const activeId = character.activeDivineBeastId;
@@ -47,18 +57,33 @@ export function DivineBeasts() {
       {eggs.length === 0 ? <p className="mt-3 rounded-lg border border-white/10 bg-black/20 p-3 text-xs text-slate-500">Nenhum ovo disponível. Ovos poderão surgir em encontros especiais e recompensas de regiões.</p> : <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{eggs.map(egg => <div key={egg.uid} className="flex items-center gap-3 rounded-lg border border-white/10 bg-black/25 p-3"><span className="text-3xl">{egg.icon}</span><div className="min-w-0 flex-1"><div className="truncate text-xs font-bold text-white">{egg.name}</div><div className="text-[10px] text-slate-500">Tier {egg.tier} · quantidade {egg.quantity}</div></div><button onClick={()=>{const result=hatchEgg(egg.uid);if(result.success)setMessage(`Eclosão concluída: ${result.beastId ? DIVINE_BEASTS[result.beastId].name : "novo vínculo"} · ${result.rarity}`);}} className="rounded-lg bg-arcane-gold px-3 py-2 text-[10px] font-black text-black hover:bg-yellow-300">Eclodir</button></div>)}</div>}
     </section>
 
+    <section className="rounded-xl border border-white/10 bg-black/20 p-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div><p className="text-[10px] font-black uppercase tracking-[.2em] text-slate-500">Coleção de companheiros</p><p className="mt-1 text-xs text-slate-400">A descrição mostra apenas o melhor exemplar de cada linhagem. As cópias excedentes ficam no cativeiro para aprimorar ou vender.</p></div>
+        <div className="flex rounded-lg border border-white/10 bg-black/25 p-1 text-[10px] font-black">
+          <button type="button" onClick={() => setPetTab("descobertos")} className={`rounded px-3 py-2 transition ${petTab === "descobertos" ? "bg-arcane-gold text-black" : "text-slate-400 hover:text-white"}`}>Pets descobertos</button>
+          <button type="button" onClick={() => setPetTab("cativeiro")} className={`rounded px-3 py-2 transition ${petTab === "cativeiro" ? "bg-purple-500 text-white" : "text-slate-400 hover:text-white"}`}>Pets em cativeiro</button>
+        </div>
+      </div>
+    </section>
+
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
       {petIds.map(id => {
         const beast = DIVINE_BEASTS[id];
         if (!beast) return null;
         const ownedInstances = owned.filter(instance => instance.id === id);
-        const ownedInstance = ownedInstances[0];
+        const bestIndex = bestPetIndex(ownedInstances);
+        const ownedInstance = ownedInstances[bestIndex];
+        const captiveInstances = ownedInstances.filter((_, index) => index !== bestIndex);
+        if (petTab === "cativeiro" && captiveInstances.length === 0) return null;
         const hasBeast = ownedInstances.length > 0;
         const copies = ownedInstances.length;
         const isActive = activeId === id;
-        return <BeastCard key={id} beast={beast} owned={hasBeast} copies={copies} rarities={ownedInstances.map(instance => instance.rarity).filter(Boolean) as string[]} rarity={ownedInstance?.rarity} active={isActive} onEquip={() => handleEquip(id)} onUnequip={unequipDivineBeast} onFeed={(foodUid) => { const result=feedDivineBeast(id, foodUid); setMessage(result.success ? "O pet foi alimentado e recuperou o humor." : result.error ?? "Não foi possível alimentar."); }} onCombine={() => { const result=combineBeast(id); setMessage(result.success ? `Linhagem aprimorada para ${result.rarity}.` : result.error ?? "Não foi possível aprimorar."); }} />;
+        return <BeastCard key={id} beast={beast} owned={hasBeast} copies={copies} captiveCount={captiveInstances.length} captiveRarities={captiveInstances.map(instance => instance.rarity).filter(Boolean) as Rarity[]} rarity={ownedInstance?.rarity} active={isActive} captiveView={petTab === "cativeiro"} onEquip={() => handleEquip(id)} onUnequip={unequipDivineBeast} onFeed={(foodUid) => { const result=feedDivineBeast(id, foodUid); setMessage(result.success ? "O pet foi alimentado e recuperou o humor." : result.error ?? "Não foi possível alimentar."); }} onCombine={() => { const result=combineBeast(id); setMessage(result.success ? `Linhagem aprimorada para ${result.rarity}.` : result.error ?? "Não foi possível aprimorar."); }} onSell={() => { const result=sellDivineBeast(id); setMessage(result.success ? `Pet vendido por ${result.gold?.toLocaleString("pt-BR")} gold.` : result.error ?? "Não foi possível vender."); }} />;
       })}
     </div>
+
+    {petTab === "cativeiro" && !petIds.some(id => owned.filter(instance => instance.id === id).length > 1) && <div className="rounded-xl border border-purple-900/40 bg-purple-950/15 p-6 text-center text-xs text-slate-400">Nenhum pet excedente no cativeiro. Ecloda novos ovos para encontrar cópias e desbloquear aprimoramentos.</div>}
 
     <footer className="rounded-xl border border-white/10 bg-black/20 p-4 text-xs leading-relaxed text-slate-500">
       <span className="font-bold text-slate-300">Sobre os bônus:</span> cada pet desfere um ataque elemental a cada 5 segundos, concede bônus de combate que crescem com o nível e possui uma especialidade própria. Nutrição e humor modulam o poder do ataque; os valores serão calibrados pelas métricas de hunt.
@@ -66,7 +91,7 @@ export function DivineBeasts() {
   </div>;
 }
 
-function BeastCard({ beast, owned, copies, rarities, rarity, active, onEquip, onUnequip, onFeed, onCombine }: { beast: DivineBeastTemplate; owned: boolean; copies: number; rarities: string[]; rarity?: string; active: boolean; onEquip: () => void; onUnequip: () => void; onFeed: (foodUid: string) => void; onCombine: () => void }) {
+function BeastCard({ beast, owned, copies, captiveCount, captiveRarities, rarity, active, captiveView, onEquip, onUnequip, onFeed, onCombine, onSell }: { beast: DivineBeastTemplate; owned: boolean; copies: number; captiveCount: number; captiveRarities: Rarity[]; rarity?: string; active: boolean; captiveView: boolean; onEquip: () => void; onUnequip: () => void; onFeed: (foodUid: string) => void; onCombine: () => void; onSell: () => void }) {
   const [imageFailed, setImageFailed] = useState(false);
   const character = useGameStore(state => state.character);
   const growth = beastGrowth(character?.level ?? 1);
@@ -83,12 +108,12 @@ function BeastCard({ beast, owned, copies, rarities, rarity, active, onEquip, on
       <div className="grid h-28 w-28 shrink-0 place-items-center overflow-hidden rounded-lg border border-white/10 bg-black/30">
         {owned && !imageFailed ? <AssetImage src={beast.sprite} alt={beast.name} className="h-full w-full object-contain [image-rendering:pixelated]" onError={() => setImageFailed(true)} /> : <span className={`text-6xl ${owned ? "" : "grayscale opacity-40"}`}>{beast.emoji}</span>}
       </div>
-      <div className="min-w-0"><div className={`text-[9px] font-black uppercase tracking-[.2em] ${owned ? "text-emerald-400" : "text-slate-600"}`}>{owned ? active ? "Pet ativo" : "Pet desbloqueado" : "Pet ainda não descoberto"}</div><h2 className={`mt-1 truncate text-lg font-black ${beast.rarity === "LENDARIO" ? "text-arcane-gold" : owned ? "text-white" : "text-slate-500"}`}>{owned ? beast.name : "???"}</h2><div className="truncate text-[10px] text-slate-500">{owned ? beast.title : "Guardião desconhecido"}</div><div className="mt-2 text-[10px] text-slate-500">{beast.region} · {rarity ?? beast.rarity}{rarity && rarity !== beast.rarity ? ` · base ${beast.rarity}` : ""}</div>{owned && copies > 1 && <div className="mt-1 flex flex-wrap gap-1">{rarities.map((entry, index) => <span key={`${entry}-${index}`} className="rounded border border-purple-500/30 px-1.5 py-0.5 text-[9px] text-purple-200">{entry}</span>)}</div>}{needsPanel}</div>
+      <div className="min-w-0"><div className={`text-[9px] font-black uppercase tracking-[.2em] ${owned ? "text-emerald-400" : "text-slate-600"}`}>{owned ? active ? "Pet ativo · melhor exemplar" : captiveView ? "No cativeiro" : "Melhor exemplar" : "Pet ainda não descoberto"}</div><h2 className={`mt-1 truncate text-lg font-black ${beast.rarity === "LENDARIO" ? "text-arcane-gold" : owned ? "text-white" : "text-slate-500"}`}>{owned ? beast.name : "???"}</h2><div className="truncate text-[10px] text-slate-500">{owned ? beast.title : "Guardião desconhecido"}</div><div className="mt-2 text-[10px] text-slate-500">{beast.region} · {rarity ?? beast.rarity}{rarity && rarity !== beast.rarity ? ` · exemplar ${rarity}` : ""}</div>{owned && captiveCount > 0 && <div className="mt-1 flex flex-wrap gap-1"><span className="rounded border border-purple-500/30 px-1.5 py-0.5 text-[9px] text-purple-200">{captiveCount} no cativeiro</span>{captiveRarities.map((entry, index) => <span key={`${entry}-${index}`} className="rounded border border-purple-500/30 px-1.5 py-0.5 text-[9px] text-purple-200">{entry}</span>)}</div>}{needsPanel}</div>
     </div>
     <div className="space-y-3 p-4">
       <p className="min-h-[54px] text-xs leading-relaxed text-slate-400">{owned ? beast.lore : `A Essência detecta um eco em ${beast.region}. O vínculo pode surgir ao derrotar o guardião local.`}</p>
       {owned ? <><p className="text-xs text-cyan-200">{bond?.name} · {bond?.element} · a cada 5 segundos · {bond?.mana} MP. Bônus abaixo calculados para seu nível atual.</p><div className="rounded-lg border border-white/5 bg-black/20 p-2"><div className="mb-1 text-[9px] font-bold uppercase tracking-wider text-arcane-gold">Bônus do pet</div><div className="flex flex-wrap gap-1.5">{stats.map(([stat, value]) => <span key={stat} className="rounded border border-emerald-900/40 bg-emerald-950/20 px-2 py-1 text-[10px] font-bold text-emerald-300">+{stat === "crit" || stat === "hit" || stat === "dge" || stat === "resMagico" || stat === "spd" ? `${(value * 100).toFixed(0)}%` : numberFormat.format(value)} {STAT_LABELS[stat] ?? stat}</span>)}</div></div><p className="text-[10px] italic leading-relaxed text-slate-500">{beast.bond}</p></> : <div className="rounded-lg border border-white/5 bg-black/20 p-2 text-[10px] text-slate-500">Pet possível ao derrotar {sourceBoss?.name ?? "o chefe regional"}. Chance de 12% por vitória; o chefe revela um dos pets ainda não descobertos.</div>}
-      {owned && <div className="grid gap-2"><button onClick={active ? onUnequip : onEquip} className={`w-full rounded-lg border px-3 py-2 text-xs font-black transition ${active ? "border-rose-900/50 bg-rose-950/40 text-rose-300 hover:bg-rose-900/50" : "border-arcane-gold/40 bg-arcane-gold/10 text-arcane-gold hover:bg-arcane-gold/20"}`}>{active ? "Desativar pet" : "Ativar pet"}</button>{copies >= 4 && <button onClick={onCombine} className="w-full rounded-lg border border-purple-400/50 bg-purple-950/30 px-3 py-2 text-xs font-black text-purple-200 hover:bg-purple-900/40">♢ Aprimorar pet · {copies}/4 + ração</button>}</div>}
+      {owned && <div className="grid gap-2">{!captiveView && <button onClick={active ? onUnequip : onEquip} className={`w-full rounded-lg border px-3 py-2 text-xs font-black transition ${active ? "border-rose-900/50 bg-rose-950/40 text-rose-300 hover:bg-rose-900/50" : "border-arcane-gold/40 bg-arcane-gold/10 text-arcane-gold hover:bg-arcane-gold/20"}`}>{active ? "Desativar pet" : "Ativar pet"}</button>}{captiveView && <><button onClick={onSell} className="w-full rounded-lg border border-rose-400/30 bg-rose-950/20 px-3 py-2 text-xs font-black text-rose-200 hover:bg-rose-900/40">Vender 1 excedente · {divineBeastSellValue(captiveRarities[0])} gold</button>{captiveCount >= 4 && <button onClick={onCombine} className="w-full rounded-lg border border-purple-400/50 bg-purple-950/30 px-3 py-2 text-xs font-black text-purple-200 hover:bg-purple-900/40">♢ Transformar 4 excedentes + ração</button>}</>}</div>}
     </div>
   </article>;
 }

@@ -10,6 +10,7 @@
 
 - [scripts/balance-audit.cjs](../scripts/balance-audit.cjs)
 - [scripts/build-online-runtime.mjs](../scripts/build-online-runtime.mjs)
+- [scripts/create-story-narration.ps1](../scripts/create-story-narration.ps1)
 - [scripts/journey-check.cjs](../scripts/journey-check.cjs)
 - [scripts/journey-ui-check.cjs](../scripts/journey-ui-check.cjs)
 - [scripts/online-check.ts](../scripts/online-check.ts)

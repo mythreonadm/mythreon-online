@@ -4,10 +4,11 @@
 
 ## Conhecimento relacionado
 
-- [[docs/conhecimento/00 - Fonte de conhecimento|Consultar as notas autorais]]
+- [[docs/conhecimento/Tutorial-Storytelling-Videos-2026-11-03|Tutorial cinematográfico — Storytelling de Mythreon]]
 
 ## Código e recursos
 
+- [docs/conhecimento/Tutorial-Storytelling-Videos-2026-11-03.md](../docs/conhecimento/Tutorial-Storytelling-Videos-2026-11-03.md)
 - [src/data/quests.ts](../src/data/quests.ts) — QUESTS, QUESTS_BY_ID
 - [src/engine/questEngine.ts](../src/engine/questEngine.ts) — updateQuestProgress, trackQuestAction, trackRaceDiscovery, checkQuestCompletion, claimQuestReward
 - [src/ui/QuestTracker.tsx](../src/ui/QuestTracker.tsx) — QuestTracker
@@ -20,6 +21,7 @@
 - [[Mythreon Obsidian/Sistema - Dados do jogo|Dados do jogo]]
 - [[Mythreon Obsidian/Sistema - Telas|Telas]]
 - [[Mythreon Obsidian/Sistema - Itens e Ferreiro|Itens e Ferreiro]]
+- [[Mythreon Obsidian/Sistema - Conhecimento e documentação|Conhecimento e documentação]]
 - [[Mythreon Obsidian/Sistema - Matrizes|Matrizes]]
 - [[Mythreon Obsidian/Sistema - Estado|Estado]]
 - [[Mythreon Obsidian/Sistema - Tipos|Tipos]]
