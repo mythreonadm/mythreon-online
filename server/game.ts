@@ -22,7 +22,7 @@ export function executeGame(world:WorldState,action?:string,args:unknown[]=[]):{
  let result:unknown;
  if(action){
   const s=store.getState();
-  if(s.isTickRunning&&['sellItem','salvageAll','salvageSelected','upgradeItem','rerollItem'].includes(action))throw Error('Saia da caça para acessar o Ferreiro.');
+  if(s.isTickRunning&&['sellItem','sellSelected','salvageAll','salvageSelected','upgradeItem','rerollItem'].includes(action))throw Error('Saia da caça para acessar o Ferreiro.');
   if(action==='activateBuff'&&(!s.isTickRunning||!s.character?.onlineBalloonUntil||s.character.onlineBalloonUntil<now))throw Error('Este eco de bônus expirou. Aguarde outro durante a caça.');
   const zero=['finishIntro','clearOfflineReport','clearDeathReport','startHealing','cancelHealing','stopHunting','stopTraining','unequipRace','unequipDivineBeast','activateBuff','buyTrainingBoost','buyBless','refreshCompendium'];
   const strings=['unlockZone','setActiveEnemy','setCurrentZone','acceptQuest','claimQuest','upgradeItem','rerollItem','depositItem','withdrawItem'];
@@ -39,6 +39,7 @@ export function executeGame(world:WorldState,action?:string,args:unknown[]=[]):{
   else if(action==='synthesize'){result=s.synthesize(uid(args[0]),uid(args[1]),uid(args[2]));if((result as any)?.success)world.counters.syntheses++;}
   else if(action==='useVial'){const id=typeof args[0]==='string'?args[0]:(args[0] as any)?.id;const vial=typeof id==='string'&&Object.hasOwn(VIALS,id)?VIALS[id]:undefined;if(!vial)throw Error('Vial inválido.');s.useVial(vial);}
   else if(action==='sellItem'){const quantity=args[1]??1;if(!Number.isInteger(quantity)||Number(quantity)<1||Number(quantity)>999)throw Error('Quantidade inválida.');s.sellItem(uid(args[0]),Number(quantity));}
+  else if(action==='sellSelected'){if(!Array.isArray(args[0])||args[0].length>300)throw Error('Seleção inválida.');s.sellSelected([...new Set(args[0].map(uid))]);}
   else if(['salvageSelected','depositMany','withdrawMany'].includes(action)){if(!Array.isArray(args[0])||args[0].length>300)throw Error('Seleção inválida.');const ids=[...new Set(args[0].map(uid))];result=(s[action as 'depositMany'])(ids);}
   else if(action==='salvageAll'){if(!['COMUM','INCOMUM','RARO','EPICO','LENDARIO'].includes(String(args[0])))throw Error('Raridade inválida.');s.salvageAll(args[0]);}
   else if(action==='recordQuestAction'){

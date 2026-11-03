@@ -28,7 +28,7 @@ export function salvageAllEquipment(char: Character, maxRarity: Rarity): { items
   let salvagedCount = 0;
 
   for (const item of char.inventory.items) {
-    const isEquip = ["ARMA", "ARMADURA", "JOIA", "PULSEIRA", "ESCUDO"].includes(item.category);
+    const isEquip = ["ARMA", "ARMADURA", "JOIA", "PULSEIRA", "ESCUDO", "FLECHA"].includes(item.category);
     const canSalvage = isEquip && item.rarity !== "LENDARIO" && RARITY_ORDER.indexOf(item.rarity) <= limit;
     
     if (!canSalvage) { keep.push(item); continue; }
@@ -56,7 +56,7 @@ export function salvageAllEquipment(char: Character, maxRarity: Rarity): { items
 
 export function salvageSelectedEquipment(char: Character, uids: string[]): { items: number, frags: number } {
   const selected = new Set(uids);
-  const chosen = char.inventory.items.filter(item => selected.has(item.uid) && ["ARMA", "ARMADURA", "JOIA", "PULSEIRA", "ESCUDO"].includes(item.category));
+  const chosen = char.inventory.items.filter(item => selected.has(item.uid) && ["ARMA", "ARMADURA", "JOIA", "PULSEIRA", "ESCUDO", "FLECHA"].includes(item.category));
   let items = 0;
   let frags = 0;
   for (const item of chosen) {

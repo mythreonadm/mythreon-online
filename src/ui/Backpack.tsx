@@ -6,6 +6,7 @@ import { getItemScore, isUpgrade, getEquippedForTarget } from "../engine/itemCom
 import { ItemModal } from "./ItemModal";
 import { ItemIcon } from "./ItemIcon"; // NOVO
 import { Item, Rarity } from "../types";
+import { sellValue } from "../engine/shop";
 
 
 const RARITY_ORDER: Record<Rarity, number> = {
@@ -15,7 +16,7 @@ const RARITY_ORDER: Record<Rarity, number> = {
 type SortBy = "rarity" | "score" | "name";
 
 export function Backpack() {
-  const { character, equip, save, depositItem, depositMany } = useGameStore();
+  const { character, equip, save, depositItem, depositMany, sellSelected } = useGameStore();
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortBy>("rarity");
@@ -76,7 +77,17 @@ export function Backpack() {
   };
 
   const selectAll = () => setSelectedUids(filtered.map(i => i.uid));
+  const selectAllForSale = () => setSelectedUids(filtered.filter(i => i.category !== "COMPONENTE" && i.category !== "FRAGMENTO" && i.category !== "POCAO").map(i => i.uid));
   const clearSelection = () => setSelectedUids([]);
+
+  const handleBulkSell = () => {
+    const items = character.inventory.items.filter(i => selectedUids.includes(i.uid));
+    if (!items.length) return;
+    const total = items.reduce((sum, item) => sum + sellValue(item) * item.quantity, 0);
+    if (!window.confirm(`Vender ${items.length} itens selecionados por aproximadamente ${total.toLocaleString("pt-BR")} gold?`)) return;
+    sellSelected(selectedUids);
+    setSelectedUids([]);
+  };
 
   const handleBulkDeposit = () => {
     if (selectedUids.length === 0) return;
@@ -129,6 +140,7 @@ export function Backpack() {
           <h2 className="text-xl font-bold text-arcane-gold">🎒 Backpack</h2>
           <span className={`rounded px-2 py-1 text-xs font-bold ${used >= total ? "bg-red-900/70 text-red-200" : used >= total - 3 ? "bg-yellow-900/60 text-yellow-200" : "bg-black/30 text-gray-400"}`}>{used}/{total} espaços{used >= total ? " · CHEIA" : ""}</span>
           <button onClick={selectAll} className="text-xs bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 rounded">Selecionar Tudo</button>
+          <button onClick={selectAllForSale} className="text-xs bg-emerald-800 hover:bg-emerald-700 border border-emerald-500/40 text-white px-2 py-1 rounded font-bold">Selecionar todos para vender</button>
           <button onClick={equipBestPowerItems} title="A pontuação geral pode ignorar a sinergia dos atributos da sua build." className="text-xs bg-emerald-800 hover:bg-emerald-700 border border-emerald-500/40 text-white px-3 py-1.5 rounded font-bold">⚡ Equipar maior potência</button>
         </div>
         <div className="flex items-center gap-2 text-sm flex-wrap">
@@ -234,6 +246,9 @@ export function Backpack() {
           <div className="flex gap-2">
             <button onClick={handleBulkDeposit} className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-bold text-sm shadow">
               📥 Enviar ao Depot
+            </button>
+            <button onClick={handleBulkSell} className="bg-emerald-700 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold text-sm shadow">
+              💰 Vender selecionados
             </button>
             <button onClick={clearSelection} className="bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 rounded-lg font-bold text-sm">
               Cancelar

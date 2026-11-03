@@ -10,7 +10,7 @@ import { processTick } from "../engine/combat";
 import { equipItem, unequipItem, addItem, removeItem } from "../engine/inventory";
 import { recalcStats, skillXpToNextLevel } from "../engine/stats";
 import { findNamedRace, generateRaceName, generateRaceId, generateRaceBonus } from "../data/races";
-import { sellItem } from "../engine/shop";
+import { sellItem, sellSelectedItems } from "../engine/shop";
 import { salvageAllEquipment, salvageSelectedEquipment } from "../engine/salvage";
 import { updateQuestProgress, claimQuestReward, trackRaceDiscovery, trackQuestAction } from "../engine/questEngine";
 import { upgradeItemLevel, rerollItemAffixes, forgeFragments } from "../engine/forge";
@@ -57,6 +57,7 @@ export interface GameState {
   equipDivineBeast: (id: DivineBeastId) => { success: boolean; error?: string };
   unequipDivineBeast: () => void;
   sellItem: (uid: string, qty?: number) => void;
+  sellSelected: (uids: string[]) => void;
   salvageAll: (maxRarity: any) => void;
   salvageSelected: (uids: string[]) => void;
   updateSettings: (settings: any) => void;
@@ -425,6 +426,15 @@ return create<GameState>((set, get) => ({
     if (!res.success) return;
     trackQuestAction(newCharacter, "SELL", res.count);
     set({ character: newCharacter }); get().save();
+  },
+
+  sellSelected: (uids) => {
+    const { character } = get(); if (!character || !uids.length) return;
+    const newCharacter = JSON.parse(JSON.stringify(character));
+    const res = sellSelectedItems(newCharacter, uids);
+    if (!res.count) return;
+    trackQuestAction(newCharacter, "SELL", res.count);
+    set({ character: newCharacter }); get().save(); notify(`Vendeu ${res.count} itens por ${res.gold.toLocaleString("pt-BR")} gold.`);
   },
 
   salvageAll: (maxRarity) => {

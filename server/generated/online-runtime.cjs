@@ -1776,6 +1776,23 @@ function sellItem(char, uid, qty = 1) {
   char.gold += gold;
   return { success: true, gold, count: n };
 }
+function sellSelectedItems(char, uids) {
+  const selected = new Set(uids);
+  let count = 0, gold = 0;
+  const keep = [];
+  for (const item of char.inventory.items) {
+    if (!selected.has(item.uid)) {
+      keep.push(item);
+      continue;
+    }
+    const amount = Math.max(1, item.quantity);
+    gold += sellValue(item) * amount;
+    count += amount;
+  }
+  char.inventory.items = keep;
+  char.gold += gold;
+  return { count, gold };
+}
 
 // src/engine/salvage.ts
 function salvageItem(char, item) {
@@ -1800,7 +1817,7 @@ function salvageAllEquipment(char, maxRarity) {
   const keep = [];
   let salvagedCount = 0;
   for (const item of char.inventory.items) {
-    const isEquip = ["ARMA", "ARMADURA", "JOIA", "PULSEIRA", "ESCUDO"].includes(item.category);
+    const isEquip = ["ARMA", "ARMADURA", "JOIA", "PULSEIRA", "ESCUDO", "FLECHA"].includes(item.category);
     const canSalvage = isEquip && item.rarity !== "LENDARIO" && RARITY_ORDER.indexOf(item.rarity) <= limit;
     if (!canSalvage) {
       keep.push(item);
@@ -1829,7 +1846,7 @@ function salvageAllEquipment(char, maxRarity) {
 }
 function salvageSelectedEquipment(char, uids) {
   const selected = new Set(uids);
-  const chosen = char.inventory.items.filter((item) => selected.has(item.uid) && ["ARMA", "ARMADURA", "JOIA", "PULSEIRA", "ESCUDO"].includes(item.category));
+  const chosen = char.inventory.items.filter((item) => selected.has(item.uid) && ["ARMA", "ARMADURA", "JOIA", "PULSEIRA", "ESCUDO", "FLECHA"].includes(item.category));
   let items = 0;
   let frags = 0;
   for (const item of chosen) {
@@ -3476,6 +3493,17 @@ function createGameStore(runtime = {}) {
       set({ character: newCharacter });
       get().save();
     },
+    sellSelected: (uids) => {
+      const { character } = get();
+      if (!character || !uids.length) return;
+      const newCharacter = JSON.parse(JSON.stringify(character));
+      const res = sellSelectedItems(newCharacter, uids);
+      if (!res.count) return;
+      trackQuestAction(newCharacter, "SELL", res.count);
+      set({ character: newCharacter });
+      get().save();
+      notify(`Vendeu ${res.count} itens por ${res.gold.toLocaleString("pt-BR")} gold.`);
+    },
     salvageAll: (maxRarity) => {
       const { character } = get();
       if (!character) return;
@@ -3764,7 +3792,7 @@ function executeGame(world, action, args = []) {
   let result;
   if (action) {
     const s = store.getState();
-    if (s.isTickRunning && ["sellItem", "salvageAll", "salvageSelected", "upgradeItem", "rerollItem"].includes(action)) throw Error("Saia da ca\xE7a para acessar o Ferreiro.");
+    if (s.isTickRunning && ["sellItem", "sellSelected", "salvageAll", "salvageSelected", "upgradeItem", "rerollItem"].includes(action)) throw Error("Saia da ca\xE7a para acessar o Ferreiro.");
     if (action === "activateBuff" && (!s.isTickRunning || !s.character?.onlineBalloonUntil || s.character.onlineBalloonUntil < now)) throw Error("Este eco de b\xF4nus expirou. Aguarde outro durante a ca\xE7a.");
     const zero = ["finishIntro", "clearOfflineReport", "clearDeathReport", "startHealing", "cancelHealing", "stopHunting", "stopTraining", "unequipRace", "unequipDivineBeast", "activateBuff", "buyTrainingBoost", "buyBless", "refreshCompendium"];
     const strings = ["unlockZone", "setActiveEnemy", "setCurrentZone", "acceptQuest", "claimQuest", "upgradeItem", "rerollItem", "depositItem", "withdrawItem"];
@@ -3829,6 +3857,9 @@ function executeGame(world, action, args = []) {
       const quantity = args[1] ?? 1;
       if (!Number.isInteger(quantity) || Number(quantity) < 1 || Number(quantity) > 999) throw Error("Quantidade inv\xE1lida.");
       s.sellItem(uid(args[0]), Number(quantity));
+    } else if (action === "sellSelected") {
+      if (!Array.isArray(args[0]) || args[0].length > 300) throw Error("Sele\xE7\xE3o inv\xE1lida.");
+      s.sellSelected([...new Set(args[0].map(uid))]);
     } else if (["salvageSelected", "depositMany", "withdrawMany"].includes(action)) {
       if (!Array.isArray(args[0]) || args[0].length > 300) throw Error("Sele\xE7\xE3o inv\xE1lida.");
       const ids = [...new Set(args[0].map(uid))];
