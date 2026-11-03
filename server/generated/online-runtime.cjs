@@ -4126,7 +4126,8 @@ async function handler(req, res) {
       res.statusCode = 400;
       return res.end(JSON.stringify({ error: "Solicita\xE7\xE3o inv\xE1lida." }));
     }
-    pool ??= new import_pg.Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: true, ...process.env.DATABASE_SSL_CA ? { ca: process.env.DATABASE_SSL_CA } : {} }, max: 3, idleTimeoutMillis: 1e4, connectionTimeoutMillis: 8e3 });
+    const sslCa = process.env.DATABASE_SSL_CA?.replace(/\\n/g, "\n").trim();
+    pool ??= new import_pg.Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: true, ...sslCa ? { ca: sslCa } : {} }, max: 3, idleTimeoutMillis: 1e4, connectionTimeoutMillis: 8e3 });
     client = await pool.connect();
     await client.query("begin");
     await client.query("set local statement_timeout='15s'");
@@ -4138,8 +4139,8 @@ async function handler(req, res) {
     if (client) await client.query("rollback").catch(() => {
     });
     const code = String(error?.code ?? "");
-    const message = code === "23505" ? "Este nome de personagem j\xE1 est\xE1 em uso." : code === "28P01" || code === "28000" ? "A senha do banco recusou a conex\xE3o. Atualize DATABASE_URL com a senha atual do Supabase." : code === "ENOTFOUND" || code === "EAI_AGAIN" ? "O host do banco n\xE3o foi encontrado. Use a URL Transaction pooler do Supabase." : code === "ECONNREFUSED" || code === "ETIMEDOUT" ? "O banco recusou a conex\xE3o. Confira a URL Transaction pooler e a porta 6543." : code === "42P01" ? "As tabelas online ainda n\xE3o foram aplicadas neste banco." : code === "23502" ? "O banco est\xE1 com uma migra\xE7\xE3o incompleta. Reaplique as migra\xE7\xF5es online." : code === "22P02" ? "A solicita\xE7\xE3o cont\xE9m um identificador inv\xE1lido. Atualize a p\xE1gina e tente novamente." : code ? "N\xE3o foi poss\xEDvel concluir. Confira a configura\xE7\xE3o do banco online." : error instanceof Error ? error.message : "N\xE3o foi poss\xEDvel concluir.";
-    console.error("world request failed", { code, message: error?.message });
+    const message = code === "23505" ? "Este nome de personagem j\xE1 est\xE1 em uso." : code === "28P01" || code === "28000" ? "A senha do banco recusou a conex\xE3o. Atualize DATABASE_URL com a senha atual do Supabase." : code === "ENOTFOUND" || code === "EAI_AGAIN" ? "O host do banco n\xE3o foi encontrado. Use a URL Transaction pooler do Supabase." : code === "ECONNREFUSED" || code === "ETIMEDOUT" ? "O banco recusou a conex\xE3o. Confira a URL Transaction pooler e a porta 6543." : code === "SELF_SIGNED_CERT_IN_CHAIN" ? "O certificado CA do Supabase n\xE3o foi aceito. Recole o arquivo .crt inteiro em DATABASE_SSL_CA, incluindo BEGIN/END CERTIFICATE." : code === "42P01" ? "As tabelas online ainda n\xE3o foram aplicadas neste banco." : code === "23502" ? "O banco est\xE1 com uma migra\xE7\xE3o incompleta. Reaplique as migra\xE7\xF5es online." : code === "22P02" ? "A solicita\xE7\xE3o cont\xE9m um identificador inv\xE1lido. Atualize a p\xE1gina e tente novamente." : code ? "N\xE3o foi poss\xEDvel concluir. Confira a configura\xE7\xE3o do banco online." : error instanceof Error ? error.message : "N\xE3o foi poss\xEDvel concluir.";
+    console.error("world request failed", { code, message: error?.message, hasCa: Boolean(process.env.DATABASE_SSL_CA), caLength: process.env.DATABASE_SSL_CA?.length ?? 0 });
     res.statusCode = code ? 500 : 400;
     res.end(JSON.stringify({ error: message }));
   } finally {
