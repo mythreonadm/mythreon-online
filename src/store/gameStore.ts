@@ -20,7 +20,7 @@ import { FRAGMENT_TEMPLATES, DIVINE_BEAST_EGG_TEMPLATES, UNIQUE_TEMPLATES, creat
 import { DIVINE_BEASTS } from "../data/divineBeasts";
 import { QUESTS } from "../data/quests";
 import { getMythreonOffer, MYTHREON_ECONOMY } from "../data/mythreonEconomy";
-import { farmSeed, farmYield, FARM_SEEDS } from "../data/farm";
+import { farmSeed, farmYield, FARM_SEEDS, farmExpansionCost } from "../data/farm";
 
 export interface GameState {
   character: Character | null;
@@ -541,7 +541,7 @@ return create<GameState>((set, get) => ({
   plantFarmSeed: (plotId, seedId) => {
     const { character } = get(); if (!character) return { success: false, error: "Personagem indisponível." };
     const seed = farmSeed(seedId); if (!seed) return { success: false, error: "Semente inválida." };
-    const next = JSON.parse(JSON.stringify(character)); next.farm ??= { plots: [], unlockedPlots: 4, lastActionAt: Date.now() };
+    const next = JSON.parse(JSON.stringify(character)); next.farm ??= { plots: [], unlockedPlots: 1, lastActionAt: Date.now() };
     const plot = next.farm.plots.find((entry: any) => entry.id === plotId);
     if (!plot || next.farm.plots.indexOf(plot) >= next.farm.unlockedPlots) return { success: false, error: "Canteiro bloqueado." };
     if (plot.seedId) return { success: false, error: "Este canteiro já está plantado." };
@@ -556,8 +556,19 @@ return create<GameState>((set, get) => ({
   },
   unlockFarmPlot: () => {
     const { character } = get(); if (!character) return { success: false, error: "Personagem indisponível." };
-    const next = JSON.parse(JSON.stringify(character)); next.farm ??= { plots: [], unlockedPlots: 4, lastActionAt: Date.now() }; const max = 12;
-    if (next.farm.unlockedPlots >= max) return { success: false, error: "Todos os terrenos já foram liberados." }; const cost = 500 * next.farm.unlockedPlots; if (next.gold < cost) return { success: false, error: `Você precisa de ${cost.toLocaleString("pt-BR")} gold.` }; next.gold -= cost; next.farm.unlockedPlots += 1; next.farm.plots.push({ id: `plot-${next.farm.unlockedPlots}` }); set({ character: next }); get().save(); return { success: true };
+    const next = JSON.parse(JSON.stringify(character)); next.farm ??= { plots: [], unlockedPlots: 1, lastActionAt: Date.now() };
+    const cost = farmExpansionCost(next.farm.unlockedPlots);
+    if (!cost) return { success: false, error: "Todos os terrenos já foram liberados." };
+    if (cost.kind === "gold") {
+      if (next.gold < cost.amount) return { success: false, error: `Você precisa de ${cost.label}.` };
+      next.gold -= cost.amount;
+    } else {
+      if ((next.mythreonCoins ?? 0) < cost.amount) return { success: false, error: `Você precisa de ${cost.label}.` };
+      next.mythreonCoins = (next.mythreonCoins ?? 0) - cost.amount;
+    }
+    next.farm.unlockedPlots += 1;
+    next.farm.plots.push({ id: `plot-${next.farm.unlockedPlots}` });
+    set({ character: next }); get().save(); return { success: true };
   },
 
   salvageAll: (maxRarity) => {

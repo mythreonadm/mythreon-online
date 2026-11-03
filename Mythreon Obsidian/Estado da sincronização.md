@@ -3,8 +3,8 @@
 > Painel automático; não substitui as notas de conhecimento.
 
 Estado: **ok**
-Atualizado: 2026-11-03T18:45:49.884Z
-PID do processo: 2236
+Atualizado: 2026-11-03T19:18:03.239Z
+PID do processo: 2364
 
 21 notas originais catalogadas. Decisões e explicações são mantidas em docs/conhecimento.
 

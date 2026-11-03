@@ -36,8 +36,6 @@
 - [imagens/image_59cd7f8b.jpg](../imagens/image_59cd7f8b.jpg)
 - [imagens/image_5f23237d.jpg](../imagens/image_5f23237d.jpg)
 - [imagens/pulseiras e itens unicos](../imagens/pulseiras e itens unicos)
-- [imagens/storytelling videos/humano e a fenix.jfif](../imagens/storytelling videos/humano e a fenix.jfif)
-- [imagens/storytelling videos/transformação e vitoria.jfif](../imagens/storytelling videos/transformação e vitoria.jfif)
 - [imagens/unicos e pulsieras](../imagens/unicos e pulsieras)
 - [imagens/videos/humanoxfalcaoxbosque.heic](../imagens/videos/humanoxfalcaoxbosque.heic)
 - [index.html](../index.html)

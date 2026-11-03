@@ -1731,7 +1731,7 @@ function createNewCharacter(name, appearance) {
     divineBeastAttackTimerMs: 0,
     depot: [],
     depotMax: 300,
-    farm: { plots: Array.from({ length: 4 }, (_, index) => ({ id: `plot-${index + 1}` })), unlockedPlots: 4, lastActionAt: Date.now() }
+    farm: { plots: [{ id: "plot-1" }], unlockedPlots: 1, lastActionAt: Date.now() }
   };
 }
 function saveGame(char, races) {
@@ -1813,7 +1813,7 @@ function loadGame() {
       if (!data.character.divineBeastNeeds || typeof data.character.divineBeastNeeds !== "object") data.character.divineBeastNeeds = {};
       if (!Number.isFinite(data.character.divineBeastAttackTimerMs)) data.character.divineBeastAttackTimerMs = 0;
       if (!data.character.depot) data.character.depot = [];
-      if (!data.character.farm || !Array.isArray(data.character.farm.plots)) data.character.farm = { plots: Array.from({ length: 4 }, (_, index) => ({ id: `plot-${index + 1}` })), unlockedPlots: 4, lastActionAt: Date.now() };
+      if (!data.character.farm || !Array.isArray(data.character.farm.plots)) data.character.farm = { plots: [{ id: "plot-1" }], unlockedPlots: 1, lastActionAt: Date.now() };
       if (Array.isArray(data.character.inventory?.items)) {
         const normalized = [];
         for (const item of data.character.inventory.items) {
@@ -3356,6 +3356,15 @@ var FARM_SEEDS = [
   { id: "SEMENTE_TRIGO", name: "Semente de Trigo", icon: "\u{1F33E}", growMs: 30 * 6e4, yieldId: "COLHEITA_TRIGO", yieldName: "Trigo de Lyss", yieldIcon: "\u{1F33E}", yieldQty: 3, cost: 160 },
   { id: "SEMENTE_LUMINA", name: "Semente Lumina", icon: "\u2728", growMs: 60 * 6e4, yieldId: "COLHEITA_LUMINA", yieldName: "Fruto Lumina", yieldIcon: "\u{1F506}", yieldQty: 2, cost: 400 }
 ];
+var FARM_MAX_PLOTS = 12;
+function farmExpansionCost(unlockedPlots) {
+  if (unlockedPlots >= FARM_MAX_PLOTS) return null;
+  const nextPlot = unlockedPlots + 1;
+  if (nextPlot === 2) return { kind: "gold", amount: 1e3, label: "1.000 gold" };
+  if (nextPlot === 3) return { kind: "gold", amount: 25e3, label: "25.000 gold" };
+  if (nextPlot === 4) return { kind: "gold", amount: 1e5, label: "100.000 gold" };
+  return { kind: "coins", amount: 500, label: "500 Mythreon Coins" };
+}
 var farmSeed = (id) => FARM_SEEDS.find((seed) => seed.id === id);
 function farmYield(seed) {
   return { uid: `farm-${seed.yieldId}-${Date.now()}-${Math.random()}`, templateId: seed.yieldId, name: seed.yieldName, category: "MATERIAL", tier: 1, rarity: "COMUM", stats: {}, affixes: [], upgradeLevel: 0, stackable: true, maxStack: 999, quantity: seed.yieldQty, icon: seed.yieldIcon };
@@ -3858,7 +3867,7 @@ function createGameStore(runtime = {}) {
       const seed = farmSeed(seedId);
       if (!seed) return { success: false, error: "Semente inv\xE1lida." };
       const next = JSON.parse(JSON.stringify(character));
-      next.farm ??= { plots: [], unlockedPlots: 4, lastActionAt: Date.now() };
+      next.farm ??= { plots: [], unlockedPlots: 1, lastActionAt: Date.now() };
       const plot = next.farm.plots.find((entry) => entry.id === plotId);
       if (!plot || next.farm.plots.indexOf(plot) >= next.farm.unlockedPlots) return { success: false, error: "Canteiro bloqueado." };
       if (plot.seedId) return { success: false, error: "Este canteiro j\xE1 est\xE1 plantado." };
@@ -3895,12 +3904,16 @@ function createGameStore(runtime = {}) {
       const { character } = get();
       if (!character) return { success: false, error: "Personagem indispon\xEDvel." };
       const next = JSON.parse(JSON.stringify(character));
-      next.farm ??= { plots: [], unlockedPlots: 4, lastActionAt: Date.now() };
-      const max = 12;
-      if (next.farm.unlockedPlots >= max) return { success: false, error: "Todos os terrenos j\xE1 foram liberados." };
-      const cost = 500 * next.farm.unlockedPlots;
-      if (next.gold < cost) return { success: false, error: `Voc\xEA precisa de ${cost.toLocaleString("pt-BR")} gold.` };
-      next.gold -= cost;
+      next.farm ??= { plots: [], unlockedPlots: 1, lastActionAt: Date.now() };
+      const cost = farmExpansionCost(next.farm.unlockedPlots);
+      if (!cost) return { success: false, error: "Todos os terrenos j\xE1 foram liberados." };
+      if (cost.kind === "gold") {
+        if (next.gold < cost.amount) return { success: false, error: `Voc\xEA precisa de ${cost.label}.` };
+        next.gold -= cost.amount;
+      } else {
+        if ((next.mythreonCoins ?? 0) < cost.amount) return { success: false, error: `Voc\xEA precisa de ${cost.label}.` };
+        next.mythreonCoins = (next.mythreonCoins ?? 0) - cost.amount;
+      }
       next.farm.unlockedPlots += 1;
       next.farm.plots.push({ id: `plot-${next.farm.unlockedPlots}` });
       set({ character: next });

@@ -2,11 +2,11 @@
 
 ## Estado implementado
 
-- Quatro canteiros gratuitos por personagem.
+- Um canteiro gratuito por personagem.
 - Plantio de Cenoura, Melancia, Trigo de Lyss e Semente Lumina.
 - Cada semente possui custo, tempo de crescimento e rendimento próprios.
-- Colheita gera materiais empilháveis até 999, prontos para alimentar Bestas Divinas e futuramente fabricar poções/rações.
-- Expansão gradual até 12 canteiros, com custo crescente em gold.
+- Colheita gera materiais empilháveis até 999, prontos para alimentar Pets e futuramente fabricar poções/rações.
+- Expansão gradual até 12 canteiros: 2º por 1.000 gold, 3º por 25.000 gold, 4º por 100.000 gold e 5º em diante por 500 Mythreon Coins.
 - Estado persistente em saves locais e no mundo online.
 - Ações online validadas pelo servidor: plantar, colher e expandir terreno.
 - Ações da Fazenda não alteram regras de combate, loot ou XP.
