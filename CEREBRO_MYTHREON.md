@@ -425,3 +425,15 @@ Implementada a primeira camada de vocação das Bestas Divinas: ovos T1–T5, ec
 Arquivos desta rodada: `src/types/index.ts`, `src/engine/save.ts`, `src/store/gameStore.ts`, `src/data/items.ts`, `src/data/beastCombat.ts`, `src/engine/combat.ts`, `src/ui/DivineBeasts.tsx`, `server/game.ts`, `server/generated/online-runtime.cjs` e `docs/conhecimento/Pets-Atividades-Boss-Diario.md`.
 
 Baú por tempo online, recompensa diária, cards, mineração, pesca e Boss cooperativo estão especificados como próximas camadas. O Boss Diário não deve ser anunciado como pronto enquanto não houver autoridade de servidor, transações idempotentes, RLS, rate limit e testes de concorrência; o cliente não pode decidir HP, dano ou loot.
+
+## Direção de produto e arte — 2026-11-03
+
+O novo ciclo foi dividido para preservar funcionamento: catálogo visual; Ferreiro avançado e economia Mythreon Coin; calendário diário e Jornal de Mythreon; pesca/mineração com progressão por habilidade; treino manual; rebalanceamento de monstros; Boss Diário cooperativo com servidor autoritativo. Nomes exatos, pastas, paletas e regras das pranchas estão em `docs/ARTE_MYTHREON_FASES_FUTURAS.md`.
+
+Regras econômicas: elevar tier e reroll comum usam recursos do Ferreiro; sortear atributo específico custa Mythreon Coin e deve ser cerca de cinco vezes mais caro; cosméticos premium podem alterar brilho, aura e skin, mas nunca dano, HP, drop ou velocidade. O calendário de 30 dias pode conceder uma skin mensal; recompensas beta devem ser vinculadas à conta e auditáveis.
+
+Primeira etapa da sequência profissional iniciada: Ferreiro agora possui elevação de Tier até T5 e sorteio de atributo específico usando Mythreon Coin + 100 Fragmentos Raros. O sorteio específico é deliberadamente caro e o tier aumenta os stats do item de forma controlada. Pranchas geradas foram salvas como `public/assets/items/prancha-mythreon-ovos-baus-ferreiro.png`, `public/assets/items/prancha-mythreon-pesca-mineracao.png` e `public/assets/ui/prancha-mythreon-efeitos-skins-jornal.png`.
+
+Segunda etapa iniciada: calendário mensal com 30 marcações, Cupom de Resgate comprado por 1 Mythreon Coin, sequência diária, bônus semanal a cada 7 dias e recompensa cosmética aos 30 dias (`Capa do Primeiro Canto`). A interface está em `src/ui/DailyCalendar.tsx` e integrada ao Refúgio; a arte está em `public/assets/ui/prancha-calendario-sequencia-skin-mes-01.png`. O bônus de calendário não concede stats de combate.
+
+Complemento visual salvo em `public/assets/ui/prancha-peixe-cicatriz-skin-addon.png`: `PEIXE_CICATRIZ.png`, `SKIN_PREMIUM_MES_01.png` e `ADDON_BOSS_LUMINESCENTE.png`, nesta ordem visual.

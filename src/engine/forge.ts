@@ -133,3 +133,52 @@ export function rerollItemAffixes(char: Character, itemUid: string): { success: 
   
   return { success: true, newAffixes };
 }
+
+export function elevateItemTier(char: Character, itemUid: string): { success: boolean; error?: string } {
+  const item = char.inventory.items.find(i => i.uid === itemUid);
+  if (!item) return { success: false, error: "Item não encontrado." };
+  if (!FORGE_CATEGORIES.includes(item.category as typeof FORGE_CATEGORIES[number])) return { success: false, error: "Escolha um equipamento válido para o Ferreiro." };
+  if (item.tier >= 5) return { success: false, error: "Este item já está no Tier máximo." };
+  const nextTier = item.tier + 1;
+  const fragments = 15 * nextTier;
+  const gold = 2500 * nextTier * nextTier;
+  const owned = countByTemplate(char.inventory, "FRAGMENTO_EPICO");
+  if (owned < fragments) return { success: false, error: `Faltam Fragmentos Épicos. Você tem ${owned}, precisa de ${fragments}.` };
+  if (char.gold < gold) return { success: false, error: `Ouro insuficiente. Você tem ${char.gold}, precisa de ${gold}.` };
+  char.gold -= gold;
+  let left = fragments;
+  for (const entry of [...char.inventory.items]) {
+    if (entry.templateId !== "FRAGMENTO_EPICO" || left <= 0) continue;
+    const amount = Math.min(entry.quantity, left); removeItem(char.inventory, entry.uid, amount); left -= amount;
+  }
+  item.tier = nextTier as Item["tier"];
+  for (const [key, value] of Object.entries(item.stats)) (item.stats as any)[key] = Math.round(Number(value) * 1.22 * 100) / 100;
+  item.name = item.name.replace(/ · T[1-5]$/, "") + ` · T${nextTier}`;
+  recalcStats(char);
+  return { success: true };
+}
+
+export function rerollSpecificAffix(char: Character, itemUid: string, stat: keyof Item["stats"]): { success: boolean; error?: string } {
+  const item = char.inventory.items.find(i => i.uid === itemUid);
+  if (!item) return { success: false, error: "Item não encontrado." };
+  if (!FORGE_CATEGORIES.includes(item.category as typeof FORGE_CATEGORIES[number])) return { success: false, error: "Escolha um equipamento válido para o Ferreiro." };
+  if (item.rarity === "COMUM") return { success: false, error: "Itens Comuns não possuem atributos para reencantar." };
+  const costFragments = 100;
+  const costGold = 2500 * item.tier;
+  if ((char.mythreonCoins ?? 0) < 1) return { success: false, error: "É necessária 1 Mythreon Coin para sortear um atributo específico." };
+  if (countByTemplate(char.inventory, "FRAGMENTO_RARO") < costFragments) return { success: false, error: `Faltam Fragmentos Raros. Você precisa de ${costFragments}.` };
+  if (char.gold < costGold) return { success: false, error: `Ouro insuficiente. Você precisa de ${costGold}.` };
+  const generated = generateRandomAffixes(item.category, item.rarity, item.tier);
+  const replacement = generated.find(affix => affix.stat === stat) ?? generated[0];
+  if (!replacement) return { success: false, error: "Nenhum atributo compatível foi encontrado." };
+  char.gold -= costGold; char.mythreonCoins = (char.mythreonCoins ?? 0) - 1;
+  let left = costFragments;
+  for (const entry of [...char.inventory.items]) {
+    if (entry.templateId !== "FRAGMENTO_RARO" || left <= 0) continue;
+    const amount = Math.min(entry.quantity, left); removeItem(char.inventory, entry.uid, amount); left -= amount;
+  }
+  const index = item.affixes.findIndex(affix => affix.stat === stat);
+  if (index >= 0) item.affixes[index] = replacement; else item.affixes.push(replacement);
+  recalcStats(char);
+  return { success: true };
+}

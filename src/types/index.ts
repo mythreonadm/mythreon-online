@@ -244,6 +244,10 @@ export interface Character {
   arenaRewardDay?: string;
   arenaRewardsToday?: number;
   arenaRareRewardDay?: string;
+  calendarCoupons?: number;
+  calendarClaimedDays?: string[];
+  calendarStreak?: number;
+  calendarLastClaimDay?: string;
   divineBeasts?: DivineBeastInstance[];
   activeDivineBeastId?: DivineBeastId;
   divineBeastNeeds?: Partial<Record<DivineBeastId, DivineBeastNeeds>>;

@@ -23,6 +23,7 @@ import { getBeastCombat } from "../data/beastCombat";
 import { QUESTS } from "../data/quests";
 import { ALL_ITEM_TEMPLATES } from "../data/items";
 import { playAttackSfx, playCombatSfx } from "../utils/sfx";
+import { DailyCalendar } from "./DailyCalendar";
 
 interface ZoneViewProps { onOpenQuest: (questId: string) => void; trackedQuestId?: string | null; }
 
@@ -62,7 +63,7 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
   const [showProjectile, setShowProjectile] = useState(false);
   const [balloon, setBalloon] = useState<{ x: number; y: number } | null>(null);
   const [buffTimeLeft, setBuffTimeLeft] = useState(0);
-  const [houseTab, setHouseTab] = useState<"maps" | "train">("maps");
+  const [houseTab, setHouseTab] = useState<"maps" | "train" | "calendar">("maps");
   const [healTimer, setHealTimer] = useState(0);
   const [magicCooldown, setMagicCooldown] = useState(0);
   const [mobilePanelOpen, setMobilePanelOpen] = useState(false);
@@ -246,7 +247,7 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,rgba(4,8,10,.58)_100%)] pointer-events-none" />
           
           <div className="relative z-10 mx-auto w-full max-w-4xl">
-            <div className="mb-8 rounded-2xl border border-arcane-gold/45 bg-[linear-gradient(180deg,rgba(5,10,13,.88),rgba(5,10,13,.68))] p-5 text-center shadow-[0_12px_40px_rgba(0,0,0,.5)] backdrop-blur-[2px] md:p-7"><div className="mb-2 text-3xl font-black tracking-[.16em] text-arcane-gold drop-shadow-[0_2px_8px_rgba(0,0,0,.95)] md:text-4xl">REFÚGIO DA ESSÊNCIA</div><h2 className="text-2xl font-bold text-white drop-shadow-[0_2px_6px_rgba(0,0,0,.95)] md:text-3xl">Comece uma nova aventura</h2><p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-slate-200 drop-shadow-[0_1px_4px_rgba(0,0,0,.95)]">Conheça uma nova área, escolha seu próximo destino e deixe a Essência registrar sua história.</p><div className="mt-5 flex flex-wrap justify-center gap-2"><button onClick={() => setHouseTab("maps")} className="rounded-lg bg-arcane-gold px-4 py-2 text-sm font-bold text-black shadow-lg hover:bg-yellow-300">✦ Conhecer áreas</button><button onClick={() => setHouseTab("train")} className="rounded-lg border border-white/35 bg-black/60 px-4 py-2 text-sm font-bold text-white shadow-lg hover:border-arcane-gold">⚔️ Preparar evolução</button></div>{(character.hp < character.hpMax || character.mp < character.mpMax) && <div className="mt-4">{healingUntil ? <span className="text-sm font-bold text-cyan-200 drop-shadow-[0_1px_4px_rgba(0,0,0,.95)]">🧘 Meditando no Refúgio… {healTimer}s</span> : <button onClick={startHealing} className="rounded-full border border-emerald-300/70 bg-emerald-900/80 px-4 py-2 text-sm font-bold text-emerald-50 shadow-lg hover:bg-emerald-700">🧘 Recuperar no Refúgio (15s)</button>}</div>}</div>
+            <div className="mb-8 rounded-2xl border border-arcane-gold/45 bg-[linear-gradient(180deg,rgba(5,10,13,.88),rgba(5,10,13,.68))] p-5 text-center shadow-[0_12px_40px_rgba(0,0,0,.5)] backdrop-blur-[2px] md:p-7"><div className="mb-2 text-3xl font-black tracking-[.16em] text-arcane-gold drop-shadow-[0_2px_8px_rgba(0,0,0,.95)] md:text-4xl">REFÚGIO DA ESSÊNCIA</div><h2 className="text-2xl font-bold text-white drop-shadow-[0_2px_6px_rgba(0,0,0,.95)] md:text-3xl">Comece uma nova aventura</h2><p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-slate-200 drop-shadow-[0_1px_4px_rgba(0,0,0,.95)]">Conheça uma nova área, escolha seu próximo destino e deixe a Essência registrar sua história.</p><div className="mt-5 flex flex-wrap justify-center gap-2"><button onClick={() => setHouseTab("maps")} className="rounded-lg bg-arcane-gold px-4 py-2 text-sm font-bold text-black shadow-lg hover:bg-yellow-300">✦ Conhecer áreas</button><button onClick={() => setHouseTab("train")} className="rounded-lg border border-white/35 bg-black/60 px-4 py-2 text-sm font-bold text-white shadow-lg hover:border-arcane-gold">⚔️ Preparar evolução</button><button onClick={() => setHouseTab("calendar")} className="rounded-lg border border-fuchsia-400/50 bg-fuchsia-950/40 px-4 py-2 text-sm font-bold text-fuchsia-100 shadow-lg hover:bg-fuchsia-900/60">🗓️ Calendário</button></div>{(character.hp < character.hpMax || character.mp < character.mpMax) && <div className="mt-4">{healingUntil ? <span className="text-sm font-bold text-cyan-200 drop-shadow-[0_1px_4px_rgba(0,0,0,.95)]">🧘 Meditando no Refúgio… {healTimer}s</span> : <button onClick={startHealing} className="rounded-full border border-emerald-300/70 bg-emerald-900/80 px-4 py-2 text-sm font-bold text-emerald-50 shadow-lg hover:bg-emerald-700">🧘 Recuperar no Refúgio (15s)</button>}</div>}</div>
 
             {houseTab === "maps" && (
               <div className="flex flex-col items-center animate-fade-in">
@@ -306,6 +307,8 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
                 })()}
               </div>
             )}
+
+            {houseTab === "calendar" && <div className="animate-fade-in"><DailyCalendar /></div>}
 
             {houseTab === "train" && (
               <div className="animate-fade-in">

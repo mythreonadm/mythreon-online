@@ -13,11 +13,12 @@ import { countByTemplate } from "../engine/inventory";
 import { MYTHREON_ECONOMY, MYTHREON_OFFERS } from "../data/mythreonEconomy";
 
 export function Shop({ storefront = false }: { storefront?: boolean }) {
-  const { character, sellItem, salvageAll, salvageSelected, updateSettings, useVial, upgradeItem, rerollItem, forgeFragments, refineMythreonCoins, buyMythreonOffer } = useGameStore();
+  const { character, sellItem, salvageAll, salvageSelected, updateSettings, useVial, upgradeItem, rerollItem, elevateItemTier, rerollSpecificAffix, forgeFragments, refineMythreonCoins, buyMythreonOffer } = useGameStore();
   
   const [tab, setTab] = useState<"FORJA" | "VIALS" | "VENDER" | "DESMANCHAR" | "ESSENCIA" | "MERCADO">(storefront ? "VIALS" : "FORJA");
   const [actionRarity, setActionRarity] = useState<Rarity>("COMUM");
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
+  const [specificStat, setSpecificStat] = useState<keyof Item["stats"]>("atk");
   const [salvageSelection, setSalvageSelection] = useState<string[]>([]);
   
   // Estado do Modal de Quantidade
@@ -69,6 +70,20 @@ export function Shop({ storefront = false }: { storefront?: boolean }) {
       const updated = character.inventory.items.find(i => i.uid === selectedItem.uid);
       if (updated) setSelectedItem(updated);
     }
+  };
+
+  const handleTier = () => {
+    if (!selectedItem) return;
+    const res = elevateItemTier(selectedItem.uid);
+    if (!res.success) alert(res.error);
+    else setSelectedItem(character.inventory.items.find(i => i.uid === selectedItem.uid) ?? selectedItem);
+  };
+
+  const handleSpecificReroll = () => {
+    if (!selectedItem) return;
+    const res = rerollSpecificAffix(selectedItem.uid, specificStat);
+    if (!res.success) alert(res.error);
+    else setSelectedItem(character.inventory.items.find(i => i.uid === selectedItem.uid) ?? selectedItem);
   };
 
   return (
@@ -291,6 +306,11 @@ export function Shop({ storefront = false }: { storefront?: boolean }) {
                     <span>🎲 Reencantar Atributos</span>
                     <span className="text-[10px] bg-black/40 px-2 py-1 rounded">{500 * selectedItem.tier}g + 20 Frags Raros</span>
                   </button>
+                  <button onClick={handleTier} disabled={selectedItem.tier >= 5} className="w-full bg-cyan-800 hover:bg-cyan-700 disabled:bg-gray-800 disabled:text-gray-500 text-white font-bold py-2.5 rounded flex justify-between items-center px-4 transition-colors">
+                    <span>✦ Elevar Tier</span><span className="text-[10px] bg-black/40 px-2 py-1 rounded">{15 * (selectedItem.tier + 1)} Fragmentos Épicos</span>
+                  </button>
+                  <div className="rounded border border-fuchsia-800/40 bg-fuchsia-950/20 p-2 text-[10px] text-fuchsia-200">🎯 Atributo específico: custa 1 Mythreon Coin + 100 Fragmentos Raros. A moeda é rara e serve como sumidouro de gold.</div>
+                  <div className="flex gap-2"><select value={String(specificStat)} onChange={event => setSpecificStat(event.target.value as keyof Item["stats"])} className="min-w-0 flex-1 rounded border border-fuchsia-800/50 bg-arcane-panel px-2 py-2 text-xs text-white"><option value="atk">Ataque</option><option value="matk">Magia</option><option value="arm">Armadura</option><option value="def">Defesa</option><option value="hp">Vida</option><option value="mp">Mana</option><option value="crit">Crítico</option><option value="hit">Precisão</option></select><button onClick={handleSpecificReroll} disabled={selectedItem.rarity === "COMUM"} className="rounded bg-fuchsia-700 px-3 py-2 text-[10px] font-bold text-white hover:bg-fuchsia-600 disabled:bg-gray-800">Sortear atributo</button></div>
                 </div>
               </>
             ) : (

@@ -55,6 +55,9 @@ export function createNewCharacter(name: string, appearance?: CharacterAppearanc
     staminaOffline: 480,
     staminaUpdatedAt: Date.now(),
     activeVials: {},
+    calendarCoupons: 0,
+    calendarClaimedDays: [],
+    calendarStreak: 0,
     cards: [],
     divineBeasts: [],
     divineBeastNeeds: {},
@@ -129,6 +132,9 @@ export function loadGame(): SaveFile | null {
         }
       }
       if (!data.character.activeVials) data.character.activeVials = {};
+      if (!Number.isFinite(data.character.calendarCoupons)) data.character.calendarCoupons = 0;
+      if (!Array.isArray(data.character.calendarClaimedDays)) data.character.calendarClaimedDays = [];
+      if (!Number.isFinite(data.character.calendarStreak)) data.character.calendarStreak = 0;
       if (!Number.isFinite(data.character.staminaOnline)) data.character.staminaOnline = 120;
       if (!Number.isFinite(data.character.staminaOffline)) data.character.staminaOffline = 480;
       if (!Number.isFinite(data.character.staminaUpdatedAt)) data.character.staminaUpdatedAt = Date.now();

@@ -14,9 +14,9 @@ import { findNamedRace, generateRaceName, generateRaceId, generateRaceBonus } fr
 import { sellItem, sellSelectedItems } from "../engine/shop";
 import { salvageAllEquipment, salvageSelectedEquipment } from "../engine/salvage";
 import { updateQuestProgress, claimQuestReward, trackRaceDiscovery, trackQuestAction } from "../engine/questEngine";
-import { upgradeItemLevel, rerollItemAffixes, forgeFragments } from "../engine/forge";
+import { upgradeItemLevel, rerollItemAffixes, forgeFragments, elevateItemTier, rerollSpecificAffix } from "../engine/forge";
 import { depositItem as engineDeposit, withdrawItem as engineWithdraw, depositMany as engineDepositMany, withdrawMany as engineWithdrawMany } from "../engine/depot";
-import { FRAGMENT_TEMPLATES, DIVINE_BEAST_EGG_TEMPLATES } from "../data/items";
+import { FRAGMENT_TEMPLATES, DIVINE_BEAST_EGG_TEMPLATES, UNIQUE_TEMPLATES, createItem } from "../data/items";
 import { DIVINE_BEASTS } from "../data/divineBeasts";
 import { QUESTS } from "../data/quests";
 import { getMythreonOffer, MYTHREON_ECONOMY } from "../data/mythreonEconomy";
@@ -76,9 +76,13 @@ export interface GameState {
   refreshCompendium: () => void;
   upgradeItem: (uid: string) => { success: boolean; error?: string };
   rerollItem: (uid: string) => { success: boolean; error?: string };
+  elevateItemTier: (uid: string) => { success: boolean; error?: string };
+  rerollSpecificAffix: (uid: string, stat: keyof Character["baseStats"]) => { success: boolean; error?: string };
   forgeFragments: (fromTemplateId: string) => { success: boolean; error?: string; crafted?: number };
   refineMythreonCoins: (amount?: number) => { success: boolean; coins?: number; error?: string };
   buyMythreonOffer: (offerId: string) => { success: boolean; error?: string };
+  buyCalendarCoupon: () => { success: boolean; error?: string };
+  claimDailyCalendar: () => { success: boolean; reward?: string; error?: string };
   
   depositItem: (uid: string) => { success: boolean; error?: string };
   withdrawItem: (uid: string) => { success: boolean; error?: string };
@@ -676,6 +680,16 @@ return create<GameState>((set, get) => ({
     if (res.success) { trackQuestAction(newCharacter, "FORGE"); set({ character: newCharacter }); get().save(); }
     return res;
   },
+  elevateItemTier: (uid) => {
+    const { character } = get(); if (!character) return { success: false, error: "Sem personagem" };
+    const next = structuredClone(character); const result = elevateItemTier(next, uid); if (!result.success) return result;
+    set({ character: next }); get().save(); return result;
+  },
+  rerollSpecificAffix: (uid, stat) => {
+    const { character } = get(); if (!character) return { success: false, error: "Sem personagem" };
+    const next = structuredClone(character); const result = rerollSpecificAffix(next, uid, stat); if (!result.success) return result;
+    set({ character: next }); get().save(); return result;
+  },
 
   forgeFragments: (fromTemplateId) => {
     const { character } = get(); if (!character) return { success: false, error: "Sem personagem" };
@@ -707,6 +721,33 @@ return create<GameState>((set, get) => ({
     if (!item || !addItem(next.inventory, item)) return { success: false, error: "Bolsa cheia. Libere um espaço antes de comprar." };
     next.mythreonCoins = (next.mythreonCoins ?? 0) - offer.priceCoins;
     set({ character: next }); get().save(); notify(`${offer.name} foi entregue na mochila.`); return { success: true };
+  },
+
+  buyCalendarCoupon: () => {
+    const { character } = get();
+    if (!character) return { success: false, error: "Sem personagem." };
+    if ((character.mythreonCoins ?? 0) < 1) return { success: false, error: "Você precisa de 1 Mythreon Coin por cupom." };
+    const next = { ...character, mythreonCoins: (character.mythreonCoins ?? 0) - 1, calendarCoupons: (character.calendarCoupons ?? 0) + 1 };
+    set({ character: next }); get().save(); notify("Cupom de resgate do calendário adquirido."); return { success: true };
+  },
+
+  claimDailyCalendar: () => {
+    const { character } = get();
+    if (!character) return { success: false, error: "Sem personagem." };
+    const today = new Date().toISOString().slice(0, 10);
+    if ((character.calendarClaimedDays ?? []).includes(today)) return { success: false, error: "A recompensa de hoje já foi resgatada." };
+    if ((character.calendarCoupons ?? 0) < 1) return { success: false, error: "Adquira um Cupom de Resgate com Mythreon Coin." };
+    const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+    const streak = character.calendarLastClaimDay === yesterday ? (character.calendarStreak ?? 0) + 1 : 1;
+    const next = structuredClone(character);
+    next.calendarCoupons = (next.calendarCoupons ?? 0) - 1;
+    next.calendarClaimedDays = [...(next.calendarClaimedDays ?? []).filter(day => day.slice(0, 7) === today.slice(0, 7)), today];
+    next.calendarLastClaimDay = today; next.calendarStreak = streak;
+    const rewardGold = 500 + streak * 250; next.gold += rewardGold;
+    let reward = `${rewardGold.toLocaleString("pt-BR")} gold`;
+    if (streak % 7 === 0) { const fragment = createItem({ ...FRAGMENT_TEMPLATES.FRAGMENTO_RARO, quantity: 3 }); addItem(next.inventory, fragment); reward += " + 3 Fragmentos Raros"; }
+    if (streak >= 30 && !next.inventory.items.some(item => item.templateId === "SKIN_CAPA_PRIMEIRO_CANTO") && !next.depot.some(item => item.templateId === "SKIN_CAPA_PRIMEIRO_CANTO")) { addItem(next.inventory, createItem({ ...UNIQUE_TEMPLATES.SKIN_CAPA_PRIMEIRO_CANTO })); reward += " + Capa do Primeiro Canto"; }
+    set({ character: next }); get().save(); notify(`Calendário: ${reward}`); return { success: true, reward };
   },
 
   depositItem: (uid) => {

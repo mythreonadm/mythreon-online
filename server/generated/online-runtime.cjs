@@ -3885,6 +3885,35 @@ function createGameStore(runtime = {}) {
       }
       return res;
     },
+    elevateItemTier: (uid) => {
+      const { character } = get();
+      if (!character) return { success: false, error: "Sem personagem" };
+      const next = JSON.parse(JSON.stringify(character)), item = next.inventory.items.find((entry) => entry.uid === uid);
+      if (!item) return { success: false, error: "Item não encontrado." };
+      if (!["ARMA", "ARMADURA", "JOIA", "PULSEIRA", "ESCUDO", "FLECHA"].includes(item.category)) return { success: false, error: "Escolha um equipamento válido para o Ferreiro." };
+      if (item.tier >= 5) return { success: false, error: "Este item já está no Tier máximo." };
+      const tier = item.tier + 1, fragments = 15 * tier, gold = 2500 * tier * tier;
+      if (countByTemplate(next.inventory, "FRAGMENTO_EPICO") < fragments) return { success: false, error: `Faltam Fragmentos Épicos. Você precisa de ${fragments}.` };
+      if (next.gold < gold) return { success: false, error: `Ouro insuficiente. Você precisa de ${gold}.` };
+      next.gold -= gold; let left = fragments;
+      for (const entry of [...next.inventory.items]) if (entry.templateId === "FRAGMENTO_EPICO" && left > 0) { const amount = Math.min(entry.quantity, left); removeItem(next.inventory, entry.uid, amount); left -= amount; }
+      item.tier = tier; for (const [key, value] of Object.entries(item.stats ?? {})) item.stats[key] = Math.round(Number(value) * 1.22 * 100) / 100;
+      item.name = item.name.replace(/ · T[1-5]$/, "") + ` · T${tier}`; recalcStats(next); set({ character: next }); get().save(); return { success: true };
+    },
+    rerollSpecificAffix: (uid, stat) => {
+      const { character } = get();
+      if (!character) return { success: false, error: "Sem personagem" };
+      const next = JSON.parse(JSON.stringify(character)), item = next.inventory.items.find((entry) => entry.uid === uid);
+      if (!item || item.rarity === "COMUM") return { success: false, error: "Escolha um equipamento não comum." };
+      if ((next.mythreonCoins ?? 0) < 1) return { success: false, error: "É necessária 1 Mythreon Coin." };
+      if (countByTemplate(next.inventory, "FRAGMENTO_RARO") < 100) return { success: false, error: "São necessários 100 Fragmentos Raros." };
+      const gold = 2500 * item.tier; if (next.gold < gold) return { success: false, error: `Ouro insuficiente. Você precisa de ${gold}.` };
+      next.gold -= gold; next.mythreonCoins -= 1; let left = 100;
+      for (const entry of [...next.inventory.items]) if (entry.templateId === "FRAGMENTO_RARO" && left > 0) { const amount = Math.min(entry.quantity, left); removeItem(next.inventory, entry.uid, amount); left -= amount; }
+      const generated = generateRandomAffixes(item.category, item.rarity, item.tier), replacement = generated.find((affix) => affix.stat === stat) ?? generated[0];
+      if (!replacement) return { success: false, error: "Nenhum atributo compatível foi encontrado." };
+      const index = item.affixes.findIndex((affix) => affix.stat === stat); if (index >= 0) item.affixes[index] = replacement; else item.affixes.push(replacement); recalcStats(next); set({ character: next }); get().save(); return { success: true };
+    },
     forgeFragments: (fromTemplateId) => {
       const { character } = get();
       if (!character) return { success: false, error: "Sem personagem" };
@@ -3923,6 +3952,22 @@ function createGameStore(runtime = {}) {
       get().save();
       notify(`${offer.name} foi entregue na mochila.`);
       return { success: true };
+    },
+    buyCalendarCoupon: () => {
+      const { character } = get();
+      if (!character) return { success: false, error: "Sem personagem." };
+      if ((character.mythreonCoins ?? 0) < 1) return { success: false, error: "Você precisa de 1 Mythreon Coin por cupom." };
+      const next = { ...character, mythreonCoins: (character.mythreonCoins ?? 0) - 1, calendarCoupons: (character.calendarCoupons ?? 0) + 1 };
+      set({ character: next }); get().save(); return { success: true };
+    },
+    claimDailyCalendar: () => {
+      const { character } = get(); if (!character) return { success: false, error: "Sem personagem." };
+      const today = new Date().toISOString().slice(0, 10); if ((character.calendarClaimedDays ?? []).includes(today)) return { success: false, error: "A recompensa de hoje já foi resgatada." };
+      if ((character.calendarCoupons ?? 0) < 1) return { success: false, error: "Adquira um Cupom de Resgate com Mythreon Coin." };
+      const yesterday = new Date(Date.now() - 864e5).toISOString().slice(0, 10), streak = character.calendarLastClaimDay === yesterday ? (character.calendarStreak ?? 0) + 1 : 1;
+      const next = { ...character, calendarCoupons: (character.calendarCoupons ?? 0) - 1, calendarClaimedDays: [...(character.calendarClaimedDays ?? []).filter((day) => day.slice(0, 7) === today.slice(0, 7)), today], calendarLastClaimDay: today, calendarStreak: streak, gold: character.gold + 500 + streak * 250 };
+      if (streak >= 30) next.calendarSkinUnlocked = true;
+      set({ character: next }); get().save(); return { success: true, reward: `${(500 + streak * 250).toLocaleString("pt-BR")} gold${streak >= 30 ? " + Capa do Primeiro Canto" : ""}` };
     },
     depositItem: (uid) => {
       const { character } = get();
@@ -4129,6 +4174,18 @@ function executeGame(world, action, args = []) {
     } else if (action === "feedDivineBeast") {
       result = s.feedDivineBeast(uid(args[0]), uid(args[1]));
       if (!result?.success) throw Error(result?.error ?? "Não foi possível alimentar a Besta.");
+    } else if (action === "elevateItemTier") {
+      result = s.elevateItemTier(uid(args[0]));
+      if (!result?.success) throw Error(result?.error ?? "Não foi possível elevar o Tier.");
+    } else if (action === "rerollSpecificAffix") {
+      result = s.rerollSpecificAffix(uid(args[0]), uid(args[1]));
+      if (!result?.success) throw Error(result?.error ?? "Não foi possível sortear o atributo.");
+    } else if (action === "buyCalendarCoupon") {
+      result = s.buyCalendarCoupon();
+      if (!result?.success) throw Error(result?.error ?? "Não foi possível comprar o cupom.");
+    } else if (action === "claimDailyCalendar") {
+      result = s.claimDailyCalendar();
+      if (!result?.success) throw Error(result?.error ?? "Não foi possível resgatar a recompensa.");
     } else if (action === "synthesize") {
       result = s.synthesize(uid(args[0]), uid(args[1]), uid(args[2]));
       if (result?.success) world.counters.syntheses++;
