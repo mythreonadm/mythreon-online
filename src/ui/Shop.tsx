@@ -242,6 +242,7 @@ export function Shop({ storefront = false }: { storefront?: boolean }) {
                   <ItemIcon item={selectedItem} className="w-16 h-16 mx-auto mb-2" />
                   <h3 className="text-lg font-bold text-white">{selectedItem.name} <span className="text-orange-400">+{selectedItem.upgradeLevel}</span></h3>
                   <p className="text-xs text-arcane-cyan uppercase">{selectedItem.rarity} · Tier {selectedItem.tier}</p>
+                  {selectedItem.category === "FLECHA" && <p className="mt-1 text-[11px] text-orange-300">🔪 O ferreiro afia as pontas: cada nível aumenta o dano e a precisão.</p>}
                 </div>
 
                 <div className="mb-4">
@@ -263,7 +264,7 @@ export function Shop({ storefront = false }: { storefront?: boolean }) {
                   </div>
 
                   <button onClick={handleUpgrade} disabled={selectedItem.upgradeLevel >= 10} className="w-full bg-orange-700 hover:bg-orange-600 disabled:bg-gray-800 disabled:text-gray-500 text-white font-bold py-2.5 rounded flex justify-between items-center px-4 transition-colors">
-                    <span>⬆️ Aprimorar Nível (+1)</span>
+                    <span>{selectedItem.category === "FLECHA" ? "🏹 Afiar Flecha (+1)" : "⬆️ Aprimorar Nível (+1)"}</span>
                     <span className="text-[10px] bg-black/40 px-2 py-1 rounded">{getUpgradeCost(selectedItem).gold}g + {getUpgradeCost(selectedItem).fragments} Frags</span>
                   </button>
 

@@ -92,7 +92,7 @@ function buildTemplates() {
 var ALL_EQUIPMENT_TEMPLATES = buildTemplates();
 var ARROW_TEMPLATES = Object.fromEntries(TIERS.map((tier) => {
   const names = ["Flecha de Madeira", "Flecha de Pedra", "Flecha de A\xE7o", "Flecha Estelar", "Flecha do Eclipse"];
-  const item = createItem({ templateId: `FLECHA_T${tier}`, name: names[tier - 1], category: "FLECHA", slot: "MUNICAO", tier, rarity: "COMUM", stats: {}, stackable: false, maxStack: 1, quantity: 1, icon: "\u{1F3F9}" });
+  const item = createItem({ templateId: `FLECHA_T${tier}`, name: names[tier - 1], category: "FLECHA", slot: "MUNICAO", tier, rarity: "COMUM", stats: { atk: [4, 9, 18, 36, 72][tier - 1], hit: [0, 0.01, 0.02, 0.03, 0.04][tier - 1] }, stackable: false, maxStack: 1, quantity: 1, icon: "\u{1F3F9}" });
   return [item.templateId, item];
 }));
 var POTION_DATA = [
@@ -3014,6 +3014,7 @@ function forgeFragments(char, fromTemplateId) {
 function upgradeItemLevel(char, itemUid) {
   const item = char.inventory.items.find((i) => i.uid === itemUid);
   if (!item) return { success: false, error: "Item n\xE3o encontrado no invent\xE1rio." };
+  if (!["ARMA", "ARMADURA", "JOIA", "PULSEIRA", "ESCUDO", "FLECHA"].includes(item.category)) return { success: false, error: "Escolha um equipamento v\xE1lido para o Ferreiro." };
   if (item.upgradeLevel >= 10) return { success: false, error: "O item j\xE1 atingiu o n\xEDvel m\xE1ximo (+10)." };
   const cost = getUpgradeCost(item);
   const fragmentsOwned = countByTemplate(char.inventory, cost.fragmentType);
@@ -3622,9 +3623,22 @@ function createGameStore(runtime = {}) {
       });
       if (!hasPendingTutorialAction) return;
       const newCharacter = JSON.parse(JSON.stringify(character));
+      let forgeRecoveryGranted = false;
+      if (action === "VISIT_FORGE" && newCharacter.quests?.active.TUT_FORGE) {
+        const forgeable = newCharacter.inventory.items.some((item) => ["ARMA", "ARMADURA", "JOIA", "PULSEIRA", "ESCUDO", "FLECHA"].includes(item.category));
+        if (!forgeable) {
+          const starter = makeEquipment("ESPADA_T1", "COMUM");
+          if (starter) {
+            starter.quantity = 1;
+            addItem(newCharacter.inventory, starter);
+            forgeRecoveryGranted = true;
+          }
+        }
+      }
       trackQuestAction(newCharacter, action);
       set({ character: newCharacter });
       get().save();
+      if (forgeRecoveryGranted) notify("O Ferreiro separou uma Espada de Prática para concluir sua missão de aprimoramento.");
     },
     buyTrainingBoost: () => {
       const { character } = get();
@@ -3847,7 +3861,7 @@ function executeGame(world, action, args = []) {
       const id = uid(args[0]);
       if (["upgradeItem", "rerollItem"].includes(action)) {
         const item = s.character.inventory.items.find((i) => i.uid === id);
-        if (!item || !["ARMA", "ARMADURA", "JOIA", "PULSEIRA", "ESCUDO"].includes(item.category)) throw Error("Escolha um equipamento v\xE1lido para o Ferreiro.");
+        if (!item || !["ARMA", "ARMADURA", "JOIA", "PULSEIRA", "ESCUDO", "FLECHA"].includes(item.category)) throw Error("Escolha um equipamento v\xE1lido para o Ferreiro.");
       }
       result = s[action](id);
     } else if (action === "startHunting") {
