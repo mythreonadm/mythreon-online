@@ -384,8 +384,8 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
         <button onClick={stopHunting} className="bg-red-900/80 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs md:text-sm transition-colors border border-red-500/50 shadow-md">
           🏃 Sair
         </button>
-        <button onClick={() => { const result = armSpecialCombo(); if (!result.success) alert(result.error); }} className={`px-3 py-1.5 rounded-lg font-bold text-xs md:text-sm border shadow-md ${((character.comboCooldownUntil ?? 0) > Date.now()) ? "bg-gray-800 text-gray-500 border-gray-700" : "bg-purple-900/80 text-purple-200 border-purple-400/50 hover:bg-purple-700"}`} title="Complete a sequência de teclas para armar o segundo impacto">
-          ⚡ Combo {comboKeys.join("+")} {comboProgress ? `(${comboProgress}/3)` : ""}
+        <button onClick={() => { const result = armSpecialCombo(); if (!result.success) alert(result.error); }} className={`px-3 py-1.5 rounded-lg font-bold text-xs md:text-sm border shadow-md ${((character.comboCooldownUntil ?? 0) > Date.now()) ? "bg-gray-800 text-gray-500 border-gray-700" : "bg-purple-900/80 text-purple-200 border-purple-400/50 hover:bg-purple-700"}`} title="Ritmo da Essência: a Essência responde à precisão do aventureiro. Complete a sequência antes da janela fechar para causar 150%, 100% ou 50% do dano base.">
+          ⚡ Ritmo da Essência {comboKeys.join("+")} {comboProgress ? `(${comboProgress}/3)` : ""}
         </button>
       </div>
 
