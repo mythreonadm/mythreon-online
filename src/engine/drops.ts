@@ -104,8 +104,11 @@ export function rollDrops(enemy: Enemy, zone: Zone, _char: Character, mods: Drop
   const drops: Item[] = [];
   const chance = (p: number) => mods.force || Math.random() < Math.min(1, p * (1 + clamp(mods.dropBonus, 0, 1)));
 
-  if (chance(enemy.componentChance)) drops.push(makeComponent(enemy.componentId));
-  if (enemy.essenceId && chance(enemy.essenceChance ?? 0)) drops.push(makeComponent(enemy.essenceId));
+  // Componentes e essências são a progressão das Matrizes: mobs comuns não devem
+  // completar uma build em poucos minutos. Chefes mantêm a taxa integral.
+  const progressionScale = enemy.isBoss ? 1 : 0.68;
+  if (chance(enemy.componentChance * progressionScale)) drops.push(makeComponent(enemy.componentId));
+  if (enemy.essenceId && chance((enemy.essenceChance ?? 0) * (enemy.isBoss ? 1 : 0.58))) drops.push(makeComponent(enemy.essenceId));
 
   if (chance(enemy.isBoss ? 0.25 : 0.08)) {
     const arrow = ARROW_TEMPLATES[`FLECHA_T${zone.tier}`];

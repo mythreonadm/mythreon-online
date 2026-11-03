@@ -46,7 +46,7 @@ export interface GameState {
   stopHunting: () => void;
   startTraining: (skill: keyof CharacterSkills) => void;
   stopTraining: () => void;
-  armSpecialCombo: () => { success: boolean; error?: string };
+  armSpecialCombo: (power?: 1.5 | 1 | 0.5) => { success: boolean; error?: string };
   setActiveEnemy: (enemyId: string) => void;
   setCurrentZone: (zoneId: string) => void;
   equip: (uid: string, force?: boolean) => { success: boolean; error?: string };
@@ -270,13 +270,14 @@ return create<GameState>((set, get) => ({
     tickInterval = setInterval(() => get().tick(), 3000); }
   },
 
-  armSpecialCombo: () => {
+  armSpecialCombo: (power = 1.5) => {
     const { character, isTickRunning } = get();
     if (!character || !isTickRunning) return { success: false, error: "O combo só pode ser armado durante a caça." };
     const now = Date.now();
     if ((character.comboCooldownUntil ?? 0) > now) return { success: false, error: `Aguarde ${Math.ceil((character.comboCooldownUntil! - now) / 1000)}s para recarregar.` };
     const updated = JSON.parse(JSON.stringify(character));
     updated.comboReadyUntil = now + 12_000;
+    updated.comboPower = power;
     set({ character: updated }); get().save();
     return { success: true };
   },

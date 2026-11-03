@@ -147,7 +147,7 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
   const race = char.activeRace;
   const support = race ? SUPPORT_EFFECTS[race.suporteId] : undefined;
   const skill = race ? ATTACK_SKILLS[race.ataqueId] : undefined;
-  const skillCd = Math.max(1, ATTACK_SKILL_COOLDOWN - prof.cdReduce);
+  const skillCd = Math.max(1, Math.ceil(ATTACK_SKILL_COOLDOWN - prof.cdReduce));
   
   const hpPotId = char.autoHpPotionEnabled ? char.autoHpPotionId || null : null;
   const hpPotPct = char.autoHpPotionPercent || 50;
@@ -235,11 +235,14 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
 
     let dealt = strike();
     if (comboReady) {
-      const bonus = strike(0.5);
-      dealt += bonus;
+      const power = char.comboPower ?? 1.5;
+      const baseDamage = dealt;
+      dealt = Math.max(1, Math.round(baseDamage * power));
       char.comboReadyUntil = undefined;
       char.comboCooldownUntil = Date.now() + 15_000;
-      result.log.push(`⚡ Combo Especial! Segundo impacto +${bonus} dano.`);
+      char.comboPower = undefined;
+      const quality = power === 1.5 ? "perfeito" : power === 1 ? "preciso" : "atrasado";
+      result.log.push(`⚡ Combo Especial ${quality}! ${dealt} de dano.`);
     }
     let elementalThisTick = 0;
     if (hasDoubleAtkBuff) { dealt += strike(); result.log.push(`⚡ Ataque Duplo!`); }
@@ -325,7 +328,8 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
       char.bestiaryKills[enemy.id] = (char.bestiaryKills[enemy.id] ?? 0) + 1;
       result.killed![enemy.id] = (result.killed![enemy.id] ?? 0) + 1;
       if (enemy.isBoss) result.bossKills![enemy.id] = (result.bossKills![enemy.id] ?? 0) + 1;
-      const g = Math.floor((enemy.goldMin + Math.floor(Math.random() * (enemy.goldMax - enemy.goldMin + 1))) * (1 + prof.goldPct));
+      const goldDifficulty = enemy.isBoss ? 1 : 0.78;
+      const g = Math.floor((enemy.goldMin + Math.floor(Math.random() * (enemy.goldMax - enemy.goldMin + 1))) * goldDifficulty * (1 + prof.goldPct));
       const xpGained = Math.floor(enemy.xp * (1 + prof.xpPct)) * (debug ? 10 : 1);
       result.gold += g; char.gold += g; result.xp += xpGained; char.xp += xpGained;
       const loot: HuntLootEntry[] = [];

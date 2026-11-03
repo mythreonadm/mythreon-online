@@ -1288,8 +1288,9 @@ function rollAmbient(zone) {
 function rollDrops(enemy, zone, _char, mods = { dropBonus: 0, rareBonus: 0 }) {
   const drops = [];
   const chance = (p) => mods.force || Math.random() < Math.min(1, p * (1 + clamp(mods.dropBonus, 0, 1)));
-  if (chance(enemy.componentChance)) drops.push(makeComponent(enemy.componentId));
-  if (enemy.essenceId && chance(enemy.essenceChance ?? 0)) drops.push(makeComponent(enemy.essenceId));
+  const progressionScale = enemy.isBoss ? 1 : 0.68;
+  if (chance(enemy.componentChance * progressionScale)) drops.push(makeComponent(enemy.componentId));
+  if (enemy.essenceId && chance((enemy.essenceChance ?? 0) * (enemy.isBoss ? 1 : 0.58))) drops.push(makeComponent(enemy.essenceId));
   if (chance(enemy.isBoss ? 0.25 : 0.08)) {
     const arrow = ARROW_TEMPLATES[`FLECHA_T${zone.tier}`];
     if (arrow) drops.push({ ...arrow, uid: generateId(), quantity: 1 });
@@ -2445,7 +2446,7 @@ function processTick(char, zone, isOffline) {
   const race = char.activeRace;
   const support = race ? SUPPORT_EFFECTS[race.suporteId] : void 0;
   const skill = race ? ATTACK_SKILLS[race.ataqueId] : void 0;
-  const skillCd = Math.max(1, ATTACK_SKILL_COOLDOWN - prof.cdReduce);
+  const skillCd = Math.max(1, Math.ceil(ATTACK_SKILL_COOLDOWN - prof.cdReduce));
   const hpPotId = char.autoHpPotionEnabled ? char.autoHpPotionId || null : null;
   const hpPotPct = char.autoHpPotionPercent || 50;
   const mpPotId = char.autoMpPotionEnabled ? char.autoMpPotionId || null : null;
@@ -2550,11 +2551,14 @@ function processTick(char, zone, isOffline) {
     };
     let dealt = strike();
     if (comboReady) {
-      const bonus = strike(0.5);
-      dealt += bonus;
+      const power = char.comboPower ?? 1.5;
+      const baseDamage = dealt;
+      dealt = Math.max(1, Math.round(baseDamage * power));
       char.comboReadyUntil = void 0;
       char.comboCooldownUntil = Date.now() + 15e3;
-      result.log.push(`\u26A1 Combo Especial! Segundo impacto +${bonus} dano.`);
+      char.comboPower = void 0;
+      const quality = power === 1.5 ? "perfeito" : power === 1 ? "preciso" : "atrasado";
+      result.log.push(`\u26A1 Combo Especial ${quality}! ${dealt} de dano.`);
     }
     let elementalThisTick = 0;
     if (hasDoubleAtkBuff) {
@@ -2640,7 +2644,8 @@ function processTick(char, zone, isOffline) {
       char.bestiaryKills[enemy.id] = (char.bestiaryKills[enemy.id] ?? 0) + 1;
       result.killed[enemy.id] = (result.killed[enemy.id] ?? 0) + 1;
       if (enemy.isBoss) result.bossKills[enemy.id] = (result.bossKills[enemy.id] ?? 0) + 1;
-      const g = Math.floor((enemy.goldMin + Math.floor(Math.random() * (enemy.goldMax - enemy.goldMin + 1))) * (1 + prof.goldPct));
+      const goldDifficulty = enemy.isBoss ? 1 : 0.78;
+      const g = Math.floor((enemy.goldMin + Math.floor(Math.random() * (enemy.goldMax - enemy.goldMin + 1))) * goldDifficulty * (1 + prof.goldPct));
       const xpGained = Math.floor(enemy.xp * (1 + prof.xpPct)) * (debug2 ? 10 : 1);
       result.gold += g;
       char.gold += g;
@@ -3295,13 +3300,14 @@ function createGameStore(runtime = {}) {
         tickInterval = setInterval(() => get().tick(), 3e3);
       }
     },
-    armSpecialCombo: () => {
+    armSpecialCombo: (power = 1.5) => {
       const { character, isTickRunning } = get();
       if (!character || !isTickRunning) return { success: false, error: "O combo s\xF3 pode ser armado durante a ca\xE7a." };
       const now = Date.now();
       if ((character.comboCooldownUntil ?? 0) > now) return { success: false, error: `Aguarde ${Math.ceil((character.comboCooldownUntil - now) / 1e3)}s para recarregar.` };
       const updated = JSON.parse(JSON.stringify(character));
       updated.comboReadyUntil = now + 12e3;
+      updated.comboPower = power;
       set({ character: updated });
       get().save();
       return { success: true };
@@ -3790,7 +3796,8 @@ function executeGame(world, action, args = []) {
       result = s.equip(id, force);
       if (!result?.success) throw Error(result?.error ?? "N\xE3o foi poss\xEDvel equipar.");
     } else if (action === "armSpecialCombo") {
-      result = s.armSpecialCombo();
+      const power = args[0] === 1 || args[0] === 0.5 || args[0] === 1.5 ? args[0] : 1.5;
+      result = s.armSpecialCombo(power);
       if (!result?.success) throw Error(result?.error ?? "N\xE3o foi poss\xEDvel armar o combo.");
     } else if (action === "unequip") {
       const slots = ["CAPACETE", "ARMADURA", "LUVAS", "CALCAS", "BOTAS", "COLAR", "ANEL_I", "ANEL_II", "PULSEIRA", "ARMA_PRINCIPAL", "OFF_HAND", "MUNICAO", "BACKPACK"];

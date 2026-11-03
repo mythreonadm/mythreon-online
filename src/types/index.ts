@@ -213,6 +213,8 @@ export interface Character {
   /** Combo especial: fica armado por poucos segundos e é consumido no próximo tick. */
   comboReadyUntil?: number;
   comboCooldownUntil?: number;
+  /** Multiplicador total do próximo combo: 1.5, 1.0 ou 0.5 conforme a precisão. */
+  comboPower?: 1.5 | 1 | 0.5;
   
   cards: CardInstance[];
   arenaRewardDay?: string;

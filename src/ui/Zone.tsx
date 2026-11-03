@@ -9,8 +9,9 @@ import { ZONES } from "../data/zones";
 import { getSpellEffect, getWeaponAnimation } from "../utils/combatVisuals";
 import { CharacterSkills, HuntEncounterRecord, DamageBreakdown, Element } from "../types";
 import { skillXpToNextLevel } from "../engine/stats";
+import { buildProfile } from "../engine/combat";
 import { VIALS } from "../data/vials";
-import { ATTACK_SKILLS } from "../data/skills";
+import { ATTACK_SKILLS, ATTACK_SKILL_COOLDOWN } from "../data/skills";
 import { getLineageByAttack } from "../data/lineages"; // NOVO IMPORT
 import { AccessIcon } from "./AccessIcon";
 import { getHuntQuestSignal } from "../utils/questSignals";
@@ -68,24 +69,30 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
   const [enemyImageError, setEnemyImageError] = useState(false);
   const [comboKeys, setComboKeys] = useState(() => ["S", "D", "A"].sort(() => Math.random() - .5));
   const [comboProgress, setComboProgress] = useState(0);
+  const [comboStartedAt, setComboStartedAt] = useState<number | null>(null);
   const [showLootConfig, setShowLootConfig] = useState<string | null>(null);
   
   const balloonTimeout = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const magicCooldownTicks = Math.max(1, Math.ceil(ATTACK_SKILL_COOLDOWN - (character ? buildProfile(character).cdReduce : 0)));
 
   useEffect(() => {
     if (!isTickRunning) return;
     const onKey = (event: KeyboardEvent) => {
       const key = event.key.toUpperCase();
-      if (key !== comboKeys[comboProgress]) { setComboProgress(0); return; }
+      if (key !== comboKeys[comboProgress]) { setComboProgress(0); setComboStartedAt(null); return; }
+      const started = comboStartedAt ?? Date.now();
+      if (!comboStartedAt) setComboStartedAt(started);
       const next = comboProgress + 1;
       if (next >= comboKeys.length) {
-        const result = armSpecialCombo();
-        if (result.success) setComboProgress(0);
+        const elapsed = Date.now() - started;
+        const power: 1.5 | 1 | 0.5 = elapsed <= 900 ? 1.5 : elapsed <= 1800 ? 1 : 0.5;
+        const result = armSpecialCombo(power);
+        if (result.success) { setComboProgress(0); setComboStartedAt(null); setComboKeys(["S", "D", "A"].sort(() => Math.random() - .5)); }
       } else setComboProgress(next);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [isTickRunning, comboKeys, comboProgress, armSpecialCombo]);
+  }, [isTickRunning, comboKeys, comboProgress, comboStartedAt, armSpecialCombo]);
 
   if (!character) return null;
   const currentZone = ZONES[currentZoneId];
@@ -119,12 +126,10 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
   useEffect(() => {
     const interval = setInterval(() => {
       const tick = character.tickCount || 0;
-      const lastCast = Math.floor(tick / 3) * 3;
-      const progress = tick - lastCast;
-      setMagicCooldown(progress);
+      setMagicCooldown(tick % magicCooldownTicks);
     }, 1000);
     return () => clearInterval(interval);
-  }, [character.tickCount]);
+  }, [character.tickCount, magicCooldownTicks]);
 
   useEffect(() => {
     if (healingUntil) {
@@ -161,7 +166,7 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
   };
 
   useEffect(() => {
-    if (isTickRunning && lastTickResult && lastTickResult.attacked) {
+    if (isTickRunning && lastTickResult && (lastTickResult.attacked || lastTickResult.usedMp)) {
       playCombatSfx(activeBond && lastTickResult.log?.some(line => line.includes(activeBond.name)) ? "beast" : "hit");
       setIsAttacking(true); setShowProjectile(true);
       if (lastTickResult.lastDamage) {
@@ -337,7 +342,7 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
   
   const raceSkill = character.activeRace ? ATTACK_SKILLS[character.activeRace.ataqueId] : null;
   const magicReady = magicCooldown === 0;
-  const magicPct = (magicCooldown / 3) * 100;
+  const magicPct = (magicCooldown / magicCooldownTicks) * 100;
   const magicManaCost = raceSkill ? (raceSkill.manaCost + character.level * 2) : 0;
   const hasEnoughMana = character.mp >= magicManaCost;
 
