@@ -72,6 +72,7 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
   const [comboStartedAt, setComboStartedAt] = useState<number | null>(null);
   const [comboClock, setComboClock] = useState(() => Date.now());
   const [comboBurst, setComboBurst] = useState(false);
+  const [comboFeedback, setComboFeedback] = useState<"idle" | "good" | "bad">("idle");
   const [showLootConfig, setShowLootConfig] = useState<string | null>(null);
   
   const balloonTimeout = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -82,20 +83,30 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
     return () => window.clearInterval(timer);
   }, []);
 
+  const handleComboKey = (key: string) => {
+    if (!isTickRunning || (character?.comboCooldownUntil ?? 0) > Date.now()) return;
+    if (key !== comboKeys[comboProgress]) {
+      setComboProgress(0); setComboStartedAt(null); setComboFeedback("bad");
+      window.setTimeout(() => setComboFeedback("idle"), 450);
+      return;
+    }
+    const started = comboStartedAt ?? Date.now();
+    if (!comboStartedAt) setComboStartedAt(started);
+    const next = comboProgress + 1;
+    setComboFeedback("good");
+    window.setTimeout(() => setComboFeedback("idle"), 300);
+    if (next >= comboKeys.length) {
+      const elapsed = Date.now() - started;
+      const power: 1.5 | 1 | 0.5 = elapsed <= 900 ? 1.5 : elapsed <= 1800 ? 1 : 0.5;
+      const result = armSpecialCombo(power);
+      if (result.success) { setComboProgress(0); setComboStartedAt(null); setComboKeys(["S", "D", "A"].sort(() => Math.random() - .5)); }
+    } else setComboProgress(next);
+  };
+
   useEffect(() => {
     if (!isTickRunning) return;
     const onKey = (event: KeyboardEvent) => {
-      const key = event.key.toUpperCase();
-      if (key !== comboKeys[comboProgress]) { setComboProgress(0); setComboStartedAt(null); return; }
-      const started = comboStartedAt ?? Date.now();
-      if (!comboStartedAt) setComboStartedAt(started);
-      const next = comboProgress + 1;
-      if (next >= comboKeys.length) {
-        const elapsed = Date.now() - started;
-        const power: 1.5 | 1 | 0.5 = elapsed <= 900 ? 1.5 : elapsed <= 1800 ? 1 : 0.5;
-        const result = armSpecialCombo(power);
-        if (result.success) { setComboProgress(0); setComboStartedAt(null); setComboKeys(["S", "D", "A"].sort(() => Math.random() - .5)); }
-      } else setComboProgress(next);
+      handleComboKey(event.key.toUpperCase());
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -473,13 +484,17 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
                 <div className="text-[8px] md:text-[10px] text-gray-400 mt-0.5">{formatVital(character.hp)} / {formatVital(character.hpMax)}</div>
               <button
                 type="button"
-                onClick={() => { const result = armSpecialCombo(); if (!result.success) alert(result.error); }}
+                onClick={() => handleComboKey(comboKeys[comboProgress] ?? comboKeys[0])}
                 disabled={(character.comboCooldownUntil ?? 0) > comboClock}
-                className={`mt-2 w-full rounded-md border px-2 py-1 text-[9px] md:text-xs font-black transition ${((character.comboCooldownUntil ?? 0) > comboClock) ? "border-gray-700 bg-gray-900 text-gray-500" : "border-purple-300 bg-purple-900/90 text-purple-100 shadow-[0_0_18px_rgba(168,85,247,.8)] animate-pulse hover:bg-purple-700"}`}
-                title="Complete a sequência de teclas para liberar o segundo impacto."
+                className={`mt-2 w-full rounded-md border px-2 py-1 text-[9px] md:text-xs font-black transition ${comboFeedback === "bad" ? "border-red-400 bg-red-950 text-red-100" : ((character.comboCooldownUntil ?? 0) > comboClock) ? "border-gray-700 bg-gray-900 text-gray-500" : "border-purple-300 bg-purple-900/90 text-purple-100 shadow-[0_0_18px_rgba(168,85,247,.8)] animate-pulse hover:bg-purple-700"}`}
+                title="No celular, toque nos botões na ordem. No PC, use o teclado."
               >
-                {((character.comboCooldownUntil ?? 0) > comboClock) ? `⏳ ${Math.ceil((character.comboCooldownUntil! - comboClock) / 1000)}s` : `⚡ COMBO ${comboKeys.join("+")}`}
+                {((character.comboCooldownUntil ?? 0) > comboClock) ? `⏳ ${Math.ceil((character.comboCooldownUntil! - comboClock) / 1000)}s` : comboFeedback === "bad" ? "↺ Sequência reiniciada" : `⚡ Toque: ${comboKeys[comboProgress] ?? comboKeys[0]}`}
               </button>
+              <div className="mt-1.5 grid grid-cols-3 gap-1.5 md:hidden" aria-label="Controles de toque do combo">
+                {comboKeys.map((key, index) => <button key={`${key}-${index}`} type="button" disabled={(character.comboCooldownUntil ?? 0) > comboClock} onClick={() => handleComboKey(key)} className={`min-h-10 rounded-lg border text-sm font-black transition active:scale-95 ${index < comboProgress ? "border-emerald-300 bg-emerald-900/80 text-emerald-100" : index === comboProgress ? "border-purple-300 bg-purple-900 text-purple-100 shadow-[0_0_12px_rgba(168,85,247,.65)]" : "border-white/15 bg-black/50 text-gray-300"}`} aria-label={`Etapa ${index + 1}: tecla ${key}`}>{index < comboProgress ? "✓" : key}</button>)}
+              </div>
+              <div className="mt-1 hidden text-[8px] text-purple-200/80 md:block">PC: pressione {comboKeys.join(" + ")} · Celular: toque nos botões</div>
               </div>
             </div>
 
