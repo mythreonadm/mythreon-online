@@ -99,7 +99,7 @@
 - [src/engine/inventory.ts](../src/engine/inventory.ts) — getUsedSlots, canAddItem, addItem, removeItem, countByTemplate, equipItem, unequipItem
 - [src/engine/itemCompare.ts](../src/engine/itemCompare.ts) — STAT_WEIGHTS, getItemScore, getBestTargetSlot, getEquippedForTarget, isUpgrade
 - [src/engine/salvage.ts](../src/engine/salvage.ts) — salvageItem, salvageAllEquipment, salvageSelectedEquipment
-- [src/engine/shop.ts](../src/engine/shop.ts) — sellValue, sellItem, sellAllEquipment
+- [src/engine/shop.ts](../src/engine/shop.ts) — sellValue, sellItem, sellSelectedItems, sellAllEquipment
 - [src/ui/Backpack.tsx](../src/ui/Backpack.tsx) — Backpack
 - [src/ui/Depot.tsx](../src/ui/Depot.tsx) — Depot
 - [src/ui/Inventory.tsx](../src/ui/Inventory.tsx) — Inventory
