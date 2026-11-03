@@ -10,6 +10,8 @@
 - Estado persistente em saves locais e no mundo online.
 - Ações online validadas pelo servidor: plantar, colher e expandir terreno.
 - Ações da Fazenda não alteram regras de combate, loot ou XP.
+- Plantar aumenta a skill de Plantio; colher aumenta a skill de Colheita. Cada ponto de Plantio reduz o tempo de crescimento em 1%, limitado a 25%.
+- Receitas disponíveis: Sopa de Cenoura de Lyss, Elixir de Maré Doce e Pão Rúnico de Lyss. O jogador pode vender a colheita bruta ou refinar para obter maior valor.
 
 ## Otimização aplicada
 

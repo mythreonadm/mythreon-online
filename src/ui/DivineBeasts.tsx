@@ -20,6 +20,7 @@ export function DivineBeasts() {
   const owned = character.divineBeasts ?? [];
   const activeId = character.activeDivineBeastId;
   const eggs = character.inventory.items.filter(item => !!DIVINE_BEAST_EGG_TEMPLATES[item.templateId]);
+  const petIds = Array.from(new Set([...DIVINE_BEAST_ORDER, ...owned.map(instance => instance.id)]));
 
   const handleEquip = (id: keyof typeof DIVINE_BEASTS) => {
     const result = equipDivineBeast(id);
@@ -47,13 +48,15 @@ export function DivineBeasts() {
     </section>
 
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-      {DIVINE_BEAST_ORDER.map(id => {
+      {petIds.map(id => {
         const beast = DIVINE_BEASTS[id];
-        const ownedInstance = owned.find(instance => instance.id === id);
-        const hasBeast = !!ownedInstance;
-        const copies = owned.filter(instance => instance.id === id).length;
+        if (!beast) return null;
+        const ownedInstances = owned.filter(instance => instance.id === id);
+        const ownedInstance = ownedInstances[0];
+        const hasBeast = ownedInstances.length > 0;
+        const copies = ownedInstances.length;
         const isActive = activeId === id;
-        return <BeastCard key={id} beast={beast} owned={hasBeast} copies={copies} rarity={ownedInstance?.rarity} active={isActive} onEquip={() => handleEquip(id)} onUnequip={unequipDivineBeast} onFeed={(foodUid) => { const result=feedDivineBeast(id, foodUid); setMessage(result.success ? "A Besta foi alimentada e recuperou o humor." : result.error ?? "Não foi possível alimentar."); }} onCombine={() => { const result=combineBeast(id); setMessage(result.success ? `Linhagem aprimorada para ${result.rarity}.` : result.error ?? "Não foi possível aprimorar."); }} />;
+        return <BeastCard key={id} beast={beast} owned={hasBeast} copies={copies} rarities={ownedInstances.map(instance => instance.rarity).filter(Boolean) as string[]} rarity={ownedInstance?.rarity} active={isActive} onEquip={() => handleEquip(id)} onUnequip={unequipDivineBeast} onFeed={(foodUid) => { const result=feedDivineBeast(id, foodUid); setMessage(result.success ? "O pet foi alimentado e recuperou o humor." : result.error ?? "Não foi possível alimentar."); }} onCombine={() => { const result=combineBeast(id); setMessage(result.success ? `Linhagem aprimorada para ${result.rarity}.` : result.error ?? "Não foi possível aprimorar."); }} />;
       })}
     </div>
 
@@ -63,7 +66,7 @@ export function DivineBeasts() {
   </div>;
 }
 
-function BeastCard({ beast, owned, copies, rarity, active, onEquip, onUnequip, onFeed, onCombine }: { beast: DivineBeastTemplate; owned: boolean; copies: number; rarity?: string; active: boolean; onEquip: () => void; onUnequip: () => void; onFeed: (foodUid: string) => void; onCombine: () => void }) {
+function BeastCard({ beast, owned, copies, rarities, rarity, active, onEquip, onUnequip, onFeed, onCombine }: { beast: DivineBeastTemplate; owned: boolean; copies: number; rarities: string[]; rarity?: string; active: boolean; onEquip: () => void; onUnequip: () => void; onFeed: (foodUid: string) => void; onCombine: () => void }) {
   const [imageFailed, setImageFailed] = useState(false);
   const character = useGameStore(state => state.character);
   const growth = beastGrowth(character?.level ?? 1);
@@ -80,7 +83,7 @@ function BeastCard({ beast, owned, copies, rarity, active, onEquip, onUnequip, o
       <div className="grid h-28 w-28 shrink-0 place-items-center overflow-hidden rounded-lg border border-white/10 bg-black/30">
         {owned && !imageFailed ? <AssetImage src={beast.sprite} alt={beast.name} className="h-full w-full object-contain [image-rendering:pixelated]" onError={() => setImageFailed(true)} /> : <span className={`text-6xl ${owned ? "" : "grayscale opacity-40"}`}>{beast.emoji}</span>}
       </div>
-      <div className="min-w-0"><div className={`text-[9px] font-black uppercase tracking-[.2em] ${owned ? "text-emerald-400" : "text-slate-600"}`}>{owned ? active ? "Pet ativo" : "Pet desbloqueado" : "Pet ainda não descoberto"}</div><h2 className={`mt-1 truncate text-lg font-black ${beast.rarity === "LENDARIO" ? "text-arcane-gold" : owned ? "text-white" : "text-slate-500"}`}>{owned ? beast.name : "???"}</h2><div className="truncate text-[10px] text-slate-500">{owned ? beast.title : "Guardião desconhecido"}</div><div className="mt-2 text-[10px] text-slate-500">{beast.region} · {rarity ?? beast.rarity}{rarity && rarity !== beast.rarity ? ` · eco-base ${beast.rarity}` : ""}</div>{needsPanel}</div>
+      <div className="min-w-0"><div className={`text-[9px] font-black uppercase tracking-[.2em] ${owned ? "text-emerald-400" : "text-slate-600"}`}>{owned ? active ? "Pet ativo" : "Pet desbloqueado" : "Pet ainda não descoberto"}</div><h2 className={`mt-1 truncate text-lg font-black ${beast.rarity === "LENDARIO" ? "text-arcane-gold" : owned ? "text-white" : "text-slate-500"}`}>{owned ? beast.name : "???"}</h2><div className="truncate text-[10px] text-slate-500">{owned ? beast.title : "Guardião desconhecido"}</div><div className="mt-2 text-[10px] text-slate-500">{beast.region} · {rarity ?? beast.rarity}{rarity && rarity !== beast.rarity ? ` · base ${beast.rarity}` : ""}</div>{owned && copies > 1 && <div className="mt-1 flex flex-wrap gap-1">{rarities.map((entry, index) => <span key={`${entry}-${index}`} className="rounded border border-purple-500/30 px-1.5 py-0.5 text-[9px] text-purple-200">{entry}</span>)}</div>}{needsPanel}</div>
     </div>
     <div className="space-y-3 p-4">
       <p className="min-h-[54px] text-xs leading-relaxed text-slate-400">{owned ? beast.lore : `A Essência detecta um eco em ${beast.region}. O vínculo pode surgir ao derrotar o guardião local.`}</p>

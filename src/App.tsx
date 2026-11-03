@@ -52,7 +52,12 @@ const TAB_ICONS: Record<Tab, AccessIconName> = {
   pets: "pet",
 };
 
-export default function App(){return onlineConfigured?<OnlineSession>{(account,switchCharacter)=><GameApp onlineAccount={account} onSwitchCharacter={switchCharacter}/>}</OnlineSession>:<GameApp/>;}
+export default function App(){
+  if (new URLSearchParams(window.location.search).get("site") === "1") {
+    return <LandingPage onAuthenticated={() => { window.history.replaceState({}, "", "/"); window.location.reload(); }} />;
+  }
+  return onlineConfigured?<OnlineSession>{(account,switchCharacter)=><GameApp onlineAccount={account} onSwitchCharacter={switchCharacter}/>}</OnlineSession>:<GameApp/>;
+}
 function GameApp({onlineAccount,onSwitchCharacter}:{onlineAccount?:LocalAccount;onSwitchCharacter?:()=>void}) {
   const online=useOnlineState();
   const [tab, setTab] = useState<Tab>("zona");
@@ -192,11 +197,13 @@ useEffect(() => {
       <header className="game-header bg-arcane-panel border-b border-arcane-border px-4 py-3 sticky top-0 z-50 shadow-lg">
         <div className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4">
           <div className="brand-lockup game-brand-lockup">
-            <AssetImage
-              src="/assets/branding/mythreon-logo-horizontal.png"
-              alt="Mythreon Online"
-              className="brand-logo"
-            />
+            <a href="/?site=1" className="game-brand-link" aria-label="Voltar para o site Mythreon Online" title="Página inicial do Mythreon Online">
+              <AssetImage
+                src="/assets/branding/mythreon-logo-horizontal.png"
+                alt="Mythreon Online"
+                className="brand-logo game-brand-banner"
+              />
+            </a>
             <div className="brand-player-info">
               <p className="text-xs text-arcane-cyan brand-subtitle">
                 {character.name} — Nível {character.level} {character.activeRace ? `(${character.activeRace.name})` : ""}

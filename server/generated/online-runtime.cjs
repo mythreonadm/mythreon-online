@@ -1731,7 +1731,7 @@ function createNewCharacter(name, appearance) {
     divineBeastAttackTimerMs: 0,
     depot: [],
     depotMax: 300,
-    farm: { plots: [{ id: "plot-1" }], unlockedPlots: 1, lastActionAt: Date.now() }
+    farm: { plots: [{ id: "plot-1" }], unlockedPlots: 1, skills: { planting: 0, harvesting: 0 }, lastActionAt: Date.now() }
   };
 }
 function saveGame(char, races) {
@@ -1813,7 +1813,8 @@ function loadGame() {
       if (!data.character.divineBeastNeeds || typeof data.character.divineBeastNeeds !== "object") data.character.divineBeastNeeds = {};
       if (!Number.isFinite(data.character.divineBeastAttackTimerMs)) data.character.divineBeastAttackTimerMs = 0;
       if (!data.character.depot) data.character.depot = [];
-      if (!data.character.farm || !Array.isArray(data.character.farm.plots)) data.character.farm = { plots: [{ id: "plot-1" }], unlockedPlots: 1, lastActionAt: Date.now() };
+      if (!data.character.farm || !Array.isArray(data.character.farm.plots)) data.character.farm = { plots: [{ id: "plot-1" }], unlockedPlots: 1, skills: { planting: 0, harvesting: 0 }, lastActionAt: Date.now() };
+      data.character.farm.skills ??= { planting: 0, harvesting: 0 };
       if (Array.isArray(data.character.inventory?.items)) {
         const normalized = [];
         for (const item of data.character.inventory.items) {
@@ -1874,6 +1875,8 @@ function loadGame() {
 var TIER_BASE = [5, 20, 70, 220, 700];
 var RARITY_SELL = { COMUM: 1, INCOMUM: 2, RARO: 5, EPICO: 12, LENDARIO: 40 };
 function sellValue(item) {
+  const farmValues = { COLHEITA_CENOURA: 18, COLHEITA_MELANCIA: 55, COLHEITA_TRIGO: 32, COLHEITA_LUMINA: 120, SOPA_CENOURA_LYSS: 85, ELIXIR_MARE_DOCE: 220, PAO_RUNICO_LYSS: 90 };
+  if (farmValues[item.templateId]) return farmValues[item.templateId];
   switch (item.category) {
     case "COMPONENTE":
       return 8;
@@ -3356,6 +3359,12 @@ var FARM_SEEDS = [
   { id: "SEMENTE_TRIGO", name: "Semente de Trigo", icon: "\u{1F33E}", growMs: 30 * 6e4, yieldId: "COLHEITA_TRIGO", yieldName: "Trigo de Lyss", yieldIcon: "\u{1F33E}", yieldQty: 3, cost: 160 },
   { id: "SEMENTE_LUMINA", name: "Semente Lumina", icon: "\u2728", growMs: 60 * 6e4, yieldId: "COLHEITA_LUMINA", yieldName: "Fruto Lumina", yieldIcon: "\u{1F506}", yieldQty: 2, cost: 400 }
 ];
+var FARM_RECIPES = [
+  { id: "RECEITA_SOPA_CENOURA", name: "Sopa de Cenoura de Lyss", icon: "\u{1F372}", ingredients: [{ templateId: "COLHEITA_CENOURA", name: "Cenoura", quantity: 2, icon: "\u{1F955}" }, { templateId: "COLHEITA_TRIGO", name: "Trigo de Lyss", quantity: 1, icon: "\u{1F33E}" }], outputTemplateId: "SOPA_CENOURA_LYSS", outputName: "Sopa de Cenoura de Lyss", outputIcon: "\u{1F372}", outputQuantity: 1, sellValue: 85 },
+  { id: "RECEITA_ELIXIR_MELANCIA", name: "Elixir de Mar\xE9 Doce", icon: "\u{1F9EA}", ingredients: [{ templateId: "COLHEITA_MELANCIA", name: "Melancia", quantity: 2, icon: "\u{1F349}" }, { templateId: "COLHEITA_LUMINA", name: "Fruto Lumina", quantity: 1, icon: "\u{1F506}" }], outputTemplateId: "ELIXIR_MARE_DOCE", outputName: "Elixir de Mar\xE9 Doce", outputIcon: "\u{1F9EA}", outputQuantity: 1, sellValue: 220 },
+  { id: "RECEITA_PAO_LYSS", name: "P\xE3o R\xFAnico de Lyss", icon: "\u{1F35E}", ingredients: [{ templateId: "COLHEITA_TRIGO", name: "Trigo de Lyss", quantity: 3, icon: "\u{1F33E}" }, { templateId: "COLHEITA_LUMINA", name: "Fruto Lumina", quantity: 1, icon: "\u{1F506}" }], outputTemplateId: "PAO_RUNICO_LYSS", outputName: "P\xE3o R\xFAnico de Lyss", outputIcon: "\u{1F35E}", outputQuantity: 2, sellValue: 180 }
+];
+var farmRecipe = (id) => FARM_RECIPES.find((recipe) => recipe.id === id);
 var FARM_MAX_PLOTS = 12;
 function farmExpansionCost(unlockedPlots) {
   if (unlockedPlots >= FARM_MAX_PLOTS) return null;
@@ -3368,6 +3377,9 @@ function farmExpansionCost(unlockedPlots) {
 var farmSeed = (id) => FARM_SEEDS.find((seed) => seed.id === id);
 function farmYield(seed) {
   return { uid: `farm-${seed.yieldId}-${Date.now()}-${Math.random()}`, templateId: seed.yieldId, name: seed.yieldName, category: "MATERIAL", tier: 1, rarity: "COMUM", stats: {}, affixes: [], upgradeLevel: 0, stackable: true, maxStack: 999, quantity: seed.yieldQty, icon: seed.yieldIcon };
+}
+function farmRecipeOutput(recipe) {
+  return { uid: `farm-recipe-${recipe.outputTemplateId}-${Date.now()}-${Math.random()}`, templateId: recipe.outputTemplateId, name: recipe.outputName, category: "MATERIAL", tier: 2, rarity: "INCOMUM", stats: {}, affixes: [], upgradeLevel: 0, stackable: true, maxStack: 999, quantity: recipe.outputQuantity, icon: recipe.outputIcon };
 }
 
 // src/store/gameStore.ts
@@ -3873,16 +3885,21 @@ function createGameStore(runtime = {}) {
       const seed = farmSeed(seedId);
       if (!seed) return { success: false, error: "Semente inv\xE1lida." };
       const next = JSON.parse(JSON.stringify(character));
-      next.farm ??= { plots: [], unlockedPlots: 1, lastActionAt: Date.now() };
+      next.farm ??= { plots: [], unlockedPlots: 1, lastActionAt: Date.now(), skills: { planting: 0, harvesting: 0 } };
+      next.farm.skills ??= { planting: 0, harvesting: 0 };
       const plot = next.farm.plots.find((entry) => entry.id === plotId);
       if (!plot || next.farm.plots.indexOf(plot) >= next.farm.unlockedPlots) return { success: false, error: "Canteiro bloqueado." };
       if (plot.seedId) return { success: false, error: "Este canteiro j\xE1 est\xE1 plantado." };
       if (next.gold < seed.cost) return { success: false, error: "Gold insuficiente para comprar esta semente." };
+      const skill = Number(next.farm.skills.planting ?? 0);
+      const speedBonus = Math.min(0.25, skill * 0.01);
+      const growMs = Math.max(3e4, Math.round(seed.growMs * (1 - speedBonus)));
       next.gold -= seed.cost;
       plot.seedId = seed.id;
       plot.plantedAt = Date.now();
-      plot.readyAt = Date.now() + seed.growMs;
+      plot.readyAt = Date.now() + growMs;
       plot.wateredAt = Date.now();
+      next.farm.skills.planting += 1;
       next.farm.lastActionAt = Date.now();
       set({ character: next });
       get().save();
@@ -3896,11 +3913,13 @@ function createGameStore(runtime = {}) {
       const seed = plot?.seedId ? farmSeed(plot.seedId) : void 0;
       if (!plot || !seed) return { success: false, error: "N\xE3o h\xE1 cultivo neste canteiro." };
       if (!plot.readyAt || Date.now() < plot.readyAt) return { success: false, error: "A planta\xE7\xE3o ainda est\xE1 crescendo." };
+      next.farm.skills ??= { planting: 0, harvesting: 0 };
       addItem(next.inventory, farmYield(seed));
       plot.seedId = void 0;
       plot.plantedAt = void 0;
       plot.readyAt = void 0;
       plot.wateredAt = void 0;
+      next.farm.skills.harvesting += 1;
       next.farm.lastActionAt = Date.now();
       set({ character: next });
       get().save();
@@ -3925,6 +3944,30 @@ function createGameStore(runtime = {}) {
       set({ character: next });
       get().save();
       return { success: true };
+    },
+    cookFarmRecipe: (recipeId) => {
+      const { character } = get();
+      if (!character) return { success: false, error: "Personagem indispon\xEDvel." };
+      const recipe = farmRecipe(recipeId);
+      if (!recipe) return { success: false, error: "Receita inv\xE1lida." };
+      const next = JSON.parse(JSON.stringify(character));
+      for (const ingredient of recipe.ingredients) {
+        const total = next.inventory.items.filter((item) => item.templateId === ingredient.templateId).reduce((sum, item) => sum + item.quantity, 0);
+        if (total < ingredient.quantity) return { success: false, error: `Faltam materiais para ${recipe.name}.` };
+      }
+      for (const ingredient of recipe.ingredients) {
+        let remaining = ingredient.quantity;
+        for (const item of [...next.inventory.items]) {
+          if (item.templateId !== ingredient.templateId || remaining <= 0) continue;
+          const take = Math.min(remaining, item.quantity);
+          removeItem(next.inventory, item.uid, take);
+          remaining -= take;
+        }
+      }
+      addItem(next.inventory, farmRecipeOutput(recipe));
+      set({ character: next });
+      get().save();
+      return { success: true, quantity: recipe.outputQuantity };
     },
     salvageAll: (maxRarity) => {
       const { character } = get();
@@ -4361,7 +4404,7 @@ function executeGame(world, action, args = []) {
     if (s.isTickRunning && ["sellItem", "sellSelected", "salvageAll", "salvageSelected", "upgradeItem", "rerollItem"].includes(action)) throw Error("Saia da ca\xE7a para acessar o Ferreiro.");
     if (action === "activateBuff" && (!s.isTickRunning || !s.character?.onlineBalloonUntil || s.character.onlineBalloonUntil < now)) throw Error("Este eco de b\xF4nus expirou. Aguarde outro durante a ca\xE7a.");
     const zero = ["finishIntro", "clearOfflineReport", "clearDeathReport", "startHealing", "cancelHealing", "stopHunting", "stopTraining", "unequipRace", "unequipDivineBeast", "activateBuff", "buyTrainingBoost", "buyBless", "refreshCompendium"];
-    const strings = ["unlockZone", "setActiveEnemy", "setCurrentZone", "acceptQuest", "claimQuest", "upgradeItem", "rerollItem", "depositItem", "withdrawItem", "discardItem", "plantFarmSeed", "harvestFarmPlot"];
+    const strings = ["unlockZone", "setActiveEnemy", "setCurrentZone", "acceptQuest", "claimQuest", "upgradeItem", "rerollItem", "depositItem", "withdrawItem", "discardItem", "plantFarmSeed", "harvestFarmPlot", "cookFarmRecipe"];
     const uid = (v) => {
       if (typeof v !== "string" || v.length < 1 || v.length > 128) throw Error("Identificador inv\xE1lido.");
       return v;

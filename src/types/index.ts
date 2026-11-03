@@ -139,7 +139,9 @@ export interface Zone {
 export interface Inventory { backpack: Backpack; items: Item[]; }
 
 export interface FarmPlot { id: string; seedId?: string; plantedAt?: number; readyAt?: number; wateredAt?: number; }
-export interface FarmState { plots: FarmPlot[]; unlockedPlots: number; lastActionAt: number; }
+export interface FarmSkills { planting: number; harvesting: number; }
+export interface FarmRecipe { id: string; name: string; icon: string; ingredients: { templateId: string; name: string; quantity: number; icon: string }[]; outputTemplateId: string; outputName: string; outputIcon: string; outputQuantity: number; sellValue: number; }
+export interface FarmState { plots: FarmPlot[]; unlockedPlots: number; lastActionAt: number; skills?: FarmSkills; }
 
 export interface CharacterSkills {
   melee: number; defense: number; magic: number; distance: number; soul: number;
