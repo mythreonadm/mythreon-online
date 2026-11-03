@@ -304,6 +304,13 @@ html { scroll-behavior: smooth; scroll-padding-top: 92px; }
 .account-dialog input:focus { border-color: var(--site-gold); outline: 2px solid rgba(230,181,79,.12); }
 .account-dialog input::placeholder { color: #747786; }
 .account-submit { width: 100%; margin-top: 12px; }
+.account-google-area { margin-top: 16px; }
+.account-divider { display: flex; align-items: center; gap: 10px; color: #777b88; font-size: 11px; text-transform: uppercase; letter-spacing: .14em; }
+.account-divider::before, .account-divider::after { content: ""; height: 1px; flex: 1; background: rgba(210,198,166,.16); }
+.account-google { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 44px; margin-top: 12px; border: 1px solid rgba(210,198,166,.25); border-radius: 9px; background: #f5f3ef; color: #24252b; font-size: 13px; font-weight: 800; cursor: pointer; transition: border-color .2s, transform .2s; }
+.account-google:hover:not(:disabled) { border-color: var(--site-gold); transform: translateY(-1px); }
+.account-google:disabled { opacity: .65; cursor: wait; }
+.account-google-mark { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; color: #4285f4; background: #fff; font-family: Arial, sans-serif; font-size: 16px; font-weight: 900; }
 .account-error { padding: 10px 12px; border: 1px solid rgba(225,94,79,.36); border-radius: 8px; background: rgba(128,35,35,.18); color: #ffb2a7; font-size: 12px; }
 .account-note { margin-top: 18px; color: #898c99; font-size: 11px; line-height: 1.6; text-align: center; }
 .account-switch { display: block; margin: 17px auto 0; border: 0; background: none; color: var(--site-gold-light); font-size: 12px; font-weight: 800; cursor: pointer; }

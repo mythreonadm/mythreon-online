@@ -142,6 +142,22 @@ function AccountDialog({ mode, onModeChange, onClose, onAuthenticated }: { mode:
     }
   }
 
+  async function signInWithGoogle() {
+    if (!onlineConfigured) return;
+    setError("");
+    setBusy(true);
+    try {
+      const { error } = await supabase().auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: window.location.origin },
+      });
+      if (error) throw error;
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Não foi possível entrar com Google.");
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="account-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) onClose(); }}>
       <section className="account-dialog" role="dialog" aria-modal="true" aria-labelledby="account-title">
@@ -159,6 +175,13 @@ function AccountDialog({ mode, onModeChange, onClose, onAuthenticated }: { mode:
           {error && <div className="account-error" role="alert">{error}</div>}{notice&&<p role="status" className="my-3 text-sm text-green-300">{notice}</p>}
           <button className="landing-button account-submit" disabled={busy}>{busy ? "Aguarde..." : registering ? "Criar conta e jogar" : "Entrar e continuar"}</button>
         </form>
+        {onlineConfigured && <div className="account-google-area">
+          <div className="account-divider"><span>ou</span></div>
+          <button type="button" className="account-google" disabled={busy} onClick={() => void signInWithGoogle()}>
+            <span className="account-google-mark" aria-hidden="true">G</span>
+            {busy ? "Abrindo Google..." : "Continuar com Google"}
+          </button>
+        </div>}
         <div className="account-note">{onlineConfigured ? "Cadastro online com confirmação de e-mail. O progresso dos personagens fica no servidor." : "Modo local: conta e progresso ficam somente neste navegador. O mundo online ainda não foi conectado."}</div>
         {onlineConfigured&&!registering&&<button type="button" className="account-switch" onClick={async()=>{setError("");if(!email)return setError("Informe seu e-mail para recuperar a senha.");const {error}=await supabase().auth.resetPasswordForEmail(email);if(error)setError(error.message);else setNotice("Confira seu e-mail para redefinir a senha.");}}>Esqueci minha senha</button>}
         <button className="account-switch" onClick={() => { setError(""); onModeChange(registering ? "login" : "register"); }}>{registering ? "Já tem conta? Entrar" : "Primeira vez aqui? Criar conta"}</button>
