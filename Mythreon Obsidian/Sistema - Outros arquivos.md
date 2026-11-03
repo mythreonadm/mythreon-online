@@ -9,7 +9,6 @@
 ## Código e recursos
 
 - [.gitignore](../.gitignore)
-- [ACC/CONSOLE CLOUD ACC google.txt](../ACC/CONSOLE CLOUD ACC google.txt)
 - [Ativação Cérebro.bat](../Ativação Cérebro.bat)
 - [api/world.js](../api/world.js)
 - [imagens/WhatsApp Image 2026-10-30 at 00.42.53.jpeg](../imagens/WhatsApp Image 2026-10-30 at 00.42.53.jpeg)
