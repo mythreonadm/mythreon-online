@@ -50,6 +50,18 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 .animate-idle { animation: idleBounce 2s infinite ease-in-out; }
 .damage-number { animation: floatUp 1s ease-out forwards; position: absolute; font-weight: bold; font-family: monospace; pointer-events: none; text-shadow: 2px 2px 0 #000; }
 
+@keyframes comboImpactBurst {
+  0% { opacity: 0; transform: scale(.55); filter: brightness(1); }
+  18% { opacity: 1; transform: scale(1.08); filter: brightness(1.8); }
+  65% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.18); }
+}
+.combo-impact-burst { animation: comboImpactBurst .9s ease-out forwards; }
+
+@media (prefers-reduced-motion: reduce) {
+  .combo-impact-burst, .damage-number, .animate-pulse, .animate-shake { animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+}
+
 @keyframes attackSwing {
   0% { transform: rotate(0deg) translateX(0); }
   50% { transform: rotate(-45deg) translateX(20px); }

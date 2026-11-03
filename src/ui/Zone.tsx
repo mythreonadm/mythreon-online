@@ -71,6 +71,7 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
   const [comboProgress, setComboProgress] = useState(0);
   const [comboStartedAt, setComboStartedAt] = useState<number | null>(null);
   const [comboClock, setComboClock] = useState(() => Date.now());
+  const [comboBurst, setComboBurst] = useState(false);
   const [showLootConfig, setShowLootConfig] = useState<string | null>(null);
   
   const balloonTimeout = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -184,6 +185,11 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
       }
       const timer1 = setTimeout(() => { setIsAttacking(false); setShowProjectile(false); }, 600);
       const timer2 = setTimeout(() => { setIsHurt(false); setFloatingDamage(null); }, 1000);
+      if (lastTickResult.comboHitDamage) {
+        setComboBurst(true);
+        const timer3 = setTimeout(() => setComboBurst(false), 900);
+        return () => { clearTimeout(timer1); clearTimeout(timer2); clearTimeout(timer3); };
+      }
       return () => { clearTimeout(timer1); clearTimeout(timer2); };
     }
   }, [lastTickResult, isTickRunning]);
@@ -418,6 +424,15 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
             />
             <div className="scene-vignette absolute inset-0 pointer-events-none"></div>
           </div>
+
+          {comboBurst && (
+            <div className="absolute inset-0 z-40 pointer-events-none flex items-center justify-center" aria-live="polite">
+              <div className="combo-impact-burst rounded-full border-2 border-amber-300/80 bg-amber-400/15 px-6 py-3 text-center shadow-[0_0_45px_rgba(251,191,36,.8)]">
+                <div className="text-amber-200 text-2xl md:text-4xl font-black tracking-widest">⚡ COMBO!</div>
+                <div className="text-amber-100 text-[10px] md:text-xs font-bold">DOIS IMPACTOS · RITMO DA ESSÊNCIA</div>
+              </div>
+            </div>
+          )}
 
           {balloon && (
             <div onClick={handleBalloonClick} className="absolute z-50 cursor-pointer animate-idle hover:scale-125 transition-transform" style={{ left: `${balloon.x}%`, top: `${balloon.y}%` }}>
