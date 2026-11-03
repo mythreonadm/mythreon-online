@@ -54,7 +54,12 @@ export function Backpack() {
 
   const handleConfirmEquip = () => {
     if (!selectedItem) return;
-    const res = equip(selectedItem.uid);
+    const current = selectedItem.slot === "BACKPACK" ? character.equipped.BACKPACK : undefined;
+    if (current && (selectedItem.slots ?? 0) <= (current.slots ?? character.inventory.backpack.slots)) {
+      const confirmed = window.confirm(`Você está usando uma mochila igual ou melhor. Deseja confirmar a troca mesmo assim?\n\nAtual: ${current.name} (${current.slots ?? 0} espaços)\nNova: ${selectedItem.name} (${selectedItem.slots ?? 0} espaços)`);
+      if (!confirmed) return;
+    }
+    const res = equip(selectedItem.uid, !!current);
     if (res.success) setSelectedItem(null);
     else alert(res.error);
   };

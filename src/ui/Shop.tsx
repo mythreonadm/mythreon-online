@@ -9,9 +9,10 @@ import { STAT_NAMES } from "../data/affixes";
 import { QuantityModal } from "./QuantityModal";
 import { ItemIcon } from "./ItemIcon";
 import { ALL_EQUIPMENT_TEMPLATES } from "../data/items";
+import { countByTemplate } from "../engine/inventory";
 
 export function Shop({ storefront = false }: { storefront?: boolean }) {
-  const { character, sellItem, salvageAll, salvageSelected, updateSettings, useVial, upgradeItem, rerollItem } = useGameStore();
+  const { character, sellItem, salvageAll, salvageSelected, updateSettings, useVial, upgradeItem, rerollItem, forgeFragments } = useGameStore();
   
   const [tab, setTab] = useState<"FORJA" | "VIALS" | "VENDER" | "DESMANCHAR">(storefront ? "VIALS" : "FORJA");
   const [actionRarity, setActionRarity] = useState<Rarity>("COMUM");
@@ -213,6 +214,13 @@ export function Shop({ storefront = false }: { storefront?: boolean }) {
       {/* ─── ABA FORJA ─── */}
       {tab === "FORJA" && (
         <div className="grid md:grid-cols-2 gap-6">
+          <section className="md:col-span-2 rounded-lg border border-cyan-800/50 bg-cyan-950/10 p-4">
+            <h3 className="font-bold text-cyan-200">💎 Fundir fragmentos</h3>
+            <p className="mt-1 text-xs text-gray-400">Converta sobras da mochila em fragmentos de maior qualidade. A operação consome os fragmentos de origem; confirme antes de usar.</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {[{ id: "FRAGMENTO_COMUM", label: "100 Comuns → 10 Épicos" }, { id: "FRAGMENTO_RARO", label: "25 Raros → 10 Épicos" }].map(recipe => <button key={recipe.id} onClick={() => { if (!window.confirm(`Fundir ${recipe.label}?`)) return; const result = forgeFragments(recipe.id); if (!result.success) alert(result.error); }} className="rounded border border-cyan-700/60 bg-cyan-900/30 px-3 py-2 text-xs font-bold text-cyan-100 hover:bg-cyan-800/50">{recipe.label} · possui {countByTemplate(character.inventory, recipe.id)}</button>)}
+            </div>
+          </section>
           <div className="bg-arcane-bg border border-arcane-border rounded-lg p-4 max-h-[500px] overflow-y-auto">
             <h3 className="font-bold text-white mb-3">Selecione um item para aprimorar</h3>
             <div className="grid grid-cols-2 gap-2">

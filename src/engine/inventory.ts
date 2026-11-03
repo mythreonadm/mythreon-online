@@ -42,9 +42,9 @@ export function countByTemplate(inv: Inventory, templateId: string): number {
   return inv.items.filter((i) => i.templateId === templateId).reduce((n, i) => n + i.quantity, 0);
 }
 
-function equipBackpack(char: Character, item: Item): { success: boolean; error?: string } {
+function equipBackpack(char: Character, item: Item, force = false): { success: boolean; error?: string } {
   const current = char.inventory.backpack;
-  if ((item.slots ?? 0) <= current.slots) return { success: false, error: "Você já usa uma mochila igual ou melhor." };
+  if ((item.slots ?? 0) <= current.slots && !force) return { success: false, error: "Você já usa uma mochila igual ou melhor. Confirme a troca para continuar." };
   const prev = char.equipped.BACKPACK;
   removeItem(char.inventory, item.uid);
   if (prev) addItem(char.inventory, prev);
@@ -53,10 +53,18 @@ function equipBackpack(char: Character, item: Item): { success: boolean; error?:
   return { success: true };
 }
 
-export function equipItem(char: Character, itemUid: string): { success: boolean; error?: string } {
+export function equipItem(char: Character, itemUid: string, force = false): { success: boolean; error?: string } {
   const item = char.inventory.items.find((i) => i.uid === itemUid);
   if (!item || !item.slot) return { success: false, error: "Item inválido" };
-  if (item.slot === "BACKPACK") return equipBackpack(char, item);
+  const validSlot = (item.category === "JOIA" && ["ANEL_I", "ANEL_II", "COLAR"].includes(item.slot)) ||
+    (item.category === "FLECHA" && item.slot === "MUNICAO") ||
+    (item.category === "BACKPACK" && item.slot === "BACKPACK") ||
+    (item.category === "PULSEIRA" && item.slot === "PULSEIRA") ||
+    (item.category === "ARMA" && item.slot === "ARMA_PRINCIPAL") ||
+    (item.category === "ESCUDO" && item.slot === "OFF_HAND") ||
+    (item.category === "ARMADURA" && ["CAPACETE", "ARMADURA", "LUVAS", "CALCAS", "BOTAS"].includes(item.slot));
+  if (!validSlot) return { success: false, error: "Este item não pertence a esse slot de equipamento." };
+  if (item.slot === "BACKPACK") return equipBackpack(char, item, force);
   let slot: SlotType = item.slot;
   if (slot === "ANEL_I") {
     if (!char.equipped.ANEL_I) slot = "ANEL_I";

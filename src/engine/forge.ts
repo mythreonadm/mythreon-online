@@ -1,7 +1,8 @@
 import { Character, Item } from "../types";
-import { removeItem, countByTemplate } from "./inventory";
+import { removeItem, countByTemplate, canAddItem, addItem } from "./inventory";
 import { recalcStats } from "./stats";
 import { generateRandomAffixes } from "./drops";
+import { FRAGMENT_TEMPLATES, createItem } from "../data/items";
 
 // ─── CUSTO DE UPGRADE (+1, +2...) ───
 export function getUpgradeCost(item: Item): { fragments: number; gold: number; fragmentType: string } {
@@ -16,6 +17,28 @@ export function getUpgradeCost(item: Item): { fragments: number; gold: number; f
   const goldCost = Math.floor((100 * item.tier * Math.pow(nextLevel, 2)));
 
   return { fragments: fragmentsNeeded, gold: goldCost, fragmentType };
+}
+
+export function forgeFragments(char: Character, fromTemplateId: string): { success: boolean; error?: string; crafted?: number } {
+  const recipes: Record<string, { to: string; input: number; output: number }> = {
+    FRAGMENTO_COMUM: { to: "FRAGMENTO_EPICO", input: 100, output: 10 },
+    FRAGMENTO_RARO: { to: "FRAGMENTO_EPICO", input: 25, output: 10 },
+  };
+  const recipe = recipes[fromTemplateId];
+  if (!recipe) return { success: false, error: "Esse fragmento não possui receita de fusão." };
+  const available = countByTemplate(char.inventory, fromTemplateId);
+  if (available < recipe.input) return { success: false, error: `Você precisa de ${recipe.input} fragmentos; possui ${available}.` };
+  const crafted = createItem({ ...FRAGMENT_TEMPLATES[recipe.to], quantity: recipe.output });
+  if (!canAddItem(char.inventory, crafted)) return { success: false, error: "Não há espaço para os fragmentos forjados." };
+  let remaining = recipe.input;
+  for (const item of [...char.inventory.items]) {
+    if (item.templateId !== fromTemplateId || remaining <= 0) continue;
+    const amount = Math.min(item.quantity, remaining);
+    removeItem(char.inventory, item.uid, amount);
+    remaining -= amount;
+  }
+  addItem(char.inventory, crafted);
+  return { success: true, crafted: recipe.output };
 }
 
 // ─── APLICAR UPGRADE ───

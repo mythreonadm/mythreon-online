@@ -375,7 +375,7 @@ function ComponentSelector({ type, components, onSelect, onCancel }: any) {
             const effect = type === "A" ? ATTACK_SKILLS[templateId] : type === "S" ? SUPPORT_EFFECTS[templateId] : PASSIVE_EFFECTS[templateId];
             const effectStats = effect ? Object.entries(effect).filter(([key, value]) => key !== "desc" && typeof value === "number") : [];
             return (
-              <button key={templateId} onClick={() => onSelect(templateId)} className="relative bg-arcane-panel border border-arcane-border hover:border-arcane-gold p-2 rounded-lg flex flex-col items-center transition-all hover:scale-105 group" title={t.skillDescription}>
+              <button key={templateId} onClick={() => onSelect(templateId)} className="relative bg-arcane-panel border border-arcane-border hover:border-arcane-gold p-2 rounded-lg flex flex-col items-center transition-all hover:scale-105 group" title={`${t.name} — ${t.skillDescription}${effectStats.length ? ` | ${effectStats.map(([key, value]) => `${key}: ${value}`).join(" · ")}` : ""}`}>
                 <span className="text-2xl mb-1">{t.icon}</span>
                 <span className="text-[9px] text-center text-white truncate w-full">{t.name.split(" ")[0]}</span>
                 <span className="text-[9px] text-arcane-cyan font-bold">x{String(qty)}</span>
@@ -427,7 +427,7 @@ function RacePreview({ race, isNamed, isDiscovered, currentRace, onSynthesize, o
       </div>
 
       <div className="space-y-2 mb-4">
-        <div className="bg-red-900/20 border border-red-900/50 p-2 rounded">
+        <div title={`${atkEffect?.desc ?? ""} · ${Object.entries(atkEffect ?? {}).filter(([k,v]) => k !== "desc" && typeof v === "number").map(([k,v]) => `${k}: ${v}`).join(" · ")}`} className="bg-red-900/20 border border-red-900/50 p-2 rounded">
           <div className="flex items-center gap-2">
             <span className="text-lg">{atkSkill?.icon}</span>
             <span className="text-xs font-bold text-red-400 uppercase">⚔️ Ataque</span>
@@ -435,7 +435,7 @@ function RacePreview({ race, isNamed, isDiscovered, currentRace, onSynthesize, o
           </div>
           <div className="text-[10px] text-gray-400 mt-1">{atkEffect?.desc.split(":")[1]?.trim()}</div>
         </div>
-        <div className="bg-green-900/20 border border-green-900/50 p-2 rounded">
+        <div title={`${supEffect?.desc ?? ""} · ${Object.entries(supEffect ?? {}).filter(([k,v]) => k !== "desc" && typeof v === "number").map(([k,v]) => `${k}: ${v}`).join(" · ")}`} className="bg-green-900/20 border border-green-900/50 p-2 rounded">
           <div className="flex items-center gap-2">
             <span className="text-lg">{supSkill?.icon}</span>
             <span className="text-xs font-bold text-green-400 uppercase">💚 Suporte</span>
@@ -443,7 +443,7 @@ function RacePreview({ race, isNamed, isDiscovered, currentRace, onSynthesize, o
           </div>
           <div className="text-[10px] text-gray-400 mt-1">{supEffect?.desc.split(":")[1]?.trim()}</div>
         </div>
-        <div className="bg-yellow-900/20 border border-yellow-900/50 p-2 rounded">
+        <div title={`${pasEffect?.desc ?? ""} · ${Object.entries(pasEffect ?? {}).filter(([k,v]) => k !== "desc" && typeof v === "number").map(([k,v]) => `${k}: ${v}`).join(" · ")}`} className="bg-yellow-900/20 border border-yellow-900/50 p-2 rounded">
           <div className="flex items-center gap-2">
             <span className="text-lg">{pasSkill?.icon}</span>
             <span className="text-xs font-bold text-yellow-400 uppercase">✨ Passiva</span>

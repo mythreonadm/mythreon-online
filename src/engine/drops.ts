@@ -109,7 +109,7 @@ export function rollDrops(enemy: Enemy, zone: Zone, _char: Character, mods: Drop
 
   if (chance(enemy.isBoss ? 0.25 : 0.08)) {
     const arrow = ARROW_TEMPLATES[`FLECHA_T${zone.tier}`];
-    if (arrow) drops.push({ ...arrow, uid: generateId(), quantity: enemy.isBoss ? 25 : 5 + Math.floor(Math.random() * 6) });
+    if (arrow) drops.push({ ...arrow, uid: generateId(), quantity: 1 });
   }
 
   if (chance(enemy.isBoss ? BALANCE.bossEquipmentDrop : BALANCE.equipmentDrop)) {

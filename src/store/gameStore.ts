@@ -13,7 +13,7 @@ import { findNamedRace, generateRaceName, generateRaceId, generateRaceBonus } fr
 import { sellItem } from "../engine/shop";
 import { salvageAllEquipment, salvageSelectedEquipment } from "../engine/salvage";
 import { updateQuestProgress, claimQuestReward, trackRaceDiscovery, trackQuestAction } from "../engine/questEngine";
-import { upgradeItemLevel, rerollItemAffixes } from "../engine/forge";
+import { upgradeItemLevel, rerollItemAffixes, forgeFragments } from "../engine/forge";
 import { depositItem as engineDeposit, withdrawItem as engineWithdraw, depositMany as engineDepositMany, withdrawMany as engineWithdrawMany } from "../engine/depot";
 import { FRAGMENT_TEMPLATES } from "../data/items";
 import { DIVINE_BEASTS } from "../data/divineBeasts";
@@ -49,7 +49,7 @@ export interface GameState {
   armSpecialCombo: () => { success: boolean; error?: string };
   setActiveEnemy: (enemyId: string) => void;
   setCurrentZone: (zoneId: string) => void;
-  equip: (uid: string) => { success: boolean; error?: string };
+  equip: (uid: string, force?: boolean) => { success: boolean; error?: string };
   unequip: (slot: any) => { success: boolean; error?: string };
   synthesize: (a: string, s: string, p: string) => { success: boolean; error?: string };
   equipRace: (race: Race) => void;
@@ -70,6 +70,7 @@ export interface GameState {
   refreshCompendium: () => void;
   upgradeItem: (uid: string) => { success: boolean; error?: string };
   rerollItem: (uid: string) => { success: boolean; error?: string };
+  forgeFragments: (fromTemplateId: string) => { success: boolean; error?: string; crafted?: number };
   
   depositItem: (uid: string) => { success: boolean; error?: string };
   withdrawItem: (uid: string) => { success: boolean; error?: string };
@@ -311,10 +312,10 @@ return create<GameState>((set, get) => ({
     if (character) { character.currentZoneId = zoneId; character.activeEnemyId = ZONES[zoneId].enemies[0]?.id; character.enemyHp = undefined; character.enemyHpId = undefined; set({ character: { ...character } }); get().save(); }
   },
 
-  equip: (uid) => {
+  equip: (uid, force = false) => {
     const { character } = get(); if (!character) return { success: false, error: "Sem personagem" };
     const newCharacter = JSON.parse(JSON.stringify(character));
-    const result = equipItem(newCharacter, uid);
+    const result = equipItem(newCharacter, uid, force);
     if (result.success) { set({ character: newCharacter }); get().save(); }
     return result;
   },
@@ -566,6 +567,14 @@ return create<GameState>((set, get) => ({
     const res = rerollItemAffixes(newCharacter, uid);
     if (res.success) { trackQuestAction(newCharacter, "FORGE"); set({ character: newCharacter }); get().save(); }
     return res;
+  },
+
+  forgeFragments: (fromTemplateId) => {
+    const { character } = get(); if (!character) return { success: false, error: "Sem personagem" };
+    const updated = JSON.parse(JSON.stringify(character));
+    const result = forgeFragments(updated, fromTemplateId);
+    if (result.success) { set({ character: updated }); get().save(); }
+    return result;
   },
 
   depositItem: (uid) => {

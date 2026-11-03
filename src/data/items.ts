@@ -60,7 +60,7 @@ export const ALL_EQUIPMENT_TEMPLATES: Record<string, Item> = buildTemplates();
 // ainda não são consumidas pela caça automática.
 export const ARROW_TEMPLATES: Record<string, Item> = Object.fromEntries(TIERS.map(tier => {
   const names = ["Flecha de Madeira", "Flecha de Pedra", "Flecha de Aço", "Flecha Estelar", "Flecha do Eclipse"];
-  const item = createItem({ templateId: `FLECHA_T${tier}`, name: names[tier - 1], category: "FLECHA", slot: "MUNICAO", tier, rarity: "COMUM", stats: {}, stackable: true, maxStack: 999, icon: "🏹" });
+  const item = createItem({ templateId: `FLECHA_T${tier}`, name: names[tier - 1], category: "FLECHA", slot: "MUNICAO", tier, rarity: "COMUM", stats: {}, stackable: false, maxStack: 1, quantity: 1, icon: "🏹" });
   return [item.templateId, item];
 }));
 

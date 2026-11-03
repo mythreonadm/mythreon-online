@@ -92,7 +92,7 @@ function buildTemplates() {
 var ALL_EQUIPMENT_TEMPLATES = buildTemplates();
 var ARROW_TEMPLATES = Object.fromEntries(TIERS.map((tier) => {
   const names = ["Flecha de Madeira", "Flecha de Pedra", "Flecha de A\xE7o", "Flecha Estelar", "Flecha do Eclipse"];
-  const item = createItem({ templateId: `FLECHA_T${tier}`, name: names[tier - 1], category: "FLECHA", slot: "MUNICAO", tier, rarity: "COMUM", stats: {}, stackable: true, maxStack: 999, icon: "\u{1F3F9}" });
+  const item = createItem({ templateId: `FLECHA_T${tier}`, name: names[tier - 1], category: "FLECHA", slot: "MUNICAO", tier, rarity: "COMUM", stats: {}, stackable: false, maxStack: 1, quantity: 1, icon: "\u{1F3F9}" });
   return [item.templateId, item];
 }));
 var POTION_DATA = [
@@ -720,9 +720,9 @@ function removeItem(inv, uid, qty = 1) {
 function countByTemplate(inv, templateId) {
   return inv.items.filter((i) => i.templateId === templateId).reduce((n, i) => n + i.quantity, 0);
 }
-function equipBackpack(char, item) {
+function equipBackpack(char, item, force = false) {
   const current = char.inventory.backpack;
-  if ((item.slots ?? 0) <= current.slots) return { success: false, error: "Voc\xEA j\xE1 usa uma mochila igual ou melhor." };
+  if ((item.slots ?? 0) <= current.slots && !force) return { success: false, error: "Voc\xEA j\xE1 usa uma mochila igual ou melhor. Confirme a troca para continuar." };
   const prev = char.equipped.BACKPACK;
   removeItem(char.inventory, item.uid);
   if (prev) addItem(char.inventory, prev);
@@ -730,10 +730,12 @@ function equipBackpack(char, item) {
   char.equipped.BACKPACK = item;
   return { success: true };
 }
-function equipItem(char, itemUid) {
+function equipItem(char, itemUid, force = false) {
   const item = char.inventory.items.find((i) => i.uid === itemUid);
   if (!item || !item.slot) return { success: false, error: "Item inv\xE1lido" };
-  if (item.slot === "BACKPACK") return equipBackpack(char, item);
+  const validSlot = item.category === "JOIA" && ["ANEL_I", "ANEL_II", "COLAR"].includes(item.slot) || item.category === "FLECHA" && item.slot === "MUNICAO" || item.category === "BACKPACK" && item.slot === "BACKPACK" || item.category === "PULSEIRA" && item.slot === "PULSEIRA" || item.category === "ARMA" && item.slot === "ARMA_PRINCIPAL" || item.category === "ESCUDO" && item.slot === "OFF_HAND" || item.category === "ARMADURA" && ["CAPACETE", "ARMADURA", "LUVAS", "CALCAS", "BOTAS"].includes(item.slot);
+  if (!validSlot) return { success: false, error: "Este item n\xE3o pertence a esse slot de equipamento." };
+  if (item.slot === "BACKPACK") return equipBackpack(char, item, force);
   let slot = item.slot;
   if (slot === "ANEL_I") {
     if (!char.equipped.ANEL_I) slot = "ANEL_I";
@@ -1290,7 +1292,7 @@ function rollDrops(enemy, zone, _char, mods = { dropBonus: 0, rareBonus: 0 }) {
   if (enemy.essenceId && chance(enemy.essenceChance ?? 0)) drops.push(makeComponent(enemy.essenceId));
   if (chance(enemy.isBoss ? 0.25 : 0.08)) {
     const arrow = ARROW_TEMPLATES[`FLECHA_T${zone.tier}`];
-    if (arrow) drops.push({ ...arrow, uid: generateId(), quantity: enemy.isBoss ? 25 : 5 + Math.floor(Math.random() * 6) });
+    if (arrow) drops.push({ ...arrow, uid: generateId(), quantity: 1 });
   }
   if (chance(enemy.isBoss ? BALANCE.bossEquipmentDrop : BALANCE.equipmentDrop)) {
     const pool2 = Object.values(ALL_EQUIPMENT_TEMPLATES).filter((t) => t.tier === zone.tier);
@@ -1716,6 +1718,15 @@ function loadGame() {
       if (!data.character.cards) data.character.cards = [];
       if (!Array.isArray(data.character.divineBeasts)) data.character.divineBeasts = [];
       if (!data.character.depot) data.character.depot = [];
+      if (Array.isArray(data.character.inventory?.items)) {
+        const normalized = [];
+        for (const item of data.character.inventory.items) {
+          const quantity = item.stackable ? Math.max(1, Number(item.quantity) || 1) : Math.max(1, Number(item.quantity) || 1);
+          if (item.stackable || quantity === 1) normalized.push({ ...item, quantity: item.stackable ? quantity : 1, maxStack: item.stackable ? item.maxStack : 1 });
+          else for (let i = 0; i < quantity; i++) normalized.push({ ...item, uid: `${item.uid}-${i + 1}`, quantity: 1, maxStack: 1 });
+        }
+        data.character.inventory.items = normalized;
+      }
       if (data.character.depotMax === void 0) data.character.depotMax = 300;
       for (const item of [...data.character.inventory?.items ?? [], ...data.character.depot ?? []]) {
         if (item.category === "COMPONENTE" && item.stackable) item.maxStack = 999;
@@ -2927,6 +2938,27 @@ function getUpgradeCost(item) {
   const goldCost = Math.floor(100 * item.tier * Math.pow(nextLevel, 2));
   return { fragments: fragmentsNeeded, gold: goldCost, fragmentType };
 }
+function forgeFragments(char, fromTemplateId) {
+  const recipes = {
+    FRAGMENTO_COMUM: { to: "FRAGMENTO_EPICO", input: 100, output: 10 },
+    FRAGMENTO_RARO: { to: "FRAGMENTO_EPICO", input: 25, output: 10 }
+  };
+  const recipe = recipes[fromTemplateId];
+  if (!recipe) return { success: false, error: "Esse fragmento n\xE3o possui receita de fus\xE3o." };
+  const available = countByTemplate(char.inventory, fromTemplateId);
+  if (available < recipe.input) return { success: false, error: `Voc\xEA precisa de ${recipe.input} fragmentos; possui ${available}.` };
+  const crafted = createItem({ ...FRAGMENT_TEMPLATES[recipe.to], quantity: recipe.output });
+  if (!canAddItem(char.inventory, crafted)) return { success: false, error: "N\xE3o h\xE1 espa\xE7o para os fragmentos forjados." };
+  let remaining = recipe.input;
+  for (const item of [...char.inventory.items]) {
+    if (item.templateId !== fromTemplateId || remaining <= 0) continue;
+    const amount = Math.min(item.quantity, remaining);
+    removeItem(char.inventory, item.uid, amount);
+    remaining -= amount;
+  }
+  addItem(char.inventory, crafted);
+  return { success: true, crafted: recipe.output };
+}
 function upgradeItemLevel(char, itemUid) {
   const item = char.inventory.items.find((i) => i.uid === itemUid);
   if (!item) return { success: false, error: "Item n\xE3o encontrado no invent\xE1rio." };
@@ -3310,11 +3342,11 @@ function createGameStore(runtime = {}) {
         get().save();
       }
     },
-    equip: (uid) => {
+    equip: (uid, force = false) => {
       const { character } = get();
       if (!character) return { success: false, error: "Sem personagem" };
       const newCharacter = JSON.parse(JSON.stringify(character));
-      const result = equipItem(newCharacter, uid);
+      const result = equipItem(newCharacter, uid, force);
       if (result.success) {
         set({ character: newCharacter });
         get().save();
@@ -3592,6 +3624,17 @@ function createGameStore(runtime = {}) {
       }
       return res;
     },
+    forgeFragments: (fromTemplateId) => {
+      const { character } = get();
+      if (!character) return { success: false, error: "Sem personagem" };
+      const updated = JSON.parse(JSON.stringify(character));
+      const result = forgeFragments(updated, fromTemplateId);
+      if (result.success) {
+        set({ character: updated });
+        get().save();
+      }
+      return result;
+    },
     depositItem: (uid) => {
       const { character } = get();
       if (!character) return { success: false, error: "Sem personagem" };
@@ -3707,7 +3750,7 @@ function executeGame(world, action, args = []) {
     if (s.isTickRunning && ["sellItem", "salvageAll", "salvageSelected", "upgradeItem", "rerollItem"].includes(action)) throw Error("Saia da ca\xE7a para acessar o Ferreiro.");
     if (action === "activateBuff" && (!s.isTickRunning || !s.character?.onlineBalloonUntil || s.character.onlineBalloonUntil < now)) throw Error("Este eco de b\xF4nus expirou. Aguarde outro durante a ca\xE7a.");
     const zero = ["finishIntro", "clearOfflineReport", "clearDeathReport", "startHealing", "cancelHealing", "stopHunting", "stopTraining", "unequipRace", "unequipDivineBeast", "activateBuff", "buyTrainingBoost", "buyBless", "refreshCompendium"];
-    const strings = ["unlockZone", "equip", "setActiveEnemy", "setCurrentZone", "acceptQuest", "claimQuest", "upgradeItem", "rerollItem", "depositItem", "withdrawItem"];
+    const strings = ["unlockZone", "setActiveEnemy", "setCurrentZone", "acceptQuest", "claimQuest", "upgradeItem", "rerollItem", "depositItem", "withdrawItem"];
     const uid = (v) => {
       if (typeof v !== "string" || v.length < 1 || v.length > 128) throw Error("Identificador inv\xE1lido.");
       return v;
@@ -3735,6 +3778,11 @@ function executeGame(world, action, args = []) {
       if (!["melee", "magic", "distance", "defense", "soul"].includes(skill)) throw Error("Atributo inv\xE1lido.");
       result = s[action](skill);
       if (action === "startTraining") world.lastAdvanceAt = now;
+    } else if (action === "equip") {
+      const id = uid(args[0]);
+      const force = args[1] === true;
+      result = s.equip(id, force);
+      if (!result?.success) throw Error(result?.error ?? "N\xE3o foi poss\xEDvel equipar.");
     } else if (action === "armSpecialCombo") {
       result = s.armSpecialCombo();
       if (!result?.success) throw Error(result?.error ?? "N\xE3o foi poss\xEDvel armar o combo.");
@@ -3800,7 +3848,12 @@ function executeGame(world, action, args = []) {
       if (!world.healingUntil || now < world.healingUntil) throw Error("Aguarde a medita\xE7\xE3o.");
       s.healFull();
     } else if (action === "claimArenaReward") throw Error("Recompensas da arena local n\xE3o podem ser importadas para a economia online.");
-    else throw Error("A\xE7\xE3o n\xE3o permitida.");
+    else if (action === "forgeFragments") {
+      const id = uid(args[0]);
+      if (!["FRAGMENTO_COMUM", "FRAGMENTO_RARO"].includes(id)) throw Error("Receita inv\xE1lida.");
+      result = s.forgeFragments(id);
+      if (!result?.success) throw Error(result?.error ?? "N\xE3o foi poss\xEDvel fundir os fragmentos.");
+    } else throw Error("A\xE7\xE3o n\xE3o permitida.");
     if (action === "activateBuff") store.getState().character.onlineBalloonUntil = void 0;
     if (action === "upgradeItem" && result?.success) world.counters.forges++;
   }

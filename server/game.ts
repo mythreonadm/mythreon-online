@@ -25,12 +25,13 @@ export function executeGame(world:WorldState,action?:string,args:unknown[]=[]):{
   if(s.isTickRunning&&['sellItem','salvageAll','salvageSelected','upgradeItem','rerollItem'].includes(action))throw Error('Saia da caça para acessar o Ferreiro.');
   if(action==='activateBuff'&&(!s.isTickRunning||!s.character?.onlineBalloonUntil||s.character.onlineBalloonUntil<now))throw Error('Este eco de bônus expirou. Aguarde outro durante a caça.');
   const zero=['finishIntro','clearOfflineReport','clearDeathReport','startHealing','cancelHealing','stopHunting','stopTraining','unequipRace','unequipDivineBeast','activateBuff','buyTrainingBoost','buyBless','refreshCompendium'];
-  const strings=['unlockZone','equip','setActiveEnemy','setCurrentZone','acceptQuest','claimQuest','upgradeItem','rerollItem','depositItem','withdrawItem'];
+  const strings=['unlockZone','setActiveEnemy','setCurrentZone','acceptQuest','claimQuest','upgradeItem','rerollItem','depositItem','withdrawItem'];
   const uid=(v:unknown)=>{if(typeof v!=='string'||v.length<1||v.length>128)throw Error('Identificador inválido.');return v;};
   if(zero.includes(action)){if(args.length)throw Error('Parâmetros inesperados.');result=(s[action as keyof GameState] as ()=>unknown)();}
   else if(strings.includes(action)){const id=uid(args[0]);if(['upgradeItem','rerollItem'].includes(action)){const item=s.character!.inventory.items.find(i=>i.uid===id);if(!item||!['ARMA','ARMADURA','JOIA','PULSEIRA','ESCUDO'].includes(item.category))throw Error('Escolha um equipamento válido para o Ferreiro.');}result=(s[action as keyof GameState] as (id:string)=>unknown)(id);}
   else if(action==='startHunting'){const zone=uid(args[0]);if(!ZONES[zone])throw Error('Mapa inválido.');s.startHunting(zone);if(store.getState().isTickRunning){store.getState().character!.lastTick=now;world.lastAdvanceAt=now;}}
   else if(action==='startTraining'||action==='spendStatPoint'){const skill=uid(args[0]);if(!['melee','magic','distance','defense','soul'].includes(skill))throw Error('Atributo inválido.');result=(s[action] as (v:any)=>unknown)(skill);if(action==='startTraining')world.lastAdvanceAt=now;}
+  else if(action==='equip'){const id=uid(args[0]);const force=args[1]===true;result=s.equip(id,force);if(!(result as any)?.success)throw Error((result as any)?.error??'Não foi possível equipar.');}
   else if(action==='armSpecialCombo'){result=s.armSpecialCombo();if(!(result as any)?.success)throw Error((result as any)?.error??'Não foi possível armar o combo.');}
   else if(action==='unequip'){const slots=['CAPACETE','ARMADURA','LUVAS','CALCAS','BOTAS','COLAR','ANEL_I','ANEL_II','PULSEIRA','ARMA_PRINCIPAL','OFF_HAND','MUNICAO','BACKPACK'];if(!slots.includes(String(args[0])))throw Error('Slot inválido.');result=s.unequip(args[0]);}
   else if(action==='equipRace'){const id=typeof args[0]==='string'?args[0]:(args[0] as any)?.id;const race=s.races.find(r=>r.id===id);if(!race)throw Error('Matriz não descoberta.');s.equipRace(race);}
@@ -55,6 +56,7 @@ export function executeGame(world:WorldState,action?:string,args:unknown[]=[]):{
   }
   else if(action==='healFull'){if(!world.healingUntil||now<world.healingUntil)throw Error('Aguarde a meditação.');s.healFull();}
   else if(action==='claimArenaReward')throw Error('Recompensas da arena local não podem ser importadas para a economia online.');
+  else if(action==='forgeFragments'){const id=uid(args[0]);if(!['FRAGMENTO_COMUM','FRAGMENTO_RARO'].includes(id))throw Error('Receita inválida.');result=s.forgeFragments(id);if(!(result as any)?.success)throw Error((result as any)?.error??'Não foi possível fundir os fragmentos.');}
   else throw Error('Ação não permitida.');
   if(action==='activateBuff')store.getState().character!.onlineBalloonUntil=undefined;
   if(action==='upgradeItem'&&(result as any)?.success)world.counters.forges++;

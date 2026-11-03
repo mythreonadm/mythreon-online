@@ -132,6 +132,16 @@ export function loadGame(): SaveFile | null {
       
       // Migração para o Depot
       if (!data.character.depot) data.character.depot = [];
+      // Migra saves antigos: itens não empilháveis (especialmente flechas) são sempre unidades únicas.
+      if (Array.isArray(data.character.inventory?.items)) {
+        const normalized: any[] = [];
+        for (const item of data.character.inventory.items) {
+          const quantity = item.stackable ? Math.max(1, Number(item.quantity) || 1) : Math.max(1, Number(item.quantity) || 1);
+          if (item.stackable || quantity === 1) normalized.push({ ...item, quantity: item.stackable ? quantity : 1, maxStack: item.stackable ? item.maxStack : 1 });
+          else for (let i = 0; i < quantity; i++) normalized.push({ ...item, uid: `${item.uid}-${i + 1}`, quantity: 1, maxStack: 1 });
+        }
+        data.character.inventory.items = normalized;
+      }
       if (data.character.depotMax === undefined) data.character.depotMax = 300;
       // Atualiza stacks antigos de componentes salvos antes do limite 999.
       for (const item of [...(data.character.inventory?.items ?? []), ...(data.character.depot ?? [])]) {
