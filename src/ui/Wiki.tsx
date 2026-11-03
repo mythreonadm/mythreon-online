@@ -13,13 +13,14 @@ import { HUMAN_LINEAGE, LINEAGES } from "../data/lineages";
 import { Item } from "../types";
 import { getPotionUsePrice } from "../data/potionEconomy";
 import { ELEMENTS, elementMultiplier } from "../data/elementalChart";
+import { PERCENT_AFFIX_RANGES, STAT_NAMES } from "../data/affixes";
 
 const PERCENT_STATS = new Set(["crit", "hit", "dge", "spd", "blk", "resFisico", "resMagico", "critDmg", "lifesteal"]);
 function formatWikiStat(stat: string, value: number) {
   return PERCENT_STATS.has(stat) && Math.abs(value) <= 1 ? `${(value * 100).toFixed(0)}%` : value.toLocaleString("pt-BR");
 }
 
-type Section = "journey" | "history" | "beasts" | "monsters" | "zones" | "equipment" | "elements" | "consumables" | "components" | "races" | "bosses" | "backpacks" | "fragments";
+type Section = "journey" | "history" | "beasts" | "monsters" | "zones" | "equipment" | "elements" | "consumables" | "components" | "races" | "bosses" | "backpacks" | "fragments" | "balance";
 
 const SECTION_META: { id: Section; label: string; icon: string; color: string }[] = [
   { id: "journey", label: "Jornada e Biomas", icon: "🗺️", color: "text-arcane-gold" },
@@ -35,6 +36,7 @@ const SECTION_META: { id: Section; label: string; icon: string; color: string }[
   { id: "bosses", label: "Chefes & Únicos", icon: "👑", color: "text-yellow-400" },
   { id: "backpacks", label: "Mochilas", icon: "🎒", color: "text-green-400" },
   { id: "fragments", label: "Fragmentos", icon: "💎", color: "text-cyan-400" },
+  { id: "balance", label: "Balanceamento", icon: "📊", color: "text-amber-300" },
 ];
 
 function getComponentSources(componentId: string) {
@@ -66,7 +68,7 @@ export function Wiki() {
           </div>
           <div className="text-right text-xs text-gray-500">
             <div>Arquivo da Cúpula Sinax</div>
-            <div className="text-arcane-cyan font-bold">Tomo I · v1.2</div>
+            <div className="text-arcane-cyan font-bold">Tomo I · v1.3 · dados do servidor</div>
           </div>
         </div>
         {section !== "history" && (
@@ -112,6 +114,7 @@ export function Wiki() {
         {section === "bosses" && <BossesSection search={search} />}
         {section === "backpacks" && <BackpacksSection search={search} />}
         {section === "fragments" && <FragmentsSection search={search} />}
+        {section === "balance" && <BalanceSection />}
       </div>
     </div>
   );
@@ -1095,4 +1098,49 @@ function FragmentsSection({ search }: { search: string }) {
       </div>
     </div>
   );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// BALANCEAMENTO — TABELAS DE REFERÊNCIA
+// ═══════════════════════════════════════════════════════════════
+function BalanceSection() {
+  const rarityRows = [
+    ["COMUM", "1,00×", "1", "0,5–1,5%", "Sem brilho; base de progressão"],
+    ["INCOMUM", "1,30×", "1", "1,2–2,5%", "Verde; armas podem receber elemento (35%)"],
+    ["RARO", "1,70×", "2", "2,0–4,0%", "Azul; armas podem receber elemento (60%)"],
+    ["ÉPICO", "2,20×", "3", "3,5–6,0%", "Roxo; armas podem receber elemento (80%)"],
+    ["LENDÁRIO", "3,00×", "4", "5,5–9,0%", "Dourado; armas sempre recebem elemento"],
+  ];
+  const statRows = [
+    ["Armas", "Ataque, ataque mágico, crítico, dano crítico, precisão, velocidade, sorte", "Prioriza dano e ritmo de ataque"],
+    ["Armaduras", "Vida, armadura, defesa, regeneração de vida, resistência física/mágica, esquiva", "Prioriza sobrevivência"],
+    ["Escudos", "Armadura, bloqueio, vida, resistências", "Prioriza mitigação e bloqueio"],
+    ["Joias / Pulseiras", "Vida, mana, regeneração de mana, crítico, ataque, magia, sorte", "Pulseiras ocupam o slot PULSEIRA e não podem entrar em anéis"],
+  ];
+  const percentStats = Object.entries(PERCENT_AFFIX_RANGES);
+  return <div className="space-y-5">
+    <div className="rounded-xl border border-amber-300/30 bg-[radial-gradient(ellipse_at_top_right,rgba(245,158,11,.12),transparent_55%),#10151a] p-5">
+      <h2 className="text-xl font-black text-amber-200">📊 Como o poder é calculado</h2>
+      <p className="mt-2 text-sm leading-relaxed text-gray-300">Esta página reúne os multiplicadores que o jogo usa para gerar drops, afixos e Gear Score. O tier do equipamento aumenta os valores base; a raridade define o multiplicador e a quantidade de afixos. O valor final exibido no personagem soma atributos equipados, matriz, treino, resistência, Divine Beast e bônus de evolução.</p>
+      <div className="mt-4 grid gap-2 sm:grid-cols-3">
+        <div className="rounded-lg border border-white/10 bg-black/20 p-3"><strong className="text-white">Power</strong><p className="mt-1 text-xs text-gray-400">Ataque, magia, defesa, armadura e vida convertidos em valor de combate.</p></div>
+        <div className="rounded-lg border border-white/10 bg-black/20 p-3"><strong className="text-white">Gear Score</strong><p className="mt-1 text-xs text-gray-400">Soma ponderada do equipamento, upgrades e afixos ativos.</p></div>
+        <div className="rounded-lg border border-white/10 bg-black/20 p-3"><strong className="text-white">Tier</strong><p className="mt-1 text-xs text-gray-400">T1 a T5 define a escala do item dentro da mesma raridade.</p></div>
+      </div>
+    </div>
+
+    <section className="overflow-hidden rounded-xl border border-arcane-border bg-arcane-panel">
+      <div className="border-b border-white/10 p-4"><h3 className="text-lg font-bold text-arcane-gold">Multiplicadores por raridade</h3><p className="mt-1 text-xs text-gray-400">Os valores abaixo são aplicados aos atributos base antes do upgrade da Forja.</p></div>
+      <div className="overflow-x-auto"><table className="w-full min-w-[720px] text-left text-xs"><thead className="bg-black/25 text-[10px] uppercase tracking-wider text-gray-400"><tr><th className="px-4 py-3">Raridade</th><th className="px-4 py-3">Multiplicador</th><th className="px-4 py-3">Afixos</th><th className="px-4 py-3">Faixa percentual</th><th className="px-4 py-3">Leitura no jogo</th></tr></thead><tbody>{rarityRows.map(([rarity, mult, affixes, range, note]) => <tr key={rarity} className="border-t border-white/5"><td className={`px-4 py-3 font-black ${rarity === "LENDÁRIO" ? "text-amber-300" : rarity === "ÉPICO" ? "text-purple-300" : rarity === "RARO" ? "text-blue-300" : rarity === "INCOMUM" ? "text-emerald-300" : "text-gray-200"}`}>{rarity}</td><td className="px-4 py-3 font-bold text-white">{mult}</td><td className="px-4 py-3 text-gray-300">{affixes}</td><td className="px-4 py-3 text-cyan-200">{range}</td><td className="px-4 py-3 text-gray-400">{note}</td></tr>)}</tbody></table></div>
+    </section>
+
+    <section className="overflow-hidden rounded-xl border border-arcane-border bg-arcane-panel">
+      <div className="border-b border-white/10 p-4"><h3 className="text-lg font-bold text-arcane-gold">Faixas de atributos percentuais</h3><p className="mt-1 text-xs text-gray-400">Os percentuais são sorteados dentro da faixa da raridade. Dano crítico possui uma escala própria.</p></div>
+      <div className="overflow-x-auto"><table className="w-full min-w-[680px] text-left text-xs"><thead className="bg-black/25 text-[10px] uppercase tracking-wider text-gray-400"><tr><th className="px-4 py-3">Atributo</th>{percentStats.map(([rarity]) => <th key={rarity} className="px-4 py-3">{rarity}</th>)}</tr></thead><tbody>{["crit", "hit", "spd", "dge", "blk", "luck", "resFisico", "resMagico", "critDmg"].map(stat => <tr key={stat} className="border-t border-white/5"><td className="px-4 py-3 font-bold text-white">{STAT_NAMES[stat] ?? stat}</td>{percentStats.map(([rarity, ranges]) => { const range = ranges[stat]; return <td key={rarity} className="px-4 py-3 text-cyan-200">{range ? `${(range[0] * 100).toFixed(1)}% – ${(range[1] * 100).toFixed(1)}%` : "—"}</td>; })}</tr>)}</tbody></table></div>
+    </section>
+
+    <section className="rounded-xl border border-arcane-border bg-arcane-panel p-4"><h3 className="text-lg font-bold text-arcane-gold">Pools por categoria</h3><div className="mt-3 grid gap-3 md:grid-cols-2">{statRows.map(([category, stats, rule]) => <div key={category} className="rounded-lg border border-white/10 bg-black/20 p-3"><h4 className="font-bold text-white">{category}</h4><p className="mt-1 text-xs text-gray-300">{stats}</p><p className="mt-2 text-[11px] text-amber-200">{rule}</p></div>)}</div></section>
+
+    <section className="rounded-xl border border-cyan-400/20 bg-cyan-950/10 p-4"><h3 className="text-lg font-bold text-cyan-200">Drops elementais</h3><p className="mt-1 text-xs leading-relaxed text-gray-300">Armas Incomuns ou superiores podem nascer com um elemento. O dano elemental usa o quadro de vantagens da seção Elementos e é exibido separadamente do dano físico no registro de combate.</p><div className="mt-3 flex flex-wrap gap-2">{ELEMENTS.filter(element => element.id !== "BASE").map(element => <span key={element.id} className="rounded-full border border-cyan-300/20 bg-black/20 px-3 py-1 text-xs text-cyan-100">{element.icon} {element.name}</span>)}</div></section>
+  </div>;
 }
