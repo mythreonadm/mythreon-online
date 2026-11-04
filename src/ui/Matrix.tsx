@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from "react";
+import { confirmedAction } from "../online/confirmation";
+import React, { useState, useMemo, useRef } from "react";
 import { useGameStore } from "../store/gameStore";
 import { ATAQUES, SUPORTES, PASSIVAS } from "../data/components";
 import { NAMED_RACES, RACE_LORE, findNamedRace, generateRaceName, generateRaceId, MATRIX_STATS, generateRaceBonus } from "../data/races";
@@ -19,6 +20,7 @@ export function MatrixView() {
   const [slotP, setSlotP] = useState<string>("");
   const [activeSelector, setActiveSelector] = useState<"A" | "S" | "P" | null>(null);
   const [error, setError] = useState("");
+  const synthesisLock = useRef(false);
   const [selectedRace, setSelectedRace] = useState<Race | null>(null);
 
   if (!character) return null;
@@ -57,9 +59,12 @@ export function MatrixView() {
 
   const isPreviewDiscovered = previewRace && races.find((r) => r.id === previewRace.id);
 
-  const handleSynthesize = () => {
+  const handleSynthesize = async () => {
     if (!slotA || !slotS || !slotP) { setError("Selecione os 3 componentes."); return; }
-    const res = synthesize(slotA, slotS, slotP);
+    if (synthesisLock.current) return;
+    synthesisLock.current = true;
+    const res = await confirmedAction(synthesize(slotA, slotS, slotP));
+    synthesisLock.current = false;
     if (!res.success) setError(res.error || "Erro");
     else { setError(""); setSlotA(""); setSlotS(""); setSlotP(""); setActiveSelector(null); }
   };

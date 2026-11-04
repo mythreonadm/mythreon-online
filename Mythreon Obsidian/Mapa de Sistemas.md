@@ -28,6 +28,6 @@
 - [[Mythreon Obsidian/Sistema - Windows|Windows]]
 - [[Mythreon Obsidian/Sistema - Mundo e História|Mundo e História]]
 
-585 arquivos catalogados; assets somente por metadados. Binários de distribuição não entram.
+694 arquivos catalogados; assets somente por metadados. Binários de distribuição não entram.
 
 [[docs/conhecimento/00 - Fonte de conhecimento|Base de conhecimento]]

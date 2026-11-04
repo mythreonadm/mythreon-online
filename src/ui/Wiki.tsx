@@ -1,4 +1,8 @@
 import { WorldJourney } from './WorldJourney';
+import { ProfessionsGuide } from "./ProfessionsGuide";
+import { DailyCalendarGuide } from "./DailyCalendarGuide";
+import { CosmeticsGuide } from "./CosmeticsGuide";
+import { CardsGuide } from "./CardsGuide";
 import React, { useState, useMemo, useEffect } from "react";
 import { AssetImage } from "./AssetImage";
 import { ZONES } from "../data/zones";
@@ -14,17 +18,23 @@ import { Item } from "../types";
 import { getPotionUsePrice } from "../data/potionEconomy";
 import { ELEMENTS, elementMultiplier } from "../data/elementalChart";
 import { PERCENT_AFFIX_RANGES, STAT_NAMES } from "../data/affixes";
+import { MYTHREON_JOURNAL, journalKindClass } from "../data/mythreonJournal";
 
 const PERCENT_STATS = new Set(["crit", "hit", "dge", "spd", "blk", "resFisico", "resMagico", "critDmg", "lifesteal"]);
 function formatWikiStat(stat: string, value: number) {
   return PERCENT_STATS.has(stat) && Math.abs(value) <= 1 ? `${(value * 100).toFixed(0)}%` : value.toLocaleString("pt-BR");
 }
 
-type Section = "journey" | "history" | "beasts" | "monsters" | "zones" | "equipment" | "elements" | "consumables" | "components" | "races" | "bosses" | "backpacks" | "fragments" | "balance";
+type Section = "journey" | "history" | "journal" | "beasts" | "monsters" | "zones" | "equipment" | "elements" | "consumables" | "components" | "races" | "bosses" | "backpacks" | "fragments" | "balance" | "professions" | "calendar" | "cosmetics" | "cards";
 
 const SECTION_META: { id: Section; label: string; icon: string; color: string }[] = [
+  { id: "cards", label: "Cards & Evolução", icon: "🎴", color: "text-violet-300" },
+  { id: "cosmetics", label: "Skins & Auras", icon: "✨", color: "text-violet-300" },
+  { id: "calendar", label: "Calendário & Presença", icon: "🗓️", color: "text-fuchsia-300" },
+  { id: "professions", label: "Mineração & Pesca", icon: "🎣", color: "text-cyan-300" },
   { id: "journey", label: "Jornada e Biomas", icon: "🗺️", color: "text-arcane-gold" },
   { id: "history", label: "História", icon: "📜", color: "text-arcane-gold" },
+  { id: "journal", label: "Jornal", icon: "📰", color: "text-cyan-300" },
   { id: "beasts", label: "Pets e Ovos", icon: "🐾", color: "text-arcane-gold" },
   { id: "monsters", label: "Monstros", icon: "👹", color: "text-red-400" },
   { id: "zones", label: "Zonas", icon: "🗺️", color: "text-green-400" },
@@ -102,7 +112,12 @@ export function Wiki() {
       {/* CONTENT */}
       <div className="min-h-[400px]">
         {section === "journey" && <WorldJourney />}
+        {section === "professions" && <ProfessionsGuide />}
+        {section === "calendar" && <DailyCalendarGuide />}
+        {section === "cosmetics" && <CosmeticsGuide />}
+        {section === "cards" && <CardsGuide />}
         {section === "history" && <HistorySection />}
+        {section === "journal" && <JournalSection />}
         {section === "beasts" && <DivineBeastsWikiSection search={search} />}
         {section === "monsters" && <MonstersSection search={search} />}
         {section === "zones" && <ZonesSection search={search} />}
@@ -1098,6 +1113,22 @@ function FragmentsSection({ search }: { search: string }) {
       </div>
     </div>
   );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// JORNAL DE MYTHREON
+// ═══════════════════════════════════════════════════════════════
+function JournalSection() {
+  const active = MYTHREON_JOURNAL.filter(entry => entry.active);
+  return <div className="space-y-5">
+    <section className="rounded-xl border border-cyan-300/20 bg-[radial-gradient(ellipse_at_top_right,rgba(6,182,212,.14),transparent_55%),#10151a] p-5">
+      <p className="text-[10px] font-black uppercase tracking-[.25em] text-cyan-300">Registros recentes da Cúpula Sinax</p>
+      <h2 className="mt-1 text-2xl font-black text-white">📰 Jornal de Mythreon</h2>
+      <p className="mt-2 max-w-3xl text-sm leading-relaxed text-gray-300">Atualizações, eventos e histórias que mudam a forma como o mundo é lembrado. Acompanhe o Jornal para descobrir pistas antes que elas desapareçam dos mapas.</p>
+      {active.length > 0 && <div className="mt-4 grid gap-3 md:grid-cols-2">{active.map(entry => <div key={entry.id} className="rounded-lg border border-amber-300/30 bg-amber-950/20 p-3"><span className="text-[10px] font-black uppercase tracking-wider text-amber-200">Ao vivo · {entry.kind}</span><h3 className="mt-1 font-bold text-white">{entry.title}</h3><p className="mt-1 text-xs text-gray-300">{entry.summary}</p></div>)}</div>}
+    </section>
+    <div className="space-y-3">{MYTHREON_JOURNAL.map(entry => <article key={entry.id} className="rounded-xl border border-white/10 bg-arcane-panel p-4 transition-colors hover:border-cyan-300/30"><div className="flex flex-wrap items-start justify-between gap-3"><div><span className={`inline-flex rounded-full border px-2 py-1 text-[10px] font-black uppercase tracking-wider ${journalKindClass(entry.kind)}`}>{entry.kind}</span><h3 className="mt-2 text-lg font-bold text-white">{entry.title}</h3></div><time className="text-xs font-bold text-gray-500">{entry.date}</time></div><p className="mt-2 text-sm font-semibold text-cyan-100">{entry.summary}</p><p className="mt-2 text-sm leading-relaxed text-gray-400">{entry.body}</p><div className="mt-3 flex flex-wrap gap-2">{entry.tags.map(tag => <span key={tag} className="rounded-full border border-white/10 bg-black/20 px-2 py-1 text-[10px] text-gray-400">#{tag}</span>)}</div></article>)}</div>
+  </div>;
 }
 
 // ═══════════════════════════════════════════════════════════════

@@ -1,0 +1,25 @@
+-- Pack 45: políticas RLS com auth.uid() avaliado uma vez por consulta.
+begin;
+drop policy if exists own_account on public.world_accounts;
+create policy own_account on public.world_accounts for select to authenticated using(id=(select auth.uid()));
+drop policy if exists own_character on public.world_characters;
+create policy own_character on public.world_characters for select to authenticated using(owner_id=(select auth.uid()));
+drop policy if exists visible_messages on public.world_messages;
+create policy visible_messages on public.world_messages for select to authenticated using(recipient_id is null or sender_owner=(select auth.uid()) or recipient_owner=(select auth.uid()));
+drop policy if exists own_friends on public.world_friends;
+create policy own_friends on public.world_friends for select to authenticated using(inviter_owner=(select auth.uid()) or invitee_owner=(select auth.uid()));
+drop policy if exists own_mail on public.world_mail;
+create policy own_mail on public.world_mail for select to authenticated using(sender_owner=(select auth.uid()) or recipient_owner=(select auth.uid()));
+drop policy if exists own_trades on public.world_trades;
+create policy own_trades on public.world_trades for select to authenticated using(a_owner=(select auth.uid()) or b_owner=(select auth.uid()));
+drop policy if exists own_trade_history on public.world_trade_transactions;
+create policy own_trade_history on public.world_trade_transactions for select to authenticated using(seller_owner_id=(select auth.uid()) or buyer_owner_id=(select auth.uid()));
+drop policy if exists own_pvp_matches on public.world_pvp_matches;
+create policy own_pvp_matches on public.world_pvp_matches for select to authenticated using(challenger_owner_id=(select auth.uid()) or opponent_owner_id=(select auth.uid()));
+drop policy if exists read_market_listings on public.world_market_listings;
+create policy read_market_listings on public.world_market_listings for select to authenticated using(status='open' or seller_owner_id=(select auth.uid()) or buyer_owner_id=(select auth.uid()));
+drop policy if exists own_card_season_progress on public.world_card_season_progress;
+create policy own_card_season_progress on public.world_card_season_progress for select to authenticated using(owner_id=(select auth.uid()));
+drop policy if exists own_card_season_rewards on public.world_card_season_rewards;
+create policy own_card_season_rewards on public.world_card_season_rewards for select to authenticated using(owner_id=(select auth.uid()));
+commit;

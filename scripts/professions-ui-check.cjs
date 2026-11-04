@@ -1,0 +1,63 @@
+const {app,BrowserWindow}=require('electron'),{build}=require('esbuild');
+const fs=require('node:fs/promises'),path=require('node:path'),http=require('node:http'),assert=require('node:assert/strict');
+const root=path.resolve(__dirname,'..'),cache=path.join(root,'node_modules/.cache/professions-ui');
+app.setPath('userData',path.join(cache,'profile'));
+let server,win;const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+app.whenReady().then(async()=>{try{
+ await fs.mkdir(cache,{recursive:true});
+ const bundle=await build({bundle:true,write:false,platform:'browser',format:'iife',define:{'import.meta.env':'{}'},outfile:'preview.js',loader:{'.png':'dataurl'},stdin:{resolveDir:root,sourcefile:'professions-preview.tsx',loader:'tsx',contents:`
+import React from 'react';import {createRoot} from 'react-dom/client';
+import {Professions} from './src/ui/Professions';import {useGameStore} from './src/store/gameStore';
+import {createNewCharacter} from './src/engine/save';import {ALL_ITEM_TEMPLATES,createItem} from './src/data/items';import {ZONES} from './src/data/zones';
+const character=createNewCharacter('Coletor');character.tutorialCompleted=true;character.introSeen=true;
+character.professions={mining:80,fishing:80};character.unlockedZoneIds=Object.keys(ZONES);
+character.equippedMiningTool=createItem(ALL_ITEM_TEMPLATES.PICARETA_T5);character.equippedFishingRod=createItem(ALL_ITEM_TEMPLATES.VARA_PESCA_T5);character.inventory.items=[];
+useGameStore.setState({character});window.__store=useGameStore;
+window.alert=message=>{throw Error('Alerta bloqueante: '+message)};Math.random=()=>0.5;
+createRoot(document.getElementById('root')).render(<Professions/>);
+`}});const compiled=bundle.outputFiles.find(file=>file.path.endsWith('.js')).contents;
+ const cssFile=(await fs.readdir(path.join(root,'dist/assets'))).find(file=>/^index-.*\.css$/.test(file)),css=await fs.readFile(path.join(root,'dist/assets',cssFile));
+ const html='<meta name="viewport" content="width=device-width,initial-scale=1"/><link rel="stylesheet" href="/style.css"/><style>body{margin:0;padding:16px;background:#071116;color:white;font-family:Arial}#root{max-width:1100px;margin:auto}</style><div id="root"></div><script src="/preview.js"></script>';
+ server=http.createServer(async(req,res)=>{try{const pathname=new URL(req.url,'http://localhost').pathname;if(pathname==='/'){res.setHeader('Content-Type','text/html');res.end(html);return;}if(pathname==='/preview.js'){res.setHeader('Content-Type','application/javascript');res.end(compiled);return;}if(pathname==='/style.css'){res.setHeader('Content-Type','text/css');res.end(css);return;}const file=path.resolve(root,'public','.'+decodeURIComponent(pathname));if(!file.startsWith(path.join(root,'public')+path.sep)){res.writeHead(403).end();return;}res.setHeader('Content-Type',({'.png':'image/png','.gif':'image/gif','.jpg':'image/jpeg','.svg':'image/svg+xml'})[path.extname(file)]??'application/octet-stream');res.end(await fs.readFile(file));}catch{res.writeHead(404).end();}});
+ await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+ win=new BrowserWindow({show:false,width:1180,height:1000,webPreferences:{sandbox:true,contextIsolation:true,nodeIntegration:false,offscreen:true,backgroundThrottling:false}});
+ const errors=[];win.webContents.on('console-message',(_event,level,message)=>{if(level===3&&!message.includes('404')&&!message.includes('Failed to load resource'))errors.push(message);});
+ const js=async source=>{const value=await win.webContents.executeJavaScript('(()=>{try{return eval('+JSON.stringify(source)+')}catch(error){return {__testError:String(error)}}})()',true);if(value?.__testError)throw Error(value.__testError+' SOURCE '+source);return value;};
+ await win.loadURL('http://127.0.0.1:'+server.address().port+'/');
+ for(let i=0;i<100;i++){if(await js('document.body.innerText.includes("Núcleo do Eclipse")'))break;await pause(100);}
+ assert.equal(await js('document.body.innerText.includes("Peixe Astral")'),true);
+ assert.equal(await js('document.body.innerText.includes("1x Melancia")'),true);
+ const beforeObserve=await js('JSON.stringify(window.__store.getState().character)');
+ await js('Array.from(document.querySelectorAll("button")).find(el=>el.getAttribute("aria-label")==="Observar Núcleo do Eclipse").click()');await pause(100);
+ assert.equal(await js('document.querySelector("[data-profession-scene=MINERACAO]").dataset.point'),"eclipse_profundo");
+ assert.equal(await js('JSON.stringify(window.__store.getState().character)'),beforeObserve,"Observar não muda a hunt, equipamentos, stats nem recursos");
+ await js('window.__button=Array.from(document.querySelectorAll("button")).find(el=>el.textContent.includes("Extrair minério"));window.__button.scrollIntoView({block:"center"});');await pause(100);
+ // A hidden offscreen window has no native pointer focus. Exercise React's Pointer API with emulated events.
+ await js('window.__button.setPointerCapture=()=>{};window.__button.dispatchEvent(new PointerEvent("pointerdown",{bubbles:true,pointerId:1,pointerType:"mouse",button:0}));');await pause(1725);
+ await js('window.__button.dispatchEvent(new PointerEvent("pointerup",{bubbles:true,pointerId:1,pointerType:"mouse",button:0}));');await pause(150);
+ assert.equal(await js('document.body.innerText.includes("Perfeito · +2 de skill")'),true,'Segurar e soltar deve acertar o pulso dourado');
+ assert.equal(await js('window.__store.getState().character.professions.mining'),82);
+ assert.equal(await js('document.querySelector("[data-profession-scene=MINERACAO]").dataset.phase'),"success");
+ assert.equal(await js('Array.from(document.querySelectorAll("button")).filter(el=>el.textContent.includes("Aguarde")).length'),5,'Recarga deve ser compartilhada pelos veios');
+ assert.equal(await js('document.documentElement.scrollWidth<=window.innerWidth'),true);
+ await fs.writeFile(path.join(cache,'desktop.png'),(await win.webContents.capturePage()).toPNG());
+ win.setSize(390,1000);await pause(300);
+ assert.equal(await js('document.documentElement.scrollWidth<=window.innerWidth'),true,'Profissões devem caber em 390px');
+ // Pointer API emulated touch: real Android hardware remains a separate verification.
+ await js('window.__touch=Array.from(document.querySelectorAll("button")).find(el=>el.textContent.includes("Lançar linha"));window.__touch.scrollIntoView({block:"center"});window.__touch.setPointerCapture=()=>{};window.__touch.dispatchEvent(new PointerEvent("pointerdown",{bubbles:true,pointerId:7,pointerType:"touch",button:0}));');await pause(100);
+ assert.equal(await js('document.body.innerText.includes("Solte no dourado!")'),true);
+ await js('document.querySelector("[role=img]").scrollIntoView({block:"center",behavior:"instant"})');await pause(250);
+ await js('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
+ const pulse=await js('(()=>{const r=document.querySelector("[role=img]").getBoundingClientRect();return {top:r.top,bottom:r.bottom}})()');
+ assert(pulse.top>=0&&pulse.bottom<=1000,'Barra precisa estar visível na captura móvel');
+ await fs.writeFile(path.join(cache,'mobile.png'),(await win.webContents.capturePage()).toPNG());
+ await js('window.__touch.dispatchEvent(new PointerEvent("pointercancel",{bubbles:true,pointerId:7,pointerType:"touch"}));');
+ assert.equal(await js('window.__store.getState().character.professions.fishing'),80);
+ await js('window.__touch.focus();window.__touch.dispatchEvent(new KeyboardEvent("keydown",{key:" ",bubbles:true}));');await pause(1725);
+ await js('window.__touch.dispatchEvent(new KeyboardEvent("keyup",{key:" ",bubbles:true}));');await pause(150);
+ assert.equal(await js('window.__store.getState().character.professions.fishing'),82,'Teclado deve concluir a coleta perfeita');
+ assert.deepEqual(errors,[]);
+ console.log('PASS Profissões UI: pulso visível, segurar/soltar, teclado, toque emulado/cancelamento, recarga compartilhada e PC/390px sem overflow.');
+ await new Promise(resolve=>server.close(resolve));app.exit(0);
+}catch(error){console.error(error);app.exit(1)}});
+setTimeout(()=>{console.error('Timeout Profissões UI');app.exit(2)},45000);

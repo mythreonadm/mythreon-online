@@ -1,0 +1,33 @@
+.boss-arena{position:relative;isolation:isolate;overflow:hidden;min-height:420px;border:1px solid #bda05266;border-radius:18px;background:#091317;color:#ecf6ed}
+.boss-arena-backdrop,.boss-arena-shade{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-2}
+.boss-arena-shade{z-index:-1;background:linear-gradient(180deg,#050d16d9 0%,#0b14153d 45%,#030c14ed 100%)}
+.boss-arena-caption{display:flex;align-items:center;flex-direction:column;gap:4px;padding:18px 14px 8px;text-align:center;text-shadow:0 2px 4px #000}
+.boss-arena-caption span{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:#eaca7b}
+.boss-arena-caption strong{font-size:clamp(18px,3vw,26px)}.boss-arena-caption small{font-size:11px;color:#c8e7dc}
+.boss-arena-health{height:9px;margin:6px 8% 0;border:1px solid #f8bc6b66;border-radius:99px;background:#1b0b10;overflow:hidden}
+.boss-arena-health>div{height:100%;background:linear-gradient(90deg,#a82430,#fba256);transition:width .35s ease}
+.boss-arena-duel{position:relative;min-height:215px;display:grid;grid-template-columns:1fr 1fr;gap:24px;padding:18px 8% 0;align-items:end}
+.boss-arena-self,.boss-arena-enemy{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;min-width:0}
+.boss-arena-hero-art{position:relative;width:100%;height:140px;max-width:145px;display:grid;place-items:center}
+.boss-arena-sprite{position:relative;z-index:1;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 5px 8px #000b)}
+.boss-arena-fallback{position:absolute;inset:25%;display:grid;place-items:center;font-size:45px;z-index:0}
+.boss-arena-enemy>.boss-arena-sprite{height:170px;max-width:220px}.boss-arena-enemy>.boss-arena-fallback{inset:20% 25%}
+.boss-arena-self>strong,.boss-arena-enemy>strong{max-width:100%;border:1px solid #a8f3d22b;border-radius:6px;background:#031116d9;padding:4px 10px;font-size:12px;color:#f6d68b;overflow-wrap:anywhere}
+.boss-arena-self>small{font-size:9px;margin-top:4px;color:#bce9da}
+.boss-arena-allies{display:flex;gap:12px;align-items:end;justify-content:center;flex-wrap:wrap;padding:12px 14px 18px;min-height:90px}
+.boss-arena-allies>p{font-size:11px;color:#bed1c9;padding:12px}.boss-arena-allies>small{width:100%;text-align:center;color:#b6c9c0;font-size:10px}
+.boss-arena-ally{width:76px;display:flex;align-items:center;flex-direction:column}.boss-arena-ally .boss-arena-hero-art{height:66px}.boss-arena-ally .boss-arena-fallback{font-size:26px}
+.boss-arena-ally>strong{display:block;max-width:76px;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#ffdf95;background:#041018cc;border-radius:4px;padding:2px 4px}.boss-arena-ally>small{font-size:9px;color:#a9dac9}
+.boss-arena-projectile{position:absolute;top:40%;left:27%;font-size:38px;color:#ffdd70;text-shadow:0 0 10px #fde477;animation:boss-arena-strike .65s ease-out both;pointer-events:none}
+.boss-arena-damage{position:absolute;right:12%;top:8%;font-size:clamp(24px,4vw,38px);font-weight:900;color:#ffe18e;text-shadow:0 2px 4px #000,0 0 12px #000;animation:boss-arena-impact 1.8s ease-out both;pointer-events:none}.boss-arena-damage small{display:block;font-size:8px;letter-spacing:.08em}
+.boss-arena-activity{display:flex;flex-wrap:wrap;justify-content:center;gap:5px;padding:0 12px 12px}.boss-arena-activity span{font-size:10px;background:#032017e6;border:1px solid #5ec4b14d;padding:3px 7px;border-radius:5px}
+.boss-arena-victory .boss-arena-health{border-color:#ffdc78}.boss-arena-victory .boss-arena-enemy>.boss-arena-sprite{opacity:.5;filter:grayscale(.6)}
+@keyframes boss-arena-strike{from{transform:translateX(0) scale(.5);opacity:1}to{transform:translateX(240px) scale(1.3);opacity:0}}
+@keyframes boss-arena-impact{0%{transform:scale(.75);opacity:0}15%,75%{transform:scale(1);opacity:1}100%{transform:translateY(-20px);opacity:0}}
+.boss-arena-still .boss-arena-projectile{display:none}.boss-arena-still .boss-arena-damage{animation:none}.boss-arena-still .boss-arena-health>div{transition:none}
+.boss-arena-player-health{display:flex;flex-direction:column;gap:3px;max-width:180px;width:100%;margin-top:6px;padding:5px 8px;border-radius:6px;background:#021218df}
+.boss-arena-player-health span,.boss-arena-player-health small{font-size:10px;color:#dcf4e1}.boss-arena-player-health progress{width:100%;height:8px;accent-color:#38d692}
+.boss-arena-retaliation{position:absolute;left:12%;top:5%;font-size:28px;font-weight:900;color:#ff9f9f;text-shadow:0 2px 4px #000}.boss-arena-retaliation small{display:block;font-size:8px;letter-spacing:.08em}
+.boss-arena-retaliation,.boss-arena-damage{z-index:3}
+@media(max-width:480px){.boss-arena{min-height:380px}.boss-arena-duel{padding:12px 5% 0;gap:10px;min-height:190px}.boss-arena-hero-art{height:112px}.boss-arena-enemy>.boss-arena-sprite{height:140px}.boss-arena-allies{gap:7px}.boss-arena-ally{width:58px}.boss-arena-ally>strong{max-width:58px}.boss-arena-damage{right:6%}}
+@media(prefers-reduced-motion:reduce){.boss-arena-projectile{display:none}.boss-arena-damage{animation:none}.boss-arena-health>div{transition:none}}

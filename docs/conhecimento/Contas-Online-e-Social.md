@@ -118,3 +118,15 @@ Teste de runtime Node real scripts/online-runtime-check.mjs: entrypoint importa 
 ### Verificação pública após publicação de 9f4285b
 
 Push autorizado pela solicitação de ativar o mundo online, concluído em origin/main. Endpoint publicado deixou de falhar na importação: GET /api/world retorna405 JSON, POST sem configuração retorna503 JSON com O mundo online ainda não foi configurado. Site continua HTTP200. Assim, o crash foi corrigido no ambiente hospedado. Supabase e Vercel foram encontrados como integrações disponíveis, mas a última verificação ainda os mostrou não instalados/conectados. O usuário confirmou não ter projeto Supabase nem SMTP. Próximo passo depende de instalar/conectar os serviços; não repetir essa pendência se uma mensagem posterior confirmar a conexão.
+
+## Pack 48 — 04/11/2026
+
+PvP por turnos agora premia o golpe que zera HP, impede resolução legada de partidas ativas e usa dados reais do adversário em desafios por nome. Ligas classificam pela maior faixa atingida. Mercado permite recuperar anúncios expirados uma única vez e limita taxa ao valor vendido. Ferramentas duplicadas são recusadas pelo servidor. Evidências e limites: [[docs/conhecimento/Pack-48-Integridade-PvP-Mercado-2026-11-04|Pack 48]]. Validação online local ampliada; publicação e testes concorrentes em infraestrutura real continuam pendentes.
+
+## Pack 52 — Mercado por lotes e unidade — 04/11/2026
+
+salesHistory combina vendas concluídas do Mercado com trocas diretas comparáveis, por template/raridade/tier/upgrade/moeda. Média ponderada por quantidade, faixa unitária e série diária de 30 dias. Exclui permutas, itens diferentes e moedas misturadas. Interface permite lote de até 999, preço total, líquido e histórico antes de publicar. Testes de domínio e prévia PC/390px passaram. [[docs/conhecimento/Pack-52-Mercado-Lotes-e-Precos-Reais-2026-11-04|Regras e limites]]. priceStats legado permanece apenas para compatibilidade; carga e moderação seguem pendentes.
+
+## Pack 56 — fila e recuperação — 04/11/2026
+
+OnlineSession agora mantém base/revisão e diário completo por personagem, reaplicando prévias determinísticas restantes após cada recibo. Isola sessões, ignora leituras antigas e recupera respostas perdidas com o mesmo requestId. Resultados de sorteio/IDs novos aguardam confirmação; navegação permanece disponível durante recuperação. O store mantém relógio padrão, com relógio fixo apenas na projeção. Testes de motor, HTTP/telas reais e PC/390px passaram localmente. [[docs/conhecimento/Pack-56-Fila-Online-e-Recuperacao-2026-11-04|Arquivos, garantias e limites]]. Sem deploy/schema; não equivale a teste de rede/concorrência em produção.

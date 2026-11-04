@@ -8,6 +8,8 @@ const RARITY_SELL: Record<Rarity, number> = { COMUM: 1, INCOMUM: 2, RARO: 5, EPI
 const EQUIP_CATEGORIES = ["ARMA", "ARMADURA", "JOIA", "PULSEIRA", "ESCUDO", "FLECHA"];
 
 export function sellValue(item: Item): number {
+  const professionValues: Record<string, number> = { LINGOTE_FERRO: 60, CRISTAL_REFINADO: 180, ISCA_CICATRIZ: 20, CALDO_MARCA_DAGUA: 190 };
+  if (professionValues[item.templateId]) return professionValues[item.templateId];
   const farmValues: Record<string, number> = { COLHEITA_CENOURA: 18, COLHEITA_MELANCIA: 55, COLHEITA_TRIGO: 32, COLHEITA_LUMINA: 120, SOPA_CENOURA_LYSS: 85, ELIXIR_MARE_DOCE: 220, PAO_RUNICO_LYSS: 90 };
   if (farmValues[item.templateId]) return farmValues[item.templateId];
   switch (item.category) {

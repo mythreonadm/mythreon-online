@@ -1,6 +1,6 @@
 import { RARITY_FRAME } from './itemRarity';
 import { formatVital, vitalPercent } from '../utils/vitals';
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { AssetImage } from "./AssetImage";
 import { useGameStore } from "../store/gameStore";
 import { VIALS } from "../data/vials";
@@ -12,9 +12,14 @@ import { DIVINE_BEASTS } from "../data/divineBeasts";
 import { ItemModal } from "./ItemModal";
 import { Item } from "../types";
 import { ELEMENTS } from "../data/elementalChart";
-import { getGearScore } from "../engine/gearScore";
+import { getGearScore, scoreCards } from "../engine/gearScore";
+import { CARD_TEMPLATES } from "../data/cards";
+import { equippedCards as formationCards, formationBonus } from "../engine/cardCollection";
 import { CharacterCustomization } from "./CharacterCustomization";
-import { appearanceLabel, appearanceStyle } from "../utils/appearance";
+import { appearanceLabel } from "../utils/appearance";
+import { getCosmeticVisual } from "../utils/cosmetics";
+import { HeroArt } from "./HeroArt";
+import { ownedCosmeticLoadout } from "../engine/cosmeticOwnership";
 
 const SLOTS: { key: SlotType; label: string; icon: string; column: number; row: number }[] = [
   { key: "CAPACETE", label: "Capacete", icon: "🎩", column: 2, row: 1 },
@@ -41,7 +46,6 @@ const RARITY_BORDER: Record<string, string> = {
 
 export function Personagem() {
   const { character, unequip, unequipRace } = useGameStore();
-  const [imgError, setImgError] = useState(false);
   const [slotPicker, setSlotPicker] = useState<SlotType | null>(null);
   const [inspectItem, setInspectItem] = useState<Item | null>(null);
   if (!character) return null;
@@ -49,8 +53,11 @@ export function Personagem() {
   const s = character.baseStats;
   const lineage = getLineageByAttack(character.activeRace?.ataqueId);
   const humanForm = !character.activeRace;
-  const visualSource = humanForm ? "/assets/players/humano-v2.png" : lineage.sprite;
   const activeBeast = character.activeDivineBeastId ? DIVINE_BEASTS[character.activeDivineBeastId] : undefined;
+  const validCosmetics = ownedCosmeticLoadout(character);
+  const cosmeticVisual = getCosmeticVisual(validCosmetics);
+  const equippedCards = formationCards(character);
+  const cardBonus = formationBonus(character);
   const equippedInPicker = slotPicker ? character.equipped[slotPicker] : undefined;
   const compatibleItems = slotPicker ? character.inventory.items.filter(item => slotPicker === "ANEL_I" || slotPicker === "ANEL_II"
     ? item.slot === "ANEL_I"
@@ -61,7 +68,6 @@ export function Personagem() {
     .map(([id]) => VIALS[id])
     .filter(Boolean);
 
-  useEffect(() => { setImgError(false); }, [visualSource]);
 
   const formatStat = (val: number | undefined, isPct = false) => {
     if (val === undefined) return "0";
@@ -80,20 +86,7 @@ export function Personagem() {
     <div className="space-y-4">
       <div className="bg-gradient-to-r from-arcane-panel to-arcane-bg border border-arcane-border rounded-xl p-4 md:p-6 shadow-lg">
         <div className="flex flex-wrap items-center gap-4 md:gap-6">
-          <div className="w-24 h-24 md:w-32 md:h-32 flex items-center justify-center bg-arcane-bg rounded-full border-2 border-arcane-purple shadow-[0_0_20px_rgba(124,58,237,0.3)] overflow-hidden">
-            {!imgError ? (
-              <AssetImage
-                key={lineage.id}
-                src={visualSource}
-                alt={humanForm ? appearanceLabel(character.appearance) : lineage.name}
-                className="w-full h-full object-contain p-2"
-                style={{ imageRendering: "pixelated", ...(humanForm ? appearanceStyle(character.appearance) : {}) }}
-                onError={() => setImgError(true)}
-              />
-            ) : (
-              <span className="text-6xl">{lineage.emoji}</span>
-            )}
-          </div>
+          <HeroArt name={character.name} attackId={character.activeRace?.ataqueId} appearance={character.appearance} cosmetics={validCosmetics} context="portrait" className="w-24 h-24 md:w-32 md:h-32 bg-arcane-bg rounded-full border-2 border-arcane-purple shadow-[0_0_20px_rgba(124,58,237,0.3)] overflow-hidden" imageClassName="p-2" />
           <div className="flex-1 min-w-[220px]">
             <h1 className="text-2xl md:text-3xl font-bold text-arcane-gold">{character.name}</h1>
             <p className="text-sm text-arcane-cyan">
@@ -101,7 +94,8 @@ export function Personagem() {
               {character.activeRace && ` · ${character.activeRace.name}`}
             </p>
             {humanForm && <div className="mt-2 flex flex-wrap gap-1.5 text-[10px] text-slate-300"><span className="rounded border border-arcane-cyan/30 bg-arcane-cyan/10 px-2 py-1">{appearanceLabel(character.appearance)}</span><span className="rounded border border-white/10 bg-black/20 px-2 py-1">Pele: {character.appearance?.skin ?? "MORENA"}</span><span className="rounded border border-white/10 bg-black/20 px-2 py-1">Cabelo: {character.appearance?.hairColor ?? "NEGRO"}</span><span className="rounded border border-white/10 bg-black/20 px-2 py-1">Roupa: {character.appearance?.outfitColor ?? "OCRE"}</span></div>}
-            <div className="mt-2 inline-flex rounded-lg border border-arcane-gold/50 bg-arcane-gold/10 px-3 py-1 text-sm font-black text-arcane-gold">⚔ Gear Score: {getGearScore(character).toLocaleString('pt-BR')}</div>
+            <div className="mt-2 flex flex-wrap gap-2"><span className="inline-flex rounded-lg border border-arcane-gold/50 bg-arcane-gold/10 px-3 py-1 text-sm font-black text-arcane-gold">⚔ Gear Score: {getGearScore(character).toLocaleString('pt-BR')}</span><span className="inline-flex rounded-lg border border-cyan-400/30 bg-cyan-950/20 px-3 py-1 text-xs font-bold text-cyan-200">🎴 Cards: {equippedCards.length}/5 · +{Math.round(scoreCards(character))}</span></div>
+            {cosmeticVisual.labels.length > 0 && <div className="mt-2 flex flex-wrap gap-1.5 text-[10px] text-violet-200"><span className="rounded border border-violet-400/40 bg-violet-950/30 px-2 py-1">✦ Cosméticos ativos</span>{cosmeticVisual.labels.map(label => <span key={label} className="rounded border border-white/10 bg-black/20 px-2 py-1">{label}</span>)}</div>}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3">
               <MiniBar label="HP" current={character.hp} max={character.hpMax} color="bg-gradient-to-r from-red-600 to-red-400" />
               <MiniBar label="MP" current={character.mp} max={character.mpMax} color="bg-gradient-to-r from-blue-600 to-blue-400" />
@@ -240,6 +234,19 @@ export function Personagem() {
                     <span className="text-white">{v.icon} {v.name}</span>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {equippedCards.length > 0 && (
+              <div data-character-card-bonus className="mt-3 rounded border border-cyan-400/30 bg-cyan-950/10 p-2">
+                <div className="text-[10px] text-cyan-300 uppercase font-bold">🎴 Formação de Cards</div>
+                <div className="mt-1 flex flex-wrap gap-1">
+                  <span className="text-[9px] rounded bg-black/25 px-1.5 py-0.5 text-cyan-100">+{cardBonus.hp.toLocaleString("pt-BR", { maximumFractionDigits: 2 })} HP</span>
+                  <span className="text-[9px] rounded bg-black/25 px-1.5 py-0.5 text-cyan-100">+{cardBonus.atk.toLocaleString("pt-BR", { maximumFractionDigits: 2 })} ATK</span>
+                  <span className="text-[9px] rounded bg-black/25 px-1.5 py-0.5 text-cyan-100">+{cardBonus.def.toLocaleString("pt-BR", { maximumFractionDigits: 2 })} DEF</span>
+                  <span className="text-[9px] rounded bg-black/25 px-1.5 py-0.5 text-cyan-100">+{(cardBonus.spd * 100).toLocaleString("pt-BR", { maximumFractionDigits: 2 })}% SPD</span>
+                </div>
+                <p className="mt-1 text-[9px] text-slate-400">Bônus complementares aplicados na hunt, no Gear Score e no duelo.</p>
               </div>
             )}
 

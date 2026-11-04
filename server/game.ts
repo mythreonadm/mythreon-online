@@ -4,19 +4,30 @@ import {createNewCharacter} from '../src/engine/save';
 import {recalcStats,xpToNextLevel} from '../src/engine/stats';
 import {VIALS} from '../src/data/vials';
 import {ZONES} from '../src/data/zones';
-import {ALL_ITEM_TEMPLATES} from '../src/data/items';
+import {ALL_ITEM_TEMPLATES, PROFESSION_TOOL_TEMPLATES, createItem} from '../src/data/items';
+import {generateId} from '../src/utils/id';
 import { getMythreonOffer } from '../src/data/mythreonEconomy';
+import { COSMETIC_SLOTS, type CosmeticSlot } from '../src/data/cosmetics';
+import { normalizeCosmeticOwnership } from '../src/engine/cosmeticOwnership';
+import { gatheringAccessError, prepareGathering, resolveGathering, type ProfessionChallenge } from '../src/engine/professionChallenge';
 import type {Character,Race,CharacterAppearance} from '../src/types';
-export interface WorldState { character:Character; races:Race[]; isTickRunning:boolean; isTraining:boolean; healingUntil:number|null; deathReport:GameState['deathReport']; lastTickResult:GameState['lastTickResult']; lastAdvanceAt:number; counters:{forges:number;syntheses:number;trades:number;bosses:number}; }
+export interface WorldState { character:Character; races:Race[]; isTickRunning:boolean; isTraining:boolean; healingUntil:number|null; deathReport:GameState['deathReport']; lastTickResult:GameState['lastTickResult']; lastAdvanceAt:number; professionChallenge?:ProfessionChallenge; counters:{forges:number;syntheses:number;trades:number;bosses:number}; }
 export function freshWorld(name:string,id:string,appearance?:CharacterAppearance):WorldState {const character=createNewCharacter(name,appearance);character.id=id;return {character,races:[],isTickRunning:false,isTraining:false,healingUntil:null,deathReport:null,lastTickResult:null,lastAdvanceAt:Date.now(),counters:{forges:0,syntheses:0,trades:0,bosses:0}};}
 function normalizeArrowItems(character:Character){for(const item of [...(character.inventory?.items??[]),...(character.depot??[]),...Object.values(character.equipped??{})]){if(/^FLECHA_T[1-5]$/.test(item.templateId)){item.category='FLECHA';item.slot='MUNICAO';item.stackable=false;item.maxStack=1;item.quantity=1;}}}
 function normalizeLegacyItems(character:Character){for(const item of [...(character.inventory?.items??[]),...(character.depot??[]),...Object.values(character.equipped??{})]){if(item.templateId==='UNICO_BRASA_ETERNA'){item.category='PULSEIRA';item.slot='PULSEIRA';}const template=ALL_ITEM_TEMPLATES[item.templateId];if(template){item.stats??={};for(const [key,value] of Object.entries(template.stats??{})){const current=Number((item.stats as any)[key]);if(!Number.isFinite(current)||current===0)(item.stats as any)[key]=Math.round(Number(value)*Math.pow(1.1,item.upgradeLevel??0)*100)/100;}}}const equipped=character.equipped??{};for(const key of ['ANEL_I','ANEL_II'] as const){const item=equipped[key];if(item?.templateId!=='UNICO_BRASA_ETERNA')continue;item.category='PULSEIRA';item.slot='PULSEIRA';if(!equipped.PULSEIRA){equipped.PULSEIRA=item;delete equipped[key];}else{(character.inventory.items??=[]).push({...item,uid:`${item.uid}-pulseira`});delete equipped[key];}}}
 export function executeGame(world:WorldState,action?:string,args:unknown[]=[]):{world:WorldState;result:unknown;messages:string[]} {
  normalizeArrowItems(world.character); normalizeLegacyItems(world.character);
- world.character.farm ??= { plots: [{ id: 'plot-1', fertility: 100 }], unlockedPlots: 1, skills: { planting: 0, harvesting: 0, irrigation: 0, fertility: 0 }, lastActionAt: Date.now() };
- world.character.farm.skills ??= { planting: 0, harvesting: 0, irrigation: 0, fertility: 0 };
- world.character.farm.skills.irrigation ??= 0; world.character.farm.skills.fertility ??= 0;
- for (const plot of world.character.farm.plots) plot.fertility ??= 100;
+ const farm = world.character.farm ?? { plots: [{ id: 'plot-1', fertility: 100 }], unlockedPlots: 1, skills: { planting: 0, harvesting: 0, irrigation: 0, fertility: 0 }, lastActionAt: Date.now() };
+ world.character.farm = farm;
+ world.character.professions = world.character.professions ?? { mining: 0, fishing: 0, lastMiningAt: 0, lastFishingAt: 0 };
+ world.character.professions.mining ??= 0; world.character.professions.fishing ??= 0;
+ const items=world.character.inventory?.items ?? [];
+ const starterTarget=()=>items.length<Number(world.character.inventory?.backpack?.slots??0)?items:(world.character.depot??=[]);
+ if(!world.character.equippedMiningTool&&!items.some(item=>item.templateId==='PICARETA_T1')&&!world.character.depot?.some(item=>item.templateId==='PICARETA_T1')) starterTarget().push(createItem({...PROFESSION_TOOL_TEMPLATES.PICARETA_T1,uid:generateId()}));
+ if(!world.character.equippedFishingRod&&!items.some(item=>item.templateId==='VARA_PESCA_T1')&&!world.character.depot?.some(item=>item.templateId==='VARA_PESCA_T1')) starterTarget().push(createItem({...PROFESSION_TOOL_TEMPLATES.VARA_PESCA_T1,uid:generateId()}));
+ farm.skills = farm.skills ?? { planting: 0, harvesting: 0, irrigation: 0, fertility: 0 };
+ farm.skills.irrigation ??= 0; farm.skills.fertility ??= 0;
+ for (const plot of farm.plots) plot.fertility ??= 100;
  const expectedXp=xpToNextLevel(world.character.level);if(world.character.xpToNext!==expectedXp){world.character.xp=Math.floor(world.character.xp/Math.max(1,world.character.xpToNext)*expectedXp);world.character.xpToNext=expectedXp;}
  world.counters??={forges:0,syntheses:0,trades:0,bosses:0};world.counters.bosses??=0;
  const messages:string[]=[]; const store=createGameStore({server:true,persist:()=>{},notify:m=>messages.push(m)});
@@ -34,16 +45,39 @@ export function executeGame(world:WorldState,action?:string,args:unknown[]=[]):{
   if(s.isTickRunning&&['sellItem','sellSelected','salvageAll','salvageSelected','upgradeItem','rerollItem'].includes(action))throw Error('Saia da caça para acessar o Ferreiro.');
   if(action==='activateBuff'&&(!s.isTickRunning||!s.character?.onlineBalloonUntil||s.character.onlineBalloonUntil<now))throw Error('Este eco de bônus expirou. Aguarde outro durante a caça.');
   const zero=['finishIntro','clearOfflineReport','clearDeathReport','startHealing','cancelHealing','stopHunting','stopTraining','unequipRace','unequipDivineBeast','activateBuff','buyTrainingBoost','buyBless','refreshCompendium'];
-  const strings=['unlockZone','setActiveEnemy','setCurrentZone','acceptQuest','claimQuest','upgradeItem','rerollItem','depositItem','withdrawItem','discardItem','plantFarmSeed','waterFarmPlot','fertilizeFarmPlot','harvestFarmPlot','cookFarmRecipe'];
+  const strings=['unlockZone','setActiveEnemy','setCurrentZone','acceptQuest','claimQuest','upgradeItem','rerollItem','depositItem','withdrawItem','discardItem','plantFarmSeed','waterFarmPlot','fertilizeFarmPlot','harvestFarmPlot','cookFarmRecipe','buyProfessionTool'];
   const uid=(v:unknown)=>{if(typeof v!=='string'||v.length<1||v.length>128)throw Error('Identificador inválido.');return v;};
-  if(zero.includes(action)){if(args.length)throw Error('Parâmetros inesperados.');result=(s[action as keyof GameState] as ()=>unknown)();}
-  else if(strings.includes(action)){const id=uid(args[0]);if(action==='plantFarmSeed'){result=s.plantFarmSeed(id,uid(args[1]));}else{if(['upgradeItem','rerollItem'].includes(action)){const item=s.character!.inventory.items.find(i=>i.uid===id);if(!item||!['ARMA','ARMADURA','JOIA','PULSEIRA','ESCUDO','FLECHA'].includes(item.category))throw Error('Escolha um equipamento válido para o Ferreiro.');}result=(s[action as keyof GameState] as (id:string)=>unknown)(id);}}
+  if(action==='beginProfessionChallenge'){
+   if((args.length!==2&&args.length!==3)||!['MINERACAO','PESCA'].includes(String(args[0])))throw Error('Profissão inválida.');
+   const prepared=prepareGathering(s.character!,world.professionChallenge,args[0] as 'MINERACAO'|'PESCA',uid(args[1]),now,args.length===3?uid(args[2]):undefined);
+   if(prepared.success)world.professionChallenge=prepared.challenge;
+   result=prepared;
+  }
+  else if(action==='finishProfessionChallenge'){
+   if(args.length!==1)throw Error('Parâmetros inesperados.');
+   const id=uid(args[0]),challenge=world.professionChallenge,resolved=resolveGathering(challenge,id,now);
+   if(challenge?.id===id)world.professionChallenge=undefined;
+   if(!resolved.success){result=resolved;}
+   else{const error=gatheringAccessError(s.character!,challenge!.kind,challenge!.targetId,now,challenge!.baitId);if(error){result={success:false,error};}else{const collected=challenge!.kind==='MINERACAO'?s.mineResource(challenge!.targetId,resolved.precision):s.fishSpot(challenge!.targetId,resolved.precision,challenge!.baitId);result={...collected,precision:resolved.precision};}}
+  }
+  else if(action==='cancelProfessionChallenge'){
+   if(args.length!==1)throw Error('Parâmetros inesperados.');const id=uid(args[0]);
+   if(world.professionChallenge?.id===id)world.professionChallenge=undefined;
+   result={success:true};
+  }
+  else if(action==='mineResource'||action==='fishSpot')throw Error('Inicie um pulso de coleta antes de extrair recursos online.');
+  else if(zero.includes(action)){if(args.length)throw Error('Parâmetros inesperados.');result=(s[action as keyof GameState] as ()=>unknown)();}
+   else if(strings.includes(action)){const id=uid(args[0]);if(action==='plantFarmSeed'){result=s.plantFarmSeed(id,uid(args[1]));}else{if(['upgradeItem','rerollItem'].includes(action)){const item=s.character!.inventory.items.find(i=>i.uid===id);if(!item||!['ARMA','ARMADURA','JOIA','PULSEIRA','ESCUDO','FLECHA'].includes(item.category))throw Error('Escolha um equipamento válido para o Ferreiro.');}result=(s[action as keyof GameState] as (id:string)=>unknown)(id);}}
+  else if(action==='equipProfessionTool'){const id=uid(args[0]);result=s.equipProfessionTool(id);if(!(result as any)?.success)throw Error((result as any)?.error??'Não foi possível equipar a ferramenta.');}
+  else if(action==='refineProfessionRecipe'){const id=uid(args[0]);result=s.refineProfessionRecipe(id);if(!(result as any)?.success)throw Error((result as any)?.error??'Não foi possível concluir o refino.');}
   else if(action==='startHunting'){const zone=uid(args[0]);if(!ZONES[zone])throw Error('Mapa inválido.');s.startHunting(zone);if(store.getState().isTickRunning){store.getState().character!.lastTick=now;world.lastAdvanceAt=now;}}
   else if(action==='startTraining'||action==='spendStatPoint'){const skill=uid(args[0]);if(!['melee','magic','distance','defense','soul'].includes(skill))throw Error('Atributo inválido.');result=(s[action] as (v:any)=>unknown)(skill);if(action==='startTraining')world.lastAdvanceAt=now;}
   else if(action==='equip'){const id=uid(args[0]);const force=args[1]===true;result=s.equip(id,force);if(!(result as any)?.success)throw Error((result as any)?.error??'Não foi possível equipar.');}
   else if(action==='armSpecialCombo'){const power=args[0]===1||args[0]===0.5||args[0]===1.5?args[0] as 1|0.5|1.5:1.5;result=s.armSpecialCombo(power);if(!(result as any)?.success)throw Error((result as any)?.error??'Não foi possível armar o combo.');s.tick();world.lastAdvanceAt=now;}
   else if(action==='unequip'){const slots=['CAPACETE','ARMADURA','LUVAS','CALCAS','BOTAS','COLAR','ANEL_I','ANEL_II','PULSEIRA','ARMA_PRINCIPAL','OFF_HAND','MUNICAO','BACKPACK'];if(!slots.includes(String(args[0])))throw Error('Slot inválido.');result=s.unequip(args[0]);}
   else if(action==='updateAppearance'){const value=args[0];if(!value||typeof value!=='object'||Array.isArray(value))throw Error('Aparência inválida.');const allowed={body:['MASCULINO','FEMININO'],skin:['CLARA','MORENA','ESCURA','AZUL_ESSENCIA'],hair:['CURTO','LONGO','TRANCAS','ARCANO'],hairColor:['NEGRO','CASTANHO','RUIVO','PRATEADO','AZUL'],outfit:['VIAJANTE','GUARDIAO','MISTICO'],outfitColor:['OCRE','AZUL','VIOLETA','VERDE']};for(const [key,values] of Object.entries(allowed)){if(!values.includes(String((value as any)[key])))throw Error('Opção de aparência inválida.');}result=s.updateAppearance(value as any);if(!(result as any)?.success)throw Error((result as any)?.error??'Não foi possível salvar a aparência.');}
+  else if(action==='equipCosmetic'){const id=uid(args[0]);if(!/^(SKIN_|LUMINESCENCIA_|ADDON_)/.test(id))throw Error('Cosmético inválido.');result=s.equipCosmetic(id);if(!(result as any)?.success)throw Error((result as any)?.error??'Não foi possível equipar o cosmético.');}
+  else if(action==='unequipCosmetic'){if(args.length!==1||!COSMETIC_SLOTS.some(slot=>slot.key===args[0]))throw Error('Espaço cosmético inválido.');result=s.unequipCosmetic(args[0] as CosmeticSlot);if(!(result as any)?.success)throw Error((result as any)?.error??'Não foi possível remover o cosmético.');}
   else if(action==='equipRace'){const id=typeof args[0]==='string'?args[0]:(args[0] as any)?.id;const race=s.races.find(r=>r.id===id);if(!race)throw Error('Matriz não descoberta.');s.equipRace(race);}
   else if(action==='equipDivineBeast'){result=s.equipDivineBeast(uid(args[0]) as any);}
   else if(action==='hatchEgg'){result=s.hatchEgg(uid(args[0]));if(!(result as any)?.success)throw Error((result as any)?.error??'Não foi possível eclodir o ovo.');}
@@ -52,8 +86,11 @@ export function executeGame(world:WorldState,action?:string,args:unknown[]=[]):{
   else if(action==='feedDivineBeast'){result=s.feedDivineBeast(uid(args[0]) as any, uid(args[1]));if(!(result as any)?.success)throw Error((result as any)?.error??'Não foi possível alimentar a Besta.');}
   else if(action==='elevateItemTier'){result=s.elevateItemTier(uid(args[0]));if(!(result as any)?.success)throw Error((result as any)?.error??'Não foi possível elevar o Tier.');}
   else if(action==='rerollSpecificAffix'){result=s.rerollSpecificAffix(uid(args[0]), uid(args[1]) as any);if(!(result as any)?.success)throw Error((result as any)?.error??'Não foi possível sortear o atributo.');}
-  else if(action==='buyCalendarCoupon'){result=s.buyCalendarCoupon();if(!(result as any)?.success)throw Error((result as any)?.error??'Não foi possível comprar o cupom.');}
-  else if(action==='claimDailyCalendar'){result=s.claimDailyCalendar();if(!(result as any)?.success)throw Error((result as any)?.error??'Não foi possível resgatar a recompensa.');}
+  else if(action==='buyCalendarCoupon'){if(args.length)throw Error('Parâmetros inesperados.');result=s.buyCalendarCoupon();if(!(result as any)?.success)throw Error((result as any)?.error??'Não foi possível comprar o cupom.');}
+  else if(action==='claimDailyCalendar'){if(args.length)throw Error('Parâmetros inesperados.');result=s.claimDailyCalendar();if(!(result as any)?.success)throw Error((result as any)?.error??'Não foi possível resgatar a recompensa.');}
+  else if(action==='claimOnlineChest'){if(args.length)throw Error('Parâmetros inesperados.');result=s.claimOnlineChest();if(!(result as any)?.success)throw Error((result as any)?.error??'O baú ainda não está pronto.');}
+  else if(action==='setCardLoadout'){if(!Array.isArray(args[0])||args[0].length>5||args[0].some(uid=>typeof uid!=='string'||uid.length>128))throw Error('Formação de cartas inválida.');result=s.setCardLoadout([...new Set(args[0])]);if(!(result as any)?.success)throw Error((result as any)?.error??'Não foi possível salvar a formação.');}
+  else if(action==='evolveCard'){if(args.length!==3||!Array.isArray(args[1])||args[1].length>16||args[1].some(id=>typeof id!=='string'||id.length<1||id.length>128)||!Number.isInteger(args[2])||Number(args[2])<1||Number(args[2])>4)throw Error('Dados de evolução inválidos.');result=s.evolveCard(uid(args[0]),args[1],Number(args[2]));}
   else if(action==='synthesize'){result=s.synthesize(uid(args[0]),uid(args[1]),uid(args[2]));if((result as any)?.success)world.counters.syntheses++;}
   else if(action==='useVial'){const id=typeof args[0]==='string'?args[0]:(args[0] as any)?.id;const vial=typeof id==='string'&&Object.hasOwn(VIALS,id)?VIALS[id]:undefined;if(!vial)throw Error('Vial inválido.');s.useVial(vial);}
   else if(action==='sellItem'){const quantity=args[1]??1;if(!Number.isInteger(quantity)||Number(quantity)<1||Number(quantity)>999)throw Error('Quantidade inválida.');s.sellItem(uid(args[0]),Number(quantity));}
@@ -85,7 +122,7 @@ export function executeGame(world:WorldState,action?:string,args:unknown[]=[]):{
   if(action==='activateBuff')store.getState().character!.onlineBalloonUntil=undefined;
   if(action==='upgradeItem'&&(result as any)?.success)world.counters.forges++;
  }
- const state=store.getState();const character=state.character!;recalcStats(character);
+ const state=store.getState();const character=state.character!;normalizeCosmeticOwnership(character);recalcStats(character);
  if(!Number.isFinite(character.gold)||character.gold<0||character.gold>Number.MAX_SAFE_INTEGER)throw Error('Saldo inválido.');
  return {world:{...world,character,races:state.races,isTickRunning:state.isTickRunning,isTraining:state.isTraining,healingUntil:state.healingUntil,deathReport:state.deathReport,lastTickResult:state.lastTickResult},result:result??null,messages};
 }

@@ -10,6 +10,7 @@
 
 - [docs/conhecimento/Jornada-Lore-Biomas.md](../docs/conhecimento/Jornada-Lore-Biomas.md)
 - [src/data/zones.ts](../src/data/zones.ts) — ZONES
+- [src/ui/MarketPriceHistory.tsx](../src/ui/MarketPriceHistory.tsx) — MarketPriceHistory
 - [src/ui/Wiki.tsx](../src/ui/Wiki.tsx) — Wiki, HistorySection
 - [src/ui/Zone.tsx](../src/ui/Zone.tsx) — ZoneView
 

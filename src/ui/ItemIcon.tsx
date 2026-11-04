@@ -17,7 +17,7 @@ export function ItemIcon({ item, className = "text-3xl mb-1", style }: Props) {
     setHasError(false);
   }, [item.templateId]);
 
-  const imagePath = `/assets/items/${item.templateId}.png`;
+  const imagePath = `/assets/items/${item.templateId === "SKIN_CAPA_PRIMEIRO_CANTO" ? "SKIN_PREMIUM_MES_01" : item.templateId === "ISCA_CICATRIZ" ? "ISCA_RARA" : item.templateId}.png`;
 
   const aura = rarityArtClass(item.rarity);
   if (hasError) {

@@ -1,5 +1,6 @@
 import type { Character, ItemStats } from "../types";
 import { getItemScore } from "./itemCompare";
+import { cardFormationScore } from "./cardCollection";
 
 /** Pontuação legível da força efetiva da build, sem substituir o cálculo de dano. */
 export function getGearScore(character?: Character | null): number {
@@ -13,7 +14,13 @@ export function getGearScore(character?: Character | null): number {
   const level = Math.max(0, character.level - 1) * 1.5;
   const matrix = scoreStats(character.activeRace?.bonus);
   const beast = character.activeDivineBeastId ? 8 : 0;
-  return Math.max(0, Math.round(equipment + statScore + skills + mastery + training + level + matrix + beast));
+  const cards = scoreCards(character);
+  return Math.max(0, Math.round(equipment + statScore + skills + mastery + training + level + matrix + beast + cards));
+}
+
+/** Cartas equipadas são uma camada de build, não apenas coleção. */
+export function scoreCards(character?: Character | null): number {
+  return cardFormationScore(character);
 }
 
 function scoreStats(stats?: ItemStats) {

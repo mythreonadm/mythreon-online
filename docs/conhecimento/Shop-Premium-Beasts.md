@@ -26,3 +26,7 @@ Build de produção passou após integrar a Shop e os ataques. Uma tentativa de 
 - src/data/beastCombat.ts, src/engine/combat.ts, src/engine/stats.ts
 - src/store/gameStore.ts, src/ui/Zone.tsx, src/ui/DivineBeasts.tsx
 - CEREBRO_MYTHREON.md
+
+## Pack 55 — cosméticos e guarda-roupa — 04/11/2026
+
+Cosméticos têm catálogo de espaços explícitos e remoção individual. Novo LUMINESCENCIA_PET custa120Coins e não altera combate. A Capa do Primeiro Canto usa arte completa na forma humana; Matriz mantém linhagem, addon tem arte no Boss/prévia e aura acompanha o Pet na hunt. Propriedade é revalidada ao salvar/gravar: item em escrow não mantém visual físico. Conquistas de calendário continuam permanentes. [[docs/conhecimento/Pack-55-Guarda-Roupa-Skins-e-Auras-2026-11-04|Regras, evidências e artes pendentes]]. Não inclui checkout real nem novas concessões de beta.

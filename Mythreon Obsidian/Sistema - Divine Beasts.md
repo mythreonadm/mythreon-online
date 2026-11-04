@@ -40,6 +40,7 @@
 - [[Mythreon Obsidian/Sistema - Combate|Combate]]
 - [[Mythreon Obsidian/Sistema - Itens e Ferreiro|Itens e Ferreiro]]
 - [[Mythreon Obsidian/Sistema - Conhecimento e documentação|Conhecimento e documentação]]
+- [[Mythreon Obsidian/Sistema - Outros arquivos|Outros arquivos]]
 - [[Mythreon Obsidian/Sistema - Estado|Estado]]
 - [[Mythreon Obsidian/Sistema - Tipos|Tipos]]
 - [[Mythreon Obsidian/Sistema - Artes e recursos|Artes e recursos]]

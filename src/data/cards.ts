@@ -18,7 +18,7 @@ export const TRAITS: Record<CardTrait, { name: string; icon: string; desc: strin
 };
 
 // ═══════════════════════════════════════════════════════════════
-// OS 38 TEMPLATES (todos os monstros do jogo)
+// OS 48 TEMPLATES (todos os monstros do jogo)
 // ═══════════════════════════════════════════════════════════════
 export const CARD_TEMPLATES: Record<string, CardTemplate> = {
   // ─── BOSQUE DE LYSS (T1) ───
@@ -258,13 +258,90 @@ export const CARD_TEMPLATES: Record<string, CardTemplate> = {
     ability: "Fim de Todas as Coisas", abilityDesc: "Ignora 50% da defesa do inimigo.",
     emoji: "👹",
   },
+
+  // ─── PÂNTANO DE VEYRA (T3 — catálogo Pack 60) ───
+  CARD_SAPO_MIASMA: {
+    monsterId: "SAPO_MIASMA", name: "Sapo-Miasma", region: "PANTANO_VEYRA", rarity: "COMUM", trait: "VENENO",
+    baseStats: { hp: 420, atk: 48, def: 18, spd: 24 },
+    ability: "Névoa Tóxica", abilityDesc: "A presença do sapo enfraquece a cura recebida pelo inimigo.", emoji: "🐸",
+  },
+  CARD_LIBELULA_LAMINA: {
+    monsterId: "LIBELULA_LAMINA", name: "Libélula-Lâmina", region: "PANTANO_VEYRA", rarity: "INCOMUM", trait: "PRECISAO",
+    baseStats: { hp: 360, atk: 68, def: 14, spd: 58 },
+    ability: "Asa Cortante", abilityDesc: "A velocidade da libélula favorece golpes precisos contra alvos expostos.", emoji: "🦋",
+  },
+  CARD_CIPO_MEMORIA: {
+    monsterId: "CIPO_MEMORIA", name: "Cipó da Memória", region: "PANTANO_VEYRA", rarity: "RARO", trait: "SILENCIO",
+    baseStats: { hp: 520, atk: 58, def: 30, spd: 20 },
+    ability: "Laço Mnêmico", abilityDesc: "Raízes antigas interrompem o ritmo de uma habilidade inimiga.", emoji: "🌿",
+  },
+  CARD_CROCODILO_SILTE: {
+    monsterId: "CROCODILO_SILTE", name: "Crocodilo de Silte", region: "PANTANO_VEYRA", rarity: "EPICO", trait: "ESCUDO",
+    baseStats: { hp: 760, atk: 76, def: 48, spd: 16 },
+    ability: "Couraça de Silte", abilityDesc: "A carapaça absorve parte do primeiro impacto recebido.", emoji: "🐊",
+  },
+  CARD_MATRIARCA_LODO: {
+    monsterId: "MATRIARCA_LODO", name: "Matriarca do Lodo", region: "PANTANO_VEYRA", rarity: "LENDARIO", trait: "REGENERACAO",
+    baseStats: { hp: 1800, atk: 108, def: 42, spd: 18 },
+    ability: "Ninhada Regenerativa", abilityDesc: "A essência do lodo recupera vitalidade quando a batalha se prolonga.", emoji: "👑",
+  },
+
+  // ─── DESERTO DE KAELOR (T4 — catálogo Pack 60) ───
+  CARD_ESCARAVELHO_VITREO: {
+    monsterId: "ESCARAVELHO_VITREO", name: "Escaravelho Vítreo", region: "DESERTO_KAELOR", rarity: "RARO", trait: "ESPINHOS",
+    baseStats: { hp: 980, atk: 112, def: 44, spd: 28 },
+    ability: "Carapaça Prismática", abilityDesc: "O cristal do casco devolve parte da força de um golpe físico.", emoji: "🪲",
+  },
+  CARD_ESPECTRO_SOLAR: {
+    monsterId: "ESPECTRO_SOLAR", name: "Espectro Solar", region: "DESERTO_KAELOR", rarity: "INCOMUM", trait: "MEDO",
+    baseStats: { hp: 900, atk: 136, def: 34, spd: 42 },
+    ability: "Clarão Sepulcral", abilityDesc: "A luz do deserto reduz a confiança do adversário por alguns instantes.", emoji: "☀️",
+  },
+  CARD_SERPENTE_MIRAGEM: {
+    monsterId: "SERPENTE_MIRAGEM", name: "Serpente de Miragem", region: "DESERTO_KAELOR", rarity: "RARO", trait: "VENENO",
+    baseStats: { hp: 1180, atk: 142, def: 42, spd: 54 },
+    ability: "Presa Ilusória", abilityDesc: "A miragem cria uma abertura e prolonga o efeito de veneno.", emoji: "🐍",
+  },
+  CARD_GOLEM_OBSIDIANA: {
+    monsterId: "GOLEM_OBSIDIANA", name: "Golem de Obsidiana", region: "DESERTO_KAELOR", rarity: "EPICO", trait: "ESCUDO",
+    baseStats: { hp: 1480, atk: 148, def: 58, spd: 14 },
+    ability: "Muralha Negra", abilityDesc: "A obsidiana mantém uma proteção densa contra o próximo impacto.", emoji: "🗿",
+  },
+  CARD_SENTINELA_ZENITE: {
+    monsterId: "SENTINELA_ZENITE", name: "Sentinela do Zênite", region: "DESERTO_KAELOR", rarity: "LENDARIO", trait: "INVESTIDA",
+    baseStats: { hp: 3000, atk: 188, def: 64, spd: 22 },
+    ability: "Veredito do Zênite", abilityDesc: "O guardião concentra a luz do céu em sua primeira investida.", emoji: "🔆",
+  },
 };
+
+/**
+ * Cards introduzidos depois do início da temporada 2026-11.
+ * Eles ficam imediatamente disponíveis no álbum e nos drops, mas só entram
+ * no denominador de uma temporada iniciada a partir de 2026-12. Assim, a
+ * expansão não rebaixa retroativamente uma coleção já em andamento.
+ */
+export const PACK60_CARD_TEMPLATE_IDS = [
+  "CARD_SAPO_MIASMA", "CARD_LIBELULA_LAMINA", "CARD_CIPO_MEMORIA", "CARD_CROCODILO_SILTE", "CARD_MATRIARCA_LODO",
+  "CARD_ESCARAVELHO_VITREO", "CARD_ESPECTRO_SOLAR", "CARD_SERPENTE_MIRAGEM", "CARD_GOLEM_OBSIDIANA", "CARD_SENTINELA_ZENITE",
+] as const;
+export const CARD_SEASON_EXPANSION_KEY = "2026-12";
+export function seasonCardTemplateIds(seasonKey: string): string[] {
+  const all = Object.keys(CARD_TEMPLATES);
+  if (seasonKey < CARD_SEASON_EXPANSION_KEY) return all.filter(id => !PACK60_CARD_TEMPLATE_IDS.includes(id as typeof PACK60_CARD_TEMPLATE_IDS[number]));
+  return all;
+}
+export function seasonCardCatalogSize(seasonKey: string): number { return seasonCardTemplateIds(seasonKey).length; }
+export function seasonUniqueCards(cards: readonly CardInstance[] | undefined, seasonKey: string): number {
+  const known = new Set(seasonCardTemplateIds(seasonKey));
+  return new Set((cards ?? []).map(card => card.templateId).filter(templateId => known.has(templateId))).size;
+}
 
 // ═══════════════════════════════════════════════════════════════
 // STATS POR NÍVEL (1 a 5) — +20% por nível
 // ═══════════════════════════════════════════════════════════════
 export function getCardStats(template: CardTemplate, level: number): CardStats {
-  const mult = 1 + (level - 1) * 0.2;
+  const safeLevel = Number.isFinite(level) ? Math.max(1, Math.min(5, Math.floor(level))) : 1;
+  const mult = 1 + (safeLevel - 1) * 0.2;
   return {
     hp:  Math.floor(template.baseStats.hp * mult),
     atk: Math.floor(template.baseStats.atk * mult),
@@ -289,20 +366,14 @@ export function createCardInstance(templateId: string): CardInstance {
 // DROP DE CARTAS
 // Bosses: 0.5% (raríssimo). T1: 3%. T5: 0.5%.
 // ═══════════════════════════════════════════════════════════════
+export function cardDropChance(tier: number, isBoss: boolean): number {
+  return isBoss ? 0.005 : tier === 1 ? 0.03 : tier === 2 ? 0.02 : tier === 3 ? 0.015 : tier === 4 ? 0.01 : 0.005;
+}
 export function rollCardDrop(monsterId: string, tier: number, isBoss: boolean): CardInstance | null {
   const templateId = `CARD_${monsterId}`;
   if (!CARD_TEMPLATES[templateId]) return null;
 
-  // Bosses: chance fixa de 0.5% (raríssimo)
-  if (isBoss) {
-    if (Math.random() < 0.005) {
-      return createCardInstance(templateId);
-    }
-    return null;
-  }
-
-  // Mobs comuns: chance por tier
-  const chance = tier === 1 ? 0.03 : tier === 2 ? 0.02 : tier === 3 ? 0.015 : tier === 4 ? 0.01 : 0.005;
+  const chance = cardDropChance(tier, isBoss);
   if (Math.random() < chance) {
     return createCardInstance(templateId);
   }

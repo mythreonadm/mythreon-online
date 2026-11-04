@@ -37,6 +37,50 @@
 - [[docs/conhecimento/Pack-14-Personalizacao-Sprite-2026-11-04|Pack 14 — Personalização visual do humano]]
 - [[docs/conhecimento/Pack-15-Auditoria-Balanceamento-2026-11-04|Pack 15 — Auditoria de balanceamento]]
 - [[docs/conhecimento/Pack-16-Integridade-Online-2026-11-04|Pack 16 — Integridade online e ações idempotentes]]
+- [[docs/conhecimento/Pack-17-Boss-Diario-Cooperativo-2026-11-04|Pack 17 — Boss Diário cooperativo]]
+- [[docs/conhecimento/Pack-18-PvP-Ranqueado-Online-2026-11-04|Pack 18 — PvP ranqueado online]]
+- [[docs/conhecimento/Pack-19-Oficios-Mineracao-Pesca-2026-11-04|Pack 19 — Mineração e Pesca]]
+- [[docs/conhecimento/Pack-20-Cards-Calendario-Premium-2026-11-04|Pack 20 — Cards, Calendário e superfície Premium]]
+- [[docs/conhecimento/Pack-21-Mercado-Negro-Online-2026-11-04|Pack 21 — Mercado Negro online]]
+- [[docs/conhecimento/Pack-22-Bau-Tempo-Online-2026-11-04|Pack 22 — Baú por tempo online]]
+- [[docs/conhecimento/Pack-23-Loadout-Cards-GearScore-PvP-2026-11-04|Pack 23 — Loadout de Cards, Gear Score e PvP]]
+- [[docs/conhecimento/Pack-24-Cosmeticos-Loadout-2026-11-04|Pack 24 — Cosméticos e personalização persistente]]
+- [[docs/conhecimento/Pack-25-Precisao-Mineracao-Pesca-2026-11-04|Pack 25 — Precisão manual em Mineração e Pesca]]
+- [[docs/conhecimento/Pack-26-Ferramentas-Refino-Profissoes-2026-11-04|Pack 26 — Ferramentas, progressão e refino de profissões]]
+- [[docs/conhecimento/Pack-27-Calendario-Marcadores-PvP-Temporada-2026-11-04|Pack 27 — Marcos do Calendário e temporada do PvP]]
+- [[docs/conhecimento/Pack-28-Loja-Premium-Entitlement-2026-11-04|Pack 28 — Loja Premium com entitlement seguro]]
+- [[docs/conhecimento/Pack-29-Matchmaking-PvP-Historico-2026-11-04|Pack 29 — Matchmaking e histórico sazonal do PvP]]
+- [[docs/conhecimento/Pack-30-Loot-Boss-Diario-2026-11-04|Pack 30 — Loot próprio do Boss Diário]]
+- [[docs/conhecimento/Pack-31-Mercado-Paginacao-Filtros-2026-11-04|Pack 31 — Mercado Negro: paginação, filtros e estatísticas]]
+- [[docs/conhecimento/Pack-32-Cards-Atributos-Hunt-2026-11-04|Pack 32 — Cartas aplicadas aos atributos da hunt]]
+- [[docs/conhecimento/Pack-33-Painel-Cards-2026-11-04|Pack 33 — Painel de origem dos bônus de Cards]]
+- [[docs/conhecimento/Pack-34-Historico-Boss-Diario-2026-11-04|Pack 34 — Histórico auditável do Boss Diário]]
+- [[docs/conhecimento/Pack-35-Hardening-Online-2026-11-04|Pack 35 — Hardening das tabelas online]]
+- [[docs/conhecimento/Pack-36-Cosmeticos-Online-2026-11-04|Pack 36 — Cosméticos online e aplicação visual]]
+- [[docs/conhecimento/Pack-37-PvP-Recompensas-Temporada-2026-11-04|Pack 37 — Temporadas e recompensas do PvP ranqueado]]
+- [[docs/conhecimento/Pack-38-Jornal-de-Mythreon-2026-11-04|Pack 38 — Jornal de Mythreon]]
+- [[docs/conhecimento/Pack-39-Ligas-PvP-2026-11-04|Pack 39 — Ligas visuais do PvP]]
+- [[docs/conhecimento/Pack-40-PvP-Combate-por-Turnos-2026-11-04|Pack 40 — PvP por turnos e combate autoritativo]]
+- [[docs/conhecimento/Pack-41-PvP-Retomada-e-Reconexao-2026-11-04|Pack 41 — Retomada e reconexão do PvP]]
+- [[docs/conhecimento/Pack-42-Mercado-Historico-de-Precos-2026-11-04|Pack 42 — Histórico de preços no Mercado Negro]]
+- [[docs/conhecimento/Pack-43-Cards-Recompensa-Sazonal-2026-11-04|Pack 43 — Temporada de Cards e recompensas de coleção]]
+- [[docs/conhecimento/Pack-44-Hardening-Indices-Online-2026-11-04|Pack 44 — Hardening de índices online]]
+- [[docs/conhecimento/Pack-45-RLS-InitPlan-Hardening-2026-11-04|Pack 45 — Hardening de políticas RLS]]
+- [[docs/conhecimento/Pack-46-Reconciliacao-Online-Imediata-2026-11-04|Pack 46 — Reconciliação online imediata]]
+- [[docs/conhecimento/Pack-47-Armazem-Ferramentas-Profissoes-2026-11-04|Pack 47 — Armazém das Ferramentas]]
+- [[docs/conhecimento/Pack-48-Integridade-PvP-Mercado-2026-11-04|Pack 48 — Integridade de PvP, Mercado e ferramentas]]
+- [[docs/conhecimento/Pack-49-Boss-Ciclos-e-Recompensas-2026-11-04|Pack 49 — Boss Diário: ciclos e recompensas recuperáveis]]
+- [[docs/conhecimento/Pack-50-Arena-Visual-Boss-Cooperativo-2026-11-04|Pack 50 — Arena visual do Boss Diário]]
+- [[docs/conhecimento/Pack-51-Retaliacao-e-Vida-Cooperativa-2026-11-04|Pack 51 — Retaliação e vida da batalha cooperativa]]
+- [[docs/conhecimento/Pack-52-Mercado-Lotes-e-Precos-Reais-2026-11-04|Pack 52 — Lotes e preços reais do Mercado Negro]]
+- [[docs/conhecimento/Pack-53-Profissoes-Tiers-e-Pulso-2026-11-04|Pack 53 — Profissões T1–T5 e pulso visível]]
+- [[docs/conhecimento/Pack-54-Calendario-e-Conquistas-Permanentes-2026-11-04|Pack 54 — Calendário real e conquistas permanentes]]
+- [[docs/conhecimento/Pack-55-Guarda-Roupa-Skins-e-Auras-2026-11-04|Pack 55 — Guarda-roupa, skins completas e auras]]
+- [[docs/conhecimento/Pack-56-Fila-Online-e-Recuperacao-2026-11-04|Pack 56 — fila online e recuperação]]
+- [[docs/conhecimento/Pack-57-Pulso-Autoritativo-de-Coleta-2026-11-04|Pack 57 — pulso autoritativo de Mineração e Pesca]]
+- [[docs/conhecimento/Pack-58-Cenas-e-Iscas-de-Profissoes-2026-11-04|Pack 58 — cenas de profissões e isca utilizável]]
+- [[docs/conhecimento/Pack-59-Cards-Evolucao-e-Bonus-Reais-2026-11-04|Pack 59 — Cards: evolução e bônus reais]]
+- [[docs/conhecimento/Pack-60-Cards-Veyra-Kaelor-e-Temporada-2026-11-04|Pack 60 — Cards de Veyra/Kaelor e catálogo sazonal]]
 - [[docs/conhecimento/Pets-Atividades-Boss-Diario|Pets, atividades e Boss Diário]]
 - [[docs/conhecimento/Pets-Ovos-Migracao-2026-11-03|Migração de Bestas Divinas para Pets e Ovos]]
 - [[docs/conhecimento/Registro de problemas|Registro de problemas]]
@@ -81,6 +125,50 @@
 - [docs/conhecimento/Pack-14-Personalizacao-Sprite-2026-11-04.md](../docs/conhecimento/Pack-14-Personalizacao-Sprite-2026-11-04.md)
 - [docs/conhecimento/Pack-15-Auditoria-Balanceamento-2026-11-04.md](../docs/conhecimento/Pack-15-Auditoria-Balanceamento-2026-11-04.md)
 - [docs/conhecimento/Pack-16-Integridade-Online-2026-11-04.md](../docs/conhecimento/Pack-16-Integridade-Online-2026-11-04.md)
+- [docs/conhecimento/Pack-17-Boss-Diario-Cooperativo-2026-11-04.md](../docs/conhecimento/Pack-17-Boss-Diario-Cooperativo-2026-11-04.md)
+- [docs/conhecimento/Pack-18-PvP-Ranqueado-Online-2026-11-04.md](../docs/conhecimento/Pack-18-PvP-Ranqueado-Online-2026-11-04.md)
+- [docs/conhecimento/Pack-19-Oficios-Mineracao-Pesca-2026-11-04.md](../docs/conhecimento/Pack-19-Oficios-Mineracao-Pesca-2026-11-04.md)
+- [docs/conhecimento/Pack-20-Cards-Calendario-Premium-2026-11-04.md](../docs/conhecimento/Pack-20-Cards-Calendario-Premium-2026-11-04.md)
+- [docs/conhecimento/Pack-21-Mercado-Negro-Online-2026-11-04.md](../docs/conhecimento/Pack-21-Mercado-Negro-Online-2026-11-04.md)
+- [docs/conhecimento/Pack-22-Bau-Tempo-Online-2026-11-04.md](../docs/conhecimento/Pack-22-Bau-Tempo-Online-2026-11-04.md)
+- [docs/conhecimento/Pack-23-Loadout-Cards-GearScore-PvP-2026-11-04.md](../docs/conhecimento/Pack-23-Loadout-Cards-GearScore-PvP-2026-11-04.md)
+- [docs/conhecimento/Pack-24-Cosmeticos-Loadout-2026-11-04.md](../docs/conhecimento/Pack-24-Cosmeticos-Loadout-2026-11-04.md)
+- [docs/conhecimento/Pack-25-Precisao-Mineracao-Pesca-2026-11-04.md](../docs/conhecimento/Pack-25-Precisao-Mineracao-Pesca-2026-11-04.md)
+- [docs/conhecimento/Pack-26-Ferramentas-Refino-Profissoes-2026-11-04.md](../docs/conhecimento/Pack-26-Ferramentas-Refino-Profissoes-2026-11-04.md)
+- [docs/conhecimento/Pack-27-Calendario-Marcadores-PvP-Temporada-2026-11-04.md](../docs/conhecimento/Pack-27-Calendario-Marcadores-PvP-Temporada-2026-11-04.md)
+- [docs/conhecimento/Pack-28-Loja-Premium-Entitlement-2026-11-04.md](../docs/conhecimento/Pack-28-Loja-Premium-Entitlement-2026-11-04.md)
+- [docs/conhecimento/Pack-29-Matchmaking-PvP-Historico-2026-11-04.md](../docs/conhecimento/Pack-29-Matchmaking-PvP-Historico-2026-11-04.md)
+- [docs/conhecimento/Pack-30-Loot-Boss-Diario-2026-11-04.md](../docs/conhecimento/Pack-30-Loot-Boss-Diario-2026-11-04.md)
+- [docs/conhecimento/Pack-31-Mercado-Paginacao-Filtros-2026-11-04.md](../docs/conhecimento/Pack-31-Mercado-Paginacao-Filtros-2026-11-04.md)
+- [docs/conhecimento/Pack-32-Cards-Atributos-Hunt-2026-11-04.md](../docs/conhecimento/Pack-32-Cards-Atributos-Hunt-2026-11-04.md)
+- [docs/conhecimento/Pack-33-Painel-Cards-2026-11-04.md](../docs/conhecimento/Pack-33-Painel-Cards-2026-11-04.md)
+- [docs/conhecimento/Pack-34-Historico-Boss-Diario-2026-11-04.md](../docs/conhecimento/Pack-34-Historico-Boss-Diario-2026-11-04.md)
+- [docs/conhecimento/Pack-35-Hardening-Online-2026-11-04.md](../docs/conhecimento/Pack-35-Hardening-Online-2026-11-04.md)
+- [docs/conhecimento/Pack-36-Cosmeticos-Online-2026-11-04.md](../docs/conhecimento/Pack-36-Cosmeticos-Online-2026-11-04.md)
+- [docs/conhecimento/Pack-37-PvP-Recompensas-Temporada-2026-11-04.md](../docs/conhecimento/Pack-37-PvP-Recompensas-Temporada-2026-11-04.md)
+- [docs/conhecimento/Pack-38-Jornal-de-Mythreon-2026-11-04.md](../docs/conhecimento/Pack-38-Jornal-de-Mythreon-2026-11-04.md)
+- [docs/conhecimento/Pack-39-Ligas-PvP-2026-11-04.md](../docs/conhecimento/Pack-39-Ligas-PvP-2026-11-04.md)
+- [docs/conhecimento/Pack-40-PvP-Combate-por-Turnos-2026-11-04.md](../docs/conhecimento/Pack-40-PvP-Combate-por-Turnos-2026-11-04.md)
+- [docs/conhecimento/Pack-41-PvP-Retomada-e-Reconexao-2026-11-04.md](../docs/conhecimento/Pack-41-PvP-Retomada-e-Reconexao-2026-11-04.md)
+- [docs/conhecimento/Pack-42-Mercado-Historico-de-Precos-2026-11-04.md](../docs/conhecimento/Pack-42-Mercado-Historico-de-Precos-2026-11-04.md)
+- [docs/conhecimento/Pack-43-Cards-Recompensa-Sazonal-2026-11-04.md](../docs/conhecimento/Pack-43-Cards-Recompensa-Sazonal-2026-11-04.md)
+- [docs/conhecimento/Pack-44-Hardening-Indices-Online-2026-11-04.md](../docs/conhecimento/Pack-44-Hardening-Indices-Online-2026-11-04.md)
+- [docs/conhecimento/Pack-45-RLS-InitPlan-Hardening-2026-11-04.md](../docs/conhecimento/Pack-45-RLS-InitPlan-Hardening-2026-11-04.md)
+- [docs/conhecimento/Pack-46-Reconciliacao-Online-Imediata-2026-11-04.md](../docs/conhecimento/Pack-46-Reconciliacao-Online-Imediata-2026-11-04.md)
+- [docs/conhecimento/Pack-47-Armazem-Ferramentas-Profissoes-2026-11-04.md](../docs/conhecimento/Pack-47-Armazem-Ferramentas-Profissoes-2026-11-04.md)
+- [docs/conhecimento/Pack-48-Integridade-PvP-Mercado-2026-11-04.md](../docs/conhecimento/Pack-48-Integridade-PvP-Mercado-2026-11-04.md)
+- [docs/conhecimento/Pack-49-Boss-Ciclos-e-Recompensas-2026-11-04.md](../docs/conhecimento/Pack-49-Boss-Ciclos-e-Recompensas-2026-11-04.md)
+- [docs/conhecimento/Pack-50-Arena-Visual-Boss-Cooperativo-2026-11-04.md](../docs/conhecimento/Pack-50-Arena-Visual-Boss-Cooperativo-2026-11-04.md)
+- [docs/conhecimento/Pack-51-Retaliacao-e-Vida-Cooperativa-2026-11-04.md](../docs/conhecimento/Pack-51-Retaliacao-e-Vida-Cooperativa-2026-11-04.md)
+- [docs/conhecimento/Pack-52-Mercado-Lotes-e-Precos-Reais-2026-11-04.md](../docs/conhecimento/Pack-52-Mercado-Lotes-e-Precos-Reais-2026-11-04.md)
+- [docs/conhecimento/Pack-53-Profissoes-Tiers-e-Pulso-2026-11-04.md](../docs/conhecimento/Pack-53-Profissoes-Tiers-e-Pulso-2026-11-04.md)
+- [docs/conhecimento/Pack-54-Calendario-e-Conquistas-Permanentes-2026-11-04.md](../docs/conhecimento/Pack-54-Calendario-e-Conquistas-Permanentes-2026-11-04.md)
+- [docs/conhecimento/Pack-55-Guarda-Roupa-Skins-e-Auras-2026-11-04.md](../docs/conhecimento/Pack-55-Guarda-Roupa-Skins-e-Auras-2026-11-04.md)
+- [docs/conhecimento/Pack-56-Fila-Online-e-Recuperacao-2026-11-04.md](../docs/conhecimento/Pack-56-Fila-Online-e-Recuperacao-2026-11-04.md)
+- [docs/conhecimento/Pack-57-Pulso-Autoritativo-de-Coleta-2026-11-04.md](../docs/conhecimento/Pack-57-Pulso-Autoritativo-de-Coleta-2026-11-04.md)
+- [docs/conhecimento/Pack-58-Cenas-e-Iscas-de-Profissoes-2026-11-04.md](../docs/conhecimento/Pack-58-Cenas-e-Iscas-de-Profissoes-2026-11-04.md)
+- [docs/conhecimento/Pack-59-Cards-Evolucao-e-Bonus-Reais-2026-11-04.md](../docs/conhecimento/Pack-59-Cards-Evolucao-e-Bonus-Reais-2026-11-04.md)
+- [docs/conhecimento/Pack-60-Cards-Veyra-Kaelor-e-Temporada-2026-11-04.md](../docs/conhecimento/Pack-60-Cards-Veyra-Kaelor-e-Temporada-2026-11-04.md)
 - [docs/conhecimento/Pets-Atividades-Boss-Diario.md](../docs/conhecimento/Pets-Atividades-Boss-Diario.md)
 - [docs/conhecimento/Pets-Ovos-Migracao-2026-11-03.md](../docs/conhecimento/Pets-Ovos-Migracao-2026-11-03.md)
 - [docs/conhecimento/Registro de problemas.md](../docs/conhecimento/Registro de problemas.md)

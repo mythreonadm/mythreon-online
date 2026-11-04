@@ -301,6 +301,7 @@
 - [public/assets/players/parecer_mythreon_v2.md](../public/assets/players/parecer_mythreon_v2.md)
 - [public/assets/players/renegado.png](../public/assets/players/renegado.png)
 - [public/assets/players/silvano.png](../public/assets/players/silvano.png)
+- [public/assets/players/skins/README.md](../public/assets/players/skins/README.md)
 - [public/assets/players/tempestario.gif](../public/assets/players/tempestario.gif)
 - [public/assets/players/tempestario.png](../public/assets/players/tempestario.png)
 - [public/assets/players/ursideo.png](../public/assets/players/ursideo.png)

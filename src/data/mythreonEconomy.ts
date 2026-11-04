@@ -37,6 +37,8 @@ export const MYTHREON_OFFERS: MythreonOffer[] = [
   { id: "ROULETTE_KEY", name: "Chave da Roleta Arcana", description: "Abre um prêmio aleatório na Roleta de Mythreon.", icon: "🗝️", templateId: "CHAVE_ROLETA_ARCANA", priceCoins: 8, kind: "ITEM", tags: ["roleta"] },
   { id: "SKIN_CAPE_NEBULA", name: "Skin · Manto da Nebulosa", description: "Cosmético exclusivo: brilho sutil, sem bônus de combate.", icon: "🧥", templateId: "SKIN_MANTO_NEBULOSA", priceCoins: 180, kind: "ITEM", tags: ["skin", "cosmético"] },
   { id: "MATRIX_LUMINESCENCE", name: "Luminescência da Matriz", description: "Efeito visual arcano para Matrizes equipadas. Sem aumento de atributos.", icon: "🌌", templateId: "LUMINESCENCIA_MATRIZ", priceCoins: 120, kind: "ITEM", tags: ["cosmético"] },
+  { id: "PET_LUMINESCENCE", name: "Aura da Besta Divina", description: "Brilho visual do Pet ativo. Não aumenta dano, atributos ou tempo de nutrição.", icon: "🐾", templateId: "LUMINESCENCIA_PET", priceCoins: 120, kind: "ITEM", tags: ["pet", "cosmético"] },
+  { id: "BOSS_LUMINOUS_ADDON", name: "Addon · Aura do Boss Diário", description: "Efeito visual de presença para o mapa do Boss Diário. Sem dano, defesa ou vantagem de loot.", icon: "✨", templateId: "ADDON_BOSS_LUMINESCENTE", priceCoins: 240, kind: "ITEM", tags: ["addon", "cosmético", "boss"] },
 ];
 export const getMythreonOffer = (id: string) => MYTHREON_OFFERS.find(offer => offer.id === id);
 

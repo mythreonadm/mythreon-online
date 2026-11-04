@@ -27,8 +27,147 @@ __export(http_exports, {
 module.exports = __toCommonJS(http_exports);
 var import_pg = require("pg");
 
+// src/data/cosmetics.ts
+var COSMETIC_SLOTS = [
+  { key: "skinTemplateId", label: "Skin humana" },
+  { key: "matrixGlowTemplateId", label: "Luminesc\xEAncia da Matriz" },
+  { key: "petAuraTemplateId", label: "Aura do Pet" },
+  { key: "bossAddonTemplateId", label: "Addon do Boss" }
+];
+var COSMETIC_DEFINITIONS = {
+  SKIN_MANTO_NEBULOSA: { slot: "skinTemplateId", label: "Manto da Nebulosa", className: "cosmetic-skin-nebula", sprite: "/assets/players/skins/SKIN_MANTO_NEBULOSA.png" },
+  SKIN_CAPA_PRIMEIRO_CANTO: { slot: "skinTemplateId", label: "Capa do Primeiro Canto", className: "cosmetic-skin-first-canto", sprite: "/assets/items/SKIN_PREMIUM_MES_01.png" },
+  LUMINESCENCIA_MATRIZ: { slot: "matrixGlowTemplateId", label: "Luminesc\xEAncia da Matriz", className: "cosmetic-matrix-luminescence" },
+  LUMINESCENCIA_PET: { slot: "petAuraTemplateId", label: "Aura da Besta Divina", className: "cosmetic-pet-luminescence" },
+  ADDON_BOSS_LUMINESCENTE: { slot: "bossAddonTemplateId", label: "Addon do Boss Luminescente", className: "cosmetic-addon-boss", sprite: "/assets/items/ADDON_BOSS_LUMINESCENTE.png" }
+};
+
+// src/data/dailyCalendar.ts
+var CALENDAR_COUPON_PRICE = 1;
+var CALENDAR_WEEK_DAYS = 7;
+var CALENDAR_WEEK_FRAGMENTS = 3;
+var CALENDAR_MAX_GOLD_STREAK = 30;
+var CALENDAR_MONTHLY_REWARDS = {
+  "2026-11": { templateId: "SKIN_CAPA_PRIMEIRO_CANTO", name: "Capa do Primeiro Canto", image: "/assets/items/SKIN_PREMIUM_MES_01.png" }
+};
+var DAY_MS = 864e5;
+function calendarDayKey(now = Date.now()) {
+  return new Date(now).toISOString().slice(0, 10);
+}
+function validCalendarDay(day) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return false;
+  const time = Date.parse(day + "T00:00:00Z");
+  return Number.isFinite(time) && calendarDayKey(time) === day;
+}
+function calendarMonthInfo(now = Date.now()) {
+  const date = new Date(now), year = date.getUTCFullYear(), month = date.getUTCMonth();
+  const key = calendarDayKey(now).slice(0, 7);
+  const days = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+  const firstWeekday = new Date(Date.UTC(year, month, 1)).getUTCDay();
+  return { key, days, firstWeekday, requiredPresence: Math.min(30, days), reward: CALENDAR_MONTHLY_REWARDS[key] };
+}
+function calendarClaimedDays(character, now = Date.now()) {
+  const today = calendarDayKey(now), month = today.slice(0, 7);
+  return [...new Set((character.calendarClaimedDays ?? []).filter((day) => typeof day === "string" && validCalendarDay(day) && day.startsWith(month + "-") && day <= today))].sort();
+}
+function calendarUnlockedSkins(character) {
+  const legacy = character.calendarMonthlySkinKey ? CALENDAR_MONTHLY_REWARDS[character.calendarMonthlySkinKey]?.templateId : void 0;
+  const allowed = new Set(Object.values(CALENDAR_MONTHLY_REWARDS).map((reward) => reward.templateId));
+  return [.../* @__PURE__ */ new Set([...character.calendarUnlockedSkins ?? [], ...legacy ? [legacy] : []])].filter((id) => allowed.has(id));
+}
+function calendarProgress(character, now = Date.now()) {
+  const today = calendarDayKey(now), yesterday = calendarDayKey(now - DAY_MS);
+  const month = calendarMonthInfo(now), days = calendarClaimedDays(character, now);
+  const stored = Number.isSafeInteger(character.calendarStreak) && Number(character.calendarStreak) >= 0 && Number(character.calendarStreak) <= 36500 ? Number(character.calendarStreak) : 0;
+  const claimedToday = days.includes(today) || character.calendarLastClaimDay === today;
+  const streak = character.calendarLastClaimDay === today || character.calendarLastClaimDay === yesterday ? stored : 0;
+  const nextStreak = claimedToday || character.calendarLastClaimDay === yesterday ? stored + 1 : 1;
+  const nextGold = 500 + Math.min(nextStreak, CALENDAR_MAX_GOLD_STREAK) * 250;
+  const nextResetAt = Date.parse(today + "T00:00:00Z") + DAY_MS;
+  const monthlyUnlocked = !!month.reward && calendarUnlockedSkins(character).includes(month.reward.templateId);
+  const weekProgress = streak > 0 && streak % CALENDAR_WEEK_DAYS === 0 ? CALENDAR_WEEK_DAYS : streak % CALENDAR_WEEK_DAYS;
+  return { today, month, days, claimedToday, streak, nextStreak, nextGold, nextResetAt, monthlyUnlocked, weekProgress };
+}
+function calendarWeeklyMilestoneKey(today, streak) {
+  const started = calendarDayKey(Date.parse(today + "T00:00:00Z") - (streak - 1) * DAY_MS);
+  return started + ":" + Math.floor(streak / CALENDAR_WEEK_DAYS);
+}
+
+// src/engine/cosmeticOwnership.ts
+function ownedCosmeticLoadout(character) {
+  if (!character.cosmeticLoadout || !Object.values(character.cosmeticLoadout).some(Boolean)) return {};
+  const owned = /* @__PURE__ */ new Set([
+    ...calendarUnlockedSkins(character),
+    ...[...character.inventory.items, ...character.depot ?? [], ...Object.values(character.equipped ?? {})].filter((item) => item && COSMETIC_DEFINITIONS[item.templateId]).map((item) => item.templateId)
+  ]);
+  const valid = {};
+  for (const { key } of COSMETIC_SLOTS) {
+    const id = character.cosmeticLoadout[key];
+    if (id && COSMETIC_DEFINITIONS[id]?.slot === key && owned.has(id)) valid[key] = id;
+  }
+  return valid;
+}
+function normalizeCosmeticOwnership(character) {
+  if (character.cosmeticLoadout) character.cosmeticLoadout = ownedCosmeticLoadout(character);
+}
+
 // server/world.ts
 var import_node_crypto2 = require("node:crypto");
+
+// server/marketAnalytics.ts
+async function marketSalesHistory(db, templateIds) {
+  if (!templateIds.length) return [];
+  const result = await db.query(`
+    with sales as (
+      select item->>'templateId' as template_id,coalesce(item->>'rarity','COMUM') as rarity,
+        coalesce((item->>'tier')::int,1) as tier,coalesce((item->>'upgradeLevel')::int,0) as upgrade_level,
+        currency,price::numeric as price,greatest(1,coalesce((item->>'quantity')::numeric,1)) as units,sold_at
+      from public.world_market_listings
+      where status='sold' and sold_at is not null and item->>'templateId'=any($1::text[])
+      union all
+      select lot.template_id,lot.rarity,lot.tier,lot.upgrade_level,
+        case when tx.gold_price>0 then 'GOLD' else 'COINS' end,
+        case when tx.gold_price>0 then tx.gold_price else tx.mythreon_coins_price end::numeric,
+        lot.units,tx.completed_at
+      from public.world_trade_transactions tx
+      cross join lateral (
+        select min(item->>'templateId') as template_id,min(coalesce(item->>'rarity','COMUM')) as rarity,
+          min(coalesce((item->>'tier')::int,1)) as tier,min(coalesce((item->>'upgradeLevel')::int,0)) as upgrade_level,
+          sum(greatest(1,coalesce((item->>'quantity')::numeric,1))) as units
+        from jsonb_array_elements(tx.items) item
+        having count(*)>0 and count(distinct jsonb_build_array(item->>'templateId',coalesce(item->>'rarity','COMUM'),coalesce((item->>'tier')::int,1),coalesce((item->>'upgradeLevel')::int,0)))=1
+      ) lot
+      where lot.template_id=any($1::text[]) and tx.counterparty_items='[]'::jsonb
+        and ((tx.gold_price>0 and tx.mythreon_coins_price=0) or (tx.gold_price=0 and tx.mythreon_coins_price>0))
+    ), totals as (
+      select template_id,rarity,tier,upgrade_level,currency,count(*)::int as sale_events,sum(units) as units_sold,
+        round(sum(price)/sum(units),2) as average_unit_price,
+        round(min(price/units),2) as lowest_unit_price,round(max(price/units),2) as highest_unit_price,max(sold_at) as last_sold_at
+      from sales group by template_id,rarity,tier,upgrade_level,currency
+    ), days as (
+      select template_id,rarity,tier,upgrade_level,currency,(sold_at at time zone 'UTC')::date as day,
+        sum(units) as units,round(sum(price)/sum(units),2) as average
+      from sales where sold_at>=now()-interval '30 days'
+      group by template_id,rarity,tier,upgrade_level,currency,(sold_at at time zone 'UTC')::date
+    )
+    select totals.*,coalesce((
+      select jsonb_agg(jsonb_build_object('day',day,'units',units,'average',average) order by day)
+      from days where days.template_id=totals.template_id and days.rarity=totals.rarity and days.tier=totals.tier
+        and days.upgrade_level=totals.upgrade_level and days.currency=totals.currency
+    ),'[]'::jsonb) as daily from totals order by template_id,rarity,tier,upgrade_level,currency
+  `, [templateIds]);
+  return result.rows.map((row) => ({
+    ...row,
+    sale_events: Number(row.sale_events),
+    units_sold: Number(row.units_sold),
+    tier: Number(row.tier),
+    upgrade_level: Number(row.upgrade_level),
+    average_unit_price: Number(row.average_unit_price),
+    lowest_unit_price: Number(row.lowest_unit_price),
+    highest_unit_price: Number(row.highest_unit_price),
+    daily: (row.daily ?? []).map((day) => ({ ...day, units: Number(day.units), average: Number(day.average) }))
+  }));
+}
 
 // src/data/worldJourney.ts
 var JOURNEY_CHAPTERS = [
@@ -107,6 +246,55 @@ var SWAMP_MATERIAL_TEMPLATES = {
   DENTE_SILTE: createItem({ templateId: "DENTE_SILTE", name: "Dente de Silte", category: "MATERIAL", tier: 3, rarity: "RARO", icon: "\u{1F9B7}", stackable: true, maxStack: 999 }),
   COROA_LODO: createItem({ templateId: "COROA_LODO", name: "Coroa de Lodo", category: "MATERIAL", tier: 3, rarity: "EPICO", icon: "\u{1F451}", stackable: true, maxStack: 999 })
 };
+var PROFESSION_TEMPLATES = {
+  MINERIO_COBRE: createItem({ templateId: "MINERIO_COBRE", name: "Min\xE9rio de Cobre", category: "MATERIAL", tier: 2, rarity: "INCOMUM", icon: "\u{1F7E0}", stackable: true, maxStack: 999 }),
+  MINERIO_ECLIPSE: createItem({ templateId: "MINERIO_ECLIPSE", name: "Min\xE9rio do Eclipse", category: "MATERIAL", tier: 5, rarity: "LENDARIO", icon: "\u{1F311}", stackable: true, maxStack: 999 }),
+  TRUTA_GELO: createItem({ templateId: "TRUTA_GELO", name: "Truta de Gelo", category: "MATERIAL", tier: 2, rarity: "INCOMUM", icon: "\u{1F41F}", stackable: true, maxStack: 999 }),
+  PEIXE_CORAL: createItem({ templateId: "PEIXE_CORAL", name: "Peixe-Coral", category: "MATERIAL", tier: 3, rarity: "RARO", icon: "\u{1F420}", stackable: true, maxStack: 999 }),
+  PEIXE_ASTRAL: createItem({ templateId: "PEIXE_ASTRAL", name: "Peixe Astral", category: "MATERIAL", tier: 5, rarity: "LENDARIO", icon: "\u2728", stackable: true, maxStack: 999 }),
+  MINERIO_FERRO: createItem({ templateId: "MINERIO_FERRO", name: "Min\xE9rio de Ferro", category: "MATERIAL", tier: 1, rarity: "COMUM", icon: "\u26CF\uFE0F", stackable: true, maxStack: 999 }),
+  CRISTAL_ESSENCIA: createItem({ templateId: "CRISTAL_ESSENCIA", name: "Cristal de Ess\xEAncia", category: "MATERIAL", tier: 3, rarity: "RARO", icon: "\u{1F48E}", stackable: true, maxStack: 999 }),
+  MINERIO_OBSIDIANO: createItem({ templateId: "MINERIO_OBSIDIANO", name: "Min\xE9rio Obsidiano", category: "MATERIAL", tier: 4, rarity: "EPICO", icon: "\u{1FAA8}", stackable: true, maxStack: 999 }),
+  PEIXE_RIO: createItem({ templateId: "PEIXE_RIO", name: "Peixe do Ref\xFAgio", category: "MATERIAL", tier: 1, rarity: "COMUM", icon: "\u{1F41F}", stackable: true, maxStack: 999 }),
+  PEIXE_CICATRIZ: createItem({ templateId: "PEIXE_CICATRIZ", name: "Peixe-Cicatriz", category: "MATERIAL", tier: 4, rarity: "EPICO", icon: "\u{1F420}", stackable: true, maxStack: 999 }),
+  LINGOTE_FERRO: createItem({ templateId: "LINGOTE_FERRO", name: "Lingote de Ferro de Lyss", category: "MATERIAL", tier: 2, rarity: "INCOMUM", icon: "\u{1F529}", stackable: true, maxStack: 999 }),
+  CRISTAL_REFINADO: createItem({ templateId: "CRISTAL_REFINADO", name: "Cristal de Ess\xEAncia Refinado", category: "MATERIAL", tier: 4, rarity: "EPICO", icon: "\u{1F4A0}", stackable: true, maxStack: 999 }),
+  ISCA_CICATRIZ: createItem({ templateId: "ISCA_CICATRIZ", name: "Isca da Cicatriz", category: "MATERIAL", tier: 3, rarity: "RARO", icon: "\u{1FAB1}", stackable: true, maxStack: 999 }),
+  CALDO_MARCA_DAGUA: createItem({ templateId: "CALDO_MARCA_DAGUA", name: "Caldo da Marca-d'\xC1gua", category: "MATERIAL", tier: 4, rarity: "EPICO", icon: "\u{1F372}", stackable: true, maxStack: 999 })
+};
+var PROFESSION_TOOL_TEMPLATES = Object.fromEntries(
+  TIERS.flatMap((tier) => {
+    const pickaxe = createItem({
+      templateId: `PICARETA_T${tier}`,
+      name: `Picareta ${["de Madeira", "de Pedra", "de A\xE7o", "de Cristal", "do Eclipse"][tier - 1]}`,
+      category: "FERRAMENTA",
+      tier,
+      rarity: tier === 1 ? "COMUM" : tier === 2 ? "INCOMUM" : tier === 3 ? "RARO" : tier === 4 ? "EPICO" : "LENDARIO",
+      profession: "MINERACAO",
+      requiredSkill: (tier - 1) * 20,
+      stackable: false,
+      maxStack: 1,
+      icon: "\u26CF\uFE0F",
+      stats: { spd: 0.01 * tier },
+      uniqueEffect: `Permite minera\xE7\xE3o T${tier}`
+    });
+    const rod = createItem({
+      templateId: `VARA_PESCA_T${tier}`,
+      name: `Vara de Pesca ${["de Bambu", "Refor\xE7ada", "de A\xE7o", "de Cristal", "da Mar\xE9 Eterna"][tier - 1]}`,
+      category: "FERRAMENTA",
+      tier,
+      rarity: tier === 1 ? "COMUM" : tier === 2 ? "INCOMUM" : tier === 3 ? "RARO" : tier === 4 ? "EPICO" : "LENDARIO",
+      profession: "PESCA",
+      requiredSkill: (tier - 1) * 20,
+      stackable: false,
+      maxStack: 1,
+      icon: "\u{1F3A3}",
+      stats: { spd: 0.01 * tier },
+      uniqueEffect: `Permite pesca T${tier}`
+    });
+    return [[pickaxe.templateId, pickaxe], [rod.templateId, rod]];
+  })
+);
 var ARROW_TEMPLATES = Object.fromEntries(TIERS.map((tier) => {
   const names = ["Flecha de Madeira", "Flecha de Pedra", "Flecha de A\xE7o", "Flecha Estelar", "Flecha do Eclipse"];
   const item = createItem({ templateId: `FLECHA_T${tier}`, name: names[tier - 1], category: "FLECHA", slot: "MUNICAO", tier, rarity: "COMUM", stats: { atk: [4, 9, 18, 36, 72][tier - 1], hit: [0, 0.01, 0.02, 0.03, 0.04][tier - 1] }, stackable: false, maxStack: 1, quantity: 1, icon: "\u{1F3F9}" });
@@ -143,7 +331,9 @@ var UNIQUE_TEMPLATES = {
   UNICO_ANEL_GUARDIA: createItem({ templateId: "UNICO_ANEL_GUARDIA", name: "Anel da Guarda Eterna", category: "JOIA", slot: "ANEL_I", tier: 5, rarity: "LENDARIO", stats: { hp: 250, arm: 20 }, preventsDeathDrop: true, icon: "\u{1F48D}", uniqueEffect: "Impede 100% das perdas de itens ao morrer" }),
   UNICO_SIGILO_INICIACAO: createItem({ templateId: "UNICO_SIGILO_INICIACAO", name: "Pulseira do Primeiro Eco", category: "PULSEIRA", slot: "PULSEIRA", tier: 1, rarity: "LENDARIO", stats: { hp: 60, mp: 40, hpRegen: 2, mpRegen: 2 }, icon: "\u2728", uniqueEffect: "Rel\xEDquia exclusiva por concluir o tutorial de Mythreon" }),
   SKIN_MANTO_NEBULOSA: createItem({ templateId: "SKIN_MANTO_NEBULOSA", name: "Manto da Nebulosa", category: "MATERIAL", tier: 5, rarity: "LENDARIO", stats: {}, icon: "\u{1F9E5}", uniqueEffect: "Skin cosm\xE9tica: part\xEDculas de estrelas e brilho violeta; n\xE3o altera combate." }),
-  LUMINESCENCIA_MATRIZ: createItem({ templateId: "LUMINESCENCIA_MATRIZ", name: "Luminesc\xEAncia da Matriz", category: "MATERIAL", tier: 5, rarity: "LENDARIO", stats: {}, icon: "\u{1F30C}", uniqueEffect: "Efeito visual cosm\xE9tico para a Matriz equipada; n\xE3o altera atributos." })
+  LUMINESCENCIA_MATRIZ: createItem({ templateId: "LUMINESCENCIA_MATRIZ", name: "Luminesc\xEAncia da Matriz", category: "MATERIAL", tier: 5, rarity: "LENDARIO", stats: {}, icon: "\u{1F30C}", uniqueEffect: "Efeito visual cosm\xE9tico para a Matriz equipada; n\xE3o altera atributos." }),
+  LUMINESCENCIA_PET: createItem({ templateId: "LUMINESCENCIA_PET", name: "Aura da Besta Divina", category: "MATERIAL", tier: 5, rarity: "LENDARIO", stats: {}, icon: "\u{1F43E}", uniqueEffect: "Aura cosm\xE9tica do Pet ativo; n\xE3o altera dano, nutri\xE7\xE3o ou atributos." }),
+  ADDON_BOSS_LUMINESCENTE: createItem({ templateId: "ADDON_BOSS_LUMINESCENTE", name: "Addon do Boss Luminescente", category: "MATERIAL", tier: 5, rarity: "LENDARIO", stats: {}, icon: "\u2728", uniqueEffect: "Aura cosm\xE9tica para aparecer no Boss Di\xE1rio; n\xE3o altera combate." })
 };
 var FRAGMENT_TEMPLATES = {
   FRAGMENTO_COMUM: createItem({ templateId: "FRAGMENTO_COMUM", name: "Fragmento Comum", category: "FRAGMENTO", tier: 1, rarity: "COMUM", icon: "\u{1FAA8}", stackable: true, maxStack: 999, quantity: 1, stats: {} }),
@@ -169,7 +359,7 @@ var MYTHREON_STORE_TEMPLATES = {
   BAU_SUPRIMENTOS_MYTHREON: createItem({ templateId: "BAU_SUPRIMENTOS_MYTHREON", name: "Ba\xFA de Suprimentos Mythreon", category: "MATERIAL", tier: 2, rarity: "RARO", icon: "\u{1F381}", stackable: true, maxStack: 999 }),
   CHAVE_ROLETA_ARCANA: createItem({ templateId: "CHAVE_ROLETA_ARCANA", name: "Chave da Roleta Arcana", category: "MATERIAL", tier: 3, rarity: "EPICO", icon: "\u{1F5DD}\uFE0F", stackable: true, maxStack: 999 })
 };
-var ALL_ITEM_TEMPLATES = { ...ALL_EQUIPMENT_TEMPLATES, ...SWAMP_MATERIAL_TEMPLATES, ...ARROW_TEMPLATES, ...POTION_TEMPLATES, ...UNIQUE_TEMPLATES, ...FRAGMENT_TEMPLATES, ...DIVINE_BEAST_EGG_TEMPLATES, ...BEAST_TAMER_TEMPLATES, ...PET_FOOD_TEMPLATES, ...MYTHREON_STORE_TEMPLATES };
+var ALL_ITEM_TEMPLATES = { ...ALL_EQUIPMENT_TEMPLATES, ...SWAMP_MATERIAL_TEMPLATES, ...PROFESSION_TEMPLATES, ...PROFESSION_TOOL_TEMPLATES, ...ARROW_TEMPLATES, ...POTION_TEMPLATES, ...UNIQUE_TEMPLATES, ...FRAGMENT_TEMPLATES, ...DIVINE_BEAST_EGG_TEMPLATES, ...BEAST_TAMER_TEMPLATES, ...PET_FOOD_TEMPLATES, ...MYTHREON_STORE_TEMPLATES };
 
 // src/engine/training.ts
 var TRAINING_MILESTONES = [
@@ -585,6 +775,654 @@ function beastGrowth(level) {
   return { hp: 60 + level * 6, mp: 30 + level * 3, atk: 6 + level, matk: 6 + level, arm: 3 + Math.floor(level * 0.6), hpRegen: 1 + Math.floor(level / 15), mpRegen: 2 + Math.floor(level / 15) };
 }
 
+// src/data/cards.ts
+var CARD_TEMPLATES = {
+  // ─── BOSQUE DE LYSS (T1) ───
+  CARD_LOBO: {
+    monsterId: "LOBO",
+    name: "Lobo-Feral",
+    region: "BOSQUE_LYSS",
+    rarity: "RARO",
+    trait: "FURIA",
+    baseStats: { hp: 100, atk: 25, def: 10, spd: 30 },
+    ability: "Mordida Sangrenta",
+    abilityDesc: "Causa 30% do ATK como dano extra no primeiro ataque.",
+    emoji: "\u{1F43A}"
+  },
+  CARD_VESPA: {
+    monsterId: "VESPA",
+    name: "Vespa-Cinza",
+    region: "BOSQUE_LYSS",
+    rarity: "COMUM",
+    trait: "VENENO",
+    baseStats: { hp: 50, atk: 15, def: 5, spd: 45 },
+    ability: "Ferr\xE3o Letal",
+    abilityDesc: "Aplica 1 stack extra de veneno no primeiro ataque.",
+    emoji: "\u{1F41D}"
+  },
+  CARD_ESPINHEIRO: {
+    monsterId: "ESPINHEIRO",
+    name: "Espinheiro-Vivo",
+    region: "BOSQUE_LYSS",
+    rarity: "RARO",
+    trait: "ESPINHOS",
+    baseStats: { hp: 180, atk: 10, def: 30, spd: 10 },
+    ability: "Enraizar",
+    abilityDesc: "Impede o inimigo de esquivar por 2 turnos.",
+    emoji: "\u{1FAB4}"
+  },
+  CARD_FALCAO: {
+    monsterId: "FALCAO",
+    name: "Falc\xE3o-Ruivo",
+    region: "BOSQUE_LYSS",
+    rarity: "COMUM",
+    trait: "PRECISAO",
+    baseStats: { hp: 80, atk: 30, def: 8, spd: 40 },
+    ability: "Voo Rasante",
+    abilityDesc: "Ataques t\xEAm 30% de chance de ignorar defesa.",
+    emoji: "\u{1F985}"
+  },
+  CARD_JAVALI: {
+    monsterId: "JAVALI",
+    name: "Javali-Musgoso",
+    region: "BOSQUE_LYSS",
+    rarity: "COMUM",
+    trait: "INVESTIDA",
+    baseStats: { hp: 150, atk: 20, def: 20, spd: 15 },
+    ability: "Coura\xE7a de Musgo",
+    abilityDesc: "Reduz em 20% o dano m\xE1gico recebido.",
+    emoji: "\u{1F417}"
+  },
+  CARD_FADA_CORROMPIDA: {
+    monsterId: "FADA_CORROMPIDA",
+    name: "Fada Corrompida",
+    region: "BOSQUE_LYSS",
+    rarity: "INCOMUM",
+    trait: "REGENERACAO",
+    baseStats: { hp: 60, atk: 20, def: 5, spd: 50 },
+    ability: "P\xF3len Curativo",
+    abilityDesc: "Cura 15% do HP de aliados no 3x3/5x5.",
+    emoji: "\u{1F9DA}"
+  },
+  CARD_ARANHA_GIGANTE: {
+    monsterId: "ARANHA_GIGANTE",
+    name: "Aranha Gigante",
+    region: "BOSQUE_LYSS",
+    rarity: "INCOMUM",
+    trait: "VENENO",
+    baseStats: { hp: 120, atk: 25, def: 12, spd: 25 },
+    ability: "Teia Pegajosa",
+    abilityDesc: "Reduz SPD do inimigo em 20% por 3 turnos.",
+    emoji: "\u{1F577}\uFE0F"
+  },
+  CARD_ESPECTRO: {
+    monsterId: "ESPECTRO",
+    name: "Espectro de Brasa",
+    region: "BOSQUE_LYSS",
+    rarity: "LENDARIO",
+    trait: "MEDO",
+    baseStats: { hp: 200, atk: 45, def: 15, spd: 50 },
+    ability: "Chama Espectral",
+    abilityDesc: "Causa dano em \xE1rea (afeta 2 inimigos no 3x3/5x5).",
+    emoji: "\u{1F47B}"
+  },
+  // ─── PICO DE DHOR (T2) ───
+  CARD_GOLEM: {
+    monsterId: "GOLEM",
+    name: "Golem-Rocha",
+    region: "PICO_DHOR",
+    rarity: "RARO",
+    trait: "ESPINHOS",
+    baseStats: { hp: 250, atk: 15, def: 40, spd: 10 },
+    ability: "Pele de Pedra",
+    abilityDesc: "Bloqueia 10% do dano recebido permanentemente.",
+    emoji: "\u{1F5FF}"
+  },
+  CARD_URSO: {
+    monsterId: "URSO",
+    name: "Urso-Fenda",
+    region: "PICO_DHOR",
+    rarity: "RARO",
+    trait: "FURIA",
+    baseStats: { hp: 220, atk: 35, def: 20, spd: 20 },
+    ability: "F\xFAria Selvagem",
+    abilityDesc: "Quando abaixo de 50% HP, ganha +30% ATK.",
+    emoji: "\u{1F43B}"
+  },
+  CARD_BANDIDO: {
+    monsterId: "BANDIDO",
+    name: "Bandido do Desfiladeiro",
+    region: "PICO_DHOR",
+    rarity: "RARO",
+    trait: "INVESTIDA",
+    baseStats: { hp: 150, atk: 40, def: 10, spd: 35 },
+    ability: "Golpe Furtivo",
+    abilityDesc: "Primeiro ataque sempre \xE9 cr\xEDtico.",
+    emoji: "\u{1F977}"
+  },
+  CARD_ELEMENTAL_GELO: {
+    monsterId: "ELEMENTAL_GELO",
+    name: "Elemental de Gelo",
+    region: "PICO_DHOR",
+    rarity: "EPICO",
+    trait: "ESCUDO",
+    baseStats: { hp: 180, atk: 30, def: 25, spd: 25 },
+    ability: "Armadura de Gelo",
+    abilityDesc: "Gera escudo de 20% HP a cada 3 turnos.",
+    emoji: "\u{1F9CA}"
+  },
+  CARD_YETI: {
+    monsterId: "YETI",
+    name: "Yeti-do-Cume",
+    region: "PICO_DHOR",
+    rarity: "EPICO",
+    trait: "ESCUDO",
+    baseStats: { hp: 280, atk: 30, def: 20, spd: 15 },
+    ability: "Pele de Neve",
+    abilityDesc: "Imune a dano de gelo.",
+    emoji: "\u{1F98D}"
+  },
+  CARD_MORCEGO_MAGMA: {
+    monsterId: "MORCEGO_MAGMA",
+    name: "Morcego de Magma",
+    region: "PICO_DHOR",
+    rarity: "INCOMUM",
+    trait: "SANGRAMENTO",
+    baseStats: { hp: 130, atk: 45, def: 8, spd: 50 },
+    ability: "Mordida Incandescente",
+    abilityDesc: "Aplica sangramento que ignora cura.",
+    emoji: "\u{1F987}"
+  },
+  CARD_CENTURIAO: {
+    monsterId: "CENTURIAO",
+    name: "Centuri\xE3o de Bronze",
+    region: "PICO_DHOR",
+    rarity: "EPICO",
+    trait: "ESPINHOS",
+    baseStats: { hp: 300, atk: 25, def: 35, spd: 10 },
+    ability: "Forma\xE7\xE3o de Escudo",
+    abilityDesc: "Reflete 30% do dano recebido.",
+    emoji: "\u{1F916}"
+  },
+  CARD_COLOSSO: {
+    monsterId: "COLOSSO",
+    name: "Colosso de Dhor",
+    region: "PICO_DHOR",
+    rarity: "LENDARIO",
+    trait: "INVESTIDA",
+    baseStats: { hp: 500, atk: 60, def: 40, spd: 15 },
+    ability: "Investida S\xEDsmica",
+    abilityDesc: "Primeiro ataque atordoa o inimigo por 1 turno.",
+    emoji: "\u{1F3D4}\uFE0F"
+  },
+  // ─── MAR DE AZHAR (T3) ───
+  CARD_CARANGUEJO: {
+    monsterId: "CARANGUEJO",
+    name: "Caranguejo-Colosso",
+    region: "MAR_AZHAR",
+    rarity: "RARO",
+    trait: "ESCUDO",
+    baseStats: { hp: 400, atk: 35, def: 35, spd: 15 },
+    ability: "Carapa\xE7a Dura",
+    abilityDesc: "Reduz dano f\xEDsico recebido em 25%.",
+    emoji: "\u{1F980}"
+  },
+  CARD_SERPENTE: {
+    monsterId: "SERPENTE",
+    name: "Serpente-N\xE9voa",
+    region: "MAR_AZHAR",
+    rarity: "RARO",
+    trait: "VENENO",
+    baseStats: { hp: 320, atk: 50, def: 15, spd: 40 },
+    ability: "Pe\xE7onha Paralisante",
+    abilityDesc: "Veneno reduz SPD do inimigo em 15%.",
+    emoji: "\u{1F40D}"
+  },
+  CARD_MEDUSA: {
+    monsterId: "MEDUSA",
+    name: "Medusa-Trov\xE3o",
+    region: "MAR_AZHAR",
+    rarity: "INCOMUM",
+    trait: "SILENCIO",
+    baseStats: { hp: 280, atk: 45, def: 20, spd: 35 },
+    ability: "Descarga El\xE9trica",
+    abilityDesc: "25% de chance de atordoar o inimigo por 1 turno.",
+    emoji: "\u{1FABC}"
+  },
+  CARD_SEREIA: {
+    monsterId: "SEREIA",
+    name: "Sereia-Cantora",
+    region: "MAR_AZHAR",
+    rarity: "INCOMUM",
+    trait: "REGENERACAO",
+    baseStats: { hp: 300, atk: 40, def: 20, spd: 30 },
+    ability: "Canto Curativo",
+    abilityDesc: "Cura 10% HP de si mesma por turno.",
+    emoji: "\u{1F9DC}"
+  },
+  CARD_POLVO: {
+    monsterId: "POLVO",
+    name: "Polvo-Abissal",
+    region: "MAR_AZHAR",
+    rarity: "EPICO",
+    trait: "SILENCIO",
+    baseStats: { hp: 380, atk: 55, def: 25, spd: 25 },
+    ability: "Tent\xE1culos Sufocantes",
+    abilityDesc: "Impede o inimigo de usar habilidade por 2 turnos.",
+    emoji: "\u{1F419}"
+  },
+  CARD_TRITAO: {
+    monsterId: "TRITAO",
+    name: "Trit\xE3o Guerreiro",
+    region: "MAR_AZHAR",
+    rarity: "EPICO",
+    trait: "ESCUDO",
+    baseStats: { hp: 420, atk: 50, def: 30, spd: 20 },
+    ability: "Tridente de Coral",
+    abilityDesc: "Gera escudo equivalente a 15% do HP m\xE1ximo.",
+    emoji: "\u{1F531}"
+  },
+  CARD_ENGUIA_ELETRICA: {
+    monsterId: "ENGUIA_ELETRICA",
+    name: "Enguia El\xE9trica",
+    region: "MAR_AZHAR",
+    rarity: "RARO",
+    trait: "SILENCIO",
+    baseStats: { hp: 350, atk: 60, def: 15, spd: 45 },
+    ability: "Choque Paralisante",
+    abilityDesc: "Cada ataque tem 20% de chance de silenciar.",
+    emoji: "\u26A1"
+  },
+  CARD_LEVIATA: {
+    monsterId: "LEVIATA",
+    name: "Leviat\xE3 de Azhar",
+    region: "MAR_AZHAR",
+    rarity: "LENDARIO",
+    trait: "MEDO",
+    baseStats: { hp: 800, atk: 90, def: 45, spd: 25 },
+    ability: "Rugido Abissal",
+    abilityDesc: "Reduz ATK de todos os inimigos em 20%.",
+    emoji: "\u{1F40B}"
+  },
+  // ─── RUÍNAS DE ASTERION (T4) ───
+  CARD_HIENA: {
+    monsterId: "HIENA",
+    name: "Hiena-Abissal",
+    region: "RUINAS_ASTERION",
+    rarity: "RARO",
+    trait: "SANGRAMENTO",
+    baseStats: { hp: 600, atk: 70, def: 25, spd: 50 },
+    ability: "Risada Sanguin\xE1ria",
+    abilityDesc: "Aplica sangramento de 8% HP por turno.",
+    emoji: "\u{1F415}"
+  },
+  CARD_SENTINELA: {
+    monsterId: "SENTINELA",
+    name: "Sentinela de Pedra",
+    region: "RUINAS_ASTERION",
+    rarity: "EPICO",
+    trait: "ESPINHOS",
+    baseStats: { hp: 750, atk: 50, def: 50, spd: 15 },
+    ability: "Guarda Eterna",
+    abilityDesc: "Reflete 30% do dano f\xEDsico recebido.",
+    emoji: "\u{1F5FF}"
+  },
+  CARD_ESCORPIAO: {
+    monsterId: "ESCORPIAO",
+    name: "Escorpi\xE3o-R\xFAnico",
+    region: "RUINAS_ASTERION",
+    rarity: "RARO",
+    trait: "VENENO",
+    baseStats: { hp: 650, atk: 75, def: 30, spd: 40 },
+    ability: "Ferr\xE3o R\xFAnico",
+    abilityDesc: "Veneno causa dano dobrado por 2 turnos.",
+    emoji: "\u{1F982}"
+  },
+  CARD_CULTISTA: {
+    monsterId: "CULTISTA",
+    name: "Cultista do Eclipse",
+    region: "RUINAS_ASTERION",
+    rarity: "EPICO",
+    trait: "MEDO",
+    baseStats: { hp: 550, atk: 80, def: 20, spd: 35 },
+    ability: "Maldi\xE7\xE3o do Eclipse",
+    abilityDesc: "Reduz ATK do inimigo em 30% por 3 turnos.",
+    emoji: "\u{1F9FF}"
+  },
+  CARD_MUMIA: {
+    monsterId: "MUMIA",
+    name: "M\xFAmia Ancestral",
+    region: "RUINAS_ASTERION",
+    rarity: "RARO",
+    trait: "SANGRAMENTO",
+    baseStats: { hp: 700, atk: 65, def: 40, spd: 15 },
+    ability: "Maldi\xE7\xE3o Milenar",
+    abilityDesc: "Impede a cura do inimigo por 3 turnos.",
+    emoji: "\u{1F9DF}"
+  },
+  CARD_GARGULA: {
+    monsterId: "GARGULA",
+    name: "G\xE1rgula de Pedra",
+    region: "RUINAS_ASTERION",
+    rarity: "EPICO",
+    trait: "ESCUDO",
+    baseStats: { hp: 800, atk: 60, def: 45, spd: 25 },
+    ability: "Est\xE1tua Viva",
+    abilityDesc: "Fica imune a dano por 1 turno a cada 4 turnos.",
+    emoji: "\u{1F987}"
+  },
+  CARD_GUARDIAO: {
+    monsterId: "GUARDIAO",
+    name: "Guardi\xE3o de Asterion",
+    region: "RUINAS_ASTERION",
+    rarity: "LENDARIO",
+    trait: "ESPINHOS",
+    baseStats: { hp: 1500, atk: 120, def: 60, spd: 20 },
+    ability: "Juramento de Asterion",
+    abilityDesc: "Reflete 50% de todo dano recebido.",
+    emoji: "\u{1F6E1}\uFE0F"
+  },
+  // ─── CICATRIZ PROFUNDA (T5) ───
+  CARD_CRIA_VAZIO: {
+    monsterId: "CRIA_VAZIO",
+    name: "Cria do Vazio",
+    region: "CICATRIZ_PROFUNDA",
+    rarity: "RARO",
+    trait: "MEDO",
+    baseStats: { hp: 1200, atk: 90, def: 30, spd: 45 },
+    ability: "Sussurro do Vazio",
+    abilityDesc: "Reduz ATK do inimigo em 25%.",
+    emoji: "\u{1F47E}"
+  },
+  CARD_VERME: {
+    monsterId: "VERME",
+    name: "Verme-Abissal",
+    region: "CICATRIZ_PROFUNDA",
+    rarity: "EPICO",
+    trait: "SANGRAMENTO",
+    baseStats: { hp: 1400, atk: 100, def: 40, spd: 20 },
+    ability: "Devorar",
+    abilityDesc: "Aplica sangramento permanente.",
+    emoji: "\u{1FAB1}"
+  },
+  CARD_ABERRACAO: {
+    monsterId: "ABERRACAO",
+    name: "Aberra\xE7\xE3o Tentacular",
+    region: "CICATRIZ_PROFUNDA",
+    rarity: "EPICO",
+    trait: "SILENCIO",
+    baseStats: { hp: 1300, atk: 110, def: 35, spd: 30 },
+    ability: "Sil\xEAncio Abissal",
+    abilityDesc: "Bloqueia habilidade do inimigo por 3 turnos.",
+    emoji: "\u{1F991}"
+  },
+  CARD_SOMBRA: {
+    monsterId: "SOMBRA",
+    name: "Sombra Faminta",
+    region: "CICATRIZ_PROFUNDA",
+    rarity: "EPICO",
+    trait: "MEDO",
+    baseStats: { hp: 1e3, atk: 120, def: 25, spd: 50 },
+    ability: "Consumir Medo",
+    abilityDesc: "Cada ataque reduz ATK do inimigo em 5% (acumula).",
+    emoji: "\u{1F311}"
+  },
+  CARD_CEIFADOR_ALMAS: {
+    monsterId: "CEIFADOR_ALMAS",
+    name: "Ceifador de Almas",
+    region: "CICATRIZ_PROFUNDA",
+    rarity: "RARO",
+    trait: "SANGRAMENTO",
+    baseStats: { hp: 1500, atk: 130, def: 40, spd: 35 },
+    ability: "Ceifa Final",
+    abilityDesc: "Dano dobrado contra inimigos com <30% HP.",
+    emoji: "\u{1F480}"
+  },
+  CARD_OLHO_VAZIO: {
+    monsterId: "OLHO_VAZIO",
+    name: "Olho do Vazio",
+    region: "CICATRIZ_PROFUNDA",
+    rarity: "EPICO",
+    trait: "SILENCIO",
+    baseStats: { hp: 1100, atk: 140, def: 25, spd: 40 },
+    ability: "Olhar Petrificante",
+    abilityDesc: "Impede o inimigo de usar habilidade.",
+    emoji: "\u{1F441}\uFE0F"
+  },
+  CARD_DEVORADOR: {
+    monsterId: "DEVORADOR",
+    name: "Devorador da Cicatriz",
+    region: "CICATRIZ_PROFUNDA",
+    rarity: "LENDARIO",
+    trait: "MEDO",
+    baseStats: { hp: 3e3, atk: 200, def: 70, spd: 30 },
+    ability: "Fim de Todas as Coisas",
+    abilityDesc: "Ignora 50% da defesa do inimigo.",
+    emoji: "\u{1F479}"
+  },
+  // ─── PÂNTANO DE VEYRA (T3 — catálogo Pack 60) ───
+  CARD_SAPO_MIASMA: {
+    monsterId: "SAPO_MIASMA",
+    name: "Sapo-Miasma",
+    region: "PANTANO_VEYRA",
+    rarity: "COMUM",
+    trait: "VENENO",
+    baseStats: { hp: 420, atk: 48, def: 18, spd: 24 },
+    ability: "N\xE9voa T\xF3xica",
+    abilityDesc: "A presen\xE7a do sapo enfraquece a cura recebida pelo inimigo.",
+    emoji: "\u{1F438}"
+  },
+  CARD_LIBELULA_LAMINA: {
+    monsterId: "LIBELULA_LAMINA",
+    name: "Lib\xE9lula-L\xE2mina",
+    region: "PANTANO_VEYRA",
+    rarity: "INCOMUM",
+    trait: "PRECISAO",
+    baseStats: { hp: 360, atk: 68, def: 14, spd: 58 },
+    ability: "Asa Cortante",
+    abilityDesc: "A velocidade da lib\xE9lula favorece golpes precisos contra alvos expostos.",
+    emoji: "\u{1F98B}"
+  },
+  CARD_CIPO_MEMORIA: {
+    monsterId: "CIPO_MEMORIA",
+    name: "Cip\xF3 da Mem\xF3ria",
+    region: "PANTANO_VEYRA",
+    rarity: "RARO",
+    trait: "SILENCIO",
+    baseStats: { hp: 520, atk: 58, def: 30, spd: 20 },
+    ability: "La\xE7o Mn\xEAmico",
+    abilityDesc: "Ra\xEDzes antigas interrompem o ritmo de uma habilidade inimiga.",
+    emoji: "\u{1F33F}"
+  },
+  CARD_CROCODILO_SILTE: {
+    monsterId: "CROCODILO_SILTE",
+    name: "Crocodilo de Silte",
+    region: "PANTANO_VEYRA",
+    rarity: "EPICO",
+    trait: "ESCUDO",
+    baseStats: { hp: 760, atk: 76, def: 48, spd: 16 },
+    ability: "Coura\xE7a de Silte",
+    abilityDesc: "A carapa\xE7a absorve parte do primeiro impacto recebido.",
+    emoji: "\u{1F40A}"
+  },
+  CARD_MATRIARCA_LODO: {
+    monsterId: "MATRIARCA_LODO",
+    name: "Matriarca do Lodo",
+    region: "PANTANO_VEYRA",
+    rarity: "LENDARIO",
+    trait: "REGENERACAO",
+    baseStats: { hp: 1800, atk: 108, def: 42, spd: 18 },
+    ability: "Ninhada Regenerativa",
+    abilityDesc: "A ess\xEAncia do lodo recupera vitalidade quando a batalha se prolonga.",
+    emoji: "\u{1F451}"
+  },
+  // ─── DESERTO DE KAELOR (T4 — catálogo Pack 60) ───
+  CARD_ESCARAVELHO_VITREO: {
+    monsterId: "ESCARAVELHO_VITREO",
+    name: "Escaravelho V\xEDtreo",
+    region: "DESERTO_KAELOR",
+    rarity: "RARO",
+    trait: "ESPINHOS",
+    baseStats: { hp: 980, atk: 112, def: 44, spd: 28 },
+    ability: "Carapa\xE7a Prism\xE1tica",
+    abilityDesc: "O cristal do casco devolve parte da for\xE7a de um golpe f\xEDsico.",
+    emoji: "\u{1FAB2}"
+  },
+  CARD_ESPECTRO_SOLAR: {
+    monsterId: "ESPECTRO_SOLAR",
+    name: "Espectro Solar",
+    region: "DESERTO_KAELOR",
+    rarity: "INCOMUM",
+    trait: "MEDO",
+    baseStats: { hp: 900, atk: 136, def: 34, spd: 42 },
+    ability: "Clar\xE3o Sepulcral",
+    abilityDesc: "A luz do deserto reduz a confian\xE7a do advers\xE1rio por alguns instantes.",
+    emoji: "\u2600\uFE0F"
+  },
+  CARD_SERPENTE_MIRAGEM: {
+    monsterId: "SERPENTE_MIRAGEM",
+    name: "Serpente de Miragem",
+    region: "DESERTO_KAELOR",
+    rarity: "RARO",
+    trait: "VENENO",
+    baseStats: { hp: 1180, atk: 142, def: 42, spd: 54 },
+    ability: "Presa Ilus\xF3ria",
+    abilityDesc: "A miragem cria uma abertura e prolonga o efeito de veneno.",
+    emoji: "\u{1F40D}"
+  },
+  CARD_GOLEM_OBSIDIANA: {
+    monsterId: "GOLEM_OBSIDIANA",
+    name: "Golem de Obsidiana",
+    region: "DESERTO_KAELOR",
+    rarity: "EPICO",
+    trait: "ESCUDO",
+    baseStats: { hp: 1480, atk: 148, def: 58, spd: 14 },
+    ability: "Muralha Negra",
+    abilityDesc: "A obsidiana mant\xE9m uma prote\xE7\xE3o densa contra o pr\xF3ximo impacto.",
+    emoji: "\u{1F5FF}"
+  },
+  CARD_SENTINELA_ZENITE: {
+    monsterId: "SENTINELA_ZENITE",
+    name: "Sentinela do Z\xEAnite",
+    region: "DESERTO_KAELOR",
+    rarity: "LENDARIO",
+    trait: "INVESTIDA",
+    baseStats: { hp: 3e3, atk: 188, def: 64, spd: 22 },
+    ability: "Veredito do Z\xEAnite",
+    abilityDesc: "O guardi\xE3o concentra a luz do c\xE9u em sua primeira investida.",
+    emoji: "\u{1F506}"
+  }
+};
+var PACK60_CARD_TEMPLATE_IDS = [
+  "CARD_SAPO_MIASMA",
+  "CARD_LIBELULA_LAMINA",
+  "CARD_CIPO_MEMORIA",
+  "CARD_CROCODILO_SILTE",
+  "CARD_MATRIARCA_LODO",
+  "CARD_ESCARAVELHO_VITREO",
+  "CARD_ESPECTRO_SOLAR",
+  "CARD_SERPENTE_MIRAGEM",
+  "CARD_GOLEM_OBSIDIANA",
+  "CARD_SENTINELA_ZENITE"
+];
+var CARD_SEASON_EXPANSION_KEY = "2026-12";
+function seasonCardTemplateIds(seasonKey) {
+  const all = Object.keys(CARD_TEMPLATES);
+  if (seasonKey < CARD_SEASON_EXPANSION_KEY) return all.filter((id) => !PACK60_CARD_TEMPLATE_IDS.includes(id));
+  return all;
+}
+function seasonCardCatalogSize(seasonKey) {
+  return seasonCardTemplateIds(seasonKey).length;
+}
+function seasonUniqueCards(cards, seasonKey) {
+  const known = new Set(seasonCardTemplateIds(seasonKey));
+  return new Set((cards ?? []).map((card) => card.templateId).filter((templateId) => known.has(templateId))).size;
+}
+function getCardStats(template, level) {
+  const safeLevel = Number.isFinite(level) ? Math.max(1, Math.min(5, Math.floor(level))) : 1;
+  const mult = 1 + (safeLevel - 1) * 0.2;
+  return {
+    hp: Math.floor(template.baseStats.hp * mult),
+    atk: Math.floor(template.baseStats.atk * mult),
+    def: Math.floor(template.baseStats.def * mult),
+    spd: Math.floor(template.baseStats.spd * mult)
+  };
+}
+function createCardInstance(templateId) {
+  return {
+    uid: generateId(),
+    templateId,
+    level: 1,
+    obtainedAt: Date.now()
+  };
+}
+function cardDropChance(tier, isBoss) {
+  return isBoss ? 5e-3 : tier === 1 ? 0.03 : tier === 2 ? 0.02 : tier === 3 ? 0.015 : tier === 4 ? 0.01 : 5e-3;
+}
+function rollCardDrop(monsterId, tier, isBoss) {
+  const templateId = `CARD_${monsterId}`;
+  if (!CARD_TEMPLATES[templateId]) return null;
+  const chance = cardDropChance(tier, isBoss);
+  if (Math.random() < chance) {
+    return createCardInstance(templateId);
+  }
+  return null;
+}
+
+// src/engine/cardCollection.ts
+var CARD_LOADOUT_LIMIT = 5;
+var CARD_MAX_LEVEL = 5;
+var CARD_HERO_WEIGHTS = { hp: 0.15, atk: 0.2, def: 0.15, spd: 2e-3 };
+var CARD_EVOLUTION_GOLD = { COMUM: 150, INCOMUM: 300, RARO: 600, EPICO: 1200, LENDARIO: 2400 };
+function equippedCards(c) {
+  if (!c) return [];
+  const byId = new Map((c.cards ?? []).map((card) => [card.uid, card]));
+  return [...new Set(c.cardLoadout ?? [])].map((uid) => byId.get(uid)).filter((card) => !!card && !!CARD_TEMPLATES[card.templateId]).slice(0, CARD_LOADOUT_LIMIT);
+}
+function cardHeroBonus(card) {
+  const template = CARD_TEMPLATES[card.templateId];
+  if (!template) return { hp: 0, atk: 0, def: 0, spd: 0 };
+  const s = getCardStats(template, card.level);
+  return { hp: s.hp * CARD_HERO_WEIGHTS.hp, atk: s.atk * CARD_HERO_WEIGHTS.atk, def: s.def * CARD_HERO_WEIGHTS.def, spd: s.spd * CARD_HERO_WEIGHTS.spd };
+}
+function formationBonus(c) {
+  return equippedCards(c).reduce((sum, card) => {
+    const b = cardHeroBonus(card);
+    return { hp: sum.hp + b.hp, atk: sum.atk + b.atk, def: sum.def + b.def, spd: sum.spd + b.spd };
+  }, { hp: 0, atk: 0, def: 0, spd: 0 });
+}
+function cardFormationScore(c) {
+  return equippedCards(c).reduce((sum, card) => {
+    const s = getCardStats(CARD_TEMPLATES[card.templateId], card.level);
+    return sum + s.atk * 0.35 + s.hp * 0.02 + s.def * 0.45 + s.spd * 0.1;
+  }, 0);
+}
+function cardEvolutionQuote(c, uid) {
+  const card = c.cards.find((entry) => entry.uid === uid), template = card && CARD_TEMPLATES[card.templateId];
+  if (!card || !template) return null;
+  const level = card.level, validLevel = Number.isInteger(level) && level >= 1 && level < CARD_MAX_LEVEL;
+  const copiesNeeded = validLevel ? 2 ** level : 0;
+  const gold = validLevel ? CARD_EVOLUTION_GOLD[template.rarity] * level ** 2 : 0;
+  const equipped = new Set(c.cardLoadout ?? []);
+  const eligible = c.cards.filter((entry) => entry.uid !== uid && entry.templateId === card.templateId && entry.level === 1 && !equipped.has(entry.uid)).sort((a, b) => a.obtainedAt - b.obtainedAt || a.uid.localeCompare(b.uid));
+  return { card, template, level, nextLevel: validLevel ? level + 1 : CARD_MAX_LEVEL, maxed: !validLevel, copiesNeeded, gold, eligible, suggested: eligible.slice(0, copiesNeeded).map((entry) => entry.uid) };
+}
+function evolveCard(c, uid, materialUids, expectedLevel) {
+  const quote = cardEvolutionQuote(c, uid);
+  if (!quote) return { success: false, error: "Escolha uma carta conhecida da sua cole\xE7\xE3o." };
+  if (quote.card.level !== expectedLevel) return { success: false, error: "O n\xEDvel desta carta mudou. Revise a evolu\xE7\xE3o novamente." };
+  if (quote.maxed) return { success: false, error: "Esta carta j\xE1 atingiu o limite de evolu\xE7\xE3o (n\xEDvel 5)." };
+  const ids = new Set(materialUids);
+  if (materialUids.length !== quote.copiesNeeded || ids.size !== materialUids.length) return { success: false, error: `Selecione exatamente ${quote.copiesNeeded} c\xF3pias diferentes.` };
+  const eligible = new Set(quote.eligible.map((card) => card.uid));
+  if (materialUids.some((id) => !eligible.has(id))) return { success: false, error: "Use somente c\xF3pias iguais de n\xEDvel 1, livres da forma\xE7\xE3o." };
+  if (c.cards.filter((card) => card.uid === uid).length !== 1 || materialUids.some((id) => c.cards.filter((card) => card.uid === id).length !== 1)) return { success: false, error: "H\xE1 identificadores repetidos na cole\xE7\xE3o. A evolu\xE7\xE3o foi interrompida." };
+  if (!Number.isSafeInteger(c.gold) || c.gold < quote.gold) return { success: false, error: "Gold insuficiente para evoluir esta carta." };
+  c.cards = c.cards.filter((card) => !ids.has(card.uid)).map((card) => card.uid === uid ? { ...card, level: card.level + 1 } : card);
+  c.gold -= quote.gold;
+  return { success: true, level: quote.nextLevel, spentGold: quote.gold, consumed: [...materialUids] };
+}
+
 // src/engine/stats.ts
 function getBaseStats(level) {
   level = Number.isFinite(Number(level)) ? Math.max(1, Math.floor(Number(level))) : 1;
@@ -617,6 +1455,7 @@ function recalcStats(char) {
   const fromRace = {};
   const fromVials = {};
   const fromBeast = {};
+  const fromCards = {};
   const elementalResistances = {};
   const isUsingBow = char.equipped.ARMA_PRINCIPAL?.templateId.includes("ARCO") ?? false;
   for (const slot of Object.keys(char.equipped)) {
@@ -651,6 +1490,7 @@ function recalcStats(char) {
     for (const [k, v] of Object.entries(beastGrowth(char.level))) fromBeast[k] = v;
     for (const [k, v] of Object.entries(activeBeast.bonus)) fromBeast[k] = (fromBeast[k] ?? 0) + numeric(v);
   }
+  Object.assign(fromCards, formationBonus(char));
   const skills = char.skills || { melee: 0, defense: 0, magic: 0, distance: 0, soul: 0 };
   const skillAtkBonus = isUsingBow ? 0 : skills.melee * 1.5;
   const skillDistBonus = isUsingBow ? skills.distance * 1.5 : 0;
@@ -661,7 +1501,7 @@ function recalcStats(char) {
   const atkMult = (1 + (support?.permAtkPct ?? 0)) * (1 + masteryBonus(char, isUsingBow ? "distance" : "melee"));
   const armMult = 1 + (passive?.armPct ?? 0) + (support?.permArmPct ?? 0);
   const hpMult = 1 + numeric(passive?.hpPct);
-  const sum = (k) => numeric(fromGear[k]) + numeric(fromRace[k]) + numeric(fromPassive[k]) + numeric(fromVials[k]) + numeric(fromBeast[k]);
+  const sum = (k) => numeric(fromGear[k]) + numeric(fromRace[k]) + numeric(fromPassive[k]) + numeric(fromVials[k]) + numeric(fromBeast[k]) + numeric(fromCards[k]);
   char.baseStats = {
     hp: Math.max(1, Math.floor((base.hp + sum("hp")) * hpMult)),
     mp: Math.max(0, Math.floor(base.mp + sum("mp"))),
@@ -831,6 +1671,7 @@ function isGuided(c) {
 }
 function canUseTab(c, tab) {
   if (tab === "online" || tab === "ranking") return true;
+  if (tab === "boss" || tab === "profissoes" || tab === "cards" || tab === "calendario") return !isGuided(c);
   if (!isGuided(c)) return true;
   if (!c.introSeen) return tab === "missoes";
   const done = c.quests.completed;
@@ -1703,14 +2544,23 @@ function createNewCharacter(name, appearance) {
     mpMax: base.mp,
     baseStats: base,
     appearance: appearance ?? { body: "MASCULINO", skin: "MORENA", hair: "CURTO", hairColor: "NEGRO", outfit: "VIAJANTE", outfitColor: "OCRE" },
+    cosmeticLoadout: {},
     mythreonShards: 0,
     mythreonCoins: 0,
     equipped: {},
-    inventory: { backpack: { ...DEFAULT_BACKPACK }, items: [] },
+    inventory: { backpack: { ...DEFAULT_BACKPACK }, items: [
+      createItem({ ...PROFESSION_TOOL_TEMPLATES.PICARETA_T1, uid: generateId() }),
+      createItem({ ...PROFESSION_TOOL_TEMPLATES.VARA_PESCA_T1, uid: generateId() })
+    ] },
     killsInZone: 0,
     currentZoneId: "BOSQUE_LYSS",
     premium: false,
+    premiumPlanId: void 0,
+    premiumUntil: void 0,
     lastTick: Date.now(),
+    pvpRating: 1e3,
+    pvpWins: 0,
+    pvpLosses: 0,
     quests: { active: {}, completed: [] },
     blesses: 0,
     skills: { melee: 10, defense: 10, magic: 10, distance: 10, soul: 10 },
@@ -1741,14 +2591,23 @@ function createNewCharacter(name, appearance) {
     calendarCoupons: 0,
     calendarClaimedDays: [],
     calendarStreak: 0,
+    calendarWeeklyRewardKey: void 0,
+    calendarMonthlySkinKey: void 0,
+    calendarUnlockedSkins: [],
+    onlineChestSeconds: 0,
+    onlineChestsOpened: 0,
     cards: [],
+    cardLoadout: [],
     divineBeasts: [],
     divineBeastNeeds: {},
     divineBeastAttackTimerMs: 0,
     divineBeastIncubator: void 0,
     depot: [],
     depotMax: 300,
-    farm: { plots: [{ id: "plot-1", fertility: 100 }], unlockedPlots: 1, skills: { planting: 0, harvesting: 0, irrigation: 0, fertility: 0 }, lastActionAt: Date.now() }
+    farm: { plots: [{ id: "plot-1", fertility: 100 }], unlockedPlots: 1, skills: { planting: 0, harvesting: 0, irrigation: 0, fertility: 0 }, lastActionAt: Date.now() },
+    professions: { mining: 0, fishing: 0, lastMiningAt: 0, lastFishingAt: 0 },
+    equippedMiningTool: void 0,
+    equippedFishingRod: void 0
   };
 }
 function saveGame(char, races) {
@@ -1792,6 +2651,11 @@ function loadGame() {
       if (data.character.blesses === void 0) data.character.blesses = 0;
       if (!Number.isFinite(data.character.mythreonShards)) data.character.mythreonShards = 0;
       if (!Number.isFinite(data.character.mythreonCoins)) data.character.mythreonCoins = 0;
+      if (!Number.isFinite(data.character.pvpRating)) data.character.pvpRating = 1e3;
+      if (!Number.isFinite(data.character.pvpWins)) data.character.pvpWins = 0;
+      if (!Number.isFinite(data.character.pvpLosses)) data.character.pvpLosses = 0;
+      if (data.character.premiumPlanId !== void 0 && typeof data.character.premiumPlanId !== "string") data.character.premiumPlanId = void 0;
+      if (data.character.premiumUntil !== void 0 && !Number.isFinite(data.character.premiumUntil)) data.character.premiumUntil = void 0;
       if (data.character.autoSalvage === void 0) data.character.autoSalvage = null;
       if (data.character.autoSell === void 0) data.character.autoSell = null;
       if (!Array.isArray(data.character.autoSellTemplateIds)) data.character.autoSellTemplateIds = [];
@@ -1822,10 +2686,18 @@ function loadGame() {
       if (!Number.isFinite(data.character.calendarCoupons)) data.character.calendarCoupons = 0;
       if (!Array.isArray(data.character.calendarClaimedDays)) data.character.calendarClaimedDays = [];
       if (!Number.isFinite(data.character.calendarStreak)) data.character.calendarStreak = 0;
+      if (data.character.calendarWeeklyRewardKey !== void 0 && typeof data.character.calendarWeeklyRewardKey !== "string") data.character.calendarWeeklyRewardKey = void 0;
+      if (data.character.calendarMonthlySkinKey !== void 0 && typeof data.character.calendarMonthlySkinKey !== "string") data.character.calendarMonthlySkinKey = void 0;
+      if (!Array.isArray(data.character.calendarUnlockedSkins)) data.character.calendarUnlockedSkins = [];
+      if (!Number.isFinite(data.character.onlineChestSeconds)) data.character.onlineChestSeconds = 0;
+      if (!Number.isFinite(data.character.onlineChestsOpened)) data.character.onlineChestsOpened = 0;
       if (!Number.isFinite(data.character.staminaOnline)) data.character.staminaOnline = 120;
       if (!Number.isFinite(data.character.staminaOffline)) data.character.staminaOffline = 480;
       if (!Number.isFinite(data.character.staminaUpdatedAt)) data.character.staminaUpdatedAt = Date.now();
       if (!data.character.cards) data.character.cards = [];
+      if (!data.character.cosmeticLoadout || typeof data.character.cosmeticLoadout !== "object") data.character.cosmeticLoadout = {};
+      if (!Array.isArray(data.character.cardLoadout)) data.character.cardLoadout = [];
+      data.character.cardLoadout = data.character.cardLoadout.filter((uid) => typeof uid === "string").slice(0, 5);
       if (!Array.isArray(data.character.divineBeasts)) data.character.divineBeasts = [];
       data.character.divineBeasts = data.character.divineBeasts.map((beast, index) => ({ ...beast, instanceId: beast.instanceId ?? `legacy-beast-${beast.id}-${beast.obtainedAt ?? index}` }));
       if (!data.character.divineBeastNeeds || typeof data.character.divineBeastNeeds !== "object") data.character.divineBeastNeeds = {};
@@ -1833,6 +2705,21 @@ function loadGame() {
       if (data.character.divineBeastIncubator && (!data.character.divineBeastIncubator.eggUid || !Number.isFinite(data.character.divineBeastIncubator.completesAt))) data.character.divineBeastIncubator = void 0;
       if (!data.character.depot) data.character.depot = [];
       if (!data.character.farm || !Array.isArray(data.character.farm.plots)) data.character.farm = { plots: [{ id: "plot-1", fertility: 100 }], unlockedPlots: 1, skills: { planting: 0, harvesting: 0, irrigation: 0, fertility: 0 }, lastActionAt: Date.now() };
+      data.character.professions ??= { mining: 0, fishing: 0, lastMiningAt: 0, lastFishingAt: 0 };
+      data.character.professions.mining ??= 0;
+      data.character.professions.fishing ??= 0;
+      const hasPickaxe = Boolean(data.character.equippedMiningTool || data.character.inventory?.items?.some((item) => item.templateId === "PICARETA_T1"));
+      const hasRod = Boolean(data.character.equippedFishingRod || data.character.inventory?.items?.some((item) => item.templateId === "VARA_PESCA_T1"));
+      if (!hasPickaxe) {
+        const item = createItem({ ...PROFESSION_TOOL_TEMPLATES.PICARETA_T1, uid: generateId() });
+        if (!addItem(data.character.inventory, item)) (data.character.depot ??= []).push(item);
+      }
+      if (!hasRod) {
+        const item = createItem({ ...PROFESSION_TOOL_TEMPLATES.VARA_PESCA_T1, uid: generateId() });
+        if (!addItem(data.character.inventory, item)) (data.character.depot ??= []).push(item);
+      }
+      if (data.character.equippedMiningTool && data.character.equippedMiningTool.category !== "FERRAMENTA") data.character.equippedMiningTool = void 0;
+      if (data.character.equippedFishingRod && data.character.equippedFishingRod.category !== "FERRAMENTA") data.character.equippedFishingRod = void 0;
       data.character.farm.skills ??= { planting: 0, harvesting: 0, irrigation: 0, fertility: 0 };
       data.character.farm.skills.irrigation ??= 0;
       data.character.farm.skills.fertility ??= 0;
@@ -1897,6 +2784,8 @@ function loadGame() {
 var TIER_BASE = [5, 20, 70, 220, 700];
 var RARITY_SELL = { COMUM: 1, INCOMUM: 2, RARO: 5, EPICO: 12, LENDARIO: 40 };
 function sellValue(item) {
+  const professionValues = { LINGOTE_FERRO: 60, CRISTAL_REFINADO: 180, ISCA_CICATRIZ: 20, CALDO_MARCA_DAGUA: 190 };
+  if (professionValues[item.templateId]) return professionValues[item.templateId];
   const farmValues = { COLHEITA_CENOURA: 18, COLHEITA_MELANCIA: 55, COLHEITA_TRIGO: 32, COLHEITA_LUMINA: 120, SOPA_CENOURA_LYSS: 85, ELIXIR_MARE_DOCE: 220, PAO_RUNICO_LYSS: 90 };
   if (farmValues[item.templateId]) return farmValues[item.templateId];
   switch (item.category) {
@@ -2025,456 +2914,6 @@ function isDebug() {
 var TICK_MS = 3e3;
 var OFFLINE_MAX_HOURS = 8;
 
-// src/data/cards.ts
-var CARD_TEMPLATES = {
-  // ─── BOSQUE DE LYSS (T1) ───
-  CARD_LOBO: {
-    monsterId: "LOBO",
-    name: "Lobo-Feral",
-    region: "BOSQUE_LYSS",
-    rarity: "RARO",
-    trait: "FURIA",
-    baseStats: { hp: 100, atk: 25, def: 10, spd: 30 },
-    ability: "Mordida Sangrenta",
-    abilityDesc: "Causa 30% do ATK como dano extra no primeiro ataque.",
-    emoji: "\u{1F43A}"
-  },
-  CARD_VESPA: {
-    monsterId: "VESPA",
-    name: "Vespa-Cinza",
-    region: "BOSQUE_LYSS",
-    rarity: "COMUM",
-    trait: "VENENO",
-    baseStats: { hp: 50, atk: 15, def: 5, spd: 45 },
-    ability: "Ferr\xE3o Letal",
-    abilityDesc: "Aplica 1 stack extra de veneno no primeiro ataque.",
-    emoji: "\u{1F41D}"
-  },
-  CARD_ESPINHEIRO: {
-    monsterId: "ESPINHEIRO",
-    name: "Espinheiro-Vivo",
-    region: "BOSQUE_LYSS",
-    rarity: "RARO",
-    trait: "ESPINHOS",
-    baseStats: { hp: 180, atk: 10, def: 30, spd: 10 },
-    ability: "Enraizar",
-    abilityDesc: "Impede o inimigo de esquivar por 2 turnos.",
-    emoji: "\u{1FAB4}"
-  },
-  CARD_FALCAO: {
-    monsterId: "FALCAO",
-    name: "Falc\xE3o-Ruivo",
-    region: "BOSQUE_LYSS",
-    rarity: "COMUM",
-    trait: "PRECISAO",
-    baseStats: { hp: 80, atk: 30, def: 8, spd: 40 },
-    ability: "Voo Rasante",
-    abilityDesc: "Ataques t\xEAm 30% de chance de ignorar defesa.",
-    emoji: "\u{1F985}"
-  },
-  CARD_JAVALI: {
-    monsterId: "JAVALI",
-    name: "Javali-Musgoso",
-    region: "BOSQUE_LYSS",
-    rarity: "COMUM",
-    trait: "INVESTIDA",
-    baseStats: { hp: 150, atk: 20, def: 20, spd: 15 },
-    ability: "Coura\xE7a de Musgo",
-    abilityDesc: "Reduz em 20% o dano m\xE1gico recebido.",
-    emoji: "\u{1F417}"
-  },
-  CARD_FADA_CORROMPIDA: {
-    monsterId: "FADA_CORROMPIDA",
-    name: "Fada Corrompida",
-    region: "BOSQUE_LYSS",
-    rarity: "INCOMUM",
-    trait: "REGENERACAO",
-    baseStats: { hp: 60, atk: 20, def: 5, spd: 50 },
-    ability: "P\xF3len Curativo",
-    abilityDesc: "Cura 15% do HP de aliados no 3x3/5x5.",
-    emoji: "\u{1F9DA}"
-  },
-  CARD_ARANHA_GIGANTE: {
-    monsterId: "ARANHA_GIGANTE",
-    name: "Aranha Gigante",
-    region: "BOSQUE_LYSS",
-    rarity: "INCOMUM",
-    trait: "VENENO",
-    baseStats: { hp: 120, atk: 25, def: 12, spd: 25 },
-    ability: "Teia Pegajosa",
-    abilityDesc: "Reduz SPD do inimigo em 20% por 3 turnos.",
-    emoji: "\u{1F577}\uFE0F"
-  },
-  CARD_ESPECTRO: {
-    monsterId: "ESPECTRO",
-    name: "Espectro de Brasa",
-    region: "BOSQUE_LYSS",
-    rarity: "LENDARIO",
-    trait: "MEDO",
-    baseStats: { hp: 200, atk: 45, def: 15, spd: 50 },
-    ability: "Chama Espectral",
-    abilityDesc: "Causa dano em \xE1rea (afeta 2 inimigos no 3x3/5x5).",
-    emoji: "\u{1F47B}"
-  },
-  // ─── PICO DE DHOR (T2) ───
-  CARD_GOLEM: {
-    monsterId: "GOLEM",
-    name: "Golem-Rocha",
-    region: "PICO_DHOR",
-    rarity: "RARO",
-    trait: "ESPINHOS",
-    baseStats: { hp: 250, atk: 15, def: 40, spd: 10 },
-    ability: "Pele de Pedra",
-    abilityDesc: "Bloqueia 10% do dano recebido permanentemente.",
-    emoji: "\u{1F5FF}"
-  },
-  CARD_URSO: {
-    monsterId: "URSO",
-    name: "Urso-Fenda",
-    region: "PICO_DHOR",
-    rarity: "RARO",
-    trait: "FURIA",
-    baseStats: { hp: 220, atk: 35, def: 20, spd: 20 },
-    ability: "F\xFAria Selvagem",
-    abilityDesc: "Quando abaixo de 50% HP, ganha +30% ATK.",
-    emoji: "\u{1F43B}"
-  },
-  CARD_BANDIDO: {
-    monsterId: "BANDIDO",
-    name: "Bandido do Desfiladeiro",
-    region: "PICO_DHOR",
-    rarity: "RARO",
-    trait: "INVESTIDA",
-    baseStats: { hp: 150, atk: 40, def: 10, spd: 35 },
-    ability: "Golpe Furtivo",
-    abilityDesc: "Primeiro ataque sempre \xE9 cr\xEDtico.",
-    emoji: "\u{1F977}"
-  },
-  CARD_ELEMENTAL_GELO: {
-    monsterId: "ELEMENTAL_GELO",
-    name: "Elemental de Gelo",
-    region: "PICO_DHOR",
-    rarity: "EPICO",
-    trait: "ESCUDO",
-    baseStats: { hp: 180, atk: 30, def: 25, spd: 25 },
-    ability: "Armadura de Gelo",
-    abilityDesc: "Gera escudo de 20% HP a cada 3 turnos.",
-    emoji: "\u{1F9CA}"
-  },
-  CARD_YETI: {
-    monsterId: "YETI",
-    name: "Yeti-do-Cume",
-    region: "PICO_DHOR",
-    rarity: "EPICO",
-    trait: "ESCUDO",
-    baseStats: { hp: 280, atk: 30, def: 20, spd: 15 },
-    ability: "Pele de Neve",
-    abilityDesc: "Imune a dano de gelo.",
-    emoji: "\u{1F98D}"
-  },
-  CARD_MORCEGO_MAGMA: {
-    monsterId: "MORCEGO_MAGMA",
-    name: "Morcego de Magma",
-    region: "PICO_DHOR",
-    rarity: "INCOMUM",
-    trait: "SANGRAMENTO",
-    baseStats: { hp: 130, atk: 45, def: 8, spd: 50 },
-    ability: "Mordida Incandescente",
-    abilityDesc: "Aplica sangramento que ignora cura.",
-    emoji: "\u{1F987}"
-  },
-  CARD_CENTURIAO: {
-    monsterId: "CENTURIAO",
-    name: "Centuri\xE3o de Bronze",
-    region: "PICO_DHOR",
-    rarity: "EPICO",
-    trait: "ESPINHOS",
-    baseStats: { hp: 300, atk: 25, def: 35, spd: 10 },
-    ability: "Forma\xE7\xE3o de Escudo",
-    abilityDesc: "Reflete 30% do dano recebido.",
-    emoji: "\u{1F916}"
-  },
-  CARD_COLOSSO: {
-    monsterId: "COLOSSO",
-    name: "Colosso de Dhor",
-    region: "PICO_DHOR",
-    rarity: "LENDARIO",
-    trait: "INVESTIDA",
-    baseStats: { hp: 500, atk: 60, def: 40, spd: 15 },
-    ability: "Investida S\xEDsmica",
-    abilityDesc: "Primeiro ataque atordoa o inimigo por 1 turno.",
-    emoji: "\u{1F3D4}\uFE0F"
-  },
-  // ─── MAR DE AZHAR (T3) ───
-  CARD_CARANGUEJO: {
-    monsterId: "CARANGUEJO",
-    name: "Caranguejo-Colosso",
-    region: "MAR_AZHAR",
-    rarity: "RARO",
-    trait: "ESCUDO",
-    baseStats: { hp: 400, atk: 35, def: 35, spd: 15 },
-    ability: "Carapa\xE7a Dura",
-    abilityDesc: "Reduz dano f\xEDsico recebido em 25%.",
-    emoji: "\u{1F980}"
-  },
-  CARD_SERPENTE: {
-    monsterId: "SERPENTE",
-    name: "Serpente-N\xE9voa",
-    region: "MAR_AZHAR",
-    rarity: "RARO",
-    trait: "VENENO",
-    baseStats: { hp: 320, atk: 50, def: 15, spd: 40 },
-    ability: "Pe\xE7onha Paralisante",
-    abilityDesc: "Veneno reduz SPD do inimigo em 15%.",
-    emoji: "\u{1F40D}"
-  },
-  CARD_MEDUSA: {
-    monsterId: "MEDUSA",
-    name: "Medusa-Trov\xE3o",
-    region: "MAR_AZHAR",
-    rarity: "INCOMUM",
-    trait: "SILENCIO",
-    baseStats: { hp: 280, atk: 45, def: 20, spd: 35 },
-    ability: "Descarga El\xE9trica",
-    abilityDesc: "25% de chance de atordoar o inimigo por 1 turno.",
-    emoji: "\u{1FABC}"
-  },
-  CARD_SEREIA: {
-    monsterId: "SEREIA",
-    name: "Sereia-Cantora",
-    region: "MAR_AZHAR",
-    rarity: "INCOMUM",
-    trait: "REGENERACAO",
-    baseStats: { hp: 300, atk: 40, def: 20, spd: 30 },
-    ability: "Canto Curativo",
-    abilityDesc: "Cura 10% HP de si mesma por turno.",
-    emoji: "\u{1F9DC}"
-  },
-  CARD_POLVO: {
-    monsterId: "POLVO",
-    name: "Polvo-Abissal",
-    region: "MAR_AZHAR",
-    rarity: "EPICO",
-    trait: "SILENCIO",
-    baseStats: { hp: 380, atk: 55, def: 25, spd: 25 },
-    ability: "Tent\xE1culos Sufocantes",
-    abilityDesc: "Impede o inimigo de usar habilidade por 2 turnos.",
-    emoji: "\u{1F419}"
-  },
-  CARD_TRITAO: {
-    monsterId: "TRITAO",
-    name: "Trit\xE3o Guerreiro",
-    region: "MAR_AZHAR",
-    rarity: "EPICO",
-    trait: "ESCUDO",
-    baseStats: { hp: 420, atk: 50, def: 30, spd: 20 },
-    ability: "Tridente de Coral",
-    abilityDesc: "Gera escudo equivalente a 15% do HP m\xE1ximo.",
-    emoji: "\u{1F531}"
-  },
-  CARD_ENGUIA_ELETRICA: {
-    monsterId: "ENGUIA_ELETRICA",
-    name: "Enguia El\xE9trica",
-    region: "MAR_AZHAR",
-    rarity: "RARO",
-    trait: "SILENCIO",
-    baseStats: { hp: 350, atk: 60, def: 15, spd: 45 },
-    ability: "Choque Paralisante",
-    abilityDesc: "Cada ataque tem 20% de chance de silenciar.",
-    emoji: "\u26A1"
-  },
-  CARD_LEVIATA: {
-    monsterId: "LEVIATA",
-    name: "Leviat\xE3 de Azhar",
-    region: "MAR_AZHAR",
-    rarity: "LENDARIO",
-    trait: "MEDO",
-    baseStats: { hp: 800, atk: 90, def: 45, spd: 25 },
-    ability: "Rugido Abissal",
-    abilityDesc: "Reduz ATK de todos os inimigos em 20%.",
-    emoji: "\u{1F40B}"
-  },
-  // ─── RUÍNAS DE ASTERION (T4) ───
-  CARD_HIENA: {
-    monsterId: "HIENA",
-    name: "Hiena-Abissal",
-    region: "RUINAS_ASTERION",
-    rarity: "RARO",
-    trait: "SANGRAMENTO",
-    baseStats: { hp: 600, atk: 70, def: 25, spd: 50 },
-    ability: "Risada Sanguin\xE1ria",
-    abilityDesc: "Aplica sangramento de 8% HP por turno.",
-    emoji: "\u{1F415}"
-  },
-  CARD_SENTINELA: {
-    monsterId: "SENTINELA",
-    name: "Sentinela de Pedra",
-    region: "RUINAS_ASTERION",
-    rarity: "EPICO",
-    trait: "ESPINHOS",
-    baseStats: { hp: 750, atk: 50, def: 50, spd: 15 },
-    ability: "Guarda Eterna",
-    abilityDesc: "Reflete 30% do dano f\xEDsico recebido.",
-    emoji: "\u{1F5FF}"
-  },
-  CARD_ESCORPIAO: {
-    monsterId: "ESCORPIAO",
-    name: "Escorpi\xE3o-R\xFAnico",
-    region: "RUINAS_ASTERION",
-    rarity: "RARO",
-    trait: "VENENO",
-    baseStats: { hp: 650, atk: 75, def: 30, spd: 40 },
-    ability: "Ferr\xE3o R\xFAnico",
-    abilityDesc: "Veneno causa dano dobrado por 2 turnos.",
-    emoji: "\u{1F982}"
-  },
-  CARD_CULTISTA: {
-    monsterId: "CULTISTA",
-    name: "Cultista do Eclipse",
-    region: "RUINAS_ASTERION",
-    rarity: "EPICO",
-    trait: "MEDO",
-    baseStats: { hp: 550, atk: 80, def: 20, spd: 35 },
-    ability: "Maldi\xE7\xE3o do Eclipse",
-    abilityDesc: "Reduz ATK do inimigo em 30% por 3 turnos.",
-    emoji: "\u{1F9FF}"
-  },
-  CARD_MUMIA: {
-    monsterId: "MUMIA",
-    name: "M\xFAmia Ancestral",
-    region: "RUINAS_ASTERION",
-    rarity: "RARO",
-    trait: "SANGRAMENTO",
-    baseStats: { hp: 700, atk: 65, def: 40, spd: 15 },
-    ability: "Maldi\xE7\xE3o Milenar",
-    abilityDesc: "Impede a cura do inimigo por 3 turnos.",
-    emoji: "\u{1F9DF}"
-  },
-  CARD_GARGULA: {
-    monsterId: "GARGULA",
-    name: "G\xE1rgula de Pedra",
-    region: "RUINAS_ASTERION",
-    rarity: "EPICO",
-    trait: "ESCUDO",
-    baseStats: { hp: 800, atk: 60, def: 45, spd: 25 },
-    ability: "Est\xE1tua Viva",
-    abilityDesc: "Fica imune a dano por 1 turno a cada 4 turnos.",
-    emoji: "\u{1F987}"
-  },
-  CARD_GUARDIAO: {
-    monsterId: "GUARDIAO",
-    name: "Guardi\xE3o de Asterion",
-    region: "RUINAS_ASTERION",
-    rarity: "LENDARIO",
-    trait: "ESPINHOS",
-    baseStats: { hp: 1500, atk: 120, def: 60, spd: 20 },
-    ability: "Juramento de Asterion",
-    abilityDesc: "Reflete 50% de todo dano recebido.",
-    emoji: "\u{1F6E1}\uFE0F"
-  },
-  // ─── CICATRIZ PROFUNDA (T5) ───
-  CARD_CRIA_VAZIO: {
-    monsterId: "CRIA_VAZIO",
-    name: "Cria do Vazio",
-    region: "CICATRIZ_PROFUNDA",
-    rarity: "RARO",
-    trait: "MEDO",
-    baseStats: { hp: 1200, atk: 90, def: 30, spd: 45 },
-    ability: "Sussurro do Vazio",
-    abilityDesc: "Reduz ATK do inimigo em 25%.",
-    emoji: "\u{1F47E}"
-  },
-  CARD_VERME: {
-    monsterId: "VERME",
-    name: "Verme-Abissal",
-    region: "CICATRIZ_PROFUNDA",
-    rarity: "EPICO",
-    trait: "SANGRAMENTO",
-    baseStats: { hp: 1400, atk: 100, def: 40, spd: 20 },
-    ability: "Devorar",
-    abilityDesc: "Aplica sangramento permanente.",
-    emoji: "\u{1FAB1}"
-  },
-  CARD_ABERRACAO: {
-    monsterId: "ABERRACAO",
-    name: "Aberra\xE7\xE3o Tentacular",
-    region: "CICATRIZ_PROFUNDA",
-    rarity: "EPICO",
-    trait: "SILENCIO",
-    baseStats: { hp: 1300, atk: 110, def: 35, spd: 30 },
-    ability: "Sil\xEAncio Abissal",
-    abilityDesc: "Bloqueia habilidade do inimigo por 3 turnos.",
-    emoji: "\u{1F991}"
-  },
-  CARD_SOMBRA: {
-    monsterId: "SOMBRA",
-    name: "Sombra Faminta",
-    region: "CICATRIZ_PROFUNDA",
-    rarity: "EPICO",
-    trait: "MEDO",
-    baseStats: { hp: 1e3, atk: 120, def: 25, spd: 50 },
-    ability: "Consumir Medo",
-    abilityDesc: "Cada ataque reduz ATK do inimigo em 5% (acumula).",
-    emoji: "\u{1F311}"
-  },
-  CARD_CEIFADOR_ALMAS: {
-    monsterId: "CEIFADOR_ALMAS",
-    name: "Ceifador de Almas",
-    region: "CICATRIZ_PROFUNDA",
-    rarity: "RARO",
-    trait: "SANGRAMENTO",
-    baseStats: { hp: 1500, atk: 130, def: 40, spd: 35 },
-    ability: "Ceifa Final",
-    abilityDesc: "Dano dobrado contra inimigos com <30% HP.",
-    emoji: "\u{1F480}"
-  },
-  CARD_OLHO_VAZIO: {
-    monsterId: "OLHO_VAZIO",
-    name: "Olho do Vazio",
-    region: "CICATRIZ_PROFUNDA",
-    rarity: "EPICO",
-    trait: "SILENCIO",
-    baseStats: { hp: 1100, atk: 140, def: 25, spd: 40 },
-    ability: "Olhar Petrificante",
-    abilityDesc: "Impede o inimigo de usar habilidade.",
-    emoji: "\u{1F441}\uFE0F"
-  },
-  CARD_DEVORADOR: {
-    monsterId: "DEVORADOR",
-    name: "Devorador da Cicatriz",
-    region: "CICATRIZ_PROFUNDA",
-    rarity: "LENDARIO",
-    trait: "MEDO",
-    baseStats: { hp: 3e3, atk: 200, def: 70, spd: 30 },
-    ability: "Fim de Todas as Coisas",
-    abilityDesc: "Ignora 50% da defesa do inimigo.",
-    emoji: "\u{1F479}"
-  }
-};
-function createCardInstance(templateId) {
-  return {
-    uid: generateId(),
-    templateId,
-    level: 1,
-    obtainedAt: Date.now()
-  };
-}
-function rollCardDrop(monsterId, tier, isBoss) {
-  const templateId = `CARD_${monsterId}`;
-  if (!CARD_TEMPLATES[templateId]) return null;
-  if (isBoss) {
-    if (Math.random() < 5e-3) {
-      return createCardInstance(templateId);
-    }
-    return null;
-  }
-  const chance = tier === 1 ? 0.03 : tier === 2 ? 0.02 : tier === 3 ? 0.015 : tier === 4 ? 0.01 : 5e-3;
-  if (Math.random() < chance) {
-    return createCardInstance(templateId);
-  }
-  return null;
-}
-
 // src/data/mythreonEconomy.ts
 var MYTHREON_ECONOMY = {
   shardsPerCoin: 100,
@@ -2498,7 +2937,9 @@ var MYTHREON_OFFERS = [
   { id: "SUPPLY_CHEST", name: "Ba\xFA de Suprimentos", description: "Fragmentos e materiais \xFAteis para a pr\xF3xima etapa da jornada.", icon: "\u{1F381}", templateId: "BAU_SUPRIMENTOS_MYTHREON", priceCoins: 12, kind: "ITEM", tags: ["suprimentos"] },
   { id: "ROULETTE_KEY", name: "Chave da Roleta Arcana", description: "Abre um pr\xEAmio aleat\xF3rio na Roleta de Mythreon.", icon: "\u{1F5DD}\uFE0F", templateId: "CHAVE_ROLETA_ARCANA", priceCoins: 8, kind: "ITEM", tags: ["roleta"] },
   { id: "SKIN_CAPE_NEBULA", name: "Skin \xB7 Manto da Nebulosa", description: "Cosm\xE9tico exclusivo: brilho sutil, sem b\xF4nus de combate.", icon: "\u{1F9E5}", templateId: "SKIN_MANTO_NEBULOSA", priceCoins: 180, kind: "ITEM", tags: ["skin", "cosm\xE9tico"] },
-  { id: "MATRIX_LUMINESCENCE", name: "Luminesc\xEAncia da Matriz", description: "Efeito visual arcano para Matrizes equipadas. Sem aumento de atributos.", icon: "\u{1F30C}", templateId: "LUMINESCENCIA_MATRIZ", priceCoins: 120, kind: "ITEM", tags: ["cosm\xE9tico"] }
+  { id: "MATRIX_LUMINESCENCE", name: "Luminesc\xEAncia da Matriz", description: "Efeito visual arcano para Matrizes equipadas. Sem aumento de atributos.", icon: "\u{1F30C}", templateId: "LUMINESCENCIA_MATRIZ", priceCoins: 120, kind: "ITEM", tags: ["cosm\xE9tico"] },
+  { id: "PET_LUMINESCENCE", name: "Aura da Besta Divina", description: "Brilho visual do Pet ativo. N\xE3o aumenta dano, atributos ou tempo de nutri\xE7\xE3o.", icon: "\u{1F43E}", templateId: "LUMINESCENCIA_PET", priceCoins: 120, kind: "ITEM", tags: ["pet", "cosm\xE9tico"] },
+  { id: "BOSS_LUMINOUS_ADDON", name: "Addon \xB7 Aura do Boss Di\xE1rio", description: "Efeito visual de presen\xE7a para o mapa do Boss Di\xE1rio. Sem dano, defesa ou vantagem de loot.", icon: "\u2728", templateId: "ADDON_BOSS_LUMINESCENTE", priceCoins: 240, kind: "ITEM", tags: ["addon", "cosm\xE9tico", "boss"] }
 ];
 var getMythreonOffer = (id) => MYTHREON_OFFERS.find((offer) => offer.id === id);
 function shardChance(enemy) {
@@ -2510,6 +2951,8 @@ function shardChance(enemy) {
 function buildProfile(char) {
   const bp = char.inventory.backpack;
   const p = { xpPct: (bp.xpBonus ?? 0) + (char.premium ? 0.1 : 0), goldPct: 0, dropPct: bp.dropBonus ?? 0, rarePct: bp.rareDropBonus ?? 0, healPct: 0, skillDmgPct: 0, cdReduce: 0, lifesteal: 0 };
+  const dailyBossXpUntil = char.dailyBossXpUntil;
+  if (dailyBossXpUntil !== void 0 && (dailyBossXpUntil === 0 || dailyBossXpUntil > Date.now())) p.xpPct += 0.05;
   const tomeUntil = char.mythreonBoosts?.TOMO_SABEDORIA;
   if (tomeUntil !== void 0 && (tomeUntil === 0 || tomeUntil > Date.now())) p.skillDmgPct += 0.2;
   for (const [vialId, expiry] of Object.entries(char.activeVials ?? {})) {
@@ -2902,9 +3345,9 @@ function processTick(char, zone, isOffline) {
         drops.push({ ...ration, uid: `${Date.now()}-ration-${enemy.id}`, quantity: 1 });
       }
       if (debug2 || char.killsInZone % 10 === 0 || enemy.isBoss) drops.push(rollAmbient(zone));
-      const autoSell = char.autoSell ?? null;
+      const autoSell = char.premium ? char.autoSell ?? null : null;
       const autoSalvage = char.autoSalvage ?? null;
-      const sellByTemplate = new Set(char.autoSellTemplateIds ?? []);
+      const sellByTemplate = new Set(char.premium ? char.autoSellTemplateIds ?? [] : []);
       const salvageByTemplate = new Set(char.autoSalvageTemplateIds ?? []);
       const ignoredLoot = new Set(char.ignoredLootTemplateIds ?? []);
       for (const d of drops) {
@@ -3430,6 +3873,95 @@ function farmRecipeOutput(recipe) {
   return { uid: `farm-recipe-${recipe.outputTemplateId}-${Date.now()}-${Math.random()}`, templateId: recipe.outputTemplateId, name: recipe.outputName, category: "MATERIAL", tier: recipe.id.includes("ESSENCIA") || recipe.id.includes("BANQUETE") ? 3 : recipe.id.includes("COMPOSTO") ? 1 : 2, rarity: recipe.id.includes("ESSENCIA") ? "RARO" : recipe.id.includes("BANQUETE") ? "EPICO" : recipe.id.includes("COMPOSTO") ? "COMUM" : "INCOMUM", stats: {}, affixes: [], upgradeLevel: 0, stackable: true, maxStack: 999, quantity: recipe.outputQuantity, icon: recipe.outputIcon };
 }
 
+// src/data/professions.ts
+var FISHING_BAIT = { templateId: "ISCA_CICATRIZ", name: "Isca da Cicatriz", quantity: 1, bonusFish: 1 };
+var PROFESSION_TOOL_SHOP = [
+  { templateId: "PICARETA_T2", profession: "MINERACAO", tier: 2, requiredSkill: 20, gold: 2e3 },
+  { templateId: "PICARETA_T3", profession: "MINERACAO", tier: 3, requiredSkill: 40, gold: 12e3 },
+  { templateId: "PICARETA_T4", profession: "MINERACAO", tier: 4, requiredSkill: 60, gold: 6e4 },
+  { templateId: "PICARETA_T5", profession: "MINERACAO", tier: 5, requiredSkill: 80, gold: 25e4 },
+  { templateId: "VARA_PESCA_T2", profession: "PESCA", tier: 2, requiredSkill: 20, gold: 2e3 },
+  { templateId: "VARA_PESCA_T3", profession: "PESCA", tier: 3, requiredSkill: 40, gold: 12e3 },
+  { templateId: "VARA_PESCA_T4", profession: "PESCA", tier: 4, requiredSkill: 60, gold: 6e4 },
+  { templateId: "VARA_PESCA_T5", profession: "PESCA", tier: 5, requiredSkill: 80, gold: 25e4 }
+];
+var MINING_NODES = [
+  { id: "veio_lyss", name: "Veio de Ferro de Lyss", zoneId: "BOSQUE_LYSS", requiredSkill: 0, tier: 1, dropTemplateId: "MINERIO_FERRO", dropName: "Min\xE9rio de Ferro", dropIcon: "\u26CF\uFE0F", action: "Revele o pulso da veia e acerte a faixa dourada" },
+  { id: "cristal_dhor", name: "Veio de Cobre de Dhor", zoneId: "PICO_DHOR", requiredSkill: 20, tier: 2, dropTemplateId: "MINERIO_COBRE", dropName: "Min\xE9rio de Cobre", dropIcon: "\u{1F7E0}", action: "Abra caminho entre gelo e brasa" },
+  { id: "cristal_azhar", name: "Gruta de Ess\xEAncia de Azhar", zoneId: "MAR_AZHAR", requiredSkill: 40, tier: 3, dropTemplateId: "CRISTAL_ESSENCIA", dropName: "Cristal de Ess\xEAncia", dropIcon: "\u{1F48E}", action: "Encontre o brilho entre os corais" },
+  { id: "obsidiana_cicatriz", name: "Veio Obsidiano", zoneId: "CICATRIZ_PROFUNDA", requiredSkill: 60, tier: 4, dropTemplateId: "MINERIO_OBSIDIANO", dropName: "Min\xE9rio Obsidiano", dropIcon: "\u{1FAA8}", action: "Quebre a crosta da Cicatriz" },
+  { id: "eclipse_profundo", name: "N\xFAcleo do Eclipse", zoneId: "CICATRIZ_PROFUNDA", requiredSkill: 80, tier: 5, dropTemplateId: "MINERIO_ECLIPSE", dropName: "Min\xE9rio do Eclipse", dropIcon: "\u{1F311}", action: "Sincronize-se com a pulsa\xE7\xE3o do abismo" }
+];
+var FISHING_SPOTS = [
+  { id: "corrego_lyss", name: "C\xF3rrego de Lyss", zoneId: "BOSQUE_LYSS", requiredSkill: 0, rodTier: 1, dropTemplateId: "PEIXE_RIO", dropName: "Peixe do Ref\xFAgio", dropIcon: "\u{1F41F}", action: "Segure e solte quando o marcador alcan\xE7ar o dourado" },
+  { id: "lago_dhor", name: "Lago Degelado de Dhor", zoneId: "PICO_DHOR", requiredSkill: 20, rodTier: 2, dropTemplateId: "TRUTA_GELO", dropName: "Truta de Gelo", dropIcon: "\u{1F41F}", action: "Sinta o pux\xE3o sob o gelo" },
+  { id: "mar_azhar", name: "Corais de Azhar", zoneId: "MAR_AZHAR", requiredSkill: 40, rodTier: 3, dropTemplateId: "PEIXE_CORAL", dropName: "Peixe-Coral", dropIcon: "\u{1F420}", action: "Recolha a linha entre as ondas" },
+  { id: "cicatriz_funda", name: "Cicatriz Profunda", zoneId: "CICATRIZ_PROFUNDA", requiredSkill: 60, rodTier: 4, dropTemplateId: "PEIXE_CICATRIZ", dropName: "Peixe-Cicatriz", dropIcon: "\u{1F420}", action: "Encontre vida nas \xE1guas escuras" },
+  { id: "lago_astral", name: "Lago Astral da Cicatriz", zoneId: "CICATRIZ_PROFUNDA", requiredSkill: 80, rodTier: 5, dropTemplateId: "PEIXE_ASTRAL", dropName: "Peixe Astral", dropIcon: "\u2728", action: "Recolha antes que o brilho desapare\xE7a" }
+];
+function professionCooldown(skill) {
+  return Math.max(1500, 5e3 - Math.floor(skill / 10) * 100);
+}
+var PROFESSION_RECIPES = [
+  { id: "LINGOTE_FERRO", name: "Fundir Lingote de Ferro", icon: "\u{1F529}", profession: "MINERACAO", requiredSkill: 10, ingredients: [{ templateId: "MINERIO_FERRO", quantity: 5 }], outputTemplateId: "LINGOTE_FERRO", outputQuantity: 1 },
+  { id: "CRISTAL_REFINADO", name: "Lapidar Cristal de Ess\xEAncia", icon: "\u{1F4A0}", profession: "MINERACAO", requiredSkill: 45, ingredients: [{ templateId: "CRISTAL_ESSENCIA", quantity: 3 }, { templateId: "MINERIO_FERRO", quantity: 5 }], outputTemplateId: "CRISTAL_REFINADO", outputQuantity: 1 },
+  { id: "ISCA_CICATRIZ", name: "Preparar Isca da Cicatriz", icon: "\u{1FAB1}", profession: "PESCA", requiredSkill: 10, ingredients: [{ templateId: "PEIXE_RIO", quantity: 3 }], outputTemplateId: "ISCA_CICATRIZ", outputQuantity: 2 },
+  { id: "CALDO_MARCA_DAGUA", name: "Cozinhar Caldo da Marca-d'\xC1gua", icon: "\u{1F372}", profession: "PESCA", requiredSkill: 45, ingredients: [{ templateId: "PEIXE_CICATRIZ", quantity: 2 }, { templateId: "COLHEITA_MELANCIA", quantity: 1 }], outputTemplateId: "CALDO_MARCA_DAGUA", outputQuantity: 1 },
+  { id: "LIGA_COBRE", name: "Forjar Liga de Cobre e Ferro", icon: "\u{1F529}", profession: "MINERACAO", requiredSkill: 20, ingredients: [{ templateId: "MINERIO_COBRE", quantity: 3 }, { templateId: "MINERIO_FERRO", quantity: 4 }], outputTemplateId: "LINGOTE_FERRO", outputQuantity: 2 },
+  { id: "LAPIDAR_OBSIDIANA", name: "Lapidar Ess\xEAncia Obsidiana", icon: "\u{1F4A0}", profession: "MINERACAO", requiredSkill: 60, ingredients: [{ templateId: "MINERIO_OBSIDIANO", quantity: 3 }, { templateId: "CRISTAL_ESSENCIA", quantity: 1 }], outputTemplateId: "CRISTAL_REFINADO", outputQuantity: 1 },
+  { id: "LAPIDAR_ECLIPSE", name: "Condensar Ess\xEAncia do Eclipse", icon: "\u{1F311}", profession: "MINERACAO", requiredSkill: 80, ingredients: [{ templateId: "MINERIO_ECLIPSE", quantity: 3 }, { templateId: "CRISTAL_ESSENCIA", quantity: 4 }], outputTemplateId: "CRISTAL_REFINADO", outputQuantity: 2 },
+  { id: "ISCA_GELO", name: "Preparar Isca de \xC1gua Fria", icon: "\u{1FAB1}", profession: "PESCA", requiredSkill: 20, ingredients: [{ templateId: "TRUTA_GELO", quantity: 2 }], outputTemplateId: "ISCA_CICATRIZ", outputQuantity: 3 },
+  { id: "CALDO_CORAL", name: "Cozinhar Caldo dos Corais", icon: "\u{1F372}", profession: "PESCA", requiredSkill: 40, ingredients: [{ templateId: "PEIXE_CORAL", quantity: 3 }, { templateId: "COLHEITA_MELANCIA", quantity: 1 }], outputTemplateId: "CALDO_MARCA_DAGUA", outputQuantity: 1 },
+  { id: "CALDO_ASTRAL", name: "Cozinhar Caldo Astral", icon: "\u{1F372}", profession: "PESCA", requiredSkill: 80, ingredients: [{ templateId: "PEIXE_ASTRAL", quantity: 3 }, { templateId: "COLHEITA_MELANCIA", quantity: 2 }], outputTemplateId: "CALDO_MARCA_DAGUA", outputQuantity: 2 }
+];
+
+// src/engine/dailyCalendar.ts
+function deliverCalendarItem(character, item) {
+  const inventory = structuredClone(character.inventory);
+  if (addItem(inventory, structuredClone(item))) {
+    character.inventory = inventory;
+    return "mochila";
+  }
+  if ((character.depot ?? []).length >= (character.depotMax ?? 300)) return null;
+  character.depot = [...character.depot ?? [], item];
+  return "dep\xF3sito";
+}
+function claimCalendarReward(character, now = Date.now()) {
+  const progress = calendarProgress(character, now);
+  if (progress.claimedToday) return { success: false, error: "A recompensa de hoje j\xE1 foi resgatada." };
+  if (character.calendarLastClaimDay && character.calendarLastClaimDay > progress.today) return { success: false, error: "O rel\xF3gio est\xE1 anterior ao \xFAltimo resgate. Aguarde o dia correto do servidor." };
+  if (!Number.isSafeInteger(character.calendarCoupons) || Number(character.calendarCoupons) < 1) return { success: false, error: "Adquira um Cupom de Resgate com Mythreon Coin." };
+  const next = structuredClone(character);
+  const milestone = calendarWeeklyMilestoneKey(progress.today, progress.nextStreak);
+  let lastMilestone = next.calendarWeeklyRewardKey;
+  if (lastMilestone && /^\d{4}-W\d{2}$/.test(lastMilestone) && progress.streak >= CALENDAR_WEEK_DAYS && character.calendarLastClaimDay) {
+    lastMilestone = calendarWeeklyMilestoneKey(character.calendarLastClaimDay, progress.streak);
+  }
+  const weekly = progress.nextStreak >= CALENDAR_WEEK_DAYS && lastMilestone !== milestone;
+  let delivery;
+  if (weekly) {
+    const location2 = deliverCalendarItem(next, createItem({ ...FRAGMENT_TEMPLATES.FRAGMENTO_RARO, quantity: CALENDAR_WEEK_FRAGMENTS }));
+    if (!location2) return { success: false, error: "Libere um espa\xE7o na mochila ou no dep\xF3sito para receber o b\xF4nus semanal. Seu cupom foi preservado." };
+    delivery = location2;
+    next.calendarWeeklyRewardKey = milestone;
+  }
+  next.calendarCoupons = Number(next.calendarCoupons) - 1;
+  next.calendarClaimedDays = [...progress.days, progress.today];
+  next.calendarLastClaimDay = progress.today;
+  next.calendarStreak = progress.nextStreak;
+  next.calendarUnlockedSkins = calendarUnlockedSkins(character);
+  next.gold += progress.nextGold;
+  const monthly = !!progress.month.reward && next.calendarClaimedDays.length >= progress.month.requiredPresence && !progress.monthlyUnlocked;
+  if (monthly && progress.month.reward) {
+    next.calendarUnlockedSkins = [.../* @__PURE__ */ new Set([...next.calendarUnlockedSkins, progress.month.reward.templateId])];
+    next.calendarMonthlySkinKey = progress.month.key;
+  }
+  let reward = progress.nextGold.toLocaleString("pt-BR") + " gold";
+  if (weekly) reward += ` + ${CALENDAR_WEEK_FRAGMENTS} Fragmentos Raros (${delivery})`;
+  if (monthly) reward += " + " + progress.month.reward.name + " (liberada no guarda-roupa)";
+  return { success: true, character: next, reward, weekly, monthly, delivery };
+}
+
 // src/store/gameStore.ts
 function recordHuntMetrics(character, zoneId, result) {
   const previous = character.huntStatsByZone?.[zoneId] ?? {
@@ -3480,6 +4012,7 @@ function eggIncubationMs(tier) {
   return [0, 60, 180, 480, 1200, 2400][Math.max(1, Math.min(5, Math.floor(tier)))] * 1e3;
 }
 function createGameStore(runtime = {}) {
+  const runtimeNow = runtime.now ?? (() => Date.now());
   let tickInterval = null;
   const notify = runtime.notify ?? ((message) => {
     if (typeof alert !== "undefined") alert(message);
@@ -3531,10 +4064,36 @@ function createGameStore(runtime = {}) {
       get().save();
       return { success: true };
     },
+    equipCosmetic: (templateId) => {
+      const { character } = get();
+      if (!character) return { success: false, error: "Personagem indispon\xEDvel." };
+      const template = ALL_ITEM_TEMPLATES[templateId];
+      const definition = COSMETIC_DEFINITIONS[templateId];
+      if (!template || !definition) return { success: false, error: "Cosm\xE9tico inv\xE1lido." };
+      const owned = [...character.inventory.items ?? [], ...character.depot ?? [], ...Object.values(character.equipped ?? {})].some((item) => item.templateId === templateId);
+      if (!owned && !calendarUnlockedSkins(character).includes(templateId)) return { success: false, error: "Voc\xEA ainda n\xE3o possui este cosm\xE9tico." };
+      const next = structuredClone(character);
+      next.cosmeticLoadout ??= {};
+      next.cosmeticLoadout[definition.slot] = templateId;
+      set({ character: next });
+      get().save();
+      return { success: true };
+    },
+    unequipCosmetic: (slot) => {
+      const { character } = get();
+      if (!character) return { success: false, error: "Personagem indispon\xEDvel." };
+      if (!COSMETIC_SLOTS.some((entry) => entry.key === slot)) return { success: false, error: "Espa\xE7o cosm\xE9tico inv\xE1lido." };
+      const next = structuredClone(character);
+      next.cosmeticLoadout = { ...next.cosmeticLoadout ?? {} };
+      delete next.cosmeticLoadout[slot];
+      set({ character: next });
+      get().save();
+      return { success: true };
+    },
     loadFromSave: () => {
       const save = loadGame();
       if (!save) return false;
-      const timeAway = (Date.now() - save.character.lastTick) / 1e3;
+      const timeAway = (runtimeNow() - save.character.lastTick) / 1e3;
       let report = null;
       if (timeAway > 60 && !isGuided(save.character)) {
         report = { timeAwaySeconds: timeAway, xpGained: Math.floor(timeAway * 10), goldGained: Math.floor(timeAway * 2), itemsDropped: Math.floor(timeAway / 60), levelsGained: 0 };
@@ -3573,17 +4132,19 @@ function createGameStore(runtime = {}) {
     startHealing: () => {
       const { character, healingUntil } = get();
       if (!character || healingUntil) return;
-      set({ healingUntil: Date.now() + 15e3 });
+      set({ healingUntil: runtimeNow() + 15e3 });
     },
     cancelHealing: () => {
       set({ healingUntil: null });
     },
     save: () => {
       const { character, races } = get();
-      if (character) {
-        if (runtime.persist) runtime.persist(character, races);
-        else saveGame(character, races);
-      }
+      if (!character) return;
+      const valid = ownedCosmeticLoadout(character);
+      const next = character.cosmeticLoadout && JSON.stringify(valid) !== JSON.stringify(character.cosmeticLoadout) ? { ...character, cosmeticLoadout: valid } : character;
+      if (next !== character) set({ character: next });
+      if (runtime.persist) runtime.persist(next, races);
+      else saveGame(next, races);
     },
     spendStatPoint: (stat) => {
       const { character } = get();
@@ -3606,7 +4167,8 @@ function createGameStore(runtime = {}) {
         const skill = newCharacter.trainingSkill;
         if (skill) {
           const beforeSeconds = Number(newCharacter.trainingSeconds?.[skill] ?? 0);
-          const trainingLog = applyTraining(newCharacter, Date.now());
+          const trainingLog = applyTraining(newCharacter, runtimeNow());
+          newCharacter.onlineChestSeconds = (newCharacter.onlineChestSeconds ?? 0) + 3;
           trackQuestAction(newCharacter, "TRAIN", Number(newCharacter.trainingSeconds?.[skill] ?? 0) - beforeSeconds);
           recalcStats(newCharacter);
           const result2 = { kills: 0, gold: 0, xp: 0, drops: [], levelsGained: 0, death: false, log: trainingLog, enemyHp: 0, enemyMaxHp: 0, skillLevelUp: trainingLog.length ? trainingLog.join(" \xB7 ") : void 0 };
@@ -3621,8 +4183,8 @@ function createGameStore(runtime = {}) {
         get().stopHunting();
         return;
       }
-      if (isGuided(character)) character.lastTick = Date.now() - 3e3;
-      const result = processTick(character, zone, !isGuided(character) && Date.now() - character.lastTick > 15e3);
+      if (isGuided(character)) character.lastTick = runtimeNow() - 3e3;
+      const result = processTick(character, zone, !isGuided(character) && runtimeNow() - character.lastTick > 15e3);
       recordHuntMetrics(character, zone.id, result);
       if (result.death && result.deathData) {
         get().stopHunting();
@@ -3631,6 +4193,7 @@ function createGameStore(runtime = {}) {
         return;
       }
       updateQuestProgress(character, result);
+      character.onlineChestSeconds = (character.onlineChestSeconds ?? 0) + 3;
       recalcStats(character);
       set({ character: { ...character }, lastTickResult: result });
       get().save();
@@ -3666,8 +4229,8 @@ function createGameStore(runtime = {}) {
       if (healingUntil) return warn("Termine sua medita\xE7\xE3o primeiro!");
       if (tickInterval) clearInterval(tickInterval);
       character.trainingSkill = skill;
-      character.trainingLastTick = Date.now();
-      character.lastTick = Date.now();
+      character.trainingLastTick = runtimeNow();
+      character.lastTick = runtimeNow();
       set({ isTickRunning: false, isTraining: true, character: { ...character } });
       if (!runtime.server) {
         get().tick();
@@ -3677,7 +4240,7 @@ function createGameStore(runtime = {}) {
     armSpecialCombo: (power = 1.5) => {
       const { character, isTickRunning } = get();
       if (!character || !isTickRunning) return { success: false, error: "O combo s\xF3 pode ser armado durante a ca\xE7a." };
-      const now = Date.now();
+      const now = runtimeNow();
       if ((character.comboCooldownUntil ?? 0) > now) return { success: false, error: `Aguarde ${Math.ceil((character.comboCooldownUntil - now) / 1e3)}s para recarregar.` };
       const updated = JSON.parse(JSON.stringify(character));
       updated.comboReadyUntil = now + 12e3;
@@ -3701,7 +4264,7 @@ function createGameStore(runtime = {}) {
       if (character) {
         character.trainingSkill = null;
         character.trainingLastTick = void 0;
-        character.lastTick = Date.now();
+        character.lastTick = runtimeNow();
         set({ isTraining: false, character: { ...character } });
         get().save();
       }
@@ -3831,7 +4394,7 @@ function createGameStore(runtime = {}) {
       if (!character) return { success: false, error: "Sem personagem" };
       const egg = character.inventory.items.find((item) => item.uid === uid);
       if (!egg || !DIVINE_BEAST_EGG_TEMPLATES[egg.templateId]) return { success: false, error: "Escolha um Ovo de Besta Divina." };
-      const now = Date.now();
+      const now = runtimeNow();
       const incubator = character.divineBeastIncubator;
       if (!incubator) {
         const next2 = structuredClone(character);
@@ -3849,7 +4412,7 @@ function createGameStore(runtime = {}) {
       const next = structuredClone(character);
       removeItem(next.inventory, uid, 1);
       next.divineBeastIncubator = void 0;
-      next.divineBeasts = [...next.divineBeasts ?? [], { id: beastId, instanceId: generateId(), rarity, obtainedAt: Date.now() }];
+      next.divineBeasts = [...next.divineBeasts ?? [], { id: beastId, instanceId: generateId(), rarity, obtainedAt: runtimeNow() }];
       set({ character: next });
       get().save();
       notify(`O ovo eclodiu: ${DIVINE_BEASTS[beastId].name} \xB7 ${rarity}!`);
@@ -3873,7 +4436,7 @@ function createGameStore(runtime = {}) {
       next.divineBeasts = (next.divineBeasts ?? []).filter((_, index) => !consume.has(index));
       removeItem(next.inventory, ration.uid, 1);
       const rarity = rank[current + 1];
-      next.divineBeasts.push({ id, instanceId: generateId(), rarity, obtainedAt: Date.now() });
+      next.divineBeasts.push({ id, instanceId: generateId(), rarity, obtainedAt: runtimeNow() });
       set({ character: next });
       get().save();
       notify(`A linhagem foi aprimorada para ${rarity}!`);
@@ -3908,10 +4471,11 @@ function createGameStore(runtime = {}) {
         CENOURA_PET: { minutes: 5, mood: 2 },
         FRUTA_MEL: { minutes: 10, mood: 5 },
         MELANCIA_LUNAR: { minutes: 15, mood: 8 },
-        RACAO_DOMADOR: { minutes: 30, mood: 12 }
+        RACAO_DOMADOR: { minutes: 30, mood: 12 },
+        CALDO_MARCA_DAGUA: { minutes: 20, mood: 10 }
       }[item.templateId];
       if (!food) return { success: false, error: "Este item n\xE3o \xE9 alimento para Bestas Divinas." };
-      const now = Date.now();
+      const now = runtimeNow();
       const previous = character.divineBeastNeeds?.[id] ?? { nutrition: 0, mood: 70, updatedAt: now };
       const elapsedMinutes = Math.max(0, (now - previous.updatedAt) / 6e4);
       const needs = {
@@ -3974,7 +4538,7 @@ function createGameStore(runtime = {}) {
       const seed = farmSeed(seedId);
       if (!seed) return { success: false, error: "Semente inv\xE1lida." };
       const next = JSON.parse(JSON.stringify(character));
-      next.farm ??= { plots: [], unlockedPlots: 1, lastActionAt: Date.now(), skills: { planting: 0, harvesting: 0, irrigation: 0, fertility: 0 } };
+      next.farm ??= { plots: [], unlockedPlots: 1, lastActionAt: runtimeNow(), skills: { planting: 0, harvesting: 0, irrigation: 0, fertility: 0 } };
       next.farm.skills ??= { planting: 0, harvesting: 0, irrigation: 0, fertility: 0 };
       const plot = next.farm.plots.find((entry) => entry.id === plotId);
       if (!plot || next.farm.plots.indexOf(plot) >= next.farm.unlockedPlots) return { success: false, error: "Canteiro bloqueado." };
@@ -3988,12 +4552,12 @@ function createGameStore(runtime = {}) {
       next.gold -= seed.cost;
       plot.fertility = fertility;
       plot.seedId = seed.id;
-      plot.plantedAt = Date.now();
-      plot.readyAt = Date.now() + growMs;
-      plot.wateredAt = Date.now();
+      plot.plantedAt = runtimeNow();
+      plot.readyAt = runtimeNow() + growMs;
+      plot.wateredAt = runtimeNow();
       plot.waterCount = 0;
       next.farm.skills.planting += 1;
-      next.farm.lastActionAt = Date.now();
+      next.farm.lastActionAt = runtimeNow();
       set({ character: next });
       get().save();
       return { success: true };
@@ -4004,7 +4568,7 @@ function createGameStore(runtime = {}) {
       const next = JSON.parse(JSON.stringify(character));
       const plot = next.farm?.plots?.find((entry) => entry.id === plotId);
       if (!plot?.seedId || !plot.readyAt) return { success: false, error: "Este canteiro n\xE3o possui uma planta\xE7\xE3o ativa." };
-      const now = Date.now();
+      const now = runtimeNow();
       if (now >= plot.readyAt) return { success: false, error: "A planta\xE7\xE3o j\xE1 est\xE1 pronta para colher." };
       const waterCount = Number(plot.waterCount ?? 0);
       if (waterCount >= 3) return { success: false, error: "Esta planta\xE7\xE3o j\xE1 recebeu toda a irriga\xE7\xE3o poss\xEDvel." };
@@ -4036,7 +4600,7 @@ function createGameStore(runtime = {}) {
       plot.fertility = Math.min(FARM_FERTILITY_MAX, current + FARM_FERTILITY_COMPOST_GAIN);
       next.farm.skills ??= { planting: 0, harvesting: 0, irrigation: 0, fertility: 0 };
       next.farm.skills.fertility = Number(next.farm.skills.fertility ?? 0) + 1;
-      next.farm.lastActionAt = Date.now();
+      next.farm.lastActionAt = runtimeNow();
       set({ character: next });
       get().save();
       return { success: true, fertility: plot.fertility };
@@ -4048,7 +4612,7 @@ function createGameStore(runtime = {}) {
       const plot = next.farm?.plots?.find((entry) => entry.id === plotId);
       const seed = plot?.seedId ? farmSeed(plot.seedId) : void 0;
       if (!plot || !seed) return { success: false, error: "N\xE3o h\xE1 cultivo neste canteiro." };
-      if (!plot.readyAt || Date.now() < plot.readyAt) return { success: false, error: "A planta\xE7\xE3o ainda est\xE1 crescendo." };
+      if (!plot.readyAt || runtimeNow() < plot.readyAt) return { success: false, error: "A planta\xE7\xE3o ainda est\xE1 crescendo." };
       next.farm.skills ??= { planting: 0, harvesting: 0, irrigation: 0, fertility: 0 };
       const fertility = Math.max(FARM_FERTILITY_MIN, Math.min(FARM_FERTILITY_MAX, Number(plot.fertility ?? FARM_FERTILITY_MAX)));
       const quantity = farmYield(seed, fertility, Number(next.farm.skills.harvesting ?? 0));
@@ -4060,7 +4624,7 @@ function createGameStore(runtime = {}) {
       plot.wateredAt = void 0;
       plot.waterCount = void 0;
       next.farm.skills.harvesting += 1;
-      next.farm.lastActionAt = Date.now();
+      next.farm.lastActionAt = runtimeNow();
       set({ character: next });
       get().save();
       return { success: true, quantity: quantity.quantity };
@@ -4069,7 +4633,7 @@ function createGameStore(runtime = {}) {
       const { character } = get();
       if (!character) return { success: false, error: "Personagem indispon\xEDvel." };
       const next = JSON.parse(JSON.stringify(character));
-      next.farm ??= { plots: [], unlockedPlots: 1, lastActionAt: Date.now() };
+      next.farm ??= { plots: [], unlockedPlots: 1, lastActionAt: runtimeNow() };
       const cost = farmExpansionCost(next.farm.unlockedPlots);
       if (!cost) return { success: false, error: "Todos os terrenos j\xE1 foram liberados." };
       if (cost.kind === "gold") {
@@ -4109,6 +4673,128 @@ function createGameStore(runtime = {}) {
       get().save();
       return { success: true, quantity: recipe.outputQuantity };
     },
+    equipProfessionTool: (uid) => {
+      const { character } = get();
+      if (!character) return { success: false, error: "Personagem indispon\xEDvel." };
+      const next = structuredClone(character);
+      const item = next.inventory.items.find((entry) => entry.uid === uid);
+      if (!item || item.category !== "FERRAMENTA" || !item.profession) return { success: false, error: "Escolha uma ferramenta de profiss\xE3o v\xE1lida." };
+      const skill = item.profession === "MINERACAO" ? Number(next.professions?.mining ?? 0) : Number(next.professions?.fishing ?? 0);
+      if (skill < Number(item.requiredSkill ?? 0)) return { success: false, error: `Requer ${item.profession === "MINERACAO" ? "minera\xE7\xE3o" : "pesca"} ${item.requiredSkill ?? 0}.` };
+      removeItem(next.inventory, uid, 1);
+      const field = item.profession === "MINERACAO" ? "equippedMiningTool" : "equippedFishingRod";
+      const previous = next[field];
+      if (previous) addItem(next.inventory, previous);
+      next[field] = item;
+      set({ character: next });
+      get().save();
+      return { success: true };
+    },
+    buyProfessionTool: (templateId) => {
+      const { character } = get();
+      if (!character) return { success: false, error: "Personagem indispon\xEDvel." };
+      const offer = PROFESSION_TOOL_SHOP.find((entry) => entry.templateId === templateId);
+      const template = PROFESSION_TOOL_TEMPLATES[templateId];
+      if (!offer || !template) return { success: false, error: "Ferramenta indispon\xEDvel." };
+      const next = structuredClone(character);
+      if ([...next.inventory.items, ...next.depot, next.equippedMiningTool, next.equippedFishingRod].some((item2) => item2?.templateId === templateId)) return { success: false, error: "Voc\xEA j\xE1 possui esta ferramenta na mochila, no dep\xF3sito ou equipada." };
+      const skill = offer.profession === "MINERACAO" ? Number(next.professions?.mining ?? 0) : Number(next.professions?.fishing ?? 0);
+      if (skill < offer.requiredSkill) return { success: false, error: `Requer ${offer.profession === "MINERACAO" ? "minera\xE7\xE3o" : "pesca"} ${offer.requiredSkill}.` };
+      if (next.gold < offer.gold) return { success: false, error: `Voc\xEA precisa de ${offer.gold.toLocaleString("pt-BR")} gold.` };
+      const item = createItem({ ...template, uid: generateId() });
+      if (!addItem(next.inventory, item)) return { success: false, error: "Bolsa cheia. Libere espa\xE7o antes de comprar." };
+      next.gold -= offer.gold;
+      set({ character: next });
+      get().save();
+      notify(`${template.name} entregue. Equipe-a para liberar o pr\xF3ximo veio ou ponto.`);
+      return { success: true, templateId };
+    },
+    refineProfessionRecipe: (recipeId) => {
+      const { character } = get();
+      if (!character) return { success: false, error: "Personagem indispon\xEDvel." };
+      const recipe = PROFESSION_RECIPES.find((entry) => entry.id === recipeId);
+      if (!recipe) return { success: false, error: "Receita de profiss\xE3o inv\xE1lida." };
+      const next = structuredClone(character);
+      const skill = recipe.profession === "MINERACAO" ? Number(next.professions?.mining ?? 0) : Number(next.professions?.fishing ?? 0);
+      if (skill < recipe.requiredSkill) return { success: false, error: `Requer ${recipe.profession === "MINERACAO" ? "minera\xE7\xE3o" : "pesca"} ${recipe.requiredSkill}.` };
+      for (const ingredient of recipe.ingredients) if (countByTemplate(next.inventory, ingredient.templateId) < ingredient.quantity) return { success: false, error: `Faltam materiais para ${recipe.name}.` };
+      for (const ingredient of recipe.ingredients) {
+        let remaining = ingredient.quantity;
+        for (const item of [...next.inventory.items]) {
+          if (item.templateId !== ingredient.templateId || remaining <= 0) continue;
+          const take = Math.min(remaining, item.quantity);
+          removeItem(next.inventory, item.uid, take);
+          remaining -= take;
+        }
+      }
+      const output = makeMaterial(recipe.outputTemplateId);
+      if (!output) return { success: false, error: "Produto de refino indispon\xEDvel." };
+      output.quantity = recipe.outputQuantity;
+      if (!addItem(next.inventory, output)) return { success: false, error: "Bolsa cheia. Libere espa\xE7o antes de refinar." };
+      set({ character: next });
+      get().save();
+      notify(`${recipe.name} conclu\xEDdo: ${recipe.outputQuantity} unidade(s).`);
+      return { success: true, quantity: recipe.outputQuantity };
+    },
+    mineResource: (nodeId, precision = 1) => {
+      const { character } = get();
+      if (!character) return { success: false, error: "Personagem indispon\xEDvel." };
+      const node = MINING_NODES.find((entry) => entry.id === nodeId);
+      if (!node) return { success: false, error: "Veio de minera\xE7\xE3o inv\xE1lido." };
+      if (!canEnterZone(character, node.zoneId)) return { success: false, error: "Conclua a travessia deste bioma em Jornadas para minerar aqui." };
+      const next = JSON.parse(JSON.stringify(character));
+      next.professions ??= { mining: 0, fishing: 0, lastMiningAt: 0, lastFishingAt: 0 };
+      const skill = Number(next.professions.mining ?? 0);
+      if (skill < node.requiredSkill) return { success: false, error: `Minera\xE7\xE3o ${node.requiredSkill} necess\xE1ria.` };
+      const tool = next.equippedMiningTool;
+      if (!tool || Number(tool.tier ?? 0) < node.tier) return { success: false, error: `Equipe uma picareta T${node.tier} ou superior.` };
+      const now = runtimeNow();
+      const cooldown = professionCooldown(skill);
+      if (now - Number(next.professions.lastMiningAt ?? 0) < cooldown) return { success: false, error: `A picareta precisa descansar ${Math.ceil((cooldown - (now - Number(next.professions.lastMiningAt ?? 0))) / 1e3)}s.` };
+      const quality = precision === 1.5 ? 1.25 : precision === 0.5 ? 0.85 : 1;
+      const quantity = Math.max(1, Math.floor((1 + Math.floor(skill / 30)) * quality));
+      const template = ALL_ITEM_TEMPLATES[node.dropTemplateId];
+      const drop = createItem({ ...template ?? { templateId: node.dropTemplateId, name: node.dropName, category: "MATERIAL", tier: node.tier, rarity: node.tier >= 4 ? "EPICO" : node.tier >= 3 ? "RARO" : "COMUM", icon: node.dropIcon, stackable: true, maxStack: 999 }, uid: generateId(), quantity, stackable: true, maxStack: 999 });
+      if (!addItem(next.inventory, drop)) return { success: false, error: "Bolsa cheia. Libere espa\xE7o para guardar o min\xE9rio." };
+      next.professions.mining = skill + (precision === 1.5 ? 2 : 1);
+      next.professions.lastMiningAt = now;
+      set({ character: next });
+      get().save();
+      return { success: true, quantity };
+    },
+    fishSpot: (spotId, precision = 1, baitId) => {
+      const { character } = get();
+      if (!character) return { success: false, error: "Personagem indispon\xEDvel." };
+      const spot = FISHING_SPOTS.find((entry) => entry.id === spotId);
+      if (!spot) return { success: false, error: "Ponto de pesca inv\xE1lido." };
+      if (!canEnterZone(character, spot.zoneId)) return { success: false, error: "Conclua a travessia deste bioma em Jornadas para pescar aqui." };
+      const next = JSON.parse(JSON.stringify(character));
+      next.professions ??= { mining: 0, fishing: 0, lastMiningAt: 0, lastFishingAt: 0 };
+      const skill = Number(next.professions.fishing ?? 0);
+      if (skill < spot.requiredSkill) return { success: false, error: `Pesca ${spot.requiredSkill} necess\xE1ria.` };
+      const rod = next.equippedFishingRod;
+      if (!rod || Number(rod.tier ?? 0) < spot.rodTier) return { success: false, error: `Equipe uma vara T${spot.rodTier} ou superior.` };
+      if (baitId !== void 0 && baitId !== FISHING_BAIT.templateId) return { success: false, error: "Isca inv\xE1lida." };
+      if (baitId && countByTemplate(next.inventory, baitId) < FISHING_BAIT.quantity) return { success: false, error: "A isca escolhida n\xE3o est\xE1 mais na mochila." };
+      const now = runtimeNow();
+      const cooldown = professionCooldown(skill);
+      if (now - Number(next.professions.lastFishingAt ?? 0) < cooldown) return { success: false, error: `A linha ainda est\xE1 na \xE1gua. Aguarde ${Math.ceil((cooldown - (now - Number(next.professions.lastFishingAt ?? 0))) / 1e3)}s.` };
+      const quality = precision === 1.5 ? 1.25 : precision === 0.5 ? 0.85 : 1;
+      const quantity = Math.max(1, Math.floor((1 + Math.floor(skill / 35)) * quality));
+      const template = ALL_ITEM_TEMPLATES[spot.dropTemplateId];
+      const drop = createItem({ ...template ?? { templateId: spot.dropTemplateId, name: spot.dropName, category: "MATERIAL", tier: spot.rodTier, rarity: spot.rodTier >= 4 ? "EPICO" : spot.rodTier >= 3 ? "RARO" : "COMUM", icon: spot.dropIcon, stackable: true, maxStack: 999 }, uid: generateId(), quantity, stackable: true, maxStack: 999 });
+      if (baitId) {
+        const baitStack = next.inventory.items.find((item) => item.templateId === baitId && item.quantity > 0);
+        removeItem(next.inventory, baitStack.uid, FISHING_BAIT.quantity);
+        drop.quantity += FISHING_BAIT.bonusFish;
+      }
+      if (!addItem(next.inventory, drop)) return { success: false, error: "Bolsa cheia. Libere espa\xE7o para guardar o peixe." };
+      next.professions.fishing = skill + (precision === 1.5 ? 2 : 1);
+      next.professions.lastFishingAt = now;
+      set({ character: next });
+      get().save();
+      return { success: true, quantity: drop.quantity, ...baitId ? { baitConsumed: baitId, bonusQuantity: FISHING_BAIT.bonusFish } : {} };
+    },
     salvageAll: (maxRarity) => {
       const { character } = get();
       if (!character) return;
@@ -4137,9 +4823,11 @@ function createGameStore(runtime = {}) {
       if (!character) return;
       const newCharacter = JSON.parse(JSON.stringify(character));
       if (settings.autoPotion !== void 0) newCharacter.autoPotion = settings.autoPotion;
-      if (settings.autoSell !== void 0) newCharacter.autoSell = settings.autoSell;
+      const premiumAutomation = Boolean(newCharacter.premium);
+      if (settings.autoSell !== void 0 && premiumAutomation) newCharacter.autoSell = settings.autoSell;
+      if (settings.autoSellTemplateIds !== void 0 && !premiumAutomation) notify("Auto-venda por raridade e por item \xE9 um benef\xEDcio do Premium Account.");
       if (settings.autoSalvage !== void 0) newCharacter.autoSalvage = settings.autoSalvage;
-      if (settings.autoSellTemplateIds !== void 0) {
+      if (settings.autoSellTemplateIds !== void 0 && premiumAutomation) {
         newCharacter.autoSellTemplateIds = settings.autoSellTemplateIds;
         newCharacter.autoSalvageTemplateIds = (newCharacter.autoSalvageTemplateIds ?? []).filter((id) => !settings.autoSellTemplateIds.includes(id));
       }
@@ -4165,7 +4853,7 @@ function createGameStore(runtime = {}) {
       if (!character) return;
       const newCharacter = JSON.parse(JSON.stringify(character));
       const durationMs = newCharacter.premium ? 30 * 60 * 1e3 : 5 * 60 * 1e3;
-      const currentBuff = newCharacter.doubleAtkUntil && newCharacter.doubleAtkUntil > Date.now() ? newCharacter.doubleAtkUntil : Date.now();
+      const currentBuff = newCharacter.doubleAtkUntil && newCharacter.doubleAtkUntil > runtimeNow() ? newCharacter.doubleAtkUntil : runtimeNow();
       newCharacter.doubleAtkUntil = currentBuff + durationMs;
       set({ character: newCharacter });
       get().save();
@@ -4231,7 +4919,7 @@ function createGameStore(runtime = {}) {
       const day = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
       if (character.trainingBoostDay === day) return { success: false, error: "J\xE1 adquirido hoje. Reinicia \xE0s 00:00 UTC." };
       if (character.gold < 250) return { success: false, error: "Gold insuficiente (250)." };
-      set({ character: { ...character, gold: character.gold - 250, trainingBoostDay: day, trainingBoostUntil: Date.now() + 18e5 } });
+      set({ character: { ...character, gold: character.gold - 250, trainingBoostDay: day, trainingBoostUntil: runtimeNow() + 18e5 } });
       get().save();
       return { success: true };
     },
@@ -4242,7 +4930,7 @@ function createGameStore(runtime = {}) {
       const newChar = JSON.parse(JSON.stringify(character));
       newChar.gold -= vial.price;
       if (!newChar.activeVials) newChar.activeVials = {};
-      const now = Date.now();
+      const now = runtimeNow();
       const family = vial.id.replace(/_[0-9]+$/, "");
       for (const id of Object.keys(newChar.activeVials)) if (id.replace(/_[0-9]+$/, "") === family) delete newChar.activeVials[id];
       newChar.activeVials[vial.id] = now + vial.durationMinutes * 6e4;
@@ -4355,7 +5043,7 @@ function createGameStore(runtime = {}) {
       const next = structuredClone(character);
       next.mythreonCoins = (next.mythreonCoins ?? 0) - offer.priceCoins;
       next.mythreonBoosts ??= {};
-      const now = Date.now();
+      const now = runtimeNow();
       const current = next.mythreonBoosts[offer.boostKey];
       if (offer.durationHours === 0) next.mythreonBoosts[offer.boostKey] = 0;
       else {
@@ -4399,42 +5087,63 @@ function createGameStore(runtime = {}) {
     buyCalendarCoupon: () => {
       const { character } = get();
       if (!character) return { success: false, error: "Sem personagem." };
-      if ((character.mythreonCoins ?? 0) < 1) return { success: false, error: "Voc\xEA precisa de 1 Mythreon Coin por cupom." };
-      const next = { ...character, mythreonCoins: (character.mythreonCoins ?? 0) - 1, calendarCoupons: (character.calendarCoupons ?? 0) + 1 };
+      if (!Number.isSafeInteger(character.mythreonCoins) || Number(character.mythreonCoins) < CALENDAR_COUPON_PRICE) return { success: false, error: "Voc\xEA precisa de 1 Mythreon Coin por cupom." };
+      const next = { ...character, mythreonCoins: (character.mythreonCoins ?? 0) - CALENDAR_COUPON_PRICE, calendarCoupons: (character.calendarCoupons ?? 0) + 1 };
       set({ character: next });
       get().save();
-      notify("Cupom de resgate do calend\xE1rio adquirido.");
       return { success: true };
     },
     claimDailyCalendar: () => {
       const { character } = get();
       if (!character) return { success: false, error: "Sem personagem." };
-      const today = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
-      if ((character.calendarClaimedDays ?? []).includes(today)) return { success: false, error: "A recompensa de hoje j\xE1 foi resgatada." };
-      if ((character.calendarCoupons ?? 0) < 1) return { success: false, error: "Adquira um Cupom de Resgate com Mythreon Coin." };
-      const yesterday = new Date(Date.now() - 864e5).toISOString().slice(0, 10);
-      const streak = character.calendarLastClaimDay === yesterday ? (character.calendarStreak ?? 0) + 1 : 1;
+      const result = claimCalendarReward(character);
+      if (!result.success) return result;
+      set({ character: result.character });
+      get().save();
+      return { success: true, reward: result.reward };
+    },
+    claimOnlineChest: () => {
+      const { character } = get();
+      if (!character) return { success: false, error: "Sem personagem." };
+      const required = 300;
+      if ((character.onlineChestSeconds ?? 0) < required) return { success: false, error: `Fique online por mais ${Math.ceil((required - (character.onlineChestSeconds ?? 0)) / 60)} min para abrir o ba\xFA.` };
       const next = structuredClone(character);
-      next.calendarCoupons = (next.calendarCoupons ?? 0) - 1;
-      next.calendarClaimedDays = [...(next.calendarClaimedDays ?? []).filter((day) => day.slice(0, 7) === today.slice(0, 7)), today];
-      next.calendarLastClaimDay = today;
-      next.calendarStreak = streak;
-      const rewardGold = 500 + streak * 250;
-      next.gold += rewardGold;
-      let reward = `${rewardGold.toLocaleString("pt-BR")} gold`;
-      if (streak % 7 === 0) {
-        const fragment = createItem({ ...FRAGMENT_TEMPLATES.FRAGMENTO_RARO, quantity: 3 });
-        addItem(next.inventory, fragment);
-        reward += " + 3 Fragmentos Raros";
-      }
-      if (streak >= 30 && !next.inventory.items.some((item) => item.templateId === "SKIN_CAPA_PRIMEIRO_CANTO") && !next.depot.some((item) => item.templateId === "SKIN_CAPA_PRIMEIRO_CANTO")) {
-        addItem(next.inventory, createItem({ ...UNIQUE_TEMPLATES.SKIN_CAPA_PRIMEIRO_CANTO }));
-        reward += " + Capa do Primeiro Canto";
-      }
+      next.onlineChestSeconds = Math.max(0, (next.onlineChestSeconds ?? 0) - required);
+      next.onlineChestsOpened = (next.onlineChestsOpened ?? 0) + 1;
+      const gold = 400 + next.level * 120;
+      const shards = 1 + Math.floor(next.level / 20);
+      next.gold += gold;
+      next.mythreonShards = (next.mythreonShards ?? 0) + shards;
+      const reward = `${gold.toLocaleString("pt-BR")} gold + ${shards} Mythreon Shard${shards === 1 ? "" : "s"}`;
       set({ character: next });
       get().save();
-      notify(`Calend\xE1rio: ${reward}`);
+      notify(`Ba\xFA do Ref\xFAgio: ${reward}`);
       return { success: true, reward };
+    },
+    setCardLoadout: (uids) => {
+      const { character } = get();
+      if (!character) return { success: false, error: "Sem personagem." };
+      if (!Array.isArray(uids) || uids.length > 5 || uids.some((uid) => typeof uid !== "string")) return { success: false, error: "A forma\xE7\xE3o aceita at\xE9 cinco cartas." };
+      const unique = [...new Set(uids)];
+      const owned = new Set((character.cards ?? []).filter((card) => CARD_TEMPLATES[card.templateId]).map((card) => card.uid));
+      if (unique.some((uid) => !owned.has(uid))) return { success: false, error: "Uma das cartas n\xE3o pertence \xE0 sua cole\xE7\xE3o." };
+      const next = structuredClone(character);
+      next.cardLoadout = unique;
+      recalcStats(next);
+      set({ character: next });
+      get().save();
+      return { success: true };
+    },
+    evolveCard: (uid, materialUids, expectedLevel) => {
+      const { character } = get();
+      if (!character) return { success: false, error: "Sem personagem." };
+      if (typeof uid !== "string" || !Array.isArray(materialUids) || materialUids.some((id) => typeof id !== "string") || !Number.isInteger(expectedLevel)) return { success: false, error: "Dados de evolu\xE7\xE3o inv\xE1lidos." };
+      const next = structuredClone(character), result = evolveCard(next, uid, materialUids, expectedLevel);
+      if (!result.success) return result;
+      recalcStats(next);
+      set({ character: next });
+      get().save();
+      return result;
     },
     depositItem: (uid) => {
       const { character } = get();
@@ -4499,7 +5208,7 @@ function createGameStore(runtime = {}) {
       if (teamSize === 3 || teamSize === 5 && character.arenaRareRewardDay !== today) {
         const fragmentId = teamSize === 3 ? "FRAGMENTO_COMUM" : "FRAGMENTO_RARO";
         const template = FRAGMENT_TEMPLATES[fragmentId];
-        if (addItem(newCharacter.inventory, { ...template, uid: `arena-${Date.now()}-${Math.random()}`, quantity: 1 })) {
+        if (addItem(newCharacter.inventory, { ...template, uid: `arena-${runtimeNow()}-${Math.random()}`, quantity: 1 })) {
           fragment = fragmentId;
           if (teamSize === 5) newCharacter.arenaRareRewardDay = today;
         }
@@ -4511,6 +5220,58 @@ function createGameStore(runtime = {}) {
   }));
 }
 var useGameStore = createGameStore();
+
+// src/engine/professionPrecision.ts
+var PROFESSION_PULSE_MS = 3e3;
+var PERFECT_PULSE_RADIUS = 0.045;
+var GOOD_PULSE_RADIUS = 0.11;
+function professionPrecisionAt(elapsed, target) {
+  if (!Number.isFinite(elapsed) || !Number.isFinite(target) || elapsed < 0 || elapsed >= PROFESSION_PULSE_MS) return 0.5;
+  const distance = Math.abs(elapsed / PROFESSION_PULSE_MS - target);
+  return distance <= PERFECT_PULSE_RADIUS ? 1.5 : distance <= GOOD_PULSE_RADIUS ? 1 : 0.5;
+}
+
+// src/engine/professionChallenge.ts
+var PROFESSION_LEAD_MS = 1200;
+var PROFESSION_DELIVERY_GRACE_MS = 750;
+function gatheringAccessError(c, kind, targetId, now, baitId) {
+  const mining = kind === "MINERACAO";
+  const point = mining ? MINING_NODES.find((node) => node.id === targetId) : FISHING_SPOTS.find((spot) => spot.id === targetId);
+  if (!point) return "Ponto de coleta inv\xE1lido.";
+  if (!canEnterZone(c, point.zoneId)) return "Conclua a travessia deste bioma em Jornadas antes de coletar.";
+  const skill = Number(mining ? c.professions?.mining ?? 0 : c.professions?.fishing ?? 0);
+  if (skill < point.requiredSkill) return `Requer ${mining ? "minera\xE7\xE3o" : "pesca"} ${point.requiredSkill}.`;
+  const tier = mining ? point.tier : point.rodTier;
+  const tool = mining ? c.equippedMiningTool : c.equippedFishingRod;
+  if (!tool || tool.category !== "FERRAMENTA" || tool.profession !== kind || Number(tool.tier ?? 0) < tier) return `Equipe ${mining ? "picareta" : "vara"} T${tier} ou superior.`;
+  const last = Number(mining ? c.professions?.lastMiningAt ?? 0 : c.professions?.lastFishingAt ?? 0);
+  const remaining = professionCooldown(skill) - (now - last);
+  if (remaining > 0) return `Aguarde ${Math.ceil(remaining / 1e3)}s antes de coletar novamente.`;
+  if (baitId !== void 0 && (mining || baitId !== FISHING_BAIT.templateId)) return "Isca inv\xE1lida para esta coleta.";
+  if (baitId && countByTemplate(c.inventory, baitId) < FISHING_BAIT.quantity) return "A isca escolhida n\xE3o est\xE1 mais na mochila.";
+}
+function prepareGathering(c, previous, kind, targetId, now, baitId) {
+  if (previous && previous.expiresAt > now) return { success: false, error: "Conclua ou cancele o pulso de coleta atual." };
+  const error = gatheringAccessError(c, kind, targetId, now, baitId);
+  if (error) return { success: false, error };
+  const startsAt = now + PROFESSION_LEAD_MS;
+  return { success: true, serverNow: now, challenge: {
+    id: crypto.randomUUID(),
+    kind,
+    targetId,
+    target: 0.4 + Math.random() * 0.35,
+    createdAt: now,
+    startsAt,
+    expiresAt: startsAt + PROFESSION_PULSE_MS + PROFESSION_DELIVERY_GRACE_MS,
+    ...baitId ? { baitId } : {}
+  } };
+}
+function resolveGathering(challenge, id, now) {
+  if (!challenge || challenge.id !== id) return { success: false, error: "Este pulso de coleta n\xE3o est\xE1 mais dispon\xEDvel." };
+  if (now < challenge.startsAt) return { success: false, error: "O pulso ainda n\xE3o come\xE7ou. Segure at\xE9 o marcador avan\xE7ar." };
+  if (now >= challenge.expiresAt) return { success: false, error: "O pulso expirou. Inicie uma nova coleta." };
+  return { success: true, precision: professionPrecisionAt(now - challenge.startsAt, challenge.target) };
+}
 
 // server/game.ts
 function freshWorld(name, id, appearance) {
@@ -4562,11 +5323,19 @@ function normalizeLegacyItems(character) {
 function executeGame(world, action, args = []) {
   normalizeArrowItems(world.character);
   normalizeLegacyItems(world.character);
-  world.character.farm ??= { plots: [{ id: "plot-1", fertility: 100 }], unlockedPlots: 1, skills: { planting: 0, harvesting: 0, irrigation: 0, fertility: 0 }, lastActionAt: Date.now() };
-  world.character.farm.skills ??= { planting: 0, harvesting: 0, irrigation: 0, fertility: 0 };
-  world.character.farm.skills.irrigation ??= 0;
-  world.character.farm.skills.fertility ??= 0;
-  for (const plot of world.character.farm.plots) plot.fertility ??= 100;
+  const farm = world.character.farm ?? { plots: [{ id: "plot-1", fertility: 100 }], unlockedPlots: 1, skills: { planting: 0, harvesting: 0, irrigation: 0, fertility: 0 }, lastActionAt: Date.now() };
+  world.character.farm = farm;
+  world.character.professions = world.character.professions ?? { mining: 0, fishing: 0, lastMiningAt: 0, lastFishingAt: 0 };
+  world.character.professions.mining ??= 0;
+  world.character.professions.fishing ??= 0;
+  const items = world.character.inventory?.items ?? [];
+  const starterTarget = () => items.length < Number(world.character.inventory?.backpack?.slots ?? 0) ? items : world.character.depot ??= [];
+  if (!world.character.equippedMiningTool && !items.some((item) => item.templateId === "PICARETA_T1") && !world.character.depot?.some((item) => item.templateId === "PICARETA_T1")) starterTarget().push(createItem({ ...PROFESSION_TOOL_TEMPLATES.PICARETA_T1, uid: generateId() }));
+  if (!world.character.equippedFishingRod && !items.some((item) => item.templateId === "VARA_PESCA_T1") && !world.character.depot?.some((item) => item.templateId === "VARA_PESCA_T1")) starterTarget().push(createItem({ ...PROFESSION_TOOL_TEMPLATES.VARA_PESCA_T1, uid: generateId() }));
+  farm.skills = farm.skills ?? { planting: 0, harvesting: 0, irrigation: 0, fertility: 0 };
+  farm.skills.irrigation ??= 0;
+  farm.skills.fertility ??= 0;
+  for (const plot of farm.plots) plot.fertility ??= 100;
   const expectedXp = xpToNextLevel(world.character.level);
   if (world.character.xpToNext !== expectedXp) {
     world.character.xp = Math.floor(world.character.xp / Math.max(1, world.character.xpToNext) * expectedXp);
@@ -4599,12 +5368,38 @@ function executeGame(world, action, args = []) {
     if (s.isTickRunning && ["sellItem", "sellSelected", "salvageAll", "salvageSelected", "upgradeItem", "rerollItem"].includes(action)) throw Error("Saia da ca\xE7a para acessar o Ferreiro.");
     if (action === "activateBuff" && (!s.isTickRunning || !s.character?.onlineBalloonUntil || s.character.onlineBalloonUntil < now)) throw Error("Este eco de b\xF4nus expirou. Aguarde outro durante a ca\xE7a.");
     const zero = ["finishIntro", "clearOfflineReport", "clearDeathReport", "startHealing", "cancelHealing", "stopHunting", "stopTraining", "unequipRace", "unequipDivineBeast", "activateBuff", "buyTrainingBoost", "buyBless", "refreshCompendium"];
-    const strings = ["unlockZone", "setActiveEnemy", "setCurrentZone", "acceptQuest", "claimQuest", "upgradeItem", "rerollItem", "depositItem", "withdrawItem", "discardItem", "plantFarmSeed", "waterFarmPlot", "fertilizeFarmPlot", "harvestFarmPlot", "cookFarmRecipe"];
+    const strings = ["unlockZone", "setActiveEnemy", "setCurrentZone", "acceptQuest", "claimQuest", "upgradeItem", "rerollItem", "depositItem", "withdrawItem", "discardItem", "plantFarmSeed", "waterFarmPlot", "fertilizeFarmPlot", "harvestFarmPlot", "cookFarmRecipe", "buyProfessionTool"];
     const uid = (v) => {
       if (typeof v !== "string" || v.length < 1 || v.length > 128) throw Error("Identificador inv\xE1lido.");
       return v;
     };
-    if (zero.includes(action)) {
+    if (action === "beginProfessionChallenge") {
+      if (args.length !== 2 && args.length !== 3 || !["MINERACAO", "PESCA"].includes(String(args[0]))) throw Error("Profiss\xE3o inv\xE1lida.");
+      const prepared = prepareGathering(s.character, world.professionChallenge, args[0], uid(args[1]), now, args.length === 3 ? uid(args[2]) : void 0);
+      if (prepared.success) world.professionChallenge = prepared.challenge;
+      result = prepared;
+    } else if (action === "finishProfessionChallenge") {
+      if (args.length !== 1) throw Error("Par\xE2metros inesperados.");
+      const id = uid(args[0]), challenge = world.professionChallenge, resolved = resolveGathering(challenge, id, now);
+      if (challenge?.id === id) world.professionChallenge = void 0;
+      if (!resolved.success) {
+        result = resolved;
+      } else {
+        const error = gatheringAccessError(s.character, challenge.kind, challenge.targetId, now, challenge.baitId);
+        if (error) {
+          result = { success: false, error };
+        } else {
+          const collected = challenge.kind === "MINERACAO" ? s.mineResource(challenge.targetId, resolved.precision) : s.fishSpot(challenge.targetId, resolved.precision, challenge.baitId);
+          result = { ...collected, precision: resolved.precision };
+        }
+      }
+    } else if (action === "cancelProfessionChallenge") {
+      if (args.length !== 1) throw Error("Par\xE2metros inesperados.");
+      const id = uid(args[0]);
+      if (world.professionChallenge?.id === id) world.professionChallenge = void 0;
+      result = { success: true };
+    } else if (action === "mineResource" || action === "fishSpot") throw Error("Inicie um pulso de coleta antes de extrair recursos online.");
+    else if (zero.includes(action)) {
       if (args.length) throw Error("Par\xE2metros inesperados.");
       result = s[action]();
     } else if (strings.includes(action)) {
@@ -4618,6 +5413,14 @@ function executeGame(world, action, args = []) {
         }
         result = s[action](id);
       }
+    } else if (action === "equipProfessionTool") {
+      const id = uid(args[0]);
+      result = s.equipProfessionTool(id);
+      if (!result?.success) throw Error(result?.error ?? "N\xE3o foi poss\xEDvel equipar a ferramenta.");
+    } else if (action === "refineProfessionRecipe") {
+      const id = uid(args[0]);
+      result = s.refineProfessionRecipe(id);
+      if (!result?.success) throw Error(result?.error ?? "N\xE3o foi poss\xEDvel concluir o refino.");
     } else if (action === "startHunting") {
       const zone = uid(args[0]);
       if (!ZONES[zone]) throw Error("Mapa inv\xE1lido.");
@@ -4655,6 +5458,15 @@ function executeGame(world, action, args = []) {
       }
       result = s.updateAppearance(value);
       if (!result?.success) throw Error(result?.error ?? "N\xE3o foi poss\xEDvel salvar a apar\xEAncia.");
+    } else if (action === "equipCosmetic") {
+      const id = uid(args[0]);
+      if (!/^(SKIN_|LUMINESCENCIA_|ADDON_)/.test(id)) throw Error("Cosm\xE9tico inv\xE1lido.");
+      result = s.equipCosmetic(id);
+      if (!result?.success) throw Error(result?.error ?? "N\xE3o foi poss\xEDvel equipar o cosm\xE9tico.");
+    } else if (action === "unequipCosmetic") {
+      if (args.length !== 1 || !COSMETIC_SLOTS.some((slot) => slot.key === args[0])) throw Error("Espa\xE7o cosm\xE9tico inv\xE1lido.");
+      result = s.unequipCosmetic(args[0]);
+      if (!result?.success) throw Error(result?.error ?? "N\xE3o foi poss\xEDvel remover o cosm\xE9tico.");
     } else if (action === "equipRace") {
       const id = typeof args[0] === "string" ? args[0] : args[0]?.id;
       const race = s.races.find((r) => r.id === id);
@@ -4681,11 +5493,24 @@ function executeGame(world, action, args = []) {
       result = s.rerollSpecificAffix(uid(args[0]), uid(args[1]));
       if (!result?.success) throw Error(result?.error ?? "N\xE3o foi poss\xEDvel sortear o atributo.");
     } else if (action === "buyCalendarCoupon") {
+      if (args.length) throw Error("Par\xE2metros inesperados.");
       result = s.buyCalendarCoupon();
       if (!result?.success) throw Error(result?.error ?? "N\xE3o foi poss\xEDvel comprar o cupom.");
     } else if (action === "claimDailyCalendar") {
+      if (args.length) throw Error("Par\xE2metros inesperados.");
       result = s.claimDailyCalendar();
       if (!result?.success) throw Error(result?.error ?? "N\xE3o foi poss\xEDvel resgatar a recompensa.");
+    } else if (action === "claimOnlineChest") {
+      if (args.length) throw Error("Par\xE2metros inesperados.");
+      result = s.claimOnlineChest();
+      if (!result?.success) throw Error(result?.error ?? "O ba\xFA ainda n\xE3o est\xE1 pronto.");
+    } else if (action === "setCardLoadout") {
+      if (!Array.isArray(args[0]) || args[0].length > 5 || args[0].some((uid2) => typeof uid2 !== "string" || uid2.length > 128)) throw Error("Forma\xE7\xE3o de cartas inv\xE1lida.");
+      result = s.setCardLoadout([...new Set(args[0])]);
+      if (!result?.success) throw Error(result?.error ?? "N\xE3o foi poss\xEDvel salvar a forma\xE7\xE3o.");
+    } else if (action === "evolveCard") {
+      if (args.length !== 3 || !Array.isArray(args[1]) || args[1].length > 16 || args[1].some((id) => typeof id !== "string" || id.length < 1 || id.length > 128) || !Number.isInteger(args[2]) || Number(args[2]) < 1 || Number(args[2]) > 4) throw Error("Dados de evolu\xE7\xE3o inv\xE1lidos.");
+      result = s.evolveCard(uid(args[0]), args[1], Number(args[2]));
     } else if (action === "synthesize") {
       result = s.synthesize(uid(args[0]), uid(args[1]), uid(args[2]));
       if (result?.success) world.counters.syntheses++;
@@ -4774,6 +5599,7 @@ function executeGame(world, action, args = []) {
   }
   const state = store.getState();
   const character = state.character;
+  normalizeCosmeticOwnership(character);
   recalcStats(character);
   if (!Number.isFinite(character.gold) || character.gold < 0 || character.gold > Number.MAX_SAFE_INTEGER) throw Error("Saldo inv\xE1lido.");
   return { world: { ...world, character, races: state.races, isTickRunning: state.isTickRunning, isTraining: state.isTraining, healingUntil: state.healingUntil, deathReport: state.deathReport, lastTickResult: state.lastTickResult }, result: result ?? null, messages };
@@ -4788,7 +5614,7 @@ function rankingMetrics(w) {
 var import_node_crypto = require("node:crypto");
 
 // src/online/rules.ts
-var ONLINE_RULES = { maxCharacters: 3, maxText: 500, messageCooldownMs: 1500, maxMailItems: 10, maxTradeItems: 10, minTransferLevel: 5, tradeExpiryMs: 30 * 60 * 1e3, baseFee: 10, goldFeeRate: 0.02 };
+var ONLINE_RULES = { maxCharacters: 3, maxText: 500, messageCooldownMs: 1500, maxMailItems: 10, maxTradeItems: 10, minTransferLevel: 5, tradeExpiryMs: 30 * 60 * 1e3, pvpExpiryMs: 10 * 60 * 1e3, baseFee: 10, goldFeeRate: 0.02 };
 function transferFee(gold) {
   return ONLINE_RULES.baseFee + Math.ceil(gold * ONLINE_RULES.goldFeeRate);
 }
@@ -4886,6 +5712,63 @@ function receiveOffer(c, offer) {
   c.depot.push(...offer.items.map((i) => ({ ...i, uid: (0, import_node_crypto.randomUUID)() })));
 }
 
+// src/engine/dailyBossBattle.ts
+var BOSS_KNOCKOUT_RECOVERY_MS = 3e4;
+function bossBattleFor(character, runId) {
+  if (character.dailyBossBattle?.runId === runId) return { ...character.dailyBossBattle };
+  const hpMax = Math.max(120, Math.floor(Number(character.hpMax) || 120));
+  return { runId, hp: hpMax, hpMax, damageTaken: 0, knockouts: 0, recoveryUntil: 0, lastDamage: 0 };
+}
+function bossRetaliation(character, runId, enemy, participants, defeated, now) {
+  const battle = bossBattleFor(character, runId);
+  if (battle.hp <= 0) {
+    if (now < battle.recoveryUntil) throw Error(`Voc\xEA est\xE1 se recuperando do nocaute. Aguarde ${Math.ceil((battle.recoveryUntil - now) / 1e3)}s.`);
+    battle.hp = battle.hpMax;
+    battle.recoveryUntil = 0;
+  }
+  battle.lastDamage = 0;
+  if (!defeated) {
+    const stats = character.baseStats;
+    const scale = 1 + Math.min(10, Math.max(0, participants - 1)) * 0.04;
+    const armor = Math.max(0, stats.arm ?? 0) + Math.max(0, stats.def ?? 0) * 0.5;
+    const raw = mitigatedDamage(enemy.atk * scale, armor);
+    const resistance = clamp(enemy.damageType === "MAGICO" ? stats.resMagico ?? 0 : stats.resFisico ?? 0, 0, BALANCE.resistanceCap);
+    const elemental = clamp(enemy.element ? character.elementalResistances?.[enemy.element] ?? 0 : 0, 0, BALANCE.resistanceCap);
+    const total = Math.max(1, Math.round(raw * (1 - resistance) * (enemy.element ? 0.65 + 0.35 * (1 - elemental) : 1)));
+    battle.lastDamage = Math.min(battle.hp, total);
+    battle.hp -= battle.lastDamage;
+    battle.damageTaken += battle.lastDamage;
+    if (battle.hp === 0) {
+      battle.knockouts += 1;
+      battle.recoveryUntil = now + BOSS_KNOCKOUT_RECOVERY_MS;
+    }
+  }
+  return battle;
+}
+
+// src/data/dailyBoss.ts
+var DAILY_BOSS_TEMPLATES = [
+  { id: "DAILY_BRASA", enemyId: "ESPECTRO", name: "Espectro de Brasa", title: "A Fagulha que Recusa o Fim", element: "FOGO", level: 15, baseHpMultiplier: 120 },
+  { id: "DAILY_COLOSSO", enemyId: "COLOSSO", name: "Colosso de Dhor", title: "A Montanha em Movimento", element: "TERRA", level: 24, baseHpMultiplier: 100 },
+  { id: "DAILY_LEVIATA", enemyId: "LEVIATA", name: "Leviat\xE3 de Azhar", title: "O Eco sob as Mar\xE9s", element: "AGUA", level: 43, baseHpMultiplier: 85 },
+  { id: "DAILY_MATRIARCA", enemyId: "MATRIARCA_LODO", name: "Matriarca do Lodo", title: "A Raiz que Lembra", element: "VENENO", level: 44, baseHpMultiplier: 85 },
+  { id: "DAILY_SENTINELA", enemyId: "SENTINELA_ZENITE", name: "Sentinela do Z\xEAnite", title: "O Olho sobre as Dunas", element: "METAL", level: 68, baseHpMultiplier: 70 },
+  { id: "DAILY_DEVORADOR", enemyId: "DEVORADOR", name: "Devorador da Cicatriz", title: "A Fome entre os Ecos", element: "MORTE", level: 95, baseHpMultiplier: 55 }
+];
+function dailyCycleKey(date = /* @__PURE__ */ new Date()) {
+  const utc = new Date(date);
+  const segment = utc.getUTCHours() < 8 ? "M" : utc.getUTCHours() < 16 ? "T" : "N";
+  return `${utc.toISOString().slice(0, 10)}-${segment}`;
+}
+function dailyBossTemplate(cycle = dailyCycleKey()) {
+  let hash = 0;
+  for (const char of cycle) hash = hash * 31 + char.charCodeAt(0) >>> 0;
+  return DAILY_BOSS_TEMPLATES[hash % DAILY_BOSS_TEMPLATES.length];
+}
+function findBossEnemy(template) {
+  return Object.values(ZONES).flatMap((zone) => zone.enemies).find((enemy) => enemy.id === template.enemyId);
+}
+
 // server/world.ts
 var uuid = (id) => {
   if (typeof id !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) throw Error("Identificador inv\xE1lido.");
@@ -4896,6 +5779,7 @@ var text = (v, max) => {
   return v.trim();
 };
 async function commitCharacter(db, c) {
+  normalizeCosmeticOwnership(c.state.character);
   if (!Number.isSafeInteger(c.state.character.gold) || c.state.character.gold < 0 || !Number.isSafeInteger(c.state.character.mythreonCoins ?? 0) || (c.state.character.mythreonCoins ?? 0) < 0) throw Error("Saldo fora dos limites.");
   await db.query("update public.world_characters set state=$2,revision=revision+1,updated_at=now() where id=$1", [c.id, JSON.stringify(c.state)]);
   await db.query("insert into public.world_rankings(character_id,name,metrics,current_map) values($1,$2,$3,$4) on conflict(character_id) do update set metrics=excluded.metrics,name=excluded.name,current_map=excluded.current_map,updated_at=now()", [c.id, c.name, JSON.stringify(rankingMetrics(c.state)), c.state.character.currentZoneId]);
@@ -4910,13 +5794,159 @@ async function byName(db, name) {
   if (!r.rows[0]) throw Error("Personagem n\xE3o encontrado.");
   return r.rows[0];
 }
+function dailyWindow(now = /* @__PURE__ */ new Date()) {
+  const utc = new Date(now);
+  const hour = utc.getUTCHours();
+  const startHour = hour < 8 ? 0 : hour < 16 ? 8 : 16;
+  const openedAt = new Date(Date.UTC(utc.getUTCFullYear(), utc.getUTCMonth(), utc.getUTCDate(), startHour));
+  return { cycleKey: dailyCycleKey(utc), openedAt, closesAt: new Date(openedAt.getTime() + 8 * 60 * 60 * 1e3) };
+}
+async function ensureDailyBoss(db) {
+  const window = dailyWindow();
+  await db.query("update public.world_daily_boss_runs set status='expired',resolved_at=coalesce(resolved_at,closes_at) where status='open' and closes_at<=now()");
+  const existing = (await db.query("select * from public.world_daily_boss_runs where cycle_key=$1 for update", [window.cycleKey])).rows[0];
+  if (existing) {
+    if (existing.status === "open" && new Date(existing.closes_at).getTime() <= Date.now()) {
+      await db.query("update public.world_daily_boss_runs set status='expired',resolved_at=coalesce(resolved_at,now()) where id=$1", [existing.id]);
+      existing.status = "expired";
+      existing.resolved_at = (/* @__PURE__ */ new Date()).toISOString();
+    }
+    return existing;
+  }
+  const template = dailyBossTemplate(window.cycleKey), enemy = findBossEnemy(template);
+  if (!enemy) throw Error("O Boss Di\xE1rio desta janela ainda n\xE3o foi configurado.");
+  const baseHp = Math.max(1e3, Math.floor(enemy.hp * template.baseHpMultiplier)), id = (0, import_node_crypto2.randomUUID)();
+  await db.query("insert into public.world_daily_boss_runs(id,cycle_key,boss_template_id,boss_name,boss_title,level,base_hp,hp_total,hp_remaining,opened_at,closes_at) values($1,$2,$3,$4,$5,$6,$7,$7,$7,$8,$9) on conflict(cycle_key) do nothing", [id, window.cycleKey, template.id, template.name, template.title, template.level, baseHp, window.openedAt, window.closesAt]);
+  return (await db.query("select * from public.world_daily_boss_runs where cycle_key=$1 for update", [window.cycleKey])).rows[0];
+}
+function applyDailyBossXp(character, xp) {
+  character.xp = Math.max(0, Number(character.xp) || 0) + Math.max(0, Math.floor(xp));
+  while (character.xp >= character.xpToNext) {
+    character.xp -= character.xpToNext;
+    character.level += 1;
+    character.statPoints = (character.statPoints ?? 0) + 3;
+    character.xpToNext = xpToNextLevel(character.level);
+  }
+  recalcStats(character);
+}
+function grantDailyBossLoot(character, run, enemy, ratio, defeated) {
+  const granted = [];
+  const put = (item) => {
+    const inventory = structuredClone(character.inventory);
+    if (addItem(inventory, item)) {
+      character.inventory = inventory;
+      granted.push(item);
+      return;
+    }
+    if ((character.depot ?? []).length < (character.depotMax ?? 300)) {
+      character.depot ??= [];
+      character.depot.push(item);
+      granted.push(item);
+      return;
+    }
+    throw Error("Libere espa\xE7o na mochila ou no dep\xF3sito para receber o loot do Boss. Sua recompensa continua dispon\xEDvel.");
+  };
+  for (const id of [enemy?.componentId, enemy?.essenceId].filter(Boolean)) {
+    const item = makeComponent(String(id));
+    item.quantity = defeated ? 2 : 1;
+    put(item);
+  }
+  const tier = run.level >= 80 ? 5 : run.level >= 60 ? 4 : run.level >= 40 ? 3 : 2;
+  const eggTemplate = DIVINE_BEAST_EGG_TEMPLATES[`OVO_BESTA_T${tier}`];
+  if (eggTemplate && ratio >= 0.02 && (defeated ? 30 : 8) + Math.floor(ratio * 40) >= (run.level * 13 + Number(character.level ?? 1) * 7) % 100) {
+    put(createItem({ ...eggTemplate, quantity: 1 }));
+  }
+  const shards = Math.max(1, Math.floor(Number(run.level || 1) * 0.18 + ratio * Number(run.level || 1) * 4));
+  character.mythreonShards = (character.mythreonShards ?? 0) + shards;
+  return { items: granted.map((item) => ({ templateId: item.templateId, name: item.name, quantity: item.quantity })), shards };
+}
+function pvpPower(state) {
+  const c = state.character, skills = Object.values(c.skills ?? {}).reduce((sum, value) => sum + Number(value || 0), 0), stats = c.baseStats ?? {};
+  const cardPower = cardFormationScore(c);
+  return Math.max(1, Number(stats.atk ?? 0) + Number(stats.matk ?? 0) + Number(stats.arm ?? 0) * 0.8 + Number(c.hpMax ?? 0) * 0.1 + skills * 5 + Number(c.level ?? 1) * 8 + Number(c.pvpRating ?? 1e3) * 0.02 + cardPower);
+}
+function eloDelta(winnerRating, loserRating) {
+  const expected = 1 / (1 + Math.pow(10, (loserRating - winnerRating) / 400));
+  return Math.max(8, Math.round(24 * (1 - expected)));
+}
+function pvpSeason(now = /* @__PURE__ */ new Date()) {
+  const key = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
+  const endsAt = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+  return { key, endsAt };
+}
+function pvpTier(rating) {
+  if (rating >= 1800) return "MITICO";
+  if (rating >= 1600) return "PLATINA";
+  if (rating >= 1400) return "OURO";
+  if (rating >= 1200) return "PRATA";
+  return "BRONZE";
+}
+function pvpLeague(rating) {
+  const rows = [{ id: "BRONZE", label: "Bronze", min: 0, next: 1200 }, { id: "PRATA", label: "Prata", min: 1200, next: 1400 }, { id: "OURO", label: "Ouro", min: 1400, next: 1600 }, { id: "PLATINA", label: "Platina", min: 1600, next: 1800 }, { id: "MITICO", label: "M\xEDtico", min: 1800, next: null }];
+  const league = [...rows].reverse().find((row) => rating >= row.min) || rows[0];
+  return { id: league.id, label: league.label, rating, minRating: league.min, nextRating: league.next, progressToNext: league.next ? Math.max(0, Math.min(100, Math.round((rating - league.min) / (league.next - league.min) * 100))) : 100 };
+}
+function pvpCombatHp(state) {
+  const c = state.character;
+  return Math.max(120, Math.min(5e3, Math.floor(Number(c.hpMax ?? c.baseStats?.hp ?? 120) * 0.6)));
+}
+function pvpTurnDamage(state) {
+  return Math.max(8, Math.min(900, Math.floor(pvpPower(state) * 0.055)));
+}
+function pvpSeasonReward(rating, wins) {
+  const tier = pvpTier(rating);
+  const table = { BRONZE: { gold: 2e3, shards: 10, coins: 0 }, PRATA: { gold: 5e3, shards: 25, coins: 0 }, OURO: { gold: 1e4, shards: 50, coins: 1 }, PLATINA: { gold: 2e4, shards: 100, coins: 1 }, MITICO: { gold: 4e4, shards: 200, coins: 2 } };
+  const base = table[tier];
+  const winBonus = Math.min(1e4, Math.max(0, wins - 5) * 250);
+  return { tier, gold: base.gold + winBonus, shards: base.shards + Math.min(100, wins * 2), coins: base.coins };
+}
+function cardSeason(now = /* @__PURE__ */ new Date()) {
+  const key = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
+  const previous = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
+  return { key, previousKey: `${previous.getUTCFullYear()}-${String(previous.getUTCMonth() + 1).padStart(2, "0")}` };
+}
+function cardSeasonReward(unique, total) {
+  const ratio = unique / Math.max(1, total);
+  if (ratio >= 1) return { tier: "COMPLETO", gold: 15e3, shards: 80, coins: 2 };
+  if (ratio >= 0.8) return { tier: "MESTRE", gold: 8e3, shards: 45, coins: 1 };
+  if (ratio >= 0.5) return { tier: "COLECIONADOR", gold: 3e3, shards: 20, coins: 0 };
+  return null;
+}
+async function upsertPvpSeasonStats(db, c, seasonKey) {
+  await db.query("insert into public.world_pvp_season_stats(id,season_key,character_id,owner_id,rating,wins,losses,matches,updated_at) values($1,$2,$3,$4,$5,$6,$7,1,now()) on conflict(season_key,character_id) do update set owner_id=excluded.owner_id,rating=excluded.rating,wins=excluded.wins,losses=excluded.losses,matches=public.world_pvp_season_stats.matches+1,updated_at=now()", [(0, import_node_crypto2.randomUUID)(), seasonKey, c.id, c.owner_id, Number(c.state.character.pvpRating ?? 1e3), Number(c.state.character.pvpWins ?? 0), Number(c.state.character.pvpLosses ?? 0)]);
+}
+async function premiumEntitlement(db, owner) {
+  try {
+    return { configured: true, row: (await db.query("select plan_id,status,starts_at,expires_at from public.world_premium_entitlements where account_id=$1", [owner])).rows[0] ?? null };
+  } catch (error) {
+    if (String(error?.code) === "42P01") return { configured: false, row: null };
+    throw error;
+  }
+}
+async function syncPremium(db, owner, character) {
+  const result = await premiumEntitlement(db, owner);
+  if (!result.configured) return null;
+  const entitlement = result.row;
+  if (!entitlement) {
+    character.premium = false;
+    character.premiumPlanId = void 0;
+    character.premiumUntil = void 0;
+    return { active: false, planId: null, expiresAt: null };
+  }
+  const now = Date.now(), starts = new Date(entitlement.starts_at).getTime(), expires = new Date(entitlement.expires_at).getTime();
+  const active = entitlement.status === "active" && Number.isFinite(starts) && starts <= now && Number.isFinite(expires) && expires > now;
+  character.premium = active;
+  character.premiumPlanId = active ? String(entitlement.plan_id) : void 0;
+  character.premiumUntil = active ? expires : void 0;
+  return { active, planId: active ? String(entitlement.plan_id) : null, expiresAt: active ? new Date(expires).toISOString() : null };
+}
 async function handleWorld(db, owner, request) {
   uuid(owner);
   const op = request.operation, p = request.payload ?? {};
   if (typeof op !== "string") throw Error("Opera\xE7\xE3o inv\xE1lida.");
   await db.query("insert into public.world_accounts(id) values($1) on conflict do nothing", [owner]);
   await db.query("select id from public.world_accounts where id=$1 for update", [owner]);
-  const readonly = ["characters", "world.read", "social.read", "ranking"];
+  const readonly = ["characters", "world.read", "social.read", "ranking", "dailyBoss.read", "pvp.read", "market.read", "premium.read", "cards.season.read"];
   let cached = null;
   if (!readonly.includes(op)) {
     const requestId = uuid(request.requestId);
@@ -4936,6 +5966,7 @@ async function handleWorld(db, owner, request) {
       const name = text(p.name, 24).normalize("NFKC");
       if (!/^[\p{L}\p{N}][\p{L}\p{N} _-]{2,23}$/u.test(name)) throw Error("Use 3\u201324 letras, n\xFAmeros, espa\xE7os ou h\xEDfen.");
       const id2 = (0, import_node_crypto2.randomUUID)(), state = freshWorld(name, id2);
+      await syncPremium(db, owner, state.character);
       await db.query("insert into public.world_characters(id,owner_id,name,state) values($1,$2,$3,$4)", [id2, owner, name, JSON.stringify(state)]);
       actor = { id: id2, owner_id: owner, name, state, revision: 0 };
       await commitCharacter(db, actor);
@@ -4946,6 +5977,316 @@ async function handleWorld(db, owner, request) {
       const page = integer(p.page ?? 0, 0, 1e3);
       const ranks = await db.query("select character_id,name,current_map,metrics,row_number() over(order by (metrics->>$1)::numeric desc,character_id) as position from public.world_rankings order by (metrics->>$1)::numeric desc,character_id limit 50 offset $2", [metric, page * 50]);
       receipt = { ranking: ranks.rows, page, metric };
+    } else if (op === "premium.read") {
+      const result = await premiumEntitlement(db, owner), entitlement = result.row;
+      const active = Boolean(entitlement && entitlement.status === "active" && new Date(entitlement.starts_at).getTime() <= Date.now() && new Date(entitlement.expires_at).getTime() > Date.now());
+      receipt = { premium: { active, planId: active ? entitlement.plan_id : null, expiresAt: active ? new Date(entitlement.expires_at).toISOString() : null, configured: result.configured } };
+    } else if (op === "cards.season.read") {
+      const actor2 = await own(db, owner, request.characterId);
+      const season = cardSeason();
+      const total = seasonCardCatalogSize(season.key);
+      const unique = seasonUniqueCards(actor2.state.character.cards, season.key);
+      await db.query("insert into public.world_card_season_progress(id,season_key,character_id,owner_id,unique_cards,total_cards) values($1,$2,$3,$4,$5,$6) on conflict(season_key,character_id) do update set unique_cards=greatest(public.world_card_season_progress.unique_cards,excluded.unique_cards),total_cards=public.world_card_season_progress.total_cards,updated_at=now()", [(0, import_node_crypto2.randomUUID)(), season.key, actor2.id, owner, unique, total]);
+      const previous = (await db.query("select season_key,unique_cards,total_cards from public.world_card_season_progress where season_key=$1 and character_id=$2", [season.previousKey, actor2.id])).rows[0] ?? null;
+      const claimed = (await db.query("select tier,reward_gold,reward_shards,reward_coins,claimed_at from public.world_card_season_rewards where season_key=$1 and character_id=$2", [season.previousKey, actor2.id])).rows[0] ?? null;
+      receipt = { cards: { seasonKey: season.key, uniqueCards: unique, totalCards: total, previousSeason: { key: season.previousKey, progress: previous, reward: claimed, preview: previous ? cardSeasonReward(Number(previous.unique_cards ?? 0), Number(previous.total_cards ?? total)) : null } } };
+    } else if (op === "dailyBoss.read") {
+      const run = await ensureDailyBoss(db);
+      const participant = request.characterId ? (await db.query("select * from public.world_daily_boss_participants where run_id=$1 and character_id=$2", [run.id, uuid(request.characterId)])).rows[0] ?? null : null;
+      const totals = (await db.query("select count(*)::int as participants,coalesce(sum(damage),0)::bigint as damage_total from public.world_daily_boss_participants where run_id=$1", [run.id])).rows[0];
+      const leaderboard = (await db.query("select p.character_id,c.name,p.damage from public.world_daily_boss_participants p join public.world_characters c on c.id=p.character_id where p.run_id=$1 order by p.damage desc limit 10", [run.id])).rows;
+      const history = (await db.query("select r.id,r.run_id,r.damage,r.participation_ratio,r.defeated,r.gold,r.xp,r.shards,r.loot,r.created_at,b.cycle_key,b.boss_name,b.level from public.world_daily_boss_rewards r join public.world_daily_boss_runs b on b.id=r.run_id where r.owner_id=$1 order by r.created_at desc limit 10", [owner])).rows;
+      const pendingRewards = request.characterId ? (await db.query("select b.id as run_id,b.boss_name,b.level,b.cycle_key,b.status,b.closes_at,p.damage from public.world_daily_boss_participants p join public.world_daily_boss_runs b on b.id=p.run_id where p.owner_id=$1 and p.character_id=$2 and p.claimed_at is null and p.damage>0 and (b.status in ('defeated','expired') or b.closes_at<=now()) order by b.closes_at asc limit 50", [owner, uuid(request.characterId)])).rows : [];
+      const roster = (await db.query("select p.character_id,c.name,p.damage,p.last_action_at,c.state->'character'->'activeRace'->>'ataqueId' as attack_id,c.state->'character'->'appearance' as appearance,c.state->'character'->'cosmeticLoadout' as cosmetics from public.world_daily_boss_participants p join public.world_characters c on c.id=p.character_id where p.run_id=$1 order by coalesce(p.last_action_at,p.joined_at) desc,p.character_id limit 12", [run.id])).rows;
+      const combatOwner = participant ? (await db.query("select state from public.world_characters where id=$1 and owner_id=$2", [uuid(request.characterId), owner])).rows[0] : null;
+      const combat = combatOwner ? bossBattleFor(combatOwner.state.character, run.id) : null;
+      receipt = { dailyBoss: { run, participant, combat, participants: Number(totals.participants ?? 0), damageTotal: Number(totals.damage_total ?? 0), leaderboard, history, pendingRewards, roster } };
+    } else if (op === "dailyBoss.join" || op === "dailyBoss.attack" || op === "dailyBoss.claim") {
+      actor = await own(db, owner, request.characterId);
+      let run;
+      if (op === "dailyBoss.claim" && p.runId) {
+        run = (await db.query("select * from public.world_daily_boss_runs where id=$1 for update", [uuid(p.runId)])).rows[0];
+        if (!run) throw Error("Ciclo do Boss Di\xE1rio n\xE3o encontrado.");
+        if (run.status === "open" && new Date(run.closes_at).getTime() <= Date.now()) {
+          await db.query("update public.world_daily_boss_runs set status='expired',resolved_at=coalesce(resolved_at,closes_at) where id=$1", [run.id]);
+          run.status = "expired";
+        }
+      } else {
+        run = await ensureDailyBoss(db);
+      }
+      if (op !== "dailyBoss.claim" && p.runId && uuid(p.runId) !== run.id) throw Error("O ciclo do Boss mudou. Atualize o painel antes de participar.");
+      if (op === "dailyBoss.join") {
+        if (run.status !== "open") throw Error("A janela deste Boss Di\xE1rio j\xE1 foi encerrada.");
+        const joined = await db.query("insert into public.world_daily_boss_participants(run_id,character_id,owner_id) values($1,$2,$3) on conflict(run_id,character_id) do nothing returning character_id", [run.id, actor.id, owner]);
+        if (joined.rows.length) {
+          const reinforcement = Math.max(1e3, Math.floor(Number(run.base_hp) * 0.1));
+          await db.query("update public.world_daily_boss_runs set hp_total=least(base_hp*4,hp_total+$2),hp_remaining=least(base_hp*4,hp_remaining+$2) where id=$1", [run.id, reinforcement]);
+        }
+        actor.state.character.dailyBossBattle = bossBattleFor(actor.state.character, run.id);
+        await commitCharacter(db, actor);
+      } else if (op === "dailyBoss.attack") {
+        if (run.status !== "open") throw Error("O Boss Di\xE1rio n\xE3o est\xE1 mais em combate.");
+        const participant2 = (await db.query("select * from public.world_daily_boss_participants where run_id=$1 and character_id=$2 for update", [run.id, actor.id])).rows[0];
+        if (!participant2) throw Error("Entre na batalha antes de atacar.");
+        if (participant2.last_action_at && Date.now() - new Date(participant2.last_action_at).getTime() < 2500) throw Error("Aguarde 2,5s entre os ataques do Boss Di\xE1rio.");
+        const ch = actor.state.character, base = Number(ch.baseStats?.atk ?? 0) + Number(ch.baseStats?.matk ?? 0), skills = Object.values(ch.skills ?? {}).reduce((sum, value) => sum + Number(value || 0), 0);
+        const damage = Math.min(Number(run.hp_remaining), 1e5, Math.max(1, Math.floor(base * 0.45 + skills * 1.5 + Number(ch.level || 1) * 4)));
+        const bossTemplate = DAILY_BOSS_TEMPLATES.find((template) => template.id === run.boss_template_id), enemy = bossTemplate ? findBossEnemy(bossTemplate) : void 0;
+        if (!enemy) throw Error("Boss n\xE3o configurado para esta batalha.");
+        const group = (await db.query("select count(*)::int as count from public.world_daily_boss_participants where run_id=$1", [run.id])).rows[0];
+        const battle = bossRetaliation(ch, run.id, enemy, Number(group.count), damage >= Number(run.hp_remaining), Date.now());
+        ch.dailyBossBattle = battle;
+        await db.query("update public.world_daily_boss_participants set damage=damage+$3,last_action_at=now() where run_id=$1 and character_id=$2", [run.id, actor.id, damage]);
+        await db.query("update public.world_daily_boss_runs set hp_remaining=greatest(0,hp_remaining-$2),status=case when hp_remaining-$2<=0 then 'defeated' else status end,resolved_at=case when hp_remaining-$2<=0 then coalesce(resolved_at,now()) else resolved_at end where id=$1", [run.id, damage]);
+        await commitCharacter(db, actor);
+        receipt.damage = damage;
+        receipt.damageTaken = battle.lastDamage;
+      } else {
+        const participant2 = (await db.query("select * from public.world_daily_boss_participants where run_id=$1 and character_id=$2 for update", [run.id, actor.id])).rows[0];
+        if (!participant2) throw Error("Participe do Boss Di\xE1rio antes de resgatar.");
+        if (participant2.claimed_at) throw Error("A recompensa desta janela j\xE1 foi resgatada.");
+        if (Number(participant2.damage ?? 0) <= 0) throw Error("Cause dano ao Boss para receber uma recompensa de participa\xE7\xE3o.");
+        if (!["defeated", "expired"].includes(run.status)) throw Error("A recompensa s\xF3 fica dispon\xEDvel quando a janela terminar.");
+        const ratio = Math.min(1, Number(participant2.damage || 0) / Math.max(1, Number(run.hp_total || 1))), defeated = run.status === "defeated";
+        const rewardGold = Math.max(50, Math.floor((Number(run.level) * 80 + ratio * Number(run.level) * 2e3) * (defeated ? 2 : 1))), rewardXp = Math.max(100, Math.floor(Number(run.level) * 35 + ratio * Number(run.level) * 500));
+        actor.state.character.gold += rewardGold;
+        applyDailyBossXp(actor.state.character, rewardXp);
+        if (defeated) actor.state.character.dailyBossXpUntil = Math.max(Number(actor.state.character.dailyBossXpUntil ?? 0), new Date(run.closes_at).getTime());
+        const bossEnemy = findBossEnemy(dailyBossTemplate(run.cycle_key));
+        const bossLoot = grantDailyBossLoot(actor.state.character, run, bossEnemy, ratio, defeated);
+        await db.query("insert into public.world_daily_boss_rewards(id,run_id,character_id,owner_id,damage,participation_ratio,defeated,gold,xp,shards,loot) values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)", [(0, import_node_crypto2.randomUUID)(), run.id, actor.id, owner, Number(participant2.damage || 0), ratio, defeated, rewardGold, rewardXp, bossLoot.shards, JSON.stringify(bossLoot.items)]);
+        await db.query("update public.world_daily_boss_participants set claimed_at=now() where run_id=$1 and character_id=$2", [run.id, actor.id]);
+        await commitCharacter(db, actor);
+        receipt.reward = { gold: rewardGold, xp: rewardXp, loot: bossLoot.items, shards: bossLoot.shards, bonusXpUntil: actor.state.character.dailyBossXpUntil ?? null };
+      }
+      run = (await db.query("select * from public.world_daily_boss_runs where id=$1", [run.id])).rows[0];
+      const participant = (await db.query("select * from public.world_daily_boss_participants where run_id=$1 and character_id=$2", [run.id, actor.id])).rows[0] ?? null;
+      receipt.dailyBoss = { run, participant, combat: actor.state.character.dailyBossBattle?.runId === run.id ? actor.state.character.dailyBossBattle : null };
+    } else if (op === "pvp.read") {
+      const ownId = request.characterId ? uuid(request.characterId) : null;
+      const online = await db.query("select id,name,online_at,state->'character'->>'level' as level,state->'character'->>'pvpRating' as rating,state->'character'->>'pvpWins' as wins,state->'character'->>'pvpLosses' as losses from public.world_characters where online_at>now()-interval '90 seconds' and ($1::uuid is null or id<>$1) order by coalesce((state->'character'->>'pvpRating')::int,1000) desc,name limit 100", [ownId]);
+      const matches = ownId ? (await db.query("select m.*,a.name as challenger_name,b.name as opponent_name from public.world_pvp_matches m join public.world_characters a on a.id=m.challenger_id join public.world_characters b on b.id=m.opponent_id where m.challenger_id=$1 or m.opponent_id=$1 order by m.created_at desc limit 50", [ownId])).rows : [];
+      const now = /* @__PURE__ */ new Date(), season = pvpSeason(now), previous = pvpSeason(new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1)));
+      const queue = ownId ? (await db.query("select character_id,season_key,rating,status,match_id,joined_at,matched_at from public.world_pvp_queue where character_id=$1", [ownId])).rows[0] ?? null : null;
+      const ownProfile = ownId ? (await db.query("select state->'character'->>'pvpRating' as rating from public.world_characters where id=$1 and owner_id=$2", [ownId, owner])).rows[0] ?? null : null;
+      const currentStats = ownId ? (await db.query("select season_key,rating,wins,losses,matches from public.world_pvp_season_stats where character_id=$1 and season_key=$2", [ownId, season.key])).rows[0] ?? null : null;
+      const previousStats = ownId ? (await db.query("select season_key,rating,wins,losses,matches from public.world_pvp_season_stats where character_id=$1 and season_key=$2", [ownId, previous.key])).rows[0] ?? null : null;
+      const previousReward = ownId ? (await db.query("select tier,rating,wins,losses,reward_gold,reward_shards,reward_coins,claimed_at from public.world_pvp_season_rewards where character_id=$1 and season_key=$2", [ownId, previous.key])).rows[0] ?? null : null;
+      const ownRating = Number(currentStats?.rating ?? ownProfile?.rating ?? 1e3);
+      receipt = { pvp: { season: { key: season.key, endsAt: season.endsAt.toISOString() }, league: pvpLeague(ownRating), online: online.rows, matches, queue, currentStats, previousSeason: { key: previous.key, stats: previousStats, reward: previousReward, preview: previousStats ? pvpSeasonReward(Number(previousStats.rating ?? 1e3), Number(previousStats.wins ?? 0)) : null } } };
+    } else if (op === "cards.season.claim" || op === "pvp.queue.join" || op === "pvp.queue.cancel" || op === "pvp.challenge" || op === "pvp.accept" || op === "pvp.resolve" || op === "pvp.turn" || op === "pvp.season.claim") {
+      actor = await own(db, owner, request.characterId);
+      if (op === "cards.season.claim") {
+        const seasonKey = text(p.seasonKey, 7), season = cardSeason();
+        if (seasonKey === season.key || !/^[0-9]{4}-(0[1-9]|1[0-2])$/.test(seasonKey)) throw Error("Temporada de Cards inv\xE1lida ou ainda aberta.");
+        const progress = (await db.query("select * from public.world_card_season_progress where season_key=$1 and character_id=$2 for update", [seasonKey, actor.id])).rows[0];
+        if (!progress) throw Error("Nenhum progresso de cole\xE7\xE3o registrado nesta temporada.");
+        const previous = (await db.query("select * from public.world_card_season_rewards where season_key=$1 and character_id=$2", [seasonKey, actor.id])).rows[0];
+        if (previous) throw Error("A recompensa desta cole\xE7\xE3o j\xE1 foi resgatada.");
+        const reward = cardSeasonReward(Number(progress.unique_cards ?? 0), Number(progress.total_cards ?? seasonCardCatalogSize(seasonKey)));
+        if (!reward) throw Error("Colecione pelo menos 50% dos Cards para resgatar a recompensa.");
+        actor.state.character.gold += reward.gold;
+        actor.state.character.mythreonShards = (actor.state.character.mythreonShards ?? 0) + reward.shards;
+        actor.state.character.mythreonCoins = (actor.state.character.mythreonCoins ?? 0) + reward.coins;
+        await db.query("insert into public.world_card_season_rewards(id,season_key,character_id,owner_id,unique_cards,total_cards,tier,reward_gold,reward_shards,reward_coins) values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)", [(0, import_node_crypto2.randomUUID)(), seasonKey, actor.id, owner, Number(progress.unique_cards ?? 0), Number(progress.total_cards ?? seasonCardCatalogSize(seasonKey)), reward.tier, reward.gold, reward.shards, reward.coins]);
+        await commitCharacter(db, actor);
+        await db.query("insert into public.world_ledger(id,operation_id,kind,sender_id,recipient_id,gold,fee,mythreon_coins,items) values($1,$2,$3,$4,$5,$6,0,$7,$8)", [(0, import_node_crypto2.randomUUID)(), request.requestId, "cards.season.reward", null, actor.id, reward.gold, reward.coins, JSON.stringify([{ kind: "MYTHREON_SHARDS", quantity: reward.shards }, { kind: "CARD_SEASON_TIER", tier: reward.tier, seasonKey }])]);
+        receipt = { cards: { status: "season-reward-claimed", seasonKey, reward } };
+      } else if (op === "pvp.season.claim") {
+        const seasonKey = text(p.seasonKey, 7);
+        const current2 = pvpSeason();
+        if (seasonKey === current2.key) throw Error("A temporada atual ainda n\xE3o foi encerrada.");
+        if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(seasonKey)) throw Error("Temporada inv\xE1lida.");
+        const stats = (await db.query("select * from public.world_pvp_season_stats where season_key=$1 and character_id=$2 for update", [seasonKey, actor.id])).rows[0];
+        if (!stats) throw Error("Voc\xEA n\xE3o tem partidas registradas nesta temporada.");
+        const previousReward = (await db.query("select * from public.world_pvp_season_rewards where season_key=$1 and character_id=$2", [seasonKey, actor.id])).rows[0];
+        if (previousReward) throw Error("A recompensa desta temporada j\xE1 foi resgatada.");
+        const reward = pvpSeasonReward(Number(stats.rating ?? 1e3), Number(stats.wins ?? 0));
+        actor.state.character.gold += reward.gold;
+        actor.state.character.mythreonShards = (actor.state.character.mythreonShards ?? 0) + reward.shards;
+        actor.state.character.mythreonCoins = (actor.state.character.mythreonCoins ?? 0) + reward.coins;
+        await db.query("insert into public.world_pvp_season_rewards(id,season_key,character_id,owner_id,tier,rating,wins,losses,reward_gold,reward_shards,reward_coins) values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)", [(0, import_node_crypto2.randomUUID)(), seasonKey, actor.id, owner, reward.tier, Number(stats.rating ?? 1e3), Number(stats.wins ?? 0), Number(stats.losses ?? 0), reward.gold, reward.shards, reward.coins]);
+        await commitCharacter(db, actor);
+        await db.query("insert into public.world_ledger(id,operation_id,kind,sender_id,recipient_id,gold,fee,mythreon_coins,items) values($1,$2,$3,$4,$5,$6,0,$7,$8)", [(0, import_node_crypto2.randomUUID)(), request.requestId, "pvp.season.reward", null, actor.id, reward.gold, reward.coins, JSON.stringify([{ kind: "MYTHREON_SHARDS", quantity: reward.shards }, { kind: "PVP_TIER", tier: reward.tier, seasonKey }])]);
+        receipt = { pvp: { status: "season-reward-claimed", seasonKey, reward } };
+      } else if (op === "pvp.queue.join" || op === "pvp.queue.cancel") {
+        const season = pvpSeason();
+        if (op === "pvp.queue.cancel") {
+          await db.query("update public.world_pvp_queue set status='cancelled',updated_at=now() where character_id=$1 and status='queued'", [actor.id]);
+          receipt = { pvp: { queue: { status: "cancelled", seasonKey: season.key } } };
+        } else {
+          const rating = Number(actor.state.character.pvpRating ?? 1e3);
+          const existing = (await db.query("select * from public.world_pvp_queue where character_id=$1 for update", [actor.id])).rows[0];
+          if (existing?.status === "matched" && existing.match_id) receipt = { pvp: { queue: existing } };
+          else {
+            const candidate = (await db.query("select q.*,c.name,c.owner_id as opponent_owner_id,c.state from public.world_pvp_queue q join public.world_characters c on c.id=q.character_id where q.season_key=$1 and q.status='queued' and q.character_id<>$2 and abs(q.rating-$3)<=150 and c.online_at>now()-interval '90 seconds' order by q.joined_at,q.character_id for update skip locked limit 1", [season.key, actor.id, rating])).rows[0];
+            if (candidate) {
+              const id2 = (0, import_node_crypto2.randomUUID)();
+              await db.query("insert into public.world_pvp_matches(id,season_key,challenger_id,opponent_id,challenger_owner_id,opponent_owner_id,challenger_rating_before,opponent_rating_before,expires_at,status,turn_owner,challenger_hp,opponent_hp) values($1,$2,$3,$4,$5,$6,$7,$8,$9,'open',$3,$10,$11)", [id2, season.key, actor.id, candidate.character_id, owner, candidate.opponent_owner_id, rating, Number(candidate.rating ?? 1e3), new Date(Date.now() + ONLINE_RULES.pvpExpiryMs), pvpCombatHp(actor.state), pvpCombatHp(candidate.state)]);
+              await db.query("update public.world_pvp_queue set status='matched',match_id=$2,matched_at=now(),updated_at=now() where character_id=$1", [candidate.character_id, id2]);
+              await db.query("insert into public.world_pvp_queue(character_id,owner_id,season_key,rating,status,match_id,matched_at) values($1,$2,$3,$4,'matched',$5,now()) on conflict(character_id) do update set owner_id=excluded.owner_id,season_key=excluded.season_key,rating=excluded.rating,status='matched',match_id=excluded.match_id,matched_at=now(),updated_at=now()", [actor.id, owner, season.key, rating, id2]);
+              receipt = { pvp: { queue: { status: "matched", matchId: id2, seasonKey: season.key }, matchId: id2, status: "open" } };
+            } else {
+              await db.query("insert into public.world_pvp_queue(character_id,owner_id,season_key,rating,status,match_id,joined_at,matched_at,updated_at) values($1,$2,$3,$4,'queued',null,now(),null,now()) on conflict(character_id) do update set owner_id=excluded.owner_id,season_key=excluded.season_key,rating=excluded.rating,status='queued',match_id=null,matched_at=null,joined_at=case when public.world_pvp_queue.status='queued' then public.world_pvp_queue.joined_at else now() end,updated_at=now()", [actor.id, owner, season.key, rating]);
+              receipt = { pvp: { queue: { status: "queued", seasonKey: season.key, rating } } };
+            }
+          }
+        }
+      } else if (op === "pvp.challenge") {
+        const target = p.opponentId ? await own(db, owner, p.opponentId).catch(() => null) : await byName(db, p.target);
+        if (!target) throw Error("Oponente n\xE3o encontrado.");
+        if (target.id === actor.id || target.owner_id === owner) throw Error("Escolha um jogador de outra conta.");
+        if (Date.now() - new Date(target.online_at).getTime() > 9e4) throw Error("O jogador precisa estar online.");
+        const busy = await db.query("select id from public.world_pvp_matches where (challenger_id=any($1::uuid[]) or opponent_id=any($1::uuid[])) and status in ('invited','open')", [[actor.id, target.id]]);
+        if (busy.rows.length) throw Error("Um dos jogadores j\xE1 tem um duelo ranqueado em andamento.");
+        const id2 = (0, import_node_crypto2.randomUUID)();
+        const targetState = (await db.query("select state from public.world_characters where id=$1", [target.id])).rows[0]?.state;
+        await db.query("insert into public.world_pvp_matches(id,season_key,challenger_id,opponent_id,challenger_owner_id,opponent_owner_id,challenger_rating_before,opponent_rating_before,expires_at,turn_owner,challenger_hp,opponent_hp) values($1,$2,$3,$4,$5,$6,$7,$8,$9,null,$10,$11)", [id2, pvpSeason().key, actor.id, target.id, owner, target.owner_id, Number(actor.state.character.pvpRating ?? 1e3), Number(targetState?.character?.pvpRating ?? 1e3), new Date(Date.now() + ONLINE_RULES.pvpExpiryMs), pvpCombatHp(actor.state), pvpCombatHp(targetState)]);
+        receipt = { pvp: { matchId: id2, status: "invited" } };
+      } else {
+        const row = (await db.query("select * from public.world_pvp_matches where id=$1 for update", [uuid(p.matchId)])).rows[0];
+        if (!row) throw Error("Duelo ranqueado n\xE3o encontrado.");
+        if (![row.challenger_id, row.opponent_id].includes(actor.id)) throw Error("Voc\xEA n\xE3o participa deste duelo.");
+        if (row.status === "invited" && op === "pvp.accept") {
+          if (row.opponent_id !== actor.id) throw Error("Somente o desafiado pode aceitar.");
+          if (new Date(row.expires_at).getTime() <= Date.now()) {
+            await db.query("update public.world_pvp_matches set status='expired',resolved_at=now() where id=$1", [row.id]);
+            throw Error("O convite de duelo expirou.");
+          }
+          await db.query("update public.world_pvp_matches set status='open',turn_owner=challenger_id where id=$1", [row.id]);
+          receipt = { pvp: { matchId: row.id, status: "open", turnOwner: row.challenger_id } };
+        } else if (op === "pvp.turn") {
+          if (row.status !== "open") throw Error("O duelo n\xE3o est\xE1 em combate.");
+          if (new Date(row.expires_at).getTime() <= Date.now()) {
+            await db.query("update public.world_pvp_matches set status='expired',resolved_at=now(),turn_owner=null where id=$1", [row.id]);
+            throw Error("O duelo expirou.");
+          }
+          if (row.turn_owner !== actor.id) throw Error("Aguarde o turno do advers\xE1rio.");
+          if (row.last_action_at && Date.now() - new Date(row.last_action_at).getTime() < 800) throw Error("Aguarde o pr\xF3ximo turno.");
+          const rows = await db.query("select * from public.world_characters where id=any($1::uuid[]) order by id for update", [[row.challenger_id, row.opponent_id]]);
+          const challenger = rows.rows.find((r) => r.id === row.challenger_id), opponent = rows.rows.find((r) => r.id === row.opponent_id);
+          if (!challenger || !opponent) throw Error("Participante inv\xE1lido.");
+          const attacker = actor.id === challenger.id ? challenger : opponent, target = attacker.id === challenger.id ? opponent : challenger;
+          const damage = pvpTurnDamage(attacker.state), challengerHp = Math.max(0, Number(row.challenger_hp ?? pvpCombatHp(challenger.state)) - (attacker.id === opponent.id ? damage : 0)), opponentHp = Math.max(0, Number(row.opponent_hp ?? pvpCombatHp(opponent.state)) - (attacker.id === challenger.id ? damage : 0));
+          const entry = { round: Number(row.round ?? 1), actorId: attacker.id, actorName: attacker.name, damage, targetHp: attacker.id === challenger.id ? opponentHp : challengerHp, at: (/* @__PURE__ */ new Date()).toISOString() }, combatLog = [...Array.isArray(row.combat_log) ? row.combat_log : [], entry];
+          if ((attacker.id === challenger.id ? opponentHp : challengerHp) <= 0) {
+            const winner = attacker, loser = target;
+            const delta = eloDelta(Number(winner.state.character.pvpRating ?? 1e3), Number(loser.state.character.pvpRating ?? 1e3));
+            winner.state.character.pvpRating = Number(winner.state.character.pvpRating ?? 1e3) + delta;
+            loser.state.character.pvpRating = Math.max(0, Number(loser.state.character.pvpRating ?? 1e3) - delta);
+            winner.state.character.pvpWins = (winner.state.character.pvpWins ?? 0) + 1;
+            loser.state.character.pvpLosses = (loser.state.character.pvpLosses ?? 0) + 1;
+            await upsertPvpSeasonStats(db, winner, String(row.season_key ?? pvpSeason().key));
+            await upsertPvpSeasonStats(db, loser, String(row.season_key ?? pvpSeason().key));
+            await commitCharacter(db, winner);
+            await commitCharacter(db, loser);
+            await db.query("update public.world_pvp_matches set status='completed',winner_id=$2,challenger_rating_after=$3,opponent_rating_after=$4,challenger_hp=$5,opponent_hp=$6,turn_owner=null,combat_log=$7,resolved_at=now(),last_action_at=now() where id=$1", [row.id, winner.id, Number(challenger.state.character.pvpRating ?? 1e3), Number(opponent.state.character.pvpRating ?? 1e3), challengerHp, opponentHp, JSON.stringify(combatLog)]);
+            receipt = { pvp: { matchId: row.id, status: "completed", winnerId: winner.id, winnerName: winner.name, delta, damage, round: entry.round, combatLog } };
+          } else {
+            await db.query("update public.world_pvp_matches set challenger_hp=$2,opponent_hp=$3,turn_owner=$4,round=round+1,combat_log=$5,last_action_at=now() where id=$1", [row.id, challengerHp, opponentHp, target.id, JSON.stringify(combatLog)]);
+            receipt = { pvp: { matchId: row.id, status: "open", damage, round: entry.round, turnOwner: target.id, challengerHp, opponentHp, combatLog } };
+          }
+        } else if (op === "pvp.resolve") {
+          if (row.turn_owner) throw Error("Este duelo usa combate por turnos. Ataque na sua vez.");
+          if (row.status !== "open") throw Error("O duelo precisa ser aceito antes da resolu\xE7\xE3o.");
+          if (new Date(row.expires_at).getTime() <= Date.now()) {
+            await db.query("update public.world_pvp_matches set status='expired',resolved_at=now() where id=$1", [row.id]);
+            throw Error("O duelo expirou.");
+          }
+          const rows = await db.query("select * from public.world_characters where id=any($1::uuid[]) order by id for update", [[row.challenger_id, row.opponent_id]]);
+          const challenger = rows.rows.find((r) => r.id === row.challenger_id), opponent = rows.rows.find((r) => r.id === row.opponent_id);
+          if (!challenger || !opponent) throw Error("Participante inv\xE1lido.");
+          const powerA = pvpPower(challenger.state), powerB = pvpPower(opponent.state), winner = powerA === powerB ? challenger.id < opponent.id ? challenger : opponent : powerA > powerB ? challenger : opponent, loser = winner.id === challenger.id ? opponent : challenger;
+          const delta = eloDelta(Number(winner.state.character.pvpRating ?? 1e3), Number(loser.state.character.pvpRating ?? 1e3));
+          winner.state.character.pvpRating = Number(winner.state.character.pvpRating ?? 1e3) + delta;
+          loser.state.character.pvpRating = Math.max(0, Number(loser.state.character.pvpRating ?? 1e3) - delta);
+          winner.state.character.pvpWins = (winner.state.character.pvpWins ?? 0) + 1;
+          loser.state.character.pvpLosses = (loser.state.character.pvpLosses ?? 0) + 1;
+          await upsertPvpSeasonStats(db, winner, String(row.season_key ?? pvpSeason().key));
+          await upsertPvpSeasonStats(db, loser, String(row.season_key ?? pvpSeason().key));
+          await commitCharacter(db, winner);
+          await commitCharacter(db, loser);
+          await db.query("update public.world_pvp_matches set status='completed',winner_id=$2,challenger_rating_after=$3,opponent_rating_after=$4,resolved_at=now() where id=$1", [row.id, winner.id, Number(challenger.state.character.pvpRating ?? 1e3), Number(opponent.state.character.pvpRating ?? 1e3)]);
+          receipt = { pvp: { matchId: row.id, status: "completed", winnerId: winner.id, winnerName: winner.name, delta, challengerRating: challenger.state.character.pvpRating, opponentRating: opponent.state.character.pvpRating } };
+        } else if (["completed", "expired", "cancelled"].includes(row.status)) {
+          receipt = { pvp: { matchId: row.id, status: row.status, winnerId: row.winner_id } };
+        } else throw Error("A\xE7\xE3o de PvP inv\xE1lida.");
+      }
+    } else if (op === "market.read") {
+      const now = /* @__PURE__ */ new Date();
+      await db.query("update public.world_market_listings set status='expired' where status='open' and expires_at<=now()");
+      const query = typeof p.query === "string" ? p.query.trim().slice(0, 48) : "";
+      const currency = String(p.currency ?? "ALL").toUpperCase();
+      if (!["ALL", "GOLD", "COINS"].includes(currency)) throw Error("Filtro de moeda inv\xE1lido.");
+      const rarity = String(p.rarity ?? "ALL").toUpperCase();
+      if (!["ALL", "COMUM", "INCOMUM", "RARO", "EPICO", "LENDARIO"].includes(rarity)) throw Error("Filtro de raridade inv\xE1lido.");
+      const sort = String(p.sort ?? "NEWEST").toUpperCase();
+      const order = sort === "PRICE_ASC" ? "price asc,created_at desc" : sort === "PRICE_DESC" ? "price desc,created_at desc" : "created_at desc";
+      const page = integer(p.page ?? 0, 0, 1e3), pageSize = 24, offset = page * pageSize;
+      const args = [query, currency, rarity];
+      const predicate = "status='open' and ($1='' or item->>'name' ilike '%'||$1||'%' or seller_name ilike '%'||$1||'%') and ($2='ALL' or currency=$2) and ($3='ALL' or item->>'rarity'=$3)";
+      const listings = (await db.query(`select id,seller_character_id,seller_name,item,currency,price,fee,expires_at,created_at from public.world_market_listings where ${predicate} order by ${order} limit $5 offset $4`, [...args, offset, pageSize])).rows;
+      const templateIds = [...new Set([...listings.map((listing) => String(listing.item?.templateId ?? "")), ...p.templateId ? [text(p.templateId, 128)] : []].filter(Boolean))];
+      const salesHistory = await marketSalesHistory(db, templateIds);
+      const priceStats = templateIds.length ? (await db.query("select template_id,sale_events,units_sold,average_gold_price,lowest_gold_price,highest_gold_price,last_sold_at,average_mythreon_coin_price,lowest_mythreon_coin_price,highest_mythreon_coin_price from public.world_trade_item_stats where template_id=any($1::text[])", [templateIds])).rows : [];
+      const summary = (await db.query(`select count(*)::int as total,coalesce(avg(price),0)::numeric as average_price,coalesce(min(price),0)::numeric as min_price,coalesce(max(price),0)::numeric as max_price from public.world_market_listings where ${predicate}`, args)).rows[0] ?? { total: 0, average_price: 0, min_price: 0, max_price: 0 };
+      const mine = request.characterId ? (await db.query("select id,seller_character_id,seller_name,item,currency,price,fee,status,expires_at,created_at,sold_at,buyer_character_id from public.world_market_listings where seller_character_id=$1 order by created_at desc limit 50", [uuid(request.characterId)])).rows : [];
+      receipt = { market: { listings, mine, priceStats, salesHistory, summary: { total: Number(summary.total ?? 0), averagePrice: Number(summary.average_price ?? 0), minPrice: Number(summary.min_price ?? 0), maxPrice: Number(summary.max_price ?? 0) }, page, pageSize, filters: { query, currency, rarity, sort }, now: now.toISOString() } };
+    } else if (op === "market.list" || op === "market.buy" || op === "market.cancel") {
+      actor = await own(db, owner, request.characterId);
+      if (op === "market.list") {
+        canTransfer(actor.state.character);
+        const currency = String(p.currency ?? "GOLD").toUpperCase();
+        if (currency !== "GOLD" && currency !== "COINS") throw Error("Escolha Gold ou Mythreon Coins.");
+        const price = integer(p.price, 1, 1e12);
+        const selection = p.item;
+        if (!selection || typeof selection.uid !== "string") throw Error("Escolha um item da mochila ou dep\xF3sito.");
+        const offer = reserveOffer(actor.state.character, { gold: 0, mythreonCoins: 0, items: [{ uid: selection.uid, quantity: integer(selection.quantity ?? 1, 1, 999) }] });
+        actor.state.character.gold += transferFee(0);
+        const item = offer.items[0];
+        const id2 = (0, import_node_crypto2.randomUUID)();
+        const fee = Math.min(price, Math.max(currency === "GOLD" ? 10 : 1, Math.floor(price * 0.05)));
+        await db.query("insert into public.world_market_listings(id,seller_character_id,seller_owner_id,seller_name,item,currency,price,fee,expires_at) values($1,$2,$3,$4,$5,$6,$7,$8,$9)", [id2, actor.id, owner, actor.name, JSON.stringify(item), currency, price, fee, new Date(Date.now() + 48 * 60 * 60 * 1e3)]);
+        await commitCharacter(db, actor);
+        receipt = { market: { listingId: id2, status: "open", fee } };
+      } else {
+        const listing = (await db.query("select * from public.world_market_listings where id=$1 for update", [uuid(p.listingId)])).rows[0];
+        if (!listing) throw Error("An\xFAncio n\xE3o encontrado.");
+        if (listing.status === "open" && new Date(listing.expires_at).getTime() <= Date.now()) {
+          await db.query("update public.world_market_listings set status='expired' where id=$1", [listing.id]);
+          listing.status = "expired";
+        }
+        if (op === "market.cancel") {
+          if (listing.seller_character_id !== actor.id || listing.seller_owner_id !== owner) throw Error("Somente o vendedor pode cancelar o an\xFAncio.");
+          if (!["open", "expired"].includes(listing.status)) throw Error("Este an\xFAncio j\xE1 foi devolvido ou vendido.");
+          restoreOffer(actor.state.character, { gold: 0, mythreonCoins: 0, items: [listing.item], fee: 0 });
+          await db.query("update public.world_market_listings set status='cancelled' where id=$1", [listing.id]);
+          await commitCharacter(db, actor);
+          receipt = { market: { listingId: listing.id, status: "cancelled" } };
+        } else {
+          if (listing.status !== "open") throw Error("Este an\xFAncio j\xE1 foi encerrado.");
+          if (listing.seller_owner_id === owner) throw Error("Voc\xEA n\xE3o pode comprar o pr\xF3prio an\xFAncio.");
+          canTransfer(actor.state.character);
+          const seller = (await db.query("select * from public.world_characters where id=$1 and owner_id=$2 for update", [listing.seller_character_id, listing.seller_owner_id])).rows[0];
+          if (!seller) throw Error("Vendedor n\xE3o encontrado.");
+          const price = Number(listing.price), fee = Math.min(price, Number(listing.fee));
+          if (listing.currency === "GOLD") {
+            if (actor.state.character.gold < price) throw Error("Gold insuficiente.");
+            actor.state.character.gold -= price;
+            seller.state.character.gold += price - fee;
+          } else {
+            if ((actor.state.character.mythreonCoins ?? 0) < price) throw Error("Mythreon Coins insuficientes.");
+            actor.state.character.mythreonCoins = (actor.state.character.mythreonCoins ?? 0) - price;
+            seller.state.character.mythreonCoins = (seller.state.character.mythreonCoins ?? 0) + price - fee;
+          }
+          receiveOffer(actor.state.character, { gold: 0, mythreonCoins: 0, items: [listing.item], fee: 0 });
+          await db.query("update public.world_market_listings set status='sold',buyer_character_id=$2,buyer_owner_id=$3,sold_at=now() where id=$1", [listing.id, actor.id, owner]);
+          await commitCharacter(db, seller);
+          await commitCharacter(db, actor);
+          await db.query("insert into public.world_ledger(id,operation_id,kind,sender_id,recipient_id,gold,fee,mythreon_coins,items) values($1,$2,$3,$4,$5,$6,$7,$8,$9)", [(0, import_node_crypto2.randomUUID)(), request.requestId, "market", seller.id, actor.id, listing.currency === "GOLD" ? price : 0, fee, listing.currency === "COINS" ? price : 0, JSON.stringify([listing.item])]);
+          receipt = { market: { listingId: listing.id, status: "sold", fee } };
+        }
+      }
     } else if (op.startsWith("trade.")) {
       if (op === "trade.invite") {
         const target = await byName(db, p.target);
@@ -5032,9 +6373,10 @@ async function handleWorld(db, owner, request) {
       actor = await own(db, owner, request.characterId);
       if (op === "world.read" || op === "world.command") {
         if (op === "world.command" && (typeof p.action !== "string" || !Array.isArray(p.args) || p.args.length > 3)) throw Error("Comando inv\xE1lido.");
+        const premium = await syncPremium(db, owner, actor.state.character);
         const executed = executeGame(actor.state, op === "world.command" ? p.action : void 0, p.args ?? []);
         actor.state = executed.world;
-        receipt = { result: executed.result, messages: executed.messages };
+        receipt = { result: executed.result, messages: executed.messages, premium };
         await commitCharacter(db, actor);
         await db.query("update public.world_characters set online_at=now() where id=$1", [actor.id]);
       } else if (op === "message.send") {

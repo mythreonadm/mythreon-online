@@ -7,7 +7,7 @@ import { Character, Race, TickResult, CharacterSkills, OfflineReportData, BuffVi
 import { ZONES } from "../data/zones";
 import { createNewCharacter, loadGame, saveGame } from "../engine/save";
 import { processTick } from "../engine/combat";
-import { equipItem, unequipItem, addItem, removeItem } from "../engine/inventory";
+import { equipItem, unequipItem, addItem, removeItem, countByTemplate } from "../engine/inventory";
 import { makeEquipment, makeMaterial } from "../engine/drops";
 import { recalcStats, skillXpToNextLevel } from "../engine/stats";
 import { findNamedRace, generateRaceName, generateRaceId, generateRaceBonus } from "../data/races";
@@ -16,12 +16,20 @@ import { salvageAllEquipment, salvageSelectedEquipment } from "../engine/salvage
 import { updateQuestProgress, claimQuestReward, trackRaceDiscovery, trackQuestAction } from "../engine/questEngine";
 import { upgradeItemLevel, rerollItemAffixes, forgeFragments, elevateItemTier, rerollSpecificAffix } from "../engine/forge";
 import { depositItem as engineDeposit, withdrawItem as engineWithdraw, depositMany as engineDepositMany, withdrawMany as engineWithdrawMany } from "../engine/depot";
-import { FRAGMENT_TEMPLATES, DIVINE_BEAST_EGG_TEMPLATES, UNIQUE_TEMPLATES, ALL_ITEM_TEMPLATES, createItem } from "../data/items";
+import { FRAGMENT_TEMPLATES, DIVINE_BEAST_EGG_TEMPLATES, UNIQUE_TEMPLATES, ALL_ITEM_TEMPLATES, PROFESSION_TOOL_TEMPLATES, createItem } from "../data/items";
 import { divineBeastSellValue, DIVINE_BEASTS } from "../data/divineBeasts";
 import { QUESTS } from "../data/quests";
 import { getMythreonOffer, MYTHREON_ECONOMY } from "../data/mythreonEconomy";
 import { farmSeed, farmYield, FARM_SEEDS, farmExpansionCost, farmRecipe, farmRecipeOutput, FARM_RECIPES, FARM_FERTILITY_MAX, FARM_FERTILITY_MIN, FARM_FERTILITY_LOSS_PER_HARVEST, FARM_FERTILITY_COMPOST_GAIN } from "../data/farm";
 import { generateId } from "../utils/id";
+import { MINING_NODES, FISHING_SPOTS, PROFESSION_RECIPES, PROFESSION_TOOL_SHOP, FISHING_BAIT, professionCooldown } from "../data/professions";
+
+import { calendarUnlockedSkins, CALENDAR_COUPON_PRICE } from "../data/dailyCalendar";
+import { claimCalendarReward } from "../engine/dailyCalendar";
+import { COSMETIC_DEFINITIONS, COSMETIC_SLOTS, type CosmeticSlot } from "../data/cosmetics";
+import { ownedCosmeticLoadout } from "../engine/cosmeticOwnership";
+import { evolveCard as engineEvolveCard } from "../engine/cardCollection";
+import { CARD_TEMPLATES } from "../data/cards";
 
 export interface GameState {
   character: Character | null;
@@ -38,6 +46,8 @@ export interface GameState {
   unlockZone: (id: string) => {success:boolean;error?:string};
   newGame: (name: string, appearance?: CharacterAppearance) => void;
   updateAppearance: (appearance: CharacterAppearance) => { success: boolean; error?: string };
+  equipCosmetic: (templateId: string) => { success: boolean; error?: string };
+  unequipCosmetic: (slot: CosmeticSlot) => { success: boolean; error?: string };
   loadFromSave: () => boolean;
   save: () => void;
   spendStatPoint: (stat: keyof CharacterSkills) => boolean;
@@ -90,12 +100,21 @@ export interface GameState {
   openMythreonRoulette: () => { success: boolean; reward?: string; error?: string };
   buyCalendarCoupon: () => { success: boolean; error?: string };
   claimDailyCalendar: () => { success: boolean; reward?: string; error?: string };
+
+  claimOnlineChest: () => { success: boolean; reward?: string; error?: string };
+  setCardLoadout: (uids: string[]) => { success: boolean; error?: string };
+  evolveCard: (uid: string, materialUids: string[], expectedLevel: number) => { success: boolean; error?: string; level?: number; spentGold?: number; consumed?: string[] };
   plantFarmSeed: (plotId: string, seedId: string) => { success: boolean; error?: string };
   waterFarmPlot: (plotId: string) => { success: boolean; error?: string; secondsReduced?: number };
   fertilizeFarmPlot: (plotId: string) => { success: boolean; error?: string; fertility?: number };
   harvestFarmPlot: (plotId: string) => { success: boolean; error?: string; quantity?: number };
   unlockFarmPlot: () => { success: boolean; error?: string };
   cookFarmRecipe: (recipeId: string) => { success: boolean; error?: string; quantity?: number };
+  mineResource: (nodeId: string, precision?: 0.5 | 1 | 1.5) => { success: boolean; error?: string; quantity?: number };
+  fishSpot: (spotId: string, precision?: 0.5 | 1 | 1.5, baitId?: string) => { success: boolean; error?: string; quantity?: number; baitConsumed?: string; bonusQuantity?: number };
+  equipProfessionTool: (uid: string) => { success: boolean; error?: string };
+  buyProfessionTool: (templateId: string) => { success: boolean; error?: string };
+  refineProfessionRecipe: (recipeId: string) => { success: boolean; error?: string; quantity?: number };
   
   depositItem: (uid: string) => { success: boolean; error?: string };
   withdrawItem: (uid: string) => { success: boolean; error?: string };
@@ -141,7 +160,8 @@ function eggIncubationMs(tier: number): number {
   return [0, 60, 180, 480, 1200, 2400][Math.max(1, Math.min(5, Math.floor(tier)))] * 1000;
 }
 
-export function createGameStore(runtime: {server?: boolean; persist?: (character: Character,races: Race[])=>void; notify?: (message:string)=>void} = {}) {
+export function createGameStore(runtime: {server?: boolean; persist?: (character: Character,races: Race[])=>void; notify?: (message:string)=>void; now?: () => number} = {}) {
+const runtimeNow = runtime.now ?? (() => Date.now());
 let tickInterval: ReturnType<typeof setInterval> | null = null;
 const notify = runtime.notify ?? ((message:string)=>{if(typeof alert !== 'undefined') alert(message);});
 const warn=(message:string)=>{if(runtime.server)throw Error(message);notify(message);};
@@ -168,10 +188,36 @@ return create<GameState>((set, get) => ({
     return { success: true };
   },
 
+  equipCosmetic: (templateId) => {
+    const { character } = get();
+    if (!character) return { success: false, error: "Personagem indisponível." };
+    const template = ALL_ITEM_TEMPLATES[templateId];
+    const definition = COSMETIC_DEFINITIONS[templateId];
+    if (!template || !definition) return { success: false, error: "Cosmético inválido." };
+    const owned = [...(character.inventory.items ?? []), ...(character.depot ?? []), ...Object.values(character.equipped ?? {})].some(item => item.templateId === templateId);
+    if (!owned && !calendarUnlockedSkins(character).includes(templateId)) return { success: false, error: "Você ainda não possui este cosmético." };
+    const next = structuredClone(character);
+    next.cosmeticLoadout ??= {};
+    next.cosmeticLoadout[definition.slot] = templateId;
+    set({ character: next }); get().save();
+    return { success: true };
+  },
+
+  unequipCosmetic: (slot) => {
+    const { character } = get();
+    if (!character) return { success: false, error: "Personagem indisponível." };
+    if (!COSMETIC_SLOTS.some(entry => entry.key === slot)) return { success: false, error: "Espaço cosmético inválido." };
+    const next = structuredClone(character);
+    next.cosmeticLoadout = { ...(next.cosmeticLoadout ?? {}) };
+    delete next.cosmeticLoadout[slot];
+    set({ character: next }); get().save();
+    return { success: true };
+  },
+
   loadFromSave: () => {
     const save = loadGame();
     if (!save) return false;
-    const timeAway = (Date.now() - save.character.lastTick) / 1000;
+    const timeAway = (runtimeNow() - save.character.lastTick) / 1000;
     let report = null;
     if (timeAway > 60 && !isGuided(save.character)) {
       report = { timeAwaySeconds: timeAway, xpGained: Math.floor(timeAway * 10), goldGained: Math.floor(timeAway * 2), itemsDropped: Math.floor(timeAway / 60), levelsGained: 0 };
@@ -217,14 +263,21 @@ return create<GameState>((set, get) => ({
   startHealing: () => {
     const { character, healingUntil } = get();
     if (!character || healingUntil) return;
-    set({ healingUntil: Date.now() + 15000 });
+    set({ healingUntil: runtimeNow() + 15000 });
   },
 
   cancelHealing: () => {
     set({ healingUntil: null });
   },
 
-  save: () => { const { character, races } = get(); if (character) { if(runtime.persist) runtime.persist(character,races); else saveGame(character, races); } },
+  save: () => {
+    const { character, races } = get();
+    if (!character) return;
+    const valid = ownedCosmeticLoadout(character);
+    const next = character.cosmeticLoadout && JSON.stringify(valid) !== JSON.stringify(character.cosmeticLoadout) ? { ...character, cosmeticLoadout: valid } : character;
+    if (next !== character) set({ character: next });
+    if (runtime.persist) runtime.persist(next, races); else saveGame(next, races);
+  },
   spendStatPoint: (stat) => {
     const { character } = get();
     if (!character || (character.statPoints ?? 0) < 1) return false;
@@ -248,7 +301,8 @@ return create<GameState>((set, get) => ({
       const skill = newCharacter.trainingSkill;
       if (skill) {
         const beforeSeconds = Number(newCharacter.trainingSeconds?.[skill] ?? 0);
-        const trainingLog = applyTraining(newCharacter, Date.now());
+        const trainingLog = applyTraining(newCharacter, runtimeNow());
+        newCharacter.onlineChestSeconds = (newCharacter.onlineChestSeconds ?? 0) + 3;
         trackQuestAction(newCharacter,"TRAIN",Number(newCharacter.trainingSeconds?.[skill] ?? 0)-beforeSeconds);
         recalcStats(newCharacter);
         const result: TickResult = { kills: 0, gold: 0, xp: 0, drops: [], levelsGained: 0, death: false, log: trainingLog, enemyHp: 0, enemyMaxHp: 0, skillLevelUp: trainingLog.length ? trainingLog.join(' · ') : undefined };
@@ -262,8 +316,8 @@ return create<GameState>((set, get) => ({
     const zone = ZONES[currentZoneId];
     if (!zone || character.level < zone.minLevel) { get().stopHunting(); return; }
 
-    if (isGuided(character)) character.lastTick = Date.now() - 3000;
-    const result = processTick(character, zone, !isGuided(character) && Date.now() - character.lastTick > 15000);
+    if (isGuided(character)) character.lastTick = runtimeNow() - 3000;
+    const result = processTick(character, zone, !isGuided(character) && runtimeNow() - character.lastTick > 15000);
     recordHuntMetrics(character, zone.id, result);
 
     if (result.death && result.deathData) {
@@ -274,6 +328,7 @@ return create<GameState>((set, get) => ({
     }
 
     updateQuestProgress(character, result);
+    character.onlineChestSeconds = (character.onlineChestSeconds ?? 0) + 3;
     recalcStats(character);
     set({ character: { ...character }, lastTickResult: result });
     get().save();
@@ -313,8 +368,8 @@ return create<GameState>((set, get) => ({
 
     if (tickInterval) clearInterval(tickInterval);
     character.trainingSkill = skill;
-    character.trainingLastTick = Date.now();
-    character.lastTick = Date.now();
+    character.trainingLastTick = runtimeNow();
+    character.lastTick = runtimeNow();
     set({ isTickRunning: false, isTraining: true, character: { ...character } });
     if (!runtime.server) { get().tick();
     tickInterval = setInterval(() => get().tick(), 3000); }
@@ -323,7 +378,7 @@ return create<GameState>((set, get) => ({
   armSpecialCombo: (power = 1.5) => {
     const { character, isTickRunning } = get();
     if (!character || !isTickRunning) return { success: false, error: "O combo só pode ser armado durante a caça." };
-    const now = Date.now();
+    const now = runtimeNow();
     if ((character.comboCooldownUntil ?? 0) > now) return { success: false, error: `Aguarde ${Math.ceil((character.comboCooldownUntil! - now) / 1000)}s para recarregar.` };
     const updated = JSON.parse(JSON.stringify(character));
     updated.comboReadyUntil = now + 12_000;
@@ -348,7 +403,7 @@ return create<GameState>((set, get) => ({
     if (tickInterval) clearInterval(tickInterval);
     tickInterval = null;
     const { character } = get();
-    if (character) { character.trainingSkill = null; character.trainingLastTick = undefined; character.lastTick = Date.now(); set({ isTraining: false, character: { ...character } }); get().save(); }
+    if (character) { character.trainingSkill = null; character.trainingLastTick = undefined; character.lastTick = runtimeNow(); set({ isTraining: false, character: { ...character } }); get().save(); }
   },
 
   setActiveEnemy: (enemyId) => {
@@ -468,7 +523,7 @@ return create<GameState>((set, get) => ({
     if (!character) return { success: false, error: "Sem personagem" };
     const egg = character.inventory.items.find(item => item.uid === uid);
     if (!egg || !DIVINE_BEAST_EGG_TEMPLATES[egg.templateId]) return { success: false, error: "Escolha um Ovo de Besta Divina." };
-    const now = Date.now();
+    const now = runtimeNow();
     const incubator = character.divineBeastIncubator;
     if (!incubator) {
       const next = structuredClone(character);
@@ -485,7 +540,7 @@ return create<GameState>((set, get) => ({
     const next = structuredClone(character);
     removeItem(next.inventory, uid, 1);
     next.divineBeastIncubator = undefined;
-    next.divineBeasts = [...(next.divineBeasts ?? []), { id: beastId, instanceId: generateId(), rarity, obtainedAt: Date.now() }];
+    next.divineBeasts = [...(next.divineBeasts ?? []), { id: beastId, instanceId: generateId(), rarity, obtainedAt: runtimeNow() }];
     set({ character: next }); get().save();
     notify(`O ovo eclodiu: ${DIVINE_BEASTS[beastId].name} · ${rarity}!`);
     return { success: true, beastId, rarity };
@@ -509,7 +564,7 @@ return create<GameState>((set, get) => ({
     next.divineBeasts = (next.divineBeasts ?? []).filter((_, index) => !consume.has(index));
     removeItem(next.inventory, ration.uid, 1);
     const rarity = rank[current + 1];
-    next.divineBeasts.push({ id, instanceId: generateId(), rarity, obtainedAt: Date.now() });
+    next.divineBeasts.push({ id, instanceId: generateId(), rarity, obtainedAt: runtimeNow() });
     set({ character: next }); get().save();
     notify(`A linhagem foi aprimorada para ${rarity}!`);
     return { success: true, rarity };
@@ -545,9 +600,10 @@ return create<GameState>((set, get) => ({
       FRUTA_MEL: { minutes: 10, mood: 5 },
       MELANCIA_LUNAR: { minutes: 15, mood: 8 },
       RACAO_DOMADOR: { minutes: 30, mood: 12 },
+      CALDO_MARCA_DAGUA: { minutes: 20, mood: 10 },
     } as Record<string, { minutes: number; mood: number }>)[item.templateId];
     if (!food) return { success: false, error: "Este item não é alimento para Bestas Divinas." };
-    const now = Date.now();
+    const now = runtimeNow();
     const previous = character.divineBeastNeeds?.[id] ?? { nutrition: 0, mood: 70, updatedAt: now };
     const elapsedMinutes = Math.max(0, (now - previous.updatedAt) / 60000);
     const needs: DivineBeastNeeds = {
@@ -602,20 +658,20 @@ return create<GameState>((set, get) => ({
   plantFarmSeed: (plotId, seedId) => {
     const { character } = get(); if (!character) return { success: false, error: "Personagem indisponível." };
     const seed = farmSeed(seedId); if (!seed) return { success: false, error: "Semente inválida." };
-    const next = JSON.parse(JSON.stringify(character)); next.farm ??= { plots: [], unlockedPlots: 1, lastActionAt: Date.now(), skills: { planting: 0, harvesting: 0, irrigation: 0, fertility: 0 } }; next.farm.skills ??= { planting: 0, harvesting: 0, irrigation: 0, fertility: 0 };
+    const next = JSON.parse(JSON.stringify(character)); next.farm ??= { plots: [], unlockedPlots: 1, lastActionAt: runtimeNow(), skills: { planting: 0, harvesting: 0, irrigation: 0, fertility: 0 } }; next.farm.skills ??= { planting: 0, harvesting: 0, irrigation: 0, fertility: 0 };
     const plot = next.farm.plots.find((entry: any) => entry.id === plotId);
     if (!plot || next.farm.plots.indexOf(plot) >= next.farm.unlockedPlots) return { success: false, error: "Canteiro bloqueado." };
     if (plot.seedId) return { success: false, error: "Este canteiro já está plantado." };
     if (next.gold < seed.cost) return { success: false, error: "Gold insuficiente para comprar esta semente." };
     const fertility = Math.max(FARM_FERTILITY_MIN, Math.min(FARM_FERTILITY_MAX, Number(plot.fertility ?? FARM_FERTILITY_MAX)));
     const skill = Number(next.farm.skills.planting ?? 0); const speedBonus = Math.min(0.25, skill * 0.01); const fertilityPenalty = (FARM_FERTILITY_MAX - fertility) / 200; const growMs = Math.max(30_000, Math.round(seed.growMs * (1 - speedBonus + fertilityPenalty)));
-    next.gold -= seed.cost; plot.fertility = fertility; plot.seedId = seed.id; plot.plantedAt = Date.now(); plot.readyAt = Date.now() + growMs; plot.wateredAt = Date.now(); plot.waterCount = 0; next.farm.skills.planting += 1; next.farm.lastActionAt = Date.now(); set({ character: next }); get().save(); return { success: true };
+    next.gold -= seed.cost; plot.fertility = fertility; plot.seedId = seed.id; plot.plantedAt = runtimeNow(); plot.readyAt = runtimeNow() + growMs; plot.wateredAt = runtimeNow(); plot.waterCount = 0; next.farm.skills.planting += 1; next.farm.lastActionAt = runtimeNow(); set({ character: next }); get().save(); return { success: true };
   },
   waterFarmPlot: (plotId) => {
     const { character } = get(); if (!character) return { success: false, error: "Personagem indisponível." };
     const next = JSON.parse(JSON.stringify(character)); const plot = next.farm?.plots?.find((entry: any) => entry.id === plotId);
     if (!plot?.seedId || !plot.readyAt) return { success: false, error: "Este canteiro não possui uma plantação ativa." };
-    const now = Date.now(); if (now >= plot.readyAt) return { success: false, error: "A plantação já está pronta para colher." };
+    const now = runtimeNow(); if (now >= plot.readyAt) return { success: false, error: "A plantação já está pronta para colher." };
     const waterCount = Number(plot.waterCount ?? 0); if (waterCount >= 3) return { success: false, error: "Esta plantação já recebeu toda a irrigação possível." };
     if (plot.wateredAt && now - plot.wateredAt < 60_000) return { success: false, error: `A terra ainda está úmida. Aguarde ${Math.ceil((60_000 - (now - plot.wateredAt)) / 1000)}s.` };
     const remaining = Math.max(30_000, plot.readyAt - now); const reduction = Math.max(5_000, Math.round(remaining * 0.08));
@@ -633,17 +689,17 @@ return create<GameState>((set, get) => ({
     const compost = next.inventory.items.find((item: any) => item.templateId === "COMPOSTO_LYSS");
     if (!compost) return { success: false, error: "É necessário um Composto Fértil de Lyss." };
     removeItem(next.inventory, compost.uid, 1); plot.fertility = Math.min(FARM_FERTILITY_MAX, current + FARM_FERTILITY_COMPOST_GAIN);
-    next.farm.skills ??= { planting: 0, harvesting: 0, irrigation: 0, fertility: 0 }; next.farm.skills.fertility = Number(next.farm.skills.fertility ?? 0) + 1; next.farm.lastActionAt = Date.now(); set({ character: next }); get().save(); return { success: true, fertility: plot.fertility };
+    next.farm.skills ??= { planting: 0, harvesting: 0, irrigation: 0, fertility: 0 }; next.farm.skills.fertility = Number(next.farm.skills.fertility ?? 0) + 1; next.farm.lastActionAt = runtimeNow(); set({ character: next }); get().save(); return { success: true, fertility: plot.fertility };
   },
   harvestFarmPlot: (plotId) => {
     const { character } = get(); if (!character) return { success: false, error: "Personagem indisponível." };
     const next = JSON.parse(JSON.stringify(character)); const plot = next.farm?.plots?.find((entry: any) => entry.id === plotId); const seed = plot?.seedId ? farmSeed(plot.seedId) : undefined;
-    if (!plot || !seed) return { success: false, error: "Não há cultivo neste canteiro." }; if (!plot.readyAt || Date.now() < plot.readyAt) return { success: false, error: "A plantação ainda está crescendo." };
-    next.farm.skills ??= { planting: 0, harvesting: 0, irrigation: 0, fertility: 0 }; const fertility = Math.max(FARM_FERTILITY_MIN, Math.min(FARM_FERTILITY_MAX, Number(plot.fertility ?? FARM_FERTILITY_MAX))); const quantity = farmYield(seed, fertility, Number(next.farm.skills.harvesting ?? 0)); addItem(next.inventory, quantity); plot.fertility = Math.max(FARM_FERTILITY_MIN, fertility - FARM_FERTILITY_LOSS_PER_HARVEST); plot.seedId = undefined; plot.plantedAt = undefined; plot.readyAt = undefined; plot.wateredAt = undefined; plot.waterCount = undefined; next.farm.skills.harvesting += 1; next.farm.lastActionAt = Date.now(); set({ character: next }); get().save(); return { success: true, quantity: quantity.quantity };
+    if (!plot || !seed) return { success: false, error: "Não há cultivo neste canteiro." }; if (!plot.readyAt || runtimeNow() < plot.readyAt) return { success: false, error: "A plantação ainda está crescendo." };
+    next.farm.skills ??= { planting: 0, harvesting: 0, irrigation: 0, fertility: 0 }; const fertility = Math.max(FARM_FERTILITY_MIN, Math.min(FARM_FERTILITY_MAX, Number(plot.fertility ?? FARM_FERTILITY_MAX))); const quantity = farmYield(seed, fertility, Number(next.farm.skills.harvesting ?? 0)); addItem(next.inventory, quantity); plot.fertility = Math.max(FARM_FERTILITY_MIN, fertility - FARM_FERTILITY_LOSS_PER_HARVEST); plot.seedId = undefined; plot.plantedAt = undefined; plot.readyAt = undefined; plot.wateredAt = undefined; plot.waterCount = undefined; next.farm.skills.harvesting += 1; next.farm.lastActionAt = runtimeNow(); set({ character: next }); get().save(); return { success: true, quantity: quantity.quantity };
   },
   unlockFarmPlot: () => {
     const { character } = get(); if (!character) return { success: false, error: "Personagem indisponível." };
-    const next = JSON.parse(JSON.stringify(character)); next.farm ??= { plots: [], unlockedPlots: 1, lastActionAt: Date.now() };
+    const next = JSON.parse(JSON.stringify(character)); next.farm ??= { plots: [], unlockedPlots: 1, lastActionAt: runtimeNow() };
     const cost = farmExpansionCost(next.farm.unlockedPlots);
     if (!cost) return { success: false, error: "Todos os terrenos já foram liberados." };
     if (cost.kind === "gold") {
@@ -664,6 +720,93 @@ return create<GameState>((set, get) => ({
     for (const ingredient of recipe.ingredients) { const total = next.inventory.items.filter((item: any) => item.templateId === ingredient.templateId).reduce((sum: number, item: any) => sum + item.quantity, 0); if (total < ingredient.quantity) return { success: false, error: `Faltam materiais para ${recipe.name}.` }; }
     for (const ingredient of recipe.ingredients) { let remaining = ingredient.quantity; for (const item of [...next.inventory.items]) { if (item.templateId !== ingredient.templateId || remaining <= 0) continue; const take = Math.min(remaining, item.quantity); removeItem(next.inventory, item.uid, take); remaining -= take; } }
     addItem(next.inventory, farmRecipeOutput(recipe)); set({ character: next }); get().save(); return { success: true, quantity: recipe.outputQuantity };
+  },
+
+  equipProfessionTool: (uid) => {
+    const { character } = get(); if (!character) return { success: false, error: "Personagem indisponível." };
+    const next = structuredClone(character);
+    const item = next.inventory.items.find(entry => entry.uid === uid);
+    if (!item || item.category !== "FERRAMENTA" || !item.profession) return { success: false, error: "Escolha uma ferramenta de profissão válida." };
+    const skill = item.profession === "MINERACAO" ? Number(next.professions?.mining ?? 0) : Number(next.professions?.fishing ?? 0);
+    if (skill < Number(item.requiredSkill ?? 0)) return { success: false, error: `Requer ${item.profession === "MINERACAO" ? "mineração" : "pesca"} ${item.requiredSkill ?? 0}.` };
+    removeItem(next.inventory, uid, 1);
+    const field = item.profession === "MINERACAO" ? "equippedMiningTool" : "equippedFishingRod";
+    const previous = next[field];
+    if (previous) addItem(next.inventory, previous);
+    next[field] = item;
+    set({ character: next }); get().save();
+    return { success: true };
+  },
+
+  buyProfessionTool: (templateId) => {
+    const { character } = get(); if (!character) return { success: false, error: "Personagem indisponível." };
+    const offer = PROFESSION_TOOL_SHOP.find(entry => entry.templateId === templateId);
+    const template = PROFESSION_TOOL_TEMPLATES[templateId];
+    if (!offer || !template) return { success: false, error: "Ferramenta indisponível." };
+    const next = structuredClone(character);
+    if ([...next.inventory.items, ...next.depot, next.equippedMiningTool, next.equippedFishingRod].some(item => item?.templateId === templateId)) return { success: false, error: "Você já possui esta ferramenta na mochila, no depósito ou equipada." }; const skill = offer.profession === "MINERACAO" ? Number(next.professions?.mining ?? 0) : Number(next.professions?.fishing ?? 0);
+    if (skill < offer.requiredSkill) return { success: false, error: `Requer ${offer.profession === "MINERACAO" ? "mineração" : "pesca"} ${offer.requiredSkill}.` };
+    if (next.gold < offer.gold) return { success: false, error: `Você precisa de ${offer.gold.toLocaleString("pt-BR")} gold.` };
+    const item = createItem({ ...template, uid: generateId() });
+    if (!addItem(next.inventory, item)) return { success: false, error: "Bolsa cheia. Libere espaço antes de comprar." };
+    next.gold -= offer.gold;
+    set({ character: next }); get().save(); notify(`${template.name} entregue. Equipe-a para liberar o próximo veio ou ponto.`);
+    return { success: true, templateId };
+  },
+
+  refineProfessionRecipe: (recipeId) => {
+    const { character } = get(); if (!character) return { success: false, error: "Personagem indisponível." };
+    const recipe = PROFESSION_RECIPES.find(entry => entry.id === recipeId);
+    if (!recipe) return { success: false, error: "Receita de profissão inválida." };
+    const next = structuredClone(character);
+    const skill = recipe.profession === "MINERACAO" ? Number(next.professions?.mining ?? 0) : Number(next.professions?.fishing ?? 0);
+    if (skill < recipe.requiredSkill) return { success: false, error: `Requer ${recipe.profession === "MINERACAO" ? "mineração" : "pesca"} ${recipe.requiredSkill}.` };
+    for (const ingredient of recipe.ingredients) if (countByTemplate(next.inventory, ingredient.templateId) < ingredient.quantity) return { success: false, error: `Faltam materiais para ${recipe.name}.` };
+    for (const ingredient of recipe.ingredients) {
+      let remaining = ingredient.quantity;
+      for (const item of [...next.inventory.items]) {
+        if (item.templateId !== ingredient.templateId || remaining <= 0) continue;
+        const take = Math.min(remaining, item.quantity); removeItem(next.inventory, item.uid, take); remaining -= take;
+      }
+    }
+    const output = makeMaterial(recipe.outputTemplateId);
+    if (!output) return { success: false, error: "Produto de refino indisponível." };
+    output.quantity = recipe.outputQuantity;
+    if (!addItem(next.inventory, output)) return { success: false, error: "Bolsa cheia. Libere espaço antes de refinar." };
+    set({ character: next }); get().save(); notify(`${recipe.name} concluído: ${recipe.outputQuantity} unidade(s).`);
+    return { success: true, quantity: recipe.outputQuantity };
+  },
+
+  mineResource: (nodeId, precision = 1) => {
+    const { character } = get(); if (!character) return { success: false, error: "Personagem indisponível." };
+    const node = MINING_NODES.find(entry => entry.id === nodeId); if (!node) return { success: false, error: "Veio de mineração inválido." };
+    if (!canEnterZone(character, node.zoneId)) return { success: false, error: "Conclua a travessia deste bioma em Jornadas para minerar aqui." };
+    const next = JSON.parse(JSON.stringify(character)); next.professions ??= { mining: 0, fishing: 0, lastMiningAt: 0, lastFishingAt: 0 };
+    const skill = Number(next.professions.mining ?? 0); if (skill < node.requiredSkill) return { success: false, error: `Mineração ${node.requiredSkill} necessária.` };
+    const tool = next.equippedMiningTool; if (!tool || Number(tool.tier ?? 0) < node.tier) return { success: false, error: `Equipe uma picareta T${node.tier} ou superior.` };
+    const now = runtimeNow(); const cooldown = professionCooldown(skill); if (now - Number(next.professions.lastMiningAt ?? 0) < cooldown) return { success: false, error: `A picareta precisa descansar ${Math.ceil((cooldown - (now - Number(next.professions.lastMiningAt ?? 0))) / 1000)}s.` };
+    const quality = precision === 1.5 ? 1.25 : precision === 0.5 ? 0.85 : 1; const quantity = Math.max(1, Math.floor((1 + Math.floor(skill / 30)) * quality)); const template = ALL_ITEM_TEMPLATES[node.dropTemplateId]; const drop = createItem({ ...(template ?? { templateId: node.dropTemplateId, name: node.dropName, category: "MATERIAL", tier: node.tier, rarity: node.tier >= 4 ? "EPICO" : node.tier >= 3 ? "RARO" : "COMUM", icon: node.dropIcon, stackable: true, maxStack: 999 }), uid: generateId(), quantity, stackable: true, maxStack: 999 });
+    if (!addItem(next.inventory, drop)) return { success: false, error: "Bolsa cheia. Libere espaço para guardar o minério." };
+    next.professions.mining = skill + (precision === 1.5 ? 2 : 1); next.professions.lastMiningAt = now; set({ character: next }); get().save(); return { success: true, quantity };
+  },
+  fishSpot: (spotId, precision = 1, baitId) => {
+    const { character } = get(); if (!character) return { success: false, error: "Personagem indisponível." };
+    const spot = FISHING_SPOTS.find(entry => entry.id === spotId); if (!spot) return { success: false, error: "Ponto de pesca inválido." };
+    if (!canEnterZone(character, spot.zoneId)) return { success: false, error: "Conclua a travessia deste bioma em Jornadas para pescar aqui." };
+    const next = JSON.parse(JSON.stringify(character)); next.professions ??= { mining: 0, fishing: 0, lastMiningAt: 0, lastFishingAt: 0 };
+    const skill = Number(next.professions.fishing ?? 0); if (skill < spot.requiredSkill) return { success: false, error: `Pesca ${spot.requiredSkill} necessária.` };
+    const rod = next.equippedFishingRod; if (!rod || Number(rod.tier ?? 0) < spot.rodTier) return { success: false, error: `Equipe uma vara T${spot.rodTier} ou superior.` };
+    if (baitId !== undefined && baitId !== FISHING_BAIT.templateId) return { success: false, error: "Isca inválida." };
+    if (baitId && countByTemplate(next.inventory, baitId) < FISHING_BAIT.quantity) return { success: false, error: "A isca escolhida não está mais na mochila." };
+    const now = runtimeNow(); const cooldown = professionCooldown(skill); if (now - Number(next.professions.lastFishingAt ?? 0) < cooldown) return { success: false, error: `A linha ainda está na água. Aguarde ${Math.ceil((cooldown - (now - Number(next.professions.lastFishingAt ?? 0))) / 1000)}s.` };
+    const quality = precision === 1.5 ? 1.25 : precision === 0.5 ? 0.85 : 1; const quantity = Math.max(1, Math.floor((1 + Math.floor(skill / 35)) * quality)); const template = ALL_ITEM_TEMPLATES[spot.dropTemplateId]; const drop = createItem({ ...(template ?? { templateId: spot.dropTemplateId, name: spot.dropName, category: "MATERIAL", tier: spot.rodTier, rarity: spot.rodTier >= 4 ? "EPICO" : spot.rodTier >= 3 ? "RARO" : "COMUM", icon: spot.dropIcon, stackable: true, maxStack: 999 }), uid: generateId(), quantity, stackable: true, maxStack: 999 });
+    if (baitId) {
+      const baitStack = next.inventory.items.find((item: import("../types").Item) => item.templateId === baitId && item.quantity > 0)!;
+      removeItem(next.inventory, baitStack.uid, FISHING_BAIT.quantity);
+      drop.quantity += FISHING_BAIT.bonusFish;
+    }
+    if (!addItem(next.inventory, drop)) return { success: false, error: "Bolsa cheia. Libere espaço para guardar o peixe." };
+    next.professions.fishing = skill + (precision === 1.5 ? 2 : 1); next.professions.lastFishingAt = now; set({ character: next }); get().save(); return { success: true, quantity: drop.quantity, ...(baitId ? { baitConsumed: baitId, bonusQuantity: FISHING_BAIT.bonusFish } : {}) };
   },
 
   salvageAll: (maxRarity) => {
@@ -689,9 +832,11 @@ return create<GameState>((set, get) => ({
     const { character } = get(); if (!character) return;
     const newCharacter = JSON.parse(JSON.stringify(character));
     if (settings.autoPotion !== undefined) newCharacter.autoPotion = settings.autoPotion;
-    if (settings.autoSell !== undefined) newCharacter.autoSell = settings.autoSell;
+    const premiumAutomation = Boolean(newCharacter.premium);
+    if (settings.autoSell !== undefined && premiumAutomation) newCharacter.autoSell = settings.autoSell;
+    if (settings.autoSellTemplateIds !== undefined && !premiumAutomation) notify("Auto-venda por raridade e por item é um benefício do Premium Account.");
     if (settings.autoSalvage !== undefined) newCharacter.autoSalvage = settings.autoSalvage;
-    if (settings.autoSellTemplateIds !== undefined) {
+    if (settings.autoSellTemplateIds !== undefined && premiumAutomation) {
       newCharacter.autoSellTemplateIds = settings.autoSellTemplateIds;
       newCharacter.autoSalvageTemplateIds = (newCharacter.autoSalvageTemplateIds ?? []).filter((id: string) => !settings.autoSellTemplateIds.includes(id));
     }
@@ -716,7 +861,7 @@ return create<GameState>((set, get) => ({
     const { character } = get(); if (!character) return;
     const newCharacter = JSON.parse(JSON.stringify(character));
     const durationMs = newCharacter.premium ? 30 * 60 * 1000 : 5 * 60 * 1000;
-    const currentBuff = newCharacter.doubleAtkUntil && newCharacter.doubleAtkUntil > Date.now() ? newCharacter.doubleAtkUntil : Date.now();
+    const currentBuff = newCharacter.doubleAtkUntil && newCharacter.doubleAtkUntil > runtimeNow() ? newCharacter.doubleAtkUntil : runtimeNow();
     newCharacter.doubleAtkUntil = currentBuff + durationMs;
     set({ character: newCharacter }); get().save();
   },
@@ -777,7 +922,7 @@ return create<GameState>((set, get) => ({
  const day = new Date().toISOString().slice(0,10);
  if (character.trainingBoostDay === day) return {success:false,error:'Já adquirido hoje. Reinicia às 00:00 UTC.'};
  if (character.gold < 250) return {success:false,error:'Gold insuficiente (250).'};
- set({character:{...character,gold:character.gold-250,trainingBoostDay:day,trainingBoostUntil:Date.now()+1800000}});
+ set({character:{...character,gold:character.gold-250,trainingBoostDay:day,trainingBoostUntil:runtimeNow()+1800000}});
  get().save(); return {success:true};
  },
  useVial: (vial) => {
@@ -786,7 +931,7 @@ return create<GameState>((set, get) => ({
     const newChar = JSON.parse(JSON.stringify(character));
     newChar.gold -= vial.price;
     if (!newChar.activeVials) newChar.activeVials = {};
-    const now = Date.now();
+    const now = runtimeNow();
 
     const family = vial.id.replace(/_[0-9]+$/, '');
  for (const id of Object.keys(newChar.activeVials)) if (id.replace(/_[0-9]+$/, '') === family) delete newChar.activeVials[id];
@@ -876,7 +1021,7 @@ return create<GameState>((set, get) => ({
     const next = structuredClone(character);
     next.mythreonCoins = (next.mythreonCoins ?? 0) - offer.priceCoins;
     next.mythreonBoosts ??= {};
-    const now = Date.now();
+    const now = runtimeNow();
     const current = next.mythreonBoosts[offer.boostKey];
     if (offer.durationHours === 0) next.mythreonBoosts[offer.boostKey] = 0;
     else {
@@ -916,28 +1061,55 @@ return create<GameState>((set, get) => ({
   buyCalendarCoupon: () => {
     const { character } = get();
     if (!character) return { success: false, error: "Sem personagem." };
-    if ((character.mythreonCoins ?? 0) < 1) return { success: false, error: "Você precisa de 1 Mythreon Coin por cupom." };
-    const next = { ...character, mythreonCoins: (character.mythreonCoins ?? 0) - 1, calendarCoupons: (character.calendarCoupons ?? 0) + 1 };
-    set({ character: next }); get().save(); notify("Cupom de resgate do calendário adquirido."); return { success: true };
+    if (!Number.isSafeInteger(character.mythreonCoins) || Number(character.mythreonCoins) < CALENDAR_COUPON_PRICE) return { success: false, error: "Você precisa de 1 Mythreon Coin por cupom." };
+    const next = { ...character, mythreonCoins: (character.mythreonCoins ?? 0) - CALENDAR_COUPON_PRICE, calendarCoupons: (character.calendarCoupons ?? 0) + 1 };
+    set({ character: next }); get().save(); return { success: true };
   },
 
   claimDailyCalendar: () => {
     const { character } = get();
     if (!character) return { success: false, error: "Sem personagem." };
-    const today = new Date().toISOString().slice(0, 10);
-    if ((character.calendarClaimedDays ?? []).includes(today)) return { success: false, error: "A recompensa de hoje já foi resgatada." };
-    if ((character.calendarCoupons ?? 0) < 1) return { success: false, error: "Adquira um Cupom de Resgate com Mythreon Coin." };
-    const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
-    const streak = character.calendarLastClaimDay === yesterday ? (character.calendarStreak ?? 0) + 1 : 1;
+    const result = claimCalendarReward(character);
+    if (!result.success) return result;
+    set({ character: result.character }); get().save();
+    return { success: true, reward: result.reward };
+  },
+
+  claimOnlineChest: () => {
+    const { character } = get();
+    if (!character) return { success: false, error: "Sem personagem." };
+    const required = 300;
+    if ((character.onlineChestSeconds ?? 0) < required) return { success: false, error: `Fique online por mais ${Math.ceil((required - (character.onlineChestSeconds ?? 0)) / 60)} min para abrir o baú.` };
     const next = structuredClone(character);
-    next.calendarCoupons = (next.calendarCoupons ?? 0) - 1;
-    next.calendarClaimedDays = [...(next.calendarClaimedDays ?? []).filter(day => day.slice(0, 7) === today.slice(0, 7)), today];
-    next.calendarLastClaimDay = today; next.calendarStreak = streak;
-    const rewardGold = 500 + streak * 250; next.gold += rewardGold;
-    let reward = `${rewardGold.toLocaleString("pt-BR")} gold`;
-    if (streak % 7 === 0) { const fragment = createItem({ ...FRAGMENT_TEMPLATES.FRAGMENTO_RARO, quantity: 3 }); addItem(next.inventory, fragment); reward += " + 3 Fragmentos Raros"; }
-    if (streak >= 30 && !next.inventory.items.some(item => item.templateId === "SKIN_CAPA_PRIMEIRO_CANTO") && !next.depot.some(item => item.templateId === "SKIN_CAPA_PRIMEIRO_CANTO")) { addItem(next.inventory, createItem({ ...UNIQUE_TEMPLATES.SKIN_CAPA_PRIMEIRO_CANTO })); reward += " + Capa do Primeiro Canto"; }
-    set({ character: next }); get().save(); notify(`Calendário: ${reward}`); return { success: true, reward };
+    next.onlineChestSeconds = Math.max(0, (next.onlineChestSeconds ?? 0) - required);
+    next.onlineChestsOpened = (next.onlineChestsOpened ?? 0) + 1;
+    const gold = 400 + next.level * 120;
+    const shards = 1 + Math.floor(next.level / 20);
+    next.gold += gold; next.mythreonShards = (next.mythreonShards ?? 0) + shards;
+    const reward = `${gold.toLocaleString("pt-BR")} gold + ${shards} Mythreon Shard${shards === 1 ? "" : "s"}`;
+    set({ character: next }); get().save(); notify(`Baú do Refúgio: ${reward}`); return { success: true, reward };
+  },
+
+  setCardLoadout: (uids) => {
+    const { character } = get();
+    if (!character) return { success: false, error: "Sem personagem." };
+    if (!Array.isArray(uids) || uids.length > 5 || uids.some(uid => typeof uid !== "string")) return { success: false, error: "A formação aceita até cinco cartas." };
+    const unique = [...new Set(uids)];
+    const owned = new Set((character.cards ?? []).filter(card => CARD_TEMPLATES[card.templateId]).map(card => card.uid));
+    if (unique.some(uid => !owned.has(uid))) return { success: false, error: "Uma das cartas não pertence à sua coleção." };
+    const next = structuredClone(character);
+    next.cardLoadout = unique;
+    recalcStats(next);
+    set({ character: next }); get().save();
+    return { success: true };
+  },
+
+  evolveCard: (uid, materialUids, expectedLevel) => {
+    const { character } = get();if (!character) return { success: false, error: "Sem personagem." };
+    if (typeof uid !== "string" || !Array.isArray(materialUids) || materialUids.some(id => typeof id !== "string") || !Number.isInteger(expectedLevel)) return { success: false, error: "Dados de evolução inválidos." };
+    const next = structuredClone(character), result = engineEvolveCard(next, uid, materialUids, expectedLevel);
+    if (!result.success) return result;
+    recalcStats(next);set({ character: next });get().save();return result;
   },
 
   depositItem: (uid) => {
@@ -995,7 +1167,7 @@ return create<GameState>((set, get) => ({
     if (teamSize === 3 || (teamSize === 5 && character.arenaRareRewardDay !== today)) {
       const fragmentId = teamSize === 3 ? "FRAGMENTO_COMUM" : "FRAGMENTO_RARO";
       const template = FRAGMENT_TEMPLATES[fragmentId];
-      if (addItem(newCharacter.inventory, { ...template, uid: `arena-${Date.now()}-${Math.random()}`, quantity: 1 })) {
+      if (addItem(newCharacter.inventory, { ...template, uid: `arena-${runtimeNow()}-${Math.random()}`, quantity: 1 })) {
         fragment = fragmentId;
         if (teamSize === 5) newCharacter.arenaRareRewardDay = today;
       }

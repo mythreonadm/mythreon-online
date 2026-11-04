@@ -45,10 +45,10 @@ Atualizado em 03/11/2026. Este arquivo é o plano operacional do lançamento e d
 
 ### P2 — depois do lançamento
 
-17. Criar PvP de Arena com turnos interativos reais.
-18. Criar Market Online, premium, efeitos cosméticos e correio avançado.
+17. Criar PvP de Arena com turnos interativos reais. **Base online entregue no Pack 18; cartas equipadas entram no poder autoritativo no Pack 23.**
+18. Operacionalizar Market Online e Premium: base online, custódia, filtros/paginação, entitlements, cancelamento/reembolso, webhook HMAC e idempotência concluídos; falta moderação, conectar checkout/provedor, configurar `MYTHREON_PREMIUM_WEBHOOK_SECRET` na Vercel e homologar pagamentos reais.
 19. Adicionar novas regiões, monstros, Divine Beasts e capítulos de lore.
-20. Adicionar eventos sazonais, conquistas de treino e rankings por temporada.
+20. Adicionar eventos sazonais, conquistas de treino e rankings por temporada. **Pack 29 adicionou fila de matchmaking e histórico sazonal do PvP; Pack 33 deixou a origem dos bônus de Cards visível no Personagem; Pack 34 adicionou histórico auditável do Boss Diário; faltam ligas, recompensas e homologação concorrente.**
 
 ## Artes que ainda faltam
 

@@ -8,7 +8,8 @@
 
 ## Código e recursos
 
-- [src/types/index.ts](../src/types/index.ts) — Rarity, SlotType, ItemCategory, ComponentType, Law, Element, CardTrait, CardRarity, CardStats, CardTemplate, CardInstance, ItemStats
+- [src/types/index.ts](../src/types/index.ts) — Rarity, SlotType, ItemCategory, ComponentType, Law, Element, CardTrait, CardRarity, Precision, CardStats, CardTemplate, CardInstance
+- [src/types/market.ts](../src/types/market.ts) — MarketSaleStats, marketVariantKey, marketSaleKey
 
 ## Relações encontradas
 

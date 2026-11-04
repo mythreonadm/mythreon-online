@@ -24,6 +24,8 @@ interface Profile { xpPct: number; goldPct: number; dropPct: number; rarePct: nu
 export function buildProfile(char: Character): Profile {
   const bp = char.inventory.backpack;
   const p: Profile = { xpPct: (bp.xpBonus ?? 0) + (char.premium ? 0.10 : 0), goldPct: 0, dropPct: bp.dropBonus ?? 0, rarePct: bp.rareDropBonus ?? 0, healPct: 0, skillDmgPct: 0, cdReduce: 0, lifesteal: 0 };
+  const dailyBossXpUntil = char.dailyBossXpUntil;
+  if (dailyBossXpUntil !== undefined && (dailyBossXpUntil === 0 || dailyBossXpUntil > Date.now())) p.xpPct += 0.05;
   const tomeUntil = char.mythreonBoosts?.TOMO_SABEDORIA;
   if (tomeUntil !== undefined && (tomeUntil === 0 || tomeUntil > Date.now())) p.skillDmgPct += 0.20;
   for (const [vialId, expiry] of Object.entries(char.activeVials ?? {})) {
@@ -401,9 +403,9 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
       }
       if (debug || char.killsInZone % 10 === 0 || enemy.isBoss) drops.push(rollAmbient(zone));
       
-      const autoSell = char.autoSell ?? null;
+      const autoSell = char.premium ? (char.autoSell ?? null) : null;
       const autoSalvage = char.autoSalvage ?? null;
-      const sellByTemplate = new Set(char.autoSellTemplateIds ?? []);
+      const sellByTemplate = new Set(char.premium ? (char.autoSellTemplateIds ?? []) : []);
       const salvageByTemplate = new Set(char.autoSalvageTemplateIds ?? []);
       const ignoredLoot = new Set(char.ignoredLootTemplateIds ?? []);
 

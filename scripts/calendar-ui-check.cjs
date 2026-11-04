@@ -1,0 +1,65 @@
+const {app,BrowserWindow}=require('electron'),{build}=require('esbuild');
+const fs=require('node:fs/promises'),path=require('node:path'),http=require('node:http'),assert=require('node:assert/strict');
+const root=path.resolve(__dirname,'..'),cache=path.join(root,'node_modules/.cache/calendar-ui');
+app.setPath('userData',path.join(cache,'profile'));
+let server,win;const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+app.whenReady().then(async()=>{try{
+ await fs.mkdir(cache,{recursive:true});
+ const bundle=await build({bundle:true,write:false,platform:'browser',format:'iife',outfile:'preview.js',stdin:{resolveDir:root,sourcefile:'calendar-preview.tsx',loader:'tsx',contents:`
+import React from 'react';import {createRoot} from 'react-dom/client';
+import {DailyCalendar} from './src/ui/DailyCalendar';import {CharacterCustomization} from './src/ui/CharacterCustomization';
+import {useGameStore} from './src/store/gameStore';import {createNewCharacter} from './src/engine/save';import {ALL_ITEM_TEMPLATES,createItem} from './src/data/items';
+const root=createRoot(document.getElementById('root'));window.__store=useGameStore;window.__alerts=[];window.alert=message=>{window.__alerts.push(message)};
+window.__scenario=(day,monthly=false)=>{
+ const now=Date.parse(day+'T12:00:00Z');Date.now=()=>now;
+ const character=createNewCharacter('Guardião');character.tutorialCompleted=true;character.introSeen=true;character.mythreonCoins=2;character.calendarCoupons=2;
+ character.calendarClaimedDays=Array.from({length:monthly?29:6},(_,i)=>'2026-11-'+String(i+1).padStart(2,'0'));
+ character.calendarLastClaimDay=monthly?'2026-11-29':'2026-11-06';character.calendarStreak=monthly?29:6;character.calendarWeeklyRewardKey=monthly?'2026-11-01:4':undefined;character.calendarMonthlySkinKey=undefined;character.calendarUnlockedSkins=[];
+ character.inventory.items=[createItem({...ALL_ITEM_TEMPLATES.FRAGMENTO_RARO,quantity:998})];character.inventory.backpack.slots=1;
+ character.depot=monthly?[createItem(ALL_ITEM_TEMPLATES.MINERIO_FERRO)]:[];character.depotMax=1;
+ useGameStore.setState({character});root.render(<><DailyCalendar key={day}/><CharacterCustomization key={'wardrobe-'+day}/></>);
+};window.__scenario('2026-11-07');
+`}});const compiled=bundle.outputFiles.find(file=>file.path.endsWith('.js')).contents;
+ const cssFile=(await fs.readdir(path.join(root,'dist/assets'))).find(file=>/^index-.*\.css$/.test(file)),css=await fs.readFile(path.join(root,'dist/assets',cssFile));
+ const html='<meta name="viewport" content="width=device-width,initial-scale=1"/><link rel="stylesheet" href="/style.css"/><style>body{margin:0;padding:16px;background:#071116;color:white;font-family:Arial}#root{max-width:1100px;margin:auto}</style><div id="root"></div><script src="/preview.js"></script>';
+ server=http.createServer(async(req,res)=>{try{const pathname=new URL(req.url,'http://localhost').pathname;if(pathname==='/'){res.setHeader('Content-Type','text/html');res.end(html);return;}if(pathname==='/preview.js'){res.setHeader('Content-Type','application/javascript');res.end(compiled);return;}if(pathname==='/style.css'){res.setHeader('Content-Type','text/css');res.end(css);return;}const file=path.resolve(root,'public','.'+decodeURIComponent(pathname));if(!file.startsWith(path.join(root,'public')+path.sep)){res.writeHead(403).end();return;}res.setHeader('Content-Type',({'.png':'image/png','.gif':'image/gif','.jpg':'image/jpeg','.svg':'image/svg+xml'})[path.extname(file)]??'application/octet-stream');res.end(await fs.readFile(file));}catch{res.writeHead(404).end();}});
+ await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+ win=new BrowserWindow({show:false,width:1180,height:1080,webPreferences:{sandbox:true,contextIsolation:true,nodeIntegration:false,offscreen:true,backgroundThrottling:false}});
+ const errors=[];win.webContents.on('console-message',event=>{if(event.level==='error'&&!event.message.includes('404')&&!event.message.includes('Failed to load resource'))errors.push(event.message);});
+ const js=async source=>{const value=await win.webContents.executeJavaScript('(()=>{try{return eval('+JSON.stringify(source)+')}catch(error){return {__testError:String(error)}}})()',true);if(value?.__testError)throw Error(value.__testError+' SOURCE '+source);return value;};
+ await win.loadURL('http://127.0.0.1:'+server.address().port+'/');
+ for(let i=0;i<100;i++){if(await js('document.querySelectorAll("[data-calendar-day]").length===30'))break;await pause(100);}
+ assert.equal(await js('document.querySelectorAll("[data-calendar-day]").length'),30);
+ for(let i=0;i<50;i++){if(await js('Array.from(document.images).some(img=>img.alt==="Capa do Primeiro Canto"&&img.complete&&img.naturalWidth>0)'))break;await pause(100);}
+ assert.equal(await js('Array.from(document.images).some(img=>img.alt==="Capa do Primeiro Canto"&&img.complete&&img.naturalWidth>0)'),true,'Arte da skin deve carregar');
+ await js('const b=document.querySelector("[data-calendar-action=claim]");b.click();b.click()');await pause(150);
+ assert.equal(await js('window.__store.getState().character.calendarCoupons'),1);
+ assert.equal(await js('window.__store.getState().character.calendarStreak'),7);
+ assert.equal(await js('window.__store.getState().character.depot[0].quantity'),3);
+ assert.equal(await js('window.__store.getState().character.inventory.items[0].quantity'),998);
+ assert.equal(await js('document.querySelector("[data-calendar-action=claim]").disabled'),true);
+ assert.equal(await js('Array.from(document.querySelectorAll("[data-calendar-day]")).find(el=>el.dataset.calendarDay==="7").dataset.claimed'),"true");
+ await js('document.querySelector("[data-calendar-action=coupon]").click()');await pause(100);
+ assert.equal(await js('window.__store.getState().character.mythreonCoins'),1);
+ assert.equal(await js('window.__store.getState().character.calendarCoupons'),2);
+ await js('window.scrollTo({top:0,behavior:"instant"});new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');await pause(150);
+ await fs.writeFile(path.join(cache,'desktop.png'),(await win.webContents.capturePage()).toPNG());
+ win.setSize(390,1080);await pause(250);
+ assert.equal(await js('document.documentElement.scrollWidth<=window.innerWidth'),true,'Calendário deve caber em 390px');
+ await fs.writeFile(path.join(cache,'mobile.png'),(await win.webContents.capturePage()).toPNG());
+ await js('window.__scenario("2026-11-30",true)');await pause(150);
+ await js('document.querySelector("[data-calendar-action=claim]").click()');await pause(100);
+ assert.deepEqual(await js('window.__store.getState().character.calendarUnlockedSkins'),['SKIN_CAPA_PRIMEIRO_CANTO']);
+ assert.equal(await js('document.body.innerText.includes("Conquistada permanentemente")'),true);
+ await js('Array.from(document.querySelectorAll("button")).find(el=>el.textContent.includes("Personalização de Personagem")).click()');await pause(100);
+ await js('Array.from(document.querySelectorAll("button")).find(el=>el.textContent.includes("Capa do Primeiro Canto")).click()');await pause(100);
+ assert.equal(await js('window.__store.getState().character.cosmeticLoadout.skinTemplateId'),'SKIN_CAPA_PRIMEIRO_CANTO');
+ await js('window.__scenario("2028-02-10")');await pause(150);
+ assert.equal(await js('document.querySelectorAll("[data-calendar-day]").length'),29);
+ assert.equal(await js('document.body.innerText.includes("skin deste mês ainda não foi anunciada")'),true);
+ assert.deepEqual(await js('window.__alerts'),[],'Fluxo não deve abrir alertas bloqueantes');
+ assert.deepEqual(errors,[]);
+ console.log('PASS Calendário UI: arte, 30/29 dias reais, cupom, resgate único, bônus no depósito, skin permanente/equipável e 390px sem overflow.');
+ await new Promise(resolve=>server.close(resolve));app.exit(0);
+}catch(error){console.error(error);app.exit(1)}});
+setTimeout(()=>{console.error('Timeout Calendário UI');app.exit(2)},45000);

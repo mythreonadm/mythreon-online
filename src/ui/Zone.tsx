@@ -24,7 +24,10 @@ import { QUESTS } from "../data/quests";
 import { ALL_ITEM_TEMPLATES } from "../data/items";
 import { playAttackSfx, playCombatSfx } from "../utils/sfx";
 import { DailyCalendar } from "./DailyCalendar";
-import { appearanceStyle } from "../utils/appearance";
+import { OnlineChest } from "./OnlineChest";
+import { HeroArt } from "./HeroArt";
+import { ownedCosmeticLoadout } from "../engine/cosmeticOwnership";
+import { getCosmeticVisual } from "../utils/cosmetics";
 
 interface ZoneViewProps { onOpenQuest: (questId: string) => void; trackedQuestId?: string | null; }
 
@@ -72,7 +75,6 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
   const [healTimer, setHealTimer] = useState(0);
   const [magicCooldown, setMagicCooldown] = useState(0);
   const [mobilePanelOpen, setMobilePanelOpen] = useState(false);
-  const [playerImageError, setPlayerImageError] = useState(false);
   const [enemyImageError, setEnemyImageError] = useState(false);
   const [comboKeys, setComboKeys] = useState(() => ["S", "D", "A"].sort(() => Math.random() - .5));
   const [comboProgress, setComboProgress] = useState(0);
@@ -168,7 +170,7 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
   const playerLineage = getLineageByAttack(character.activeRace?.ataqueId);
 
   useEffect(() => {
-    setPlayerImageError(false); setEnemyImageError(false); setPetImageError(false);
+    setEnemyImageError(false); setPetImageError(false);
   }, [currentMob?.id, playerLineage.id]); // Reseta erro se o mob ou a raça mudar
 
   useEffect(() => {
@@ -270,6 +272,7 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,rgba(4,8,10,.58)_100%)] pointer-events-none" />
           
           <div className="relative z-10 mx-auto w-full max-w-4xl">
+            <OnlineChest />
             <div className="mb-8 rounded-2xl border border-arcane-gold/45 bg-[linear-gradient(180deg,rgba(5,10,13,.88),rgba(5,10,13,.68))] p-5 text-center shadow-[0_12px_40px_rgba(0,0,0,.5)] backdrop-blur-[2px] md:p-7"><div className="mb-2 text-3xl font-black tracking-[.16em] text-arcane-gold drop-shadow-[0_2px_8px_rgba(0,0,0,.95)] md:text-4xl">REFÚGIO DA ESSÊNCIA</div><h2 className="text-2xl font-bold text-white drop-shadow-[0_2px_6px_rgba(0,0,0,.95)] md:text-3xl">Comece uma nova aventura</h2><p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-slate-200 drop-shadow-[0_1px_4px_rgba(0,0,0,.95)]">Conheça uma nova área, escolha seu próximo destino e deixe a Essência registrar sua história.</p><div className="mt-5 flex flex-wrap justify-center gap-2"><button onClick={() => setHouseTab("maps")} className="rounded-lg bg-arcane-gold px-4 py-2 text-sm font-bold text-black shadow-lg hover:bg-yellow-300">✦ Conhecer áreas</button><button onClick={() => setHouseTab("train")} className="rounded-lg border border-white/35 bg-black/60 px-4 py-2 text-sm font-bold text-white shadow-lg hover:border-arcane-gold">⚔️ Preparar evolução</button><button onClick={() => setHouseTab("calendar")} className="rounded-lg border border-fuchsia-400/50 bg-fuchsia-950/40 px-4 py-2 text-sm font-bold text-fuchsia-100 shadow-lg hover:bg-fuchsia-900/60">🗓️ Calendário</button></div>{(character.hp < character.hpMax || character.mp < character.mpMax) && <div className="mt-4">{healingUntil ? <span className="text-sm font-bold text-cyan-200 drop-shadow-[0_1px_4px_rgba(0,0,0,.95)]">🧘 Meditando no Refúgio… {healTimer}s</span> : <button onClick={startHealing} className="rounded-full border border-emerald-300/70 bg-emerald-900/80 px-4 py-2 text-sm font-bold text-emerald-50 shadow-lg hover:bg-emerald-700">🧘 Recuperar no Refúgio (15s)</button>}</div>}</div>
 
             {houseTab === "maps" && (
@@ -406,16 +409,6 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
     }
   };
 
-  // AQUI ESTÁ A GRANDE MUDANÇA VISUAL
-  // O sprite agora vem da linhagem da raça, não da arma
-  const getPlayerVisual = () => {
-    return playerLineage.id === "HUMANO" ? "/assets/players/humano-v2.png" : playerLineage.sprite;
-  };
-
-  const getPlayerFallbackEmoji = () => {
-    return playerLineage.emoji;
-  };
-
   // A arma ainda dita a ANIMAÇÃO (espada = swing, arco = shoot)
   const weaponAnimClass = isAttacking ? getWeaponAnimation(character.equipped.ARMA_PRINCIPAL?.templateId) : "animate-run";
   const spellEmoji = getSpellEffect(character.activeRace?.ataqueId || "A1");
@@ -427,6 +420,8 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
   const hasEnoughMana = character.mp >= magicManaCost;
 
   const activeVialCount = Object.keys(character.activeVials).filter(id => character.activeVials[id] > Date.now()).length;
+  const validCosmetics = ownedCosmeticLoadout(character);
+  const cosmeticVisual = getCosmeticVisual(validCosmetics);
   const huntStats = character.huntStatsByZone?.[currentZoneId];
   const huntHours = (huntStats?.activeMs ?? 0) / 3600000;
   const actualGoldPerHour = huntHours > 0 ? Math.max(0, (huntStats?.gold ?? 0) - (huntStats?.goldSpentPotions ?? 0)) / huntHours : 0;
@@ -508,22 +503,9 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
           <div className="relative z-20 flex justify-between items-end px-4 md:px-20 pb-8 md:pb-12 h-[300px] md:h-[500px]">
             <div className="flex flex-col items-center relative translate-y-2 md:translate-y-4">
               
-              {activeBond && <div className={`combat-pet-companion absolute bottom-16 left-full ml-1 flex w-24 md:ml-4 md:w-32 flex-col items-center ${petAttackPulse ? "animate-pulse drop-shadow-[0_0_22px_rgba(45,212,191,.95)]" : ""}`} title={`${activeBond.beast.name} · ${activeBond.element} · ataque a cada ${activeBond.cooldownSeconds}s`}><div className="relative grid h-24 w-24 place-items-center md:h-36 md:w-36">{!petImageError ? <AssetImage removeWhite src={activeBond.beast.sprite} alt={activeBond.beast.name} className="h-full w-full object-contain [image-rendering:pixelated]" onAllSourcesFail={() => setPetImageError(true)} /> : <span className="text-6xl leading-none drop-shadow-lg md:text-8xl" role="img" aria-label={activeBond.beast.name}>{activeBond.beast.emoji}</span>}{petDamage !== null && <span className="damage-number absolute -top-5 left-1/2 -translate-x-1/2 whitespace-nowrap text-lg font-black text-teal-200 drop-shadow-[0_2px_3px_rgba(0,0,0,1)]">-{petDamage}</span>}</div><span className="rounded bg-black/75 px-2 text-center text-[10px] font-bold text-arcane-gold">{activeBond.beast.name}</span><span className="mt-0.5 rounded-full border border-cyan-300/30 bg-black/60 px-1.5 text-[8px] text-cyan-100">✦ Pet ativo · {activeBond.cooldownSeconds}s</span></div>}
+              {activeBond && <div className={`combat-pet-companion ${cosmeticVisual.petClassName} absolute bottom-16 left-full ml-1 flex w-24 md:ml-4 md:w-32 flex-col items-center ${petAttackPulse ? "animate-pulse drop-shadow-[0_0_22px_rgba(45,212,191,.95)]" : ""}`} title={`${activeBond.beast.name} · ${activeBond.element} · ataque a cada ${activeBond.cooldownSeconds}s`}><div className="relative grid h-24 w-24 place-items-center md:h-36 md:w-36">{!petImageError ? <AssetImage removeWhite src={activeBond.beast.sprite} alt={activeBond.beast.name} className="h-full w-full object-contain [image-rendering:pixelated]" onAllSourcesFail={() => setPetImageError(true)} /> : <span className="text-6xl leading-none drop-shadow-lg md:text-8xl" role="img" aria-label={activeBond.beast.name}>{activeBond.beast.emoji}</span>}{petDamage !== null && <span className="damage-number absolute -top-5 left-1/2 -translate-x-1/2 whitespace-nowrap text-lg font-black text-teal-200 drop-shadow-[0_2px_3px_rgba(0,0,0,1)]">-{petDamage}</span>}</div><span className="rounded bg-black/75 px-2 text-center text-[10px] font-bold text-arcane-gold">{activeBond.beast.name}</span><span className="mt-0.5 rounded-full border border-cyan-300/30 bg-black/60 px-1.5 py-0.5 text-[8px] text-cyan-100">✦ Pet ativo · {activeBond.cooldownSeconds}s</span></div>}
               {/* SPRITE DO JOGADOR (Agora baseado na Linhagem) */}
-              <div className={`combat-sprite combat-sprite-player relative w-24 h-24 md:w-40 md:h-40 flex items-center justify-center transition-transform ${weaponAnimClass}`}>
-                {!playerImageError ? (
-                  <AssetImage
-                    key={playerLineage.id} // Força recarregar se a classe mudar
-                    src={getPlayerVisual()} 
-                    alt={playerLineage.name} 
-                    className="w-full h-full object-contain drop-shadow-[0_10px_10px_rgba(0,0,0,0.8)]" 
-                    style={{ imageRendering: "pixelated", ...(playerLineage.id === "HUMANO" ? appearanceStyle(character.appearance) : {}) }}
-                    onAllSourcesFail={() => setPlayerImageError(true)}
-                  />
-                ) : (
-                  <span className="text-[60px] md:text-[100px] leading-none select-none drop-shadow-lg">{getPlayerFallbackEmoji()}</span>
-                )}
-              </div>
+              <HeroArt name={character.name} attackId={character.activeRace?.ataqueId} appearance={character.appearance} cosmetics={validCosmetics} context="hunt" className={`combat-sprite combat-sprite-player w-24 h-24 md:w-40 md:h-40 transition-transform ${weaponAnimClass}`} imageClassName="drop-shadow-[0_10px_10px_rgba(0,0,0,0.8)]" />
 
               <div className="mt-1 md:mt-2 text-center w-32 md:w-48 bg-black/80 p-1.5 md:p-2 rounded-lg border-2 border-arcane-cyan shadow-[0_0_10px_rgba(6,182,212,0.5)]">
                 <h3 className="text-[10px] md:text-sm font-bold text-arcane-cyan truncate">{character.name}</h3>

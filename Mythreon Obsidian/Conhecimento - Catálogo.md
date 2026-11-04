@@ -35,6 +35,50 @@
 - [[docs/conhecimento/Pack-14-Personalizacao-Sprite-2026-11-04|Pack 14 — Personalização visual do humano]] — a revisar
 - [[docs/conhecimento/Pack-15-Auditoria-Balanceamento-2026-11-04|Pack 15 — Auditoria de balanceamento]] — a revisar
 - [[docs/conhecimento/Pack-16-Integridade-Online-2026-11-04|Pack 16 — Integridade online e ações idempotentes]] — a revisar
+- [[docs/conhecimento/Pack-17-Boss-Diario-Cooperativo-2026-11-04|Pack 17 — Boss Diário cooperativo]] — a revisar
+- [[docs/conhecimento/Pack-18-PvP-Ranqueado-Online-2026-11-04|Pack 18 — PvP ranqueado online]] — a revisar
+- [[docs/conhecimento/Pack-19-Oficios-Mineracao-Pesca-2026-11-04|Pack 19 — Mineração e Pesca]] — a revisar
+- [[docs/conhecimento/Pack-20-Cards-Calendario-Premium-2026-11-04|Pack 20 — Cards, Calendário e superfície Premium]] — a revisar
+- [[docs/conhecimento/Pack-21-Mercado-Negro-Online-2026-11-04|Pack 21 — Mercado Negro online]] — a revisar
+- [[docs/conhecimento/Pack-22-Bau-Tempo-Online-2026-11-04|Pack 22 — Baú por tempo online]] — a revisar
+- [[docs/conhecimento/Pack-23-Loadout-Cards-GearScore-PvP-2026-11-04|Pack 23 — Loadout de Cards, Gear Score e PvP]] — a revisar
+- [[docs/conhecimento/Pack-24-Cosmeticos-Loadout-2026-11-04|Pack 24 — Cosméticos e personalização persistente]] — a revisar
+- [[docs/conhecimento/Pack-25-Precisao-Mineracao-Pesca-2026-11-04|Pack 25 — Precisão manual em Mineração e Pesca]] — a revisar
+- [[docs/conhecimento/Pack-26-Ferramentas-Refino-Profissoes-2026-11-04|Pack 26 — Ferramentas, progressão e refino de profissões]] — a revisar
+- [[docs/conhecimento/Pack-27-Calendario-Marcadores-PvP-Temporada-2026-11-04|Pack 27 — Marcos do Calendário e temporada do PvP]] — a revisar
+- [[docs/conhecimento/Pack-28-Loja-Premium-Entitlement-2026-11-04|Pack 28 — Loja Premium com entitlement seguro]] — a revisar
+- [[docs/conhecimento/Pack-29-Matchmaking-PvP-Historico-2026-11-04|Pack 29 — Matchmaking e histórico sazonal do PvP]] — a revisar
+- [[docs/conhecimento/Pack-30-Loot-Boss-Diario-2026-11-04|Pack 30 — Loot próprio do Boss Diário]] — a revisar
+- [[docs/conhecimento/Pack-31-Mercado-Paginacao-Filtros-2026-11-04|Pack 31 — Mercado Negro: paginação, filtros e estatísticas]] — a revisar
+- [[docs/conhecimento/Pack-32-Cards-Atributos-Hunt-2026-11-04|Pack 32 — Cartas aplicadas aos atributos da hunt]] — a revisar
+- [[docs/conhecimento/Pack-33-Painel-Cards-2026-11-04|Pack 33 — Painel de origem dos bônus de Cards]] — a revisar
+- [[docs/conhecimento/Pack-34-Historico-Boss-Diario-2026-11-04|Pack 34 — Histórico auditável do Boss Diário]] — a revisar
+- [[docs/conhecimento/Pack-35-Hardening-Online-2026-11-04|Pack 35 — Hardening das tabelas online]] — a revisar
+- [[docs/conhecimento/Pack-36-Cosmeticos-Online-2026-11-04|Pack 36 — Cosméticos online e aplicação visual]] — a revisar
+- [[docs/conhecimento/Pack-37-PvP-Recompensas-Temporada-2026-11-04|Pack 37 — Temporadas e recompensas do PvP ranqueado]] — a revisar
+- [[docs/conhecimento/Pack-38-Jornal-de-Mythreon-2026-11-04|Pack 38 — Jornal de Mythreon]] — a revisar
+- [[docs/conhecimento/Pack-39-Ligas-PvP-2026-11-04|Pack 39 — Ligas visuais do PvP]] — a revisar
+- [[docs/conhecimento/Pack-40-PvP-Combate-por-Turnos-2026-11-04|Pack 40 — PvP por turnos e combate autoritativo]] — a revisar
+- [[docs/conhecimento/Pack-41-PvP-Retomada-e-Reconexao-2026-11-04|Pack 41 — Retomada e reconexão do PvP]] — a revisar
+- [[docs/conhecimento/Pack-42-Mercado-Historico-de-Precos-2026-11-04|Pack 42 — Histórico de preços no Mercado Negro]] — a revisar
+- [[docs/conhecimento/Pack-43-Cards-Recompensa-Sazonal-2026-11-04|Pack 43 — Temporada de Cards e recompensas de coleção]] — a revisar
+- [[docs/conhecimento/Pack-44-Hardening-Indices-Online-2026-11-04|Pack 44 — Hardening de índices online]] — a revisar
+- [[docs/conhecimento/Pack-45-RLS-InitPlan-Hardening-2026-11-04|Pack 45 — Hardening de políticas RLS]] — a revisar
+- [[docs/conhecimento/Pack-46-Reconciliacao-Online-Imediata-2026-11-04|Pack 46 — Reconciliação online imediata]] — a revisar
+- [[docs/conhecimento/Pack-47-Armazem-Ferramentas-Profissoes-2026-11-04|Pack 47 — Armazém das Ferramentas]] — a revisar
+- [[docs/conhecimento/Pack-48-Integridade-PvP-Mercado-2026-11-04|Pack 48 — Integridade de PvP, Mercado e ferramentas]] — a revisar
+- [[docs/conhecimento/Pack-49-Boss-Ciclos-e-Recompensas-2026-11-04|Pack 49 — Boss Diário: ciclos e recompensas recuperáveis]] — a revisar
+- [[docs/conhecimento/Pack-50-Arena-Visual-Boss-Cooperativo-2026-11-04|Pack 50 — Arena visual do Boss Diário]] — a revisar
+- [[docs/conhecimento/Pack-51-Retaliacao-e-Vida-Cooperativa-2026-11-04|Pack 51 — Retaliação e vida da batalha cooperativa]] — a revisar
+- [[docs/conhecimento/Pack-52-Mercado-Lotes-e-Precos-Reais-2026-11-04|Pack 52 — Lotes e preços reais do Mercado Negro]] — a revisar
+- [[docs/conhecimento/Pack-53-Profissoes-Tiers-e-Pulso-2026-11-04|Pack 53 — Profissões T1–T5 e pulso visível]] — a revisar
+- [[docs/conhecimento/Pack-54-Calendario-e-Conquistas-Permanentes-2026-11-04|Pack 54 — Calendário real e conquistas permanentes]] — a revisar
+- [[docs/conhecimento/Pack-55-Guarda-Roupa-Skins-e-Auras-2026-11-04|Pack 55 — Guarda-roupa, skins completas e auras]] — a revisar
+- [[docs/conhecimento/Pack-56-Fila-Online-e-Recuperacao-2026-11-04|Pack 56 — fila online e recuperação]] — Fila durável por personagem e reconciliação da prévia sem apagar ações ainda pendentes.
+- [[docs/conhecimento/Pack-57-Pulso-Autoritativo-de-Coleta-2026-11-04|Pack 57 — pulso autoritativo de Mineração e Pesca]] — Pulso online de coleta criado e pontuado pelo servidor, com uso único e cancelamento.
+- [[docs/conhecimento/Pack-58-Cenas-e-Iscas-de-Profissoes-2026-11-04|Pack 58 — cenas de profissões e isca utilizável]] — Cenas de coleta com artes existentes e consumo opcional e atômico da Isca da Cicatriz.
+- [[docs/conhecimento/Pack-59-Cards-Evolucao-e-Bonus-Reais-2026-11-04|Pack 59 — Cards: evolução e bônus reais]] — Evolução real de Cards por cópias livres/gold e bônus compartilhados entre combate, Álbum e Personagem.
+- [[docs/conhecimento/Pack-60-Cards-Veyra-Kaelor-e-Temporada-2026-11-04|Pack 60 — Cards de Veyra/Kaelor e catálogo sazonal]] — Catálogo de Cards dos dez monstros de Pântano de Veyra e Deserto de Kaelor, com compatibilidade sazonal retroativa.
 - [[docs/conhecimento/Pets-Atividades-Boss-Diario|Pets, atividades e Boss Diário]] — em desenvolvimento
 - [[docs/conhecimento/Pets-Ovos-Migracao-2026-11-03|Migração de Bestas Divinas para Pets e Ovos]] — a revisar
 - [[docs/conhecimento/Registro de problemas|Registro de problemas]] — Problemas de documentação, sincronização e continuidade com suas evidências.

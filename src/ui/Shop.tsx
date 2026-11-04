@@ -1,3 +1,4 @@
+import { confirmedAction } from "../online/confirmation";
 import React, { useState } from "react";
 import { useGameStore } from "../store/gameStore";
 import { sellValue } from "../engine/shop";
@@ -11,6 +12,7 @@ import { ItemIcon } from "./ItemIcon";
 import { ALL_EQUIPMENT_TEMPLATES } from "../data/items";
 import { countByTemplate } from "../engine/inventory";
 import { MYTHREON_ECONOMY, MYTHREON_OFFERS, MYTHREON_DONATION_PACKS, MYTHREON_PREMIUM_PLANS, PREMIUM_BENEFITS } from "../data/mythreonEconomy";
+import { OnlineMarket } from "./OnlineMarket";
 
 export function Shop({ storefront = false }: { storefront?: boolean }) {
   const { character, sellItem, salvageAll, salvageSelected, updateSettings, useVial, upgradeItem, rerollItem, elevateItemTier, rerollSpecificAffix, forgeFragments, refineMythreonCoins, buyMythreonOffer, buyMythreonBoost, openMythreonRoulette } = useGameStore();
@@ -54,38 +56,38 @@ export function Shop({ storefront = false }: { storefront?: boolean }) {
   };
 
   // ─── FORJA ───
-  const handleUpgrade = () => {
+  const handleUpgrade = async () => {
     if (!selectedItem) return;
-    const res = upgradeItem(selectedItem.uid);
+    const res = await confirmedAction(upgradeItem(selectedItem.uid));
     if (!res.success) alert(res.error);
     else {
-      const updated = character.inventory.items.find(i => i.uid === selectedItem.uid);
+      const updated = useGameStore.getState().character?.inventory.items.find(i => i.uid === selectedItem.uid);
       if (updated) setSelectedItem(updated);
     }
   };
 
-  const handleReroll = () => {
+  const handleReroll = async () => {
     if (!selectedItem) return;
-    const res = rerollItem(selectedItem.uid);
+    const res = await confirmedAction(rerollItem(selectedItem.uid));
     if (!res.success) alert(res.error);
     else {
-      const updated = character.inventory.items.find(i => i.uid === selectedItem.uid);
+      const updated = useGameStore.getState().character?.inventory.items.find(i => i.uid === selectedItem.uid);
       if (updated) setSelectedItem(updated);
     }
   };
 
-  const handleTier = () => {
+  const handleTier = async () => {
     if (!selectedItem) return;
-    const res = elevateItemTier(selectedItem.uid);
+    const res = await confirmedAction(elevateItemTier(selectedItem.uid));
     if (!res.success) alert(res.error);
-    else setSelectedItem(character.inventory.items.find(i => i.uid === selectedItem.uid) ?? selectedItem);
+    else setSelectedItem(useGameStore.getState().character?.inventory.items.find(i => i.uid === selectedItem.uid) ?? selectedItem);
   };
 
-  const handleSpecificReroll = () => {
+  const handleSpecificReroll = async () => {
     if (!selectedItem) return;
-    const res = rerollSpecificAffix(selectedItem.uid, specificStat);
+    const res = await confirmedAction(rerollSpecificAffix(selectedItem.uid, specificStat));
     if (!res.success) alert(res.error);
-    else setSelectedItem(character.inventory.items.find(i => i.uid === selectedItem.uid) ?? selectedItem);
+    else setSelectedItem(useGameStore.getState().character?.inventory.items.find(i => i.uid === selectedItem.uid) ?? selectedItem);
   };
 
   return (
@@ -162,17 +164,15 @@ export function Shop({ storefront = false }: { storefront?: boolean }) {
           <section className="rounded-xl border border-cyan-700/50 bg-cyan-950/15 p-5">
             <h3 className="text-lg font-bold text-cyan-200">🔷 Refinaria de Mythreon</h3>
             <p className="mt-1 text-sm text-gray-300">Shards caem raramente de toda criatura viva. Criar uma Coin exige energia e uma taxa alta em gold para manter seu valor.</p>
-            <div className="mt-4 flex flex-wrap items-center gap-3"><span className="rounded bg-black/30 px-3 py-2 text-sm text-cyan-100">100 Shards + {MYTHREON_ECONOMY.goldPerCoin.toLocaleString("pt-BR")} gold = 1 Mythreon Coin</span><button onClick={() => { const result = refineMythreonCoins(1); if (!result.success) alert(result.error); }} className="rounded bg-fuchsia-600 px-4 py-2 font-bold text-white hover:bg-fuchsia-500">Refinar 1 Coin</button><button onClick={() => { const result = refineMythreonCoins(Math.floor(Math.min(character.mythreonShards ?? 0, Math.floor(character.gold / MYTHREON_ECONOMY.goldPerCoin)) / MYTHREON_ECONOMY.shardsPerCoin)); if (!result.success) alert(result.error); }} className="rounded border border-fuchsia-500/60 px-4 py-2 font-bold text-fuchsia-100 hover:bg-fuchsia-900/40">Refinar máximo</button></div>
+            <div className="mt-4 flex flex-wrap items-center gap-3"><span className="rounded bg-black/30 px-3 py-2 text-sm text-cyan-100">100 Shards + {MYTHREON_ECONOMY.goldPerCoin.toLocaleString("pt-BR")} gold = 1 Mythreon Coin</span><button onClick={async () => { const result = await confirmedAction(refineMythreonCoins(1)); if (!result.success) alert(result.error); }} className="rounded bg-fuchsia-600 px-4 py-2 font-bold text-white hover:bg-fuchsia-500">Refinar 1 Coin</button><button onClick={async () => { const result = await confirmedAction(refineMythreonCoins(Math.floor(Math.min(character.mythreonShards ?? 0, Math.floor(character.gold / MYTHREON_ECONOMY.goldPerCoin)) / MYTHREON_ECONOMY.shardsPerCoin))); if (!result.success) alert(result.error); }} className="rounded border border-fuchsia-500/60 px-4 py-2 font-bold text-fuchsia-100 hover:bg-fuchsia-900/40">Refinar máximo</button></div>
           </section>
-          <section className="rounded-xl border border-violet-700/40 bg-violet-950/10 p-4"><h3 className="mb-3 font-bold text-violet-200">📖 Tomos e modos de progressão</h3><p className="mb-3 text-xs text-gray-400">Os Tomos dão um impulso temporário de habilidade; treino, build e conhecimento continuam sendo o caminho principal.</p><div className="grid gap-3 md:grid-cols-4">{MYTHREON_OFFERS.filter(offer => offer.kind === "BOOST").map(offer => <div key={offer.id} className="rounded-lg border border-white/10 bg-arcane-bg p-3"><div className="text-2xl">{offer.icon}</div><h4 className="mt-1 text-sm font-bold text-white">{offer.name}</h4><p className="mt-1 min-h-12 text-xs text-gray-400">{offer.description}</p><div className="mt-3 flex items-center justify-between gap-2"><span className="text-xs font-bold text-fuchsia-200">🪙 {offer.priceCoins}</span><button type="button" onClick={() => { const result = buyMythreonBoost(offer.id); if (!result.success) alert(result.error); }} className="rounded bg-violet-700 px-2 py-1.5 text-[11px] font-bold text-white hover:bg-violet-600">Ativar</button></div></div>)}</div></section>
-          <section className="rounded-xl border border-fuchsia-700/40 bg-black/20 p-4"><h3 className="mb-3 font-bold text-fuchsia-200">Loja especial</h3><div className="grid gap-3 md:grid-cols-3">{MYTHREON_OFFERS.filter(offer => offer.kind !== "BOOST").map(offer => <div key={offer.id} className="rounded-lg border border-arcane-border bg-arcane-bg p-4"><div className="text-3xl">{offer.icon}</div><h4 className="mt-2 font-bold text-white">{offer.name}</h4><p className="min-h-10 text-xs text-gray-400">{offer.description}</p><div className="mt-3 flex items-center justify-between"><span className="font-bold text-fuchsia-200">🪙 {offer.priceCoins}</span><button onClick={() => { const result = buyMythreonOffer(offer.id); if (!result.success) alert(result.error); }} className="rounded bg-fuchsia-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-fuchsia-600">Comprar</button></div></div>)}</div></section>
-          <section className="rounded-xl border border-amber-700/40 bg-amber-950/10 p-4"><div className="flex flex-wrap items-center justify-between gap-3"><div><h3 className="font-bold text-amber-200">🎰 Roleta Arcana</h3><p className="mt-1 text-xs text-gray-400">Use uma Chave da Roleta para sortear gold, fragmentos, ovos ou suprimentos. O prêmio é definido no servidor.</p></div><button type="button" onClick={() => { const result = openMythreonRoulette(); if (!result.success) alert(result.error); }} className="rounded bg-amber-700 px-4 py-2 text-sm font-bold text-white hover:bg-amber-600">Abrir chave</button></div><p className="mt-2 text-xs text-amber-100/70">Chaves na mochila: {countByTemplate(character.inventory, "CHAVE_ROLETA_ARCANA")}</p></section>
+          <section className="rounded-xl border border-violet-700/40 bg-violet-950/10 p-4"><h3 className="mb-3 font-bold text-violet-200">📖 Tomos e modos de progressão</h3><p className="mb-3 text-xs text-gray-400">Os Tomos dão um impulso temporário de habilidade; treino, build e conhecimento continuam sendo o caminho principal.</p><div className="grid gap-3 md:grid-cols-4">{MYTHREON_OFFERS.filter(offer => offer.kind === "BOOST").map(offer => <div key={offer.id} className="rounded-lg border border-white/10 bg-arcane-bg p-3"><div className="text-2xl">{offer.icon}</div><h4 className="mt-1 text-sm font-bold text-white">{offer.name}</h4><p className="mt-1 min-h-12 text-xs text-gray-400">{offer.description}</p><div className="mt-3 flex items-center justify-between gap-2"><span className="text-xs font-bold text-fuchsia-200">🪙 {offer.priceCoins}</span><button type="button" onClick={async () => { const result = await confirmedAction(buyMythreonBoost(offer.id)); if (!result.success) alert(result.error); }} className="rounded bg-violet-700 px-2 py-1.5 text-[11px] font-bold text-white hover:bg-violet-600">Ativar</button></div></div>)}</div></section>
+          <section className="rounded-xl border border-fuchsia-700/40 bg-black/20 p-4"><h3 className="mb-3 font-bold text-fuchsia-200">Loja especial</h3><div className="grid gap-3 md:grid-cols-3">{MYTHREON_OFFERS.filter(offer => offer.kind !== "BOOST").map(offer => <div key={offer.id} className="rounded-lg border border-arcane-border bg-arcane-bg p-4"><div className="text-3xl">{offer.icon}</div><h4 className="mt-2 font-bold text-white">{offer.name}</h4><p className="min-h-10 text-xs text-gray-400">{offer.description}</p><div className="mt-3 flex items-center justify-between"><span className="font-bold text-fuchsia-200">🪙 {offer.priceCoins}</span><button onClick={async () => { const result = await confirmedAction(buyMythreonOffer(offer.id)); if (!result.success) alert(result.error); }} className="rounded bg-fuchsia-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-fuchsia-600">Comprar</button></div></div>)}</div></section>
+          <section className="rounded-xl border border-amber-700/40 bg-amber-950/10 p-4"><div className="flex flex-wrap items-center justify-between gap-3"><div><h3 className="font-bold text-amber-200">🎰 Roleta Arcana</h3><p className="mt-1 text-xs text-gray-400">Use uma Chave da Roleta para sortear gold, fragmentos, ovos ou suprimentos. O prêmio é definido no servidor.</p></div><button type="button" onClick={async () => { const result = await confirmedAction(openMythreonRoulette()); if (!result.success) alert(result.error); }} className="rounded bg-amber-700 px-4 py-2 text-sm font-bold text-white hover:bg-amber-600">Abrir chave</button></div><p className="mt-2 text-xs text-amber-100/70">Chaves na mochila: {countByTemplate(character.inventory, "CHAVE_ROLETA_ARCANA")}</p></section>
         </div>
       )}
 
-      {tab === "MERCADO" && (
-        <section className="space-y-4 rounded-xl border border-rose-700/40 bg-rose-950/10 p-5"><h3 className="text-lg font-bold text-rose-200">🕯️ Mercado Negro</h3><p className="text-sm text-gray-300">O mercado entre aventureiros será ligado ao mundo online na próxima etapa. Aqui fica o painel reservado para anúncios por gold ou Mythreon Coins, sem remover itens da sua mochila ainda.</p><div className="grid gap-3 md:grid-cols-2"><div className="rounded-lg border border-arcane-border bg-arcane-bg p-4"><h4 className="font-bold text-white">Anunciar um item</h4><p className="mt-1 text-xs text-gray-400">Selecione um item, defina gold ou Coins e publique para outros jogadores.</p><button disabled className="mt-3 cursor-not-allowed rounded bg-gray-700 px-3 py-2 text-xs font-bold text-gray-400">Em preparação para o mundo online</button></div><div className="rounded-lg border border-arcane-border bg-arcane-bg p-4"><h4 className="font-bold text-white">Ofertas disponíveis</h4><p className="mt-1 text-xs text-gray-400">As ofertas globais aparecerão aqui quando a tabela de anúncios estiver ativa no servidor.</p><span className="mt-3 inline-block rounded bg-rose-900/30 px-3 py-1 text-xs text-rose-200">Mercado seguro · taxa anti-inflação planejada</span></div></div></section>
-      )}
+      {tab === "MERCADO" && <OnlineMarket />}
 
       {/* ─── ABA VENDER ─── */}
       {tab === "VENDER" && (
@@ -265,7 +265,7 @@ export function Shop({ storefront = false }: { storefront?: boolean }) {
             <h3 className="font-bold text-cyan-200">💎 Fundir fragmentos</h3>
             <p className="mt-1 text-xs text-gray-400">Converta sobras da mochila em fragmentos de maior qualidade. A operação consome os fragmentos de origem; confirme antes de usar.</p>
             <div className="mt-3 flex flex-wrap gap-2">
-              {[{ id: "FRAGMENTO_COMUM", label: "100 Comuns → 10 Épicos" }, { id: "FRAGMENTO_RARO", label: "25 Raros → 10 Épicos" }].map(recipe => <button key={recipe.id} onClick={() => { if (!window.confirm(`Fundir ${recipe.label}?`)) return; const result = forgeFragments(recipe.id); if (!result.success) alert(result.error); }} className="rounded border border-cyan-700/60 bg-cyan-900/30 px-3 py-2 text-xs font-bold text-cyan-100 hover:bg-cyan-800/50">{recipe.label} · possui {countByTemplate(character.inventory, recipe.id)}</button>)}
+              {[{ id: "FRAGMENTO_COMUM", label: "100 Comuns → 10 Épicos" }, { id: "FRAGMENTO_RARO", label: "25 Raros → 10 Épicos" }].map(recipe => <button key={recipe.id} onClick={async () => { if (!window.confirm(`Fundir ${recipe.label}?`)) return; const result = await confirmedAction(forgeFragments(recipe.id)); if (!result.success) alert(result.error); }} className="rounded border border-cyan-700/60 bg-cyan-900/30 px-3 py-2 text-xs font-bold text-cyan-100 hover:bg-cyan-800/50">{recipe.label} · possui {countByTemplate(character.inventory, recipe.id)}</button>)}
             </div>
           </section>
           <div className="bg-arcane-bg border border-arcane-border rounded-lg p-4 max-h-[500px] overflow-y-auto">

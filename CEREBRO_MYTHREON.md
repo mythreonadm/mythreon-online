@@ -437,3 +437,61 @@ Primeira etapa da sequência profissional iniciada: Ferreiro agora possui eleva�
 Segunda etapa iniciada: calendário mensal com 30 marcações, Cupom de Resgate comprado por 1 Mythreon Coin, sequência diária, bônus semanal a cada 7 dias e recompensa cosmética aos 30 dias (`Capa do Primeiro Canto`). A interface está em `src/ui/DailyCalendar.tsx` e integrada ao Refúgio; a arte está em `public/assets/ui/prancha-calendario-sequencia-skin-mes-01.png`. O bônus de calendário não concede stats de combate.
 
 Complemento visual salvo em `public/assets/ui/prancha-peixe-cicatriz-skin-addon.png`: `PEIXE_CICATRIZ.png`, `SKIN_PREMIUM_MES_01.png` e `ADDON_BOSS_LUMINESCENTE.png`, nesta ordem visual.
+
+## Continuidade — Pack 48 — 04/11/2026
+
+Corrigidos nocaute/vencedor, atalho de resolução, HP do desafiado e ligas do PvP; resgate de anúncios expirados, taxa limitada ao preço e compra duplicada de ferramentas. Fontes: server/world.ts, src/store/gameStore.ts, OnlinePvP.tsx, OnlineMarket.tsx, Professions.tsx e scripts/online-check.ts. Ver docs/conhecimento/Pack-48-Integridade-PvP-Mercado-2026-11-04.md. Não houve deploy. Auditoria do Pack 46 encontrou aplicação redundante da mesma resposta, portanto não considerar a latência resolvida sem testar fila otimista.
+
+## Continuidade — Pack 49 — 04/11/2026
+
+
+
+Boss Diário ganhou pendências por ciclo, resgate antigo por runId, fechamento de janelas vencidas, proteção de criação por cycle_key, recompensa apenas com dano, limite de overkill, preservação de bônus recente e entrega de loot sem duplicar stack parcial. Teste online local passou com três usuários serializados, incluindo rollback de resgate sem espaço. Não é teste concorrente real. Fonte autoral: docs/conhecimento/Pack-49-Boss-Ciclos-e-Recompensas-2026-11-04.md. Sem schema novo ou deploy. Continuar mapa cooperativo, ataques/dano do Boss, escala real e reconciliação otimista do cliente.
+
+## Continuidade — Pack 50 — 04/11/2026
+
+DailyBossArena.tsx e CSS próprio apresentam bioma, herói, Boss, aliados, cosméticos, HP e dano confirmado. API retorna whitelist pública de roster; online:check validou campos e fluxos anteriores. Prévia Electron oculta scripts/daily-boss-arena-check.cjs passou em PC e 390px, com capturas em node_modules/.cache/boss-arena. Componentes foram inspecionados visualmente. Não alegar real-time por golpe: remotos ainda são agregados por polling de dez segundos. Falta retaliação do Boss, regras defensivas, inscrição próxima e testes com múltiplas conexões. Fonte: docs/conhecimento/Pack-50-Arena-Visual-Boss-Cooperativo-2026-11-04.md. Sem deploy.
+
+## Continuidade — Pack 51 — 04/11/2026
+
+Boss recebeu retaliação server-side e Character.dailyBossBattle isolado de HP/MP/Bless/hunt. Funções puras em src/engine/dailyBossBattle.ts; snapshot ao entrar, nocaute com 30s, reinscrição sem cura, último golpe sem retaliação, escala por participantes e mitigação compartilhada. Estado e contribuição gravados na mesma transação; sem schema novo. Arena inclui vida privada, dano recebido e recuperação. Evidências e pendências em docs/conhecimento/Pack-51-Retaliacao-e-Vida-Cooperativa-2026-11-04.md. Não houve deploy.
+
+## Continuidade — Pack 52 — 04/11/2026
+
+Corrigido histórico do Mercado: referências agora incluem compras efetivas e trades comparáveis; moeda, raridade, tier e upgrade separados e preço por unidade ponderado. server/marketAnalytics.ts calcula salesHistory sem schema novo; UI antiga priceStats mantida na API para compatibilidade. Lotes configuráveis, taxa/líquido, gráfico e tabela diária adicionados. online:check verificou aritmética, integração, variantes, moedas, replay e exclusão de barter/múltiplos itens. Prévia scripts/market-ui-check.cjs passou PC/390px com líquido950 para lote1000. Fonte: docs/conhecimento/Pack-52-Mercado-Lotes-e-Precos-Reais-2026-11-04.md. Não houve deploy; medir carga e criar moderação continuam pendentes.
+
+## Continuidade — Pack 53 — 04/11/2026
+
+Mineração/Pesca T1–T5 completadas com cinco recursos novos, travessias validadas no domínio, pulso visual por segurar/soltar, teclado, cancelamento e recarga compartilhada. Dez receitas com margem de venda; Caldo agora usa COLHEITA_MELANCIA e alimenta o Pet (+40 nutrição/+10 humor). ItemIcon/emoji, Wiki/Jornal e prompts de arte atualizados. professions:check, online:check, typecheck, build e prévia Electron PC/390px passaram. Documento: docs/conhecimento/Pack-53-Profissoes-Tiers-e-Pulso-2026-11-04.md. Sem deploy. Não chamar de anti-macro seguro: precisão ainda vem do cliente. Próximos pontos: cenas de profissão, isca e destinos no Ferreiro, desafio validado no servidor, reconciliação online e biomas laterais.
+
+## Continuidade — Pack 54 — 04/11/2026
+
+Corrigidos calendário fixo de 30 dias, bônus por ISO que saía antes de mais sete presenças, contagem mensal via sequência anterior e skin perdida em bolsa cheia. Regras em src/data/dailyCalendar.ts e entrega clonada em src/engine/dailyCalendar.ts. Novos direitos Character.calendarUnlockedSkins preservam skin sem bolsa; marcador mensal antigo recupera direito. Guarda-roupa/equipCosmetic aceitam direitos e ItemIcon usa a arte mensal existente. Cupom1Coin preservado; gold diário agora tem teto8000. Mensal30 presenças do mês, fevereiro28/29. Semana por marco/início da sequência, com compatibilidade ISO e recuperação única de marco sem recibo. Wiki/Jornal/arte integrados. calendar:check, online:check, typecheck, build e prévia PC/390px passaram. Fonte: docs/conhecimento/Pack-54-Calendario-e-Conquistas-Permanentes-2026-11-04.md. Sem deploy/schema. Catálogo só novembro2026; beta/meses seguintes e sprite humana de skin ainda pendentes.
+
+## Continuidade — Pack 55 — 04/11/2026
+
+HeroArt compartilhado conecta sprite completa do Primeiro Canto à forma humana em Personagem/hunt/Boss; Matriz conserva linhagem. Addon usa PNG existente somente Boss/prévia; Nebulosa ausente recua para humano com cores. Guarda-roupa ganhou prévia, quatro espaços e remoção. Catálogo src/data/cosmetics.ts e novo LUMINESCENCIA_PET (oferta120Coins) resolvem o campo de aura antes inalcançável. Propriedade revalidada por src/engine/cosmeticOwnership.ts no save/motor/commit: escrow/venda do último cosmético físico desativa visual, conquista mensal permanente permanece. Corrigido hook condicional de Personagem. cosmetics:check, online:check, calendar:check, typecheck, build e prévias de cosméticos/Boss/calendário passaram. Captura de cosméticos usa paint nativo offscreen/software após capturePage falhar; não equivale a teste físico. Fonte: docs/conhecimento/Pack-55-Guarda-Roupa-Skins-e-Auras-2026-11-04.md. Sem deploy/schema. Pendentes arte completa Nebulosa, ícone auraPet, transparência Elarion, atlas/skins beta/mensais/Matriz e dispositivos físicos.
+
+## Continuidade — Pack 56 — 04/11/2026
+
+src/online/session.ts substitui flags globais por base/revisão + fila serial durável v2, 32 comandos por personagem. projection.ts refaz só ações determinísticas com instante fixo; sorteios/IDs novos aguardam servidor. confirmation.ts conecta recibos aos handlers de Fazenda/Pets/Matriz/Ferreiro/calendário/profissões. Isolamento de sessões, leituras antigas, resposta perdida/idempotência, diário legado/corrompido, armazenamento indisponível e falha de assinante verificados. Removido bloqueio visual global; navegação disponível durante recuperação. healFull online agora pede world.read e hooks da Fazenda corrigidos. online:session-check, regressões de calendário/cosméticos/profissões/jornada, typecheck/build e prévia HTTP/controlador/telas PC/390px passaram. Aviso bundle acima500kB continua. Fonte: docs/conhecimento/Pack-56-Fila-Online-e-Recuperacao-2026-11-04.md. Sem deploy/schema. Não afirmar que todos os lags foram resolvidos ou que saves foram adiados1h; faltam rede/carga/concorrência/dispositivos reais, polling e divisão do bundle.
+
+## Continuidade — Pack 57 — 04/11/2026
+
+Profissões online deixaram de aceitar score cliente: src/engine/professionChallenge.ts + server/game.ts guardam WorldState.professionChallenge no JSON existente. begin/finish/cancel, UUID, um desafio por personagem, início1,2s, pulso3s, graça750ms, grau no processamento server-side, consumo único e requisitos revalidados. mineResource/fishSpot diretos recusados online, preservados offline. Widget prepara/conta, cancela resposta tardia após soltura/desmontagem e mostra precisão confirmada. Wiki/Jornal e testes atualizados. professions:pulse-check, professions:check, online:session-check, online:check, typecheck, build e UI local/online PC390px passaram. Runtime gerado, sem schema/deploy. Fonte: docs/conhecimento/Pack-57-Pulso-Autoritativo-de-Coleta-2026-11-04.md. Não é anti-macro completo; jitter/locks podem mudar nota. Próximos: medir rede real, cenas, iscas, rotas laterais e usos dos recursos.
+
+## Continuidade — Pack 58 — 04/11/2026
+
+ProfessionScene.tsx/CSS integra humano/skin, biomas, ferramenta e artes EFEITO_PESCA_MORDIDA/EFEITO_MINERACAO_FAISCA existentes a fases do widget. Observar troca prévia sem mexer na hunt. Efeitos/movimento/reduced-motion reativos; seletor específico evita HeroArt fora da cena. FISHING_BAIT define ISCA_CICATRIZ opcional, consumida1 por pesca válida,+1 peixe após precisão, sem skillextra. BaitId é ligado ao pulso; domínio clona para consumir/entregar junto, revalida e preserva em falha. Alias de arte ISCA_RARA.png. Novos testes de isca, API/replay e UI PC390px passaram, com typecheck/build e regressões. Fonte: docs/conhecimento/Pack-58-Cenas-e-Iscas-de-Profissoes-2026-11-04.md. Sem schema/deploy. Humano continua em pé; falta pose sentada/atlas/cenário próprio. Próximos: destinos no Ferreiro, rotas, curva de skill, rede/carga real e outros sistemas do backlog.
+
+## Continuidade — Pack 59 — 04/11/2026
+
+src/engine/cardCollection.ts centraliza formação/bônus/score/evolução; stats, Gear, PvP, Personagem e Álbum consomem a mesma regra. EvolveCard(uid,materialUIDs,expectedLevel) exige2/4/8/16 cópias iguais Nv1 fora da formação; goldbase150/300/600/1200/2400×nível²; determinístico atéNv5. Clone/commit preservaUID,obtainedAt,espécie,loadout,HP atual. API idempotente e nível esperado impedem dupla compra. Álbum permite selecionar cópia, equipar/retirar, revisar custo, mostra bônus reais e sprites viaCardArt. Wiki/Jornal, leitura limitada de níveis e dropChance compartilhado. Personagem sem truncar frações; Arena hook inicial corrigido. cards:check, online:check/session, regressões, typecheck/build e UI PC390px passaram; capturas em.cache/online-flow. Fonte: docs/conhecimento/Pack-59-Cards-Evolucao-e-Bonus-Reais-2026-11-04.md. Sem schema/deploy. Pendentes Cards dos10 mobsnovos e referência sazonal do catálogo, histórico/volume, negociação e playtest de custos.
+
+## Continuidade — Pack 60 — Cards de Veyra/Kaelor — 04/11/2026
+
+O catálogo de Cards agora tem 48 espécies e valida cada template contra o mob de origem. Dez memórias novas cobrem Sapo-Miasma, Libélula-Lâmina, Cipó da Memória, Crocodilo de Silte, Matriarca do Lodo, Escaravelho Vítreo, Espectro Solar, Serpente de Miragem, Golem de Obsidiana e Sentinela do Zênite. Elas reutilizam CardArt, sprites PNG existentes, as chances por tier/boss e os bônus/evolução centralizados; não criar regra paralela de dano ou loot.
+
+Compatibilidade sazonal: `seasonCardTemplateIds("2026-11")` exclui os dez IDs introduzidos após a abertura e mantém 38 no denominador. A partir de `2026-12`, o catálogo sazonal tem 48. `cards.season.read` calcula espécies únicas filtradas e preserva o `total_cards` já gravado no conflito; `cards.season.claim` usa o snapshot persistido. Isso evita que uma expansão no meio do mês rebaixe coleções antigas.
+
+Arquivos autorais: `src/data/cards.ts`, `server/world.ts`, `src/ui/CardsGuide.tsx`, `src/data/mythreonJournal.ts`, `scripts/cards-check.ts`, `docs/conhecimento/Pack-60-Cards-Veyra-Kaelor-e-Temporada-2026-11-04.md`. Validações pendentes desta continuidade: rodar `cards:check`, `online:check`, typecheck, bundle/build, diff --check e brain:sync; gerar runtime antes de qualquer publicação. Sem migration, commit ou deploy.

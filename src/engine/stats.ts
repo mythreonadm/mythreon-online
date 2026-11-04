@@ -6,6 +6,7 @@ import { PASSIVE_EFFECTS, SUPPORT_EFFECTS } from "../data/skills";
 import { VIALS } from "../data/vials";
 import { beastGrowth } from "../data/beastCombat";
 import { DIVINE_BEASTS } from "../data/divineBeasts";
+import { formationBonus } from "./cardCollection";
 
 export function getBaseStats(level: number): ItemStats {
   level = Number.isFinite(Number(level)) ? Math.max(1, Math.floor(Number(level))) : 1;
@@ -32,6 +33,7 @@ export function recalcStats(char: Character): void {
   const fromRace: any = {};
   const fromVials: any = {};
   const fromBeast: any = {};
+  const fromCards: any = {};
   const elementalResistances: Character["elementalResistances"] = {};
 
   // 1. Soma os stats de Equipamentos e Afixos
@@ -75,6 +77,10 @@ export function recalcStats(char: Character): void {
     for (const [k, v] of Object.entries(activeBeast.bonus)) fromBeast[k] = (fromBeast[k] ?? 0) + numeric(v);
   }
 
+  // Formação de Cards: bônus moderados entram na hunt e no PvP.
+  // A escala evita que uma carta substitua equipamento, Matriz ou Pet.
+  Object.assign(fromCards, formationBonus(char));
+
   // 5. Skills de Treino
   const skills = char.skills || { melee: 0, defense: 0, magic: 0, distance: 0, soul: 0 };
   const skillAtkBonus = (isUsingBow ? 0 : skills.melee * 1.5);
@@ -89,7 +95,7 @@ export function recalcStats(char: Character): void {
   const armMult = 1 + (passive?.armPct ?? 0) + (support?.permArmPct ?? 0);
   const hpMult = 1 + numeric(passive?.hpPct);
 
-  const sum = (k: string) => numeric(fromGear[k]) + numeric(fromRace[k]) + numeric(fromPassive[k]) + numeric(fromVials[k]) + numeric(fromBeast[k]);
+  const sum = (k: string) => numeric(fromGear[k]) + numeric(fromRace[k]) + numeric(fromPassive[k]) + numeric(fromVials[k]) + numeric(fromBeast[k]) + numeric(fromCards[k]);
 
   // 7. Junta tudo e aplica os limites (Caps)
   char.baseStats = {

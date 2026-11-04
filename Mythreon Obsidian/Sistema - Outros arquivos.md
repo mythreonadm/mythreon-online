@@ -10,6 +10,7 @@
 
 - [.gitignore](../.gitignore)
 - [Ativação Cérebro.bat](../Ativação Cérebro.bat)
+- [api/premium.js](../api/premium.js)
 - [api/world.js](../api/world.js)
 - [docs/launcher-manifest.example.json](../docs/launcher-manifest.example.json)
 - [imagens/WhatsApp Image 2026-10-30 at 00.42.53.jpeg](../imagens/WhatsApp Image 2026-10-30 at 00.42.53.jpeg)
@@ -48,7 +49,10 @@
 - [postcss.config.js](../postcss.config.js)
 - [server/game.ts](../server/game.ts) — WorldState, freshWorld, executeGame, rankingMetrics
 - [server/generated/online-runtime.cjs](../server/generated/online-runtime.cjs)
+- [server/generated/premium-runtime.cjs](../server/generated/premium-runtime.cjs)
 - [server/http.ts](../server/http.ts) — config, handler
+- [server/marketAnalytics.ts](../server/marketAnalytics.ts) — marketSalesHistory
+- [server/premium.ts](../server/premium.ts) — PREMIUM_PLAN_IDS, PREMIUM_STATUSES, PremiumWebhookPayload, premiumSignature, verifyPremiumSignature, parsePremiumPayload, config, handler
 - [server/transfers.ts](../server/transfers.ts) — Offer, ItemSelection, emptyOffer, integer, canTransfer, restoreOffer, reserveOffer, receiveOffer
 - [server/world.ts](../server/world.ts) — Database, WorldRequest, CharacterRow, handleWorld
 - [src/config.ts](../src/config.ts) — isDebug, setDebug, TICK_MS, OFFLINE_MAX_HOURS
@@ -59,8 +63,11 @@
 - [src/main.tsx](../src/main.tsx)
 - [src/online/OnlineSession.tsx](../src/online/OnlineSession.tsx) — OnlineSession
 - [src/online/client.ts](../src/online/client.ts) — onlineConfigured, supabase, apiUrl, worldRequest
-- [src/online/controller.ts](../src/online/controller.ts) — useOnlineState, refreshSocial, onlineAction, connectCharacter, disconnectCharacter
+- [src/online/confirmation.ts](../src/online/confirmation.ts) — confirmedAction
+- [src/online/controller.ts](../src/online/controller.ts) — useOnlineState, refreshSocial, retryOnlineConnection, onlineAction, connectCharacter, disconnectCharacter
+- [src/online/projection.ts](../src/online/projection.ts) — GameSnapshot, canProject, gameSnapshot, previewGameAction, projectGameCommand
 - [src/online/rules.ts](../src/online/rules.ts) — ONLINE_RULES, transferFee, RANKING_METRICS, RankingMetric
+- [src/online/session.ts](../src/online/session.ts) — OnlineResponse, StoredCommand, SessionStatus, OnlineSession
 - [src/play.sh](../src/play.sh)
 - [src/vite-env.d.ts](../src/vite-env.d.ts)
 - [supabase/migrations/001_online_world.sql](../supabase/migrations/001_online_world.sql)
@@ -68,6 +75,18 @@
 - [supabase/migrations/003_trade_audit.sql](../supabase/migrations/003_trade_audit.sql)
 - [supabase/migrations/004_chat_channels.sql](../supabase/migrations/004_chat_channels.sql)
 - [supabase/migrations/005_online_trade_coins.sql](../supabase/migrations/005_online_trade_coins.sql)
+- [supabase/migrations/007_daily_boss.sql](../supabase/migrations/007_daily_boss.sql)
+- [supabase/migrations/008_pvp_ranked.sql](../supabase/migrations/008_pvp_ranked.sql)
+- [supabase/migrations/009_market_listings.sql](../supabase/migrations/009_market_listings.sql)
+- [supabase/migrations/010_premium_entitlements.sql](../supabase/migrations/010_premium_entitlements.sql)
+- [supabase/migrations/011_pvp_matchmaking.sql](../supabase/migrations/011_pvp_matchmaking.sql)
+- [supabase/migrations/012_market_search_indexes.sql](../supabase/migrations/012_market_search_indexes.sql)
+- [supabase/migrations/013_daily_boss_rewards.sql](../supabase/migrations/013_daily_boss_rewards.sql)
+- [supabase/migrations/014_online_security_indexes.sql](../supabase/migrations/014_online_security_indexes.sql)
+- [supabase/migrations/015_pvp_season_rewards.sql](../supabase/migrations/015_pvp_season_rewards.sql)
+- [supabase/migrations/017_card_season_rewards.sql](../supabase/migrations/017_card_season_rewards.sql)
+- [supabase/migrations/018_online_fk_indexes.sql](../supabase/migrations/018_online_fk_indexes.sql)
+- [supabase/migrations/019_rls_initplan_hardening.sql](../supabase/migrations/019_rls_initplan_hardening.sql)
 - [tsconfig.json](../tsconfig.json)
 - [tsconfig.node.json](../tsconfig.node.json)
 - [tsconfig.server.json](../tsconfig.server.json)
@@ -85,6 +104,7 @@
 - [[Mythreon Obsidian/Sistema - Estado|Estado]]
 - [[Mythreon Obsidian/Sistema - Atributos e progressão|Atributos e progressão]]
 - [[Mythreon Obsidian/Sistema - Tipos|Tipos]]
+- [[Mythreon Obsidian/Sistema - Utilitários|Utilitários]]
 - [[Mythreon Obsidian/Sistema - Mundo e História|Mundo e História]]
 
 [[Mythreon Obsidian/Mapa de Sistemas|Mapa técnico]]

@@ -17,6 +17,7 @@ As notas abaixo são as fontes preservadas para decisões, explicações e proce
 | Combate, drops, resistências e progressão | [[docs/conhecimento/Balanceamento-Combate-Economia|Balanceamento de combate e economia]] |
 | Shop, premium e os ataques das Beasts | [[docs/conhecimento/Shop-Premium-Beasts|Shop, premium e Divine Beasts]] |
 | Treino, maestria, conquistas e novas propostas | [[docs/conhecimento/Treino-e-Diferenciais-Mythreon|Treino e diferenciais]] |
+| Cards, formação, bônus, evolução e novos biomas | [[docs/conhecimento/Pack-60-Cards-Veyra-Kaelor-e-Temporada-2026-11-04|Cards: catálogo e temporada]] |
 | Simulação de builds e executável Windows | [[docs/conhecimento/Laboratorio-de-Builds-e-Windows|Laboratório e Windows]] |
 | Artes que ainda faltam produzir | [[docs/ARTE_ITENS_PENDENTES|Lista de artes e prompts]] |
 | Como operar e recuperar a memória do projeto | [[docs/conhecimento/Operacao do Cerebro e Obsidian|Operação do Cérebro e Obsidian]] |

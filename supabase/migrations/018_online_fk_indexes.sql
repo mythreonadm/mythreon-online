@@ -1,0 +1,21 @@
+-- Pack 44: índices de cobertura para FKs usadas por RLS e consultas online.
+begin;
+create index if not exists world_card_season_progress_character on public.world_card_season_progress(character_id, season_key desc);
+create index if not exists world_card_season_rewards_character on public.world_card_season_rewards(character_id, claimed_at desc);
+create index if not exists world_friends_invitee on public.world_friends(invitee_id);
+create index if not exists world_friends_inviter on public.world_friends(inviter_id);
+create index if not exists world_ledger_recipient on public.world_ledger(recipient_id, created_at desc);
+create index if not exists world_ledger_sender on public.world_ledger(sender_id, created_at desc);
+create index if not exists world_mail_sender on public.world_mail(sender_id, created_at desc);
+create index if not exists world_market_buyer_character on public.world_market_listings(buyer_character_id, sold_at desc);
+create index if not exists world_market_buyer_owner on public.world_market_listings(buyer_owner_id, sold_at desc);
+create index if not exists world_market_seller_owner on public.world_market_listings(seller_owner_id, created_at desc);
+create index if not exists world_pvp_challenger_owner on public.world_pvp_matches(challenger_owner_id, created_at desc);
+create index if not exists world_pvp_opponent_owner on public.world_pvp_matches(opponent_owner_id, created_at desc);
+create index if not exists world_pvp_winner on public.world_pvp_matches(winner_id, resolved_at desc);
+create index if not exists world_pvp_queue_match on public.world_pvp_queue(match_id);
+create index if not exists world_pvp_season_rewards_character on public.world_pvp_season_rewards(character_id, claimed_at desc);
+create index if not exists world_pvp_season_stats_character on public.world_pvp_season_stats(character_id, season_key desc);
+create index if not exists world_trade_transactions_buyer_owner on public.world_trade_transactions(buyer_owner_id, completed_at desc);
+create index if not exists world_trade_transactions_seller_owner on public.world_trade_transactions(seller_owner_id, completed_at desc);
+commit;

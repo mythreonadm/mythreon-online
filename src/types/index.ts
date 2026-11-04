@@ -1,6 +1,6 @@
 export type Rarity = "COMUM" | "INCOMUM" | "RARO" | "EPICO" | "LENDARIO";
 export type SlotType = "CAPACETE" | "ARMADURA" | "LUVAS" | "CALCAS" | "BOTAS" | "COLAR" | "ANEL_I" | "ANEL_II" | "PULSEIRA" | "ARMA_PRINCIPAL" | "OFF_HAND" | "MUNICAO" | "BACKPACK";
-export type ItemCategory = "ARMA" | "ARMADURA" | "JOIA" | "PULSEIRA" | "ESCUDO" | "BACKPACK" | "FLECHA" | "COMPONENTE" | "POCAO" | "MATERIAL" | "FRAGMENTO";
+export type ItemCategory = "ARMA" | "ARMADURA" | "JOIA" | "PULSEIRA" | "ESCUDO" | "BACKPACK" | "FLECHA" | "FERRAMENTA" | "COMPONENTE" | "POCAO" | "MATERIAL" | "FRAGMENTO";
 export type ComponentType = "ATAQUE" | "SUPORTE" | "PASSIVA";
 export type Law = "PRIME" | "VORO" | "LOGHIS" | "EMOHNA" | "RAAN" | "SYNTHES" | "CHRONOS" | "LYSS" | "DHOR" | "KAELOR" | "NOCTHAR" | "VEYRA" | "ASTER";
 export type Element = "FOGO" | "ELETRICIDADE" | "VENTO" | "TERRA" | "AGUA" | "GELO" | "MORTE" | "SAGRADO" | "PSIQUICO" | "VENENO" | "METAL" | "BASE";
@@ -11,6 +11,7 @@ export type CardTrait =
   | "REGENERACAO" | "ESCUDO" | "SANGRAMENTO" | "MEDO" | "SILENCIO";
 
 export type CardRarity = "COMUM" | "INCOMUM" | "RARO" | "EPICO" | "LENDARIO";
+export type Precision = 0.5 | 1 | 1.5;
 
 export interface CardStats {
   hp: number;
@@ -60,6 +61,8 @@ export interface Item {
   elementalResistances?: Partial<Record<Element, number>>;
   slots?: number; dropBonus?: number; rareDropBonus?: number; xpBonus?: number;
   goldBonus?: number; lifesteal?: number;
+  profession?: "MINERACAO" | "PESCA";
+  requiredSkill?: number;
 }
 
 export interface ComponentTemplate {
@@ -150,6 +153,17 @@ export interface FarmPlot { id: string; seedId?: string; plantedAt?: number; rea
 export interface FarmSkills { planting: number; harvesting: number; irrigation?: number; fertility?: number; }
 export interface FarmRecipe { id: string; name: string; icon: string; ingredients: { templateId: string; name: string; quantity: number; icon: string }[]; outputTemplateId: string; outputName: string; outputIcon: string; outputQuantity: number; sellValue: number; }
 export interface FarmState { plots: FarmPlot[]; unlockedPlots: number; lastActionAt: number; skills?: FarmSkills; }
+export interface ProfessionState { mining: number; fishing: number; lastMiningAt?: number; lastFishingAt?: number; }
+export interface ProfessionRecipe {
+  id: string;
+  name: string;
+  icon: string;
+  profession: "MINERACAO" | "PESCA";
+  requiredSkill: number;
+  ingredients: { templateId: string; quantity: number }[];
+  outputTemplateId: string;
+  outputQuantity: number;
+}
 
 export interface CharacterSkills {
   melee: number; defense: number; magic: number; distance: number; soul: number;
@@ -162,6 +176,12 @@ export interface CharacterAppearance {
   hairColor: "NEGRO" | "CASTANHO" | "RUIVO" | "PRATEADO" | "AZUL";
   outfit: "VIAJANTE" | "GUARDIAO" | "MISTICO";
   outfitColor: "OCRE" | "AZUL" | "VIOLETA" | "VERDE";
+}
+export interface CosmeticLoadout {
+  skinTemplateId?: string;
+  matrixGlowTemplateId?: string;
+  petAuraTemplateId?: string;
+  bossAddonTemplateId?: string;
 }
 
 export type QuestObjectiveType = "KILL" | "KILL_BOSS" | "COLLECT" | "REACH_LEVEL" | "EARN_GOLD" | "SYNTHESIZE" | "EQUIP_RACE" | "CONFIGURE_POTIONS" | "SELL" | "SALVAGE" | "FORGE" | "VISIT_WIKI" | "VISIT_MATRIX" | "VISIT_FORGE" | "VISIT_BACKPACK" | "VISIT_CHARACTER" | "VISIT_BEASTS" | "VISIT_SHOP" | "VISIT_LAB" | "VISIT_DEPOT" | "TRAIN" | "UNLOCK_ZONE" | "DISCOVER_TOTAL" | "DISCOVER_NAMED";
@@ -190,10 +210,21 @@ export interface DeathReportData {
   lostItems?: string[];
 }
 
+export interface DailyBossBattle {
+  runId: string;
+  hp: number;
+  hpMax: number;
+  damageTaken: number;
+  knockouts: number;
+  recoveryUntil: number;
+  lastDamage: number;
+}
+
 export interface Character {
   id: string; name: string; level: number; xp: number; xpToNext: number; gold: number;
   hp: number; hpMax: number; mp: number; mpMax: number; baseStats: ItemStats;
   appearance?: CharacterAppearance;
+  cosmeticLoadout?: CosmeticLoadout;
   mythreonShards?: number; mythreonCoins?: number;
   /** Buffs da Loja Mythreon: chave -> timestamp de expiração; 0 significa eterno. */
   mythreonBoosts?: Record<string, number>;
@@ -204,7 +235,15 @@ export interface Character {
   staminaOnline?: number;
   staminaOffline?: number;
   staminaUpdatedAt?: number;
-  premium: boolean; lastTick: number; trainingBoostUntil?: number; trainingBoostDay?: string;
+  premium: boolean; /** Entitlement comercial sincronizado do servidor; nunca é ativado pelo cliente. */
+  premiumPlanId?: string; premiumUntil?: number;
+  lastTick: number; trainingBoostUntil?: number; trainingBoostDay?: string;
+  /** Bônus de participação no Boss Diário, válido até o próximo ciclo. */
+  dailyBossXpUntil?: number;
+  /** Vida isolada do Boss cooperativo, calculada exclusivamente pelo servidor. */
+  dailyBossBattle?: DailyBossBattle;
+  /** Classificação do PvP ranqueado online. */
+  pvpRating?: number; pvpWins?: number; pvpLosses?: number;
   
   quests: QuestState;
   blesses: number;
@@ -256,6 +295,8 @@ export interface Character {
   comboPower?: 1.5 | 1 | 0.5;
   
   cards: CardInstance[];
+  /** Formação persistente da Arena: até cinco cartas que também compõem o poder da build. */
+  cardLoadout?: string[];
   arenaRewardDay?: string;
   arenaRewardsToday?: number;
   arenaRareRewardDay?: string;
@@ -263,6 +304,15 @@ export interface Character {
   calendarClaimedDays?: string[];
   calendarStreak?: number;
   calendarLastClaimDay?: string;
+  /** Marco da sequência já entregue (início YYYY-MM-DD:número); aceita chave ISO legada. */
+  calendarWeeklyRewardKey?: string;
+  /** Marco mensal da skin exclusiva já entregue (chave YYYY-MM). */
+  calendarMonthlySkinKey?: string;
+  /** Skins de calendário permanentemente conquistadas, independentes da mochila. */
+  calendarUnlockedSkins?: string[];
+  /** Tempo acumulado em atividade online para abrir o Baú do Refúgio. */
+  onlineChestSeconds?: number;
+  onlineChestsOpened?: number;
   divineBeasts?: DivineBeastInstance[];
   activeDivineBeastId?: DivineBeastId;
   divineBeastNeeds?: Partial<Record<DivineBeastId, DivineBeastNeeds>>;
@@ -279,6 +329,9 @@ export interface Character {
   depot: Item[];       // NOVO
   depotMax: number;    // NOVO
   farm?: FarmState;
+  professions?: ProfessionState;
+  equippedMiningTool?: Item;
+  equippedFishingRod?: Item;
 }
 
 export interface HuntLootEntry {

@@ -224,6 +224,17 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 .combat-sprite-enemy::before { background: radial-gradient(ellipse, rgba(200,112,87,.26), rgba(8,13,13,.1) 58%, transparent 72%); }
 .combat-pet-companion { z-index: 2; transition: filter .2s ease, transform .2s ease; }
 .combat-pet-companion::after { content: ""; position: absolute; z-index: -1; bottom: 24px; width: 72%; height: 18%; border-radius: 50%; background: radial-gradient(ellipse, rgba(45,212,191,.28), transparent 72%); pointer-events: none; }
+.cosmetic-skin-nebula { filter: drop-shadow(0 0 12px rgba(168,85,247,.72)) drop-shadow(0 0 24px rgba(34,211,238,.2)); }
+.cosmetic-skin-nebula::after { content: "✦"; position: absolute; inset: 8% 10% auto auto; color: rgba(196,181,253,.9); font-size: 16px; text-shadow: 0 0 12px rgba(167,139,250,.95); animation: cosmetic-spark 2.2s ease-in-out infinite; pointer-events: none; }
+.cosmetic-skin-first-canto { filter: drop-shadow(0 0 10px rgba(250,204,21,.65)); }
+.hero-art { position:relative; isolation:isolate; display:flex; align-items:center; justify-content:center; }
+.hero-art-image { position:relative; z-index:1; width:100%; height:100%; object-fit:contain; image-rendering:pixelated; }
+.hero-art-addon { position:absolute; z-index:0; inset:-8%; width:116%; height:116%; object-fit:contain; pointer-events:none; }
+.hero-art-fallback { position:relative; z-index:1; font-size:clamp(2rem,6vw,5rem); line-height:1; }
+.cosmetic-pet-luminescence { filter:drop-shadow(0 0 7px rgba(45,212,191,.8)) drop-shadow(0 0 14px rgba(250,204,21,.35)); }
+.cosmetic-matrix-luminescence { box-shadow: 0 0 0 2px rgba(45,212,191,.25), 0 0 24px rgba(45,212,191,.5), inset 0 0 18px rgba(168,85,247,.18); border-radius: 48%; }
+.cosmetic-addon-boss { filter: drop-shadow(0 0 8px rgba(125,211,252,.75)) drop-shadow(0 0 18px rgba(45,212,191,.5)); }
+@keyframes cosmetic-spark { 0%, 100% { opacity: .2; transform: scale(.8) rotate(0deg); } 50% { opacity: 1; transform: scale(1.2) rotate(18deg); } }
 .combat-scene > .absolute.top-0 { padding: 14px 16px; }
 
 @media (max-width: 700px) {

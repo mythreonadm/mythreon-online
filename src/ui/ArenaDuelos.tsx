@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useGameStore } from "../store/gameStore";
 import { CARD_TEMPLATES, TRAITS } from "../data/cards";
 import { ArenaSize, ArenaStrategy, makeOpponentDeck, simulateArenaDuel, ArenaBattleResult } from "../engine/cardArena";
@@ -12,17 +12,21 @@ const MODES: { size: ArenaSize; title: string; subtitle: string; reward: string 
 const GOLD = new Intl.NumberFormat("pt-BR");
 
 export function ArenaDuelos() {
-  const { character, currentZoneId, claimArenaReward } = useGameStore();
+  const { character, currentZoneId, claimArenaReward, setCardLoadout } = useGameStore();
   const [size, setSize] = useState<ArenaSize>(1);
   const [strategy, setStrategy] = useState<ArenaStrategy>("PRECISAO");
-  const [selected, setSelected] = useState<string[]>([]);
+  const [selected, setSelected] = useState<string[]>(character?.cardLoadout ?? []);
   const [battle, setBattle] = useState<ArenaBattleResult | null>(null);
   const [shownLogs, setShownLogs] = useState(0);
   const [rewardMessage, setRewardMessage] = useState("");
+  const cards = character?.cards ?? [];
+  useEffect(() => {
+    if (!character) return;
+    setSelected((character.cardLoadout ?? []).filter(uid => cards.some(card => card.uid === uid)).slice(0, size));
+  }, [character?.id, character?.cardLoadout?.join(","), size]);
   if (!character) return null;
   const today = new Date().toISOString().slice(0, 10);
   const rewardsUsed = character.arenaRewardDay === today ? (character.arenaRewardsToday ?? 0) : 0;
-  const cards = character.cards ?? [];
   const picked = cards.filter(card => selected.includes(card.uid));
   const mode = MODES.find(item => item.size === size)!;
   const available = cards.filter(card => !!CARD_TEMPLATES[card.templateId]);
@@ -34,6 +38,10 @@ export function ArenaDuelos() {
       : current.length < size ? [...current, card.uid] : [...current.slice(1), card.uid]);
   };
   const chooseMode = (next: ArenaSize) => { setSize(next); setSelected([]); setBattle(null); setShownLogs(0); setRewardMessage(""); };
+  const saveFormation = () => {
+    const result = setCardLoadout(selected);
+    setRewardMessage(result.success ? "Formação salva: as cartas agora contam no Gear Score e no PvP online." : result.error ?? "Não foi possível salvar a formação.");
+  };
   const startBattle = () => {
     if (picked.length !== size) return;
     const averageLevel = picked.reduce((total, card) => total + card.level, 0) / size;
@@ -83,7 +91,7 @@ export function ArenaDuelos() {
         </div>
 
         <div className="rounded-xl border border-white/10 bg-black/20 p-4">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2"><div><h3 className="text-sm font-bold text-white">Sua formação</h3><p className="text-xs text-slate-500">Escolha {size} carta{size > 1 ? "s" : ""} · {picked.length}/{size} selecionada{picked.length === 1 ? "" : "s"}</p></div><span className="text-[10px] uppercase tracking-wider text-slate-600">Região da equipe</span></div>
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2"><div><h3 className="text-sm font-bold text-white">Sua formação</h3><p className="text-xs text-slate-500">Escolha {size} carta{size > 1 ? "s" : ""} · {picked.length}/{size} selecionada{picked.length === 1 ? "" : "s"}</p></div><div className="flex items-center gap-2"><span className="text-[10px] uppercase tracking-wider text-slate-600">Região da equipe</span><button onClick={saveFormation} disabled={picked.length !== size} className="rounded-lg border border-arcane-gold/50 bg-arcane-gold/10 px-3 py-1.5 text-[10px] font-black text-arcane-gold disabled:cursor-not-allowed disabled:opacity-40">Salvar formação</button></div></div>
           {available.length === 0 ? <div className="rounded-lg border border-dashed border-white/10 px-4 py-8 text-center"><div className="text-3xl">🎴</div><p className="mt-2 text-sm font-semibold text-slate-300">Sua coleção ainda está vazia</p><p className="mt-1 text-xs text-slate-500">Cartas podem ser encontradas durante a caça. Volte quando capturar sua primeira.</p></div> :
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">{available.map(card => {
               const template = CARD_TEMPLATES[card.templateId]; const trait = TRAITS[template.trait]; const active = selected.includes(card.uid);

@@ -18,6 +18,7 @@
 ## Relações encontradas
 
 - [[Mythreon Obsidian/Sistema - Dados do jogo|Dados do jogo]]
+- [[Mythreon Obsidian/Sistema - Outros arquivos|Outros arquivos]]
 - [[Mythreon Obsidian/Sistema - Missões|Missões]]
 - [[Mythreon Obsidian/Sistema - Estado|Estado]]
 - [[Mythreon Obsidian/Sistema - Atributos e progressão|Atributos e progressão]]

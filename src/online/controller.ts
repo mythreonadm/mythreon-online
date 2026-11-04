@@ -1,45 +1,110 @@
-import {create} from 'zustand';
-import {createGameStore,useGameStore,type GameState} from '../store/gameStore';
-import {supabase,worldRequest} from './client';
-export const useOnlineState=create<{active:boolean;pending:boolean;error:string;social:any;tradeId:string|null;refresh:()=>Promise<void>}>()(()=>({active:false,pending:false,error:'',social:null,tradeId:null,refresh:async()=>{}}));
-let original:Partial<GameState>={},poll:ReturnType<typeof setInterval>|undefined,socialPoll:ReturnType<typeof setInterval>|undefined,fullSync:ReturnType<typeof setInterval>|undefined,channel:any=null,revision=-1,selectedId='',generation=0,busy=false,socialBusy=false,polling=false,flushing=false;
-type QueuedCommand={operation:string;payload:any;resolve:(value:any)=>void;reject:(reason:any)=>void};
-const commandQueue:QueuedCommand[]=[];
-let recovery:{operation:string;payload:any;requestId:string}|null=null;
-const pendingKey=()=> 'mythreon-pending-'+selectedId;
-function remember(){try{if(recovery)localStorage.setItem(pendingKey(),JSON.stringify(recovery));else localStorage.removeItem(pendingKey());}catch{}}
-function apply(result:any,includeCurrent=true){if(includeCurrent&&result.current&&Number(result.current.revision)>=revision){revision=Number(result.current.revision);const w=result.current.state;useGameStore.setState({character:w.character,races:w.races,currentZoneId:w.character.currentZoneId,isTickRunning:w.isTickRunning,isTraining:w.isTraining,healingUntil:w.healingUntil,deathReport:w.deathReport,lastTickResult:w.lastTickResult,offlineReport:null});}if(result.social)useOnlineState.setState({social:result.social});}
-export async function refreshSocial(){if(!selectedId||socialBusy)return;socialBusy=true;const gen=generation;try{const response=await worldRequest('social.read',{},selectedId);if(gen===generation)apply(response,false);}catch(e){if(gen===generation)useOnlineState.setState({error:e instanceof Error?e.message:'Conexão indisponível.'});}finally{socialBusy=false;}}
-async function executeOnlineAction(operation:string,payload:any={}) {if(recovery)throw Error('Aguardando a confirmação da última ação.');const requestId=crypto.randomUUID(),storageKey=pendingKey();try{localStorage.setItem(storageKey,JSON.stringify({operation,payload,requestId}));}catch{}busy=true;const gen=generation;try{const result=await worldRequest(operation,payload,selectedId,requestId);try{localStorage.removeItem(storageKey);}catch{}if(gen===generation)apply(result);return result;}catch(e){if(!(e as any)?.uncertain){try{localStorage.removeItem(storageKey);}catch{}}if(gen===generation){if((e as any)?.uncertain){recovery={operation,payload,requestId};remember();}useOnlineState.setState({error:e instanceof Error?e.message:'Não foi possível concluir.'});}throw e;}finally{busy=false;if(gen===generation)useOnlineState.setState({pending:!!recovery});}}
-async function flushCommandQueue(){if(flushing)return;flushing=true;try{while(commandQueue.length&&!recovery){const job=commandQueue.shift()!;try{job.resolve(await executeOnlineAction(job.operation,job.payload));}catch(error){job.reject(error);}}}finally{flushing=false;}}
-export function onlineAction(operation:string,payload:any={}):Promise<any> {return new Promise<any>((resolve,reject)=>{commandQueue.push({operation,payload,resolve,reject});void flushCommandQueue();});}
-export async function connectCharacter(id:string){disconnectCharacter();selectedId=id;try{recovery=JSON.parse(localStorage.getItem(pendingKey())??'null');}catch{recovery=null;}const gen=++generation;const first=await worldRequest('world.read',{},id);if(gen!==generation)return;apply(first);
- const local=useGameStore.getState();original={};const overrides:Record<string,any>={};
- for(const [name,value] of Object.entries(local)){if(typeof value!=='function')continue;(original as any)[name]=value;
-  if(['tick','save','loadFromSave','newGame'].includes(name)){overrides[name]=()=>name==='loadFromSave'?false:undefined;continue;}
-  overrides[name]=(...args:any[])=>{
-   // Handlers como onClick={stopHunting} recebem o evento React. Nunca o envie ao
-   // servidor: SyntheticEvent contém referências circulares (__reactFiber).
-   const noArg = ['stopHunting','stopTraining','finishIntro','clearOfflineReport','clearDeathReport','startHealing','cancelHealing','unequipRace','unequipDivineBeast','activateBuff','buyTrainingBoost','buyBless','refreshCompendium'].includes(name);
-   const safeArgs = noArg || (args.length === 1 && args[0] && typeof args[0] === 'object' && ('nativeEvent' in args[0] || 'currentTarget' in args[0])) ? [] : args;
-   // Pré-validação isolada mantém a interface síncrona existente; só a resposta do servidor altera o personagem real.
-   const shadow=createGameStore({server:true,persist:()=>{},notify:()=>{}});const current=useGameStore.getState();shadow.setState({character:structuredClone(current.character),races:structuredClone(current.races),currentZoneId:current.currentZoneId,isTickRunning:current.isTickRunning,isTraining:current.isTraining,healingUntil:current.healingUntil,deathReport:current.deathReport});
-   let preview:any;try{preview=(shadow.getState() as any)[name](...safeArgs);}catch{return {success:false,error:'Não foi possível validar esta ação.'};}
-   if(preview?.success===false||preview===false)return preview;
-   // Atualização otimista: a interface reage imediatamente; a confirmação segue em segundo plano.
-   const next=shadow.getState();
-   useGameStore.setState({character:next.character,races:next.races,currentZoneId:next.currentZoneId,isTickRunning:next.isTickRunning,isTraining:next.isTraining,healingUntil:next.healingUntil,deathReport:next.deathReport,lastTickResult:next.lastTickResult});
-   void onlineAction('world.command',{action:name,args:safeArgs}).then(r=>{if(r.result?.success===false)useOnlineState.setState({error:r.result.error??'Ação não concluída.'});}).catch(()=>{});
-   return preview;
-  };
- }
- useGameStore.setState(overrides);useOnlineState.setState({active:true,error:recovery?'Recuperando a confirmação da última ação…':'',pending:!!recovery,refresh:refreshSocial});
- poll=setInterval(async()=>{if(busy||polling||commandQueue.length)return;polling=true;try{const result=recovery?await worldRequest(recovery.operation,recovery.payload,id,recovery.requestId):await worldRequest('world.read',{},id);if(gen===generation){if(recovery){recovery=null;remember();useOnlineState.setState({pending:false});void flushCommandQueue();}apply(result);useOnlineState.setState({error:''});}}catch(e){if(gen===generation){if(recovery&&!(e as any)?.uncertain){recovery=null;remember();useOnlineState.setState({pending:false});void flushCommandQueue();}useOnlineState.setState({error:e instanceof Error?e.message:'Conexão perdida.'});}}finally{polling=false;}},3000);
- fullSync=setInterval(()=>{if(!busy&&!recovery&&!polling&&!commandQueue.length)void refreshWorld(id,gen);},60*60*1000);
- channel=supabase().channel('mythreon-world-'+id);for(const table of ['world_messages','world_friends','world_mail','world_trades','world_trade_transactions'])channel.on('postgres_changes',{event:'*',schema:'public',table},()=>void refreshSocial());channel.subscribe();
- // O polling curto mantém a comunidade responsiva quando WebSocket ou publicação
- // Realtime demora a ficar disponível, sem esperar o ciclo completo do mundo.
- socialPoll=setInterval(()=>void refreshSocial(),5000);await refreshSocial();
+import { create } from "zustand";
+import { useGameStore, type GameState } from "../store/gameStore";
+import { supabase, worldRequest } from "./client";
+import { OnlineSession } from "./session";
+import { previewGameAction, projectGameCommand } from "./projection";
+
+export const useOnlineState = create<{
+  active: boolean; pending: boolean; syncing: number; commands: string[]; error: string; social: any; tradeId: string | null; refresh: () => Promise<void>;
+}>()(() => ({ active: false, pending: false, syncing: 0, commands: [], error: "", social: null, tradeId: null, refresh: refreshSocial }));
+let current: OnlineSession | null = null;
+let original: Partial<GameState> = {};
+let poll: ReturnType<typeof setInterval> | undefined, socialPoll: ReturnType<typeof setInterval> | undefined, fullSync: ReturnType<typeof setInterval> | undefined;
+let channel: any = null, polling: OnlineSession | null = null, socialRunning: OnlineSession | null = null;
+let characterId = "";
+const NO_ARGUMENTS = new Set(["stopHunting", "stopTraining", "finishIntro", "clearOfflineReport", "clearDeathReport", "startHealing", "cancelHealing", "unequipRace", "unequipDivineBeast", "activateBuff", "buyTrainingBoost", "buyBless", "refreshCompendium"]);
+const DEDUPLICATE = new Set(["hatchEgg", "harvestFarmPlot", "claimDailyCalendar", "claimOnlineChest", "claimQuest"]);
+
+export async function refreshSocial() {
+  const session = current, id = characterId;
+  if (!session || session.isDisposed || socialRunning === session) return;
+  socialRunning = session;
+  try {
+    const result = await worldRequest("social.read", {}, id);
+    if (current === session && result.social) useOnlineState.setState({ social: result.social });
+  } catch (error) {
+    if (current === session) useOnlineState.setState({ error: error instanceof Error ? error.message : "Comunidade indisponível." });
+  } finally { if (socialRunning === session) socialRunning = null; }
 }
-async function refreshWorld(id:string,gen:number){try{const result=await worldRequest('world.read',{},id);if(gen===generation)apply(result);}catch{} }
-export function disconnectCharacter(){generation++;if(poll)clearInterval(poll);if(socialPoll)clearInterval(socialPoll);if(fullSync)clearInterval(fullSync);if(channel){void supabase().removeChannel(channel);channel=null;}if(Object.keys(original).length)useGameStore.setState(original);original={};recovery=null;commandQueue.splice(0,commandQueue.length);selectedId='';revision=-1;busy=false;socialBusy=false;polling=false;flushing=false;useOnlineState.setState({active:false,pending:false,error:'',social:null,tradeId:null});}
+async function refreshWorld(session: OnlineSession, id: string) {
+  if (current !== session || session.hasWork || polling === session) return;
+  polling = session;
+  const token = session.readToken;
+  try {
+    const result = await worldRequest("world.read", {}, id);
+    if (current === session) session.acceptRead(result, token);
+  } catch (error) {
+    if (current === session) useOnlineState.setState({ error: error instanceof Error ? error.message : "Conexão perdida." });
+  } finally { if (polling === session) polling = null; }
+}
+export function retryOnlineConnection() {
+  const session = current;
+  if (!session) return;
+  session.retry();
+  void refreshWorld(session, characterId); void refreshSocial();
+}
+export function onlineAction(operation: string, payload: any = {}): Promise<any> {
+  if (!current) return Promise.reject(Error("Entre no personagem para executar esta ação."));
+  return current.submit(operation, payload);
+}
+export async function connectCharacter(id: string) {
+  disconnectCharacter();
+  characterId = id;
+  const session = new OnlineSession({
+    characterId: id, request: worldRequest, project: projectGameCommand,
+    storage: { getItem: key => localStorage.getItem(key), setItem: (key, value) => localStorage.setItem(key, value), removeItem: key => localStorage.removeItem(key) },
+    onView: state => { if (current === session) useGameStore.setState({ ...state, offlineReport: null }); },
+    onStatus: status => { if (current === session) useOnlineState.setState({ pending: status.recovering, syncing: status.queued, commands: status.commands, error: status.error }); },
+    onResponse: result => { if (current === session && result.social) useOnlineState.setState({ social: result.social }); },
+  });
+  current = session;
+  try { if (!await session.initialize() || current !== session) return; }
+  catch (error) {
+    if (current === session) { session.dispose(); current = null; useOnlineState.setState({ active: false, pending: false, syncing: 0, error: error instanceof Error ? error.message : "Não foi possível carregar o personagem." }); }
+    throw error;
+  }
+  const local = useGameStore.getState(), overrides: Record<string, any> = {};
+  original = {};
+  for (const [name, value] of Object.entries(local)) {
+    if (typeof value !== "function") continue;
+    (original as any)[name] = value;
+    if (["tick", "save", "loadFromSave", "newGame"].includes(name)) { overrides[name] = () => name === "loadFromSave" ? false : undefined; continue; }
+    if (name === "healFull") { overrides[name] = () => { if (current === session) void refreshWorld(session, id); }; continue; }
+    overrides[name] = (...args: any[]) => {
+      if (current !== session || session.isDisposed) return { success: false, error: "Este personagem foi desconectado." };
+      if (session.isRecovering) return { success: false, error: "A última ação ainda está sendo confirmada. Você pode navegar enquanto aguarda." };
+      // React events are circular; they are never command arguments.
+      const safeArgs = NO_ARGUMENTS.has(name) || (args.length === 1 && args[0] && typeof args[0] === "object" && ("nativeEvent" in args[0] || "currentTarget" in args[0])) ? [] : args;
+      let copied: unknown[];
+      try { copied = JSON.parse(JSON.stringify(safeArgs)); }
+      catch { return { success: false, error: "Os parâmetros desta ação são inválidos." }; }
+      const at = Date.now(), preview = previewGameAction(session.view, name, copied, at);
+      if (preview.result === false || preview.result?.success === false) return preview.result;
+      const receipt = session.submit("world.command", { action: name, args: copied }, { at, deduplicate: DEDUPLICATE.has(name) });
+      if (preview.result && typeof preview.result === "object") {
+        const confirmation = receipt.then(result => result.result ?? preview.result);
+        void confirmation.catch(() => {});
+        return { ...preview.result, confirmation };
+      }
+      return preview.result;
+    };
+  }
+  useGameStore.setState(overrides);
+  useOnlineState.setState({ active: true, refresh: refreshSocial });
+  poll = setInterval(() => { void refreshWorld(session, id); }, 3000);
+  fullSync = setInterval(() => { void refreshWorld(session, id); }, 60 * 60 * 1000);
+  channel = supabase().channel("mythreon-world-" + id);
+  for (const table of ["world_messages", "world_friends", "world_mail", "world_trades", "world_trade_transactions", "world_market_listings"]) channel.on("postgres_changes", { event: "*", schema: "public", table }, () => { if (current === session) void refreshSocial(); });
+  channel.subscribe();
+  socialPoll = setInterval(() => { if (current === session) void refreshSocial(); }, 5000);
+  await refreshSocial();
+}
+export function disconnectCharacter() {
+  const previous = current;
+  current = null; previous?.dispose();
+  if (poll) clearInterval(poll); if (socialPoll) clearInterval(socialPoll); if (fullSync) clearInterval(fullSync);
+  if (channel) { void supabase().removeChannel(channel); channel = null; }
+  if (Object.keys(original).length) useGameStore.setState(original);
+  original = {}; characterId = ""; polling = null; socialRunning = null;
+  useOnlineState.setState({ active: false, pending: false, syncing: 0, commands: [], error: "", social: null, tradeId: null });
+}

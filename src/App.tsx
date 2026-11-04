@@ -21,6 +21,11 @@ import { Shop } from "./ui/Shop";
 import { Quests } from "./ui/Quests";
 import { Wiki } from "./ui/Wiki";
 import { Duelos } from "./ui/Duelos";
+import { OnlinePvP } from "./ui/OnlinePvP";
+import { DailyBoss } from "./ui/DailyBoss";
+import { Professions } from "./ui/Professions";
+import { CardAlbum } from "./ui/CardAlbum";
+import { DailyCalendar } from "./ui/DailyCalendar";
 import { DivineBeasts } from "./ui/DivineBeasts";
 import { Farm } from "./ui/Farm";
 import { AudioManager } from "./ui/AudioManager";
@@ -40,15 +45,15 @@ import { checkQuestCompletion } from "./engine/questEngine";
 import { ZONES } from "./data/zones";
 import type { CharacterAppearance } from "./types";
 
-type Tab = "zona" | "personagem" | "backpack" | "depot" | "matriz" | "pets" | "fazenda" | "laboratorio" | "shop" | "loja" | "missoes" | "duelos" | "wiki" | "online" | "ranking";
+type Tab = "zona" | "personagem" | "backpack" | "depot" | "matriz" | "pets" | "fazenda" | "profissoes" | "laboratorio" | "shop" | "loja" | "missoes" | "duelos" | "boss" | "wiki" | "online" | "ranking" | "cards" | "calendario";
 
 const TAB_LABELS: Record<Tab, string> = {
-  online:"Comunidade",ranking:"Ranking", zona: "Explorar", personagem: "Personagem", backpack: "Mochila", depot: "Depósito", fazenda: "Fazenda",
+  online:"Comunidade",ranking:"Ranking",boss:"Boss Diário",cards:"Cards",calendario:"Calendário", zona: "Explorar", personagem: "Personagem", backpack: "Mochila", depot: "Depósito", fazenda: "Fazenda", profissoes: "Ofícios",
   matriz: "Matriz", pets: "Pets", laboratorio: "Laboratório", shop: "Shop", loja: "Ferreiro", missoes: "Jornadas", duelos: "Duelo", wiki: "Arquivo",
 };
 
 const TAB_ICONS: Record<Tab, AccessIconName> = {
-  online:"quest",ranking:"archive", zona: "explore", personagem: "character", backpack: "backpack", depot: "depot",
+  online:"quest",ranking:"archive",boss:"duel",cards:"archive",calendario:"archive", zona: "explore", personagem: "character", backpack: "backpack", depot: "depot", profissoes: "farm",
   matriz: "matrix", fazenda: "farm", laboratorio: "matrix", shop: "shop", loja: "shop", missoes: "quest", duelos: "duel", wiki: "archive",
   pets: "pet",
 };
@@ -230,7 +235,7 @@ useEffect(() => {
 
       <nav className="game-nav bg-arcane-panel/80 backdrop-blur border-b border-arcane-border sticky top-[73px] z-40" aria-label="Navegação principal de Mythreon">
         <div className="max-w-7xl mx-auto flex flex-nowrap justify-start gap-1 overflow-x-auto px-2 py-1.5 md:flex-wrap md:justify-center md:overflow-visible">
-          {(["zona", "personagem", "backpack", "depot", "matriz", "pets", "fazenda", "laboratorio", "shop", "loja", "missoes", "duelos", "wiki", "online", "ranking"] as Tab[]).map((t) => (
+          {(["zona", "personagem", "backpack", "depot", "matriz", "pets", "fazenda", "profissoes", "laboratorio", "shop", "loja", "missoes", "duelos", "boss", "cards", "calendario", "wiki", "online", "ranking"] as Tab[]).map((t) => (
             <button
               key={t}
               onClick={() => {
@@ -258,8 +263,8 @@ useEffect(() => {
       <QuestTracker onSelect={trackQuest} />
       <SettingsPanel open={settingsOpen} onClose={() => setSettingsOpen(false)} />
 
-      <main className={`game-main max-w-7xl mx-auto p-4 mt-4 ${online.pending ? "pointer-events-none opacity-70" : ""}`} aria-busy={online.pending}>
-        <fieldset disabled={online.pending} className="min-w-0 border-0 p-0 m-0">
+      <main className="game-main max-w-7xl mx-auto p-4 mt-4" aria-busy={online.pending || online.syncing > 0}>
+        <fieldset className="min-w-0 border-0 p-0 m-0">
         {tab === "online" && <OnlineCommunity/>}
         {tab === "ranking" && <OnlineRanking/>}
         {tab === "zona" && <ZoneView onOpenQuest={openQuest} trackedQuestId={trackedQuestId} />}
@@ -269,11 +274,15 @@ useEffect(() => {
         {tab === "matriz" && <MatrixView />}
         {tab === "pets" && <DivineBeasts />}
         {tab === "fazenda" && <Farm />}
+        {tab === "profissoes" && <Professions />}
         {tab === "laboratorio" && <BuildLab />}
         {tab === "loja" && <Shop key="ferreiro" />}
 {tab === "shop" && <><CommerceBenefits /><Shop key="shop" storefront /></>}
         {tab === "missoes" && <Quests focusQuestId={focusQuestId} onFocusHandled={clearQuestFocus} />}
-        {tab === "duelos" && <Duelos />}
+        {tab === "duelos" && <><OnlinePvP /><Duelos /></>}
+        {tab === "boss" && <DailyBoss />}
+        {tab === "cards" && <CardAlbum />}
+        {tab === "calendario" && <DailyCalendar />}
         {tab === "wiki" && <Wiki />}
         <div className="mt-6">
           <CombatLog />

@@ -75,6 +75,45 @@ export const SWAMP_MATERIAL_TEMPLATES: Record<string, Item> = {
   COROA_LODO: createItem({ templateId: "COROA_LODO", name: "Coroa de Lodo", category: "MATERIAL", tier: 3, rarity: "EPICO", icon: "👑", stackable: true, maxStack: 999 }),
 };
 
+export const PROFESSION_TEMPLATES: Record<string, Item> = {
+  MINERIO_COBRE: createItem({ templateId: "MINERIO_COBRE", name: "Minério de Cobre", category: "MATERIAL", tier: 2, rarity: "INCOMUM", icon: "🟠", stackable: true, maxStack: 999 }),
+  MINERIO_ECLIPSE: createItem({ templateId: "MINERIO_ECLIPSE", name: "Minério do Eclipse", category: "MATERIAL", tier: 5, rarity: "LENDARIO", icon: "🌑", stackable: true, maxStack: 999 }),
+  TRUTA_GELO: createItem({ templateId: "TRUTA_GELO", name: "Truta de Gelo", category: "MATERIAL", tier: 2, rarity: "INCOMUM", icon: "🐟", stackable: true, maxStack: 999 }),
+  PEIXE_CORAL: createItem({ templateId: "PEIXE_CORAL", name: "Peixe-Coral", category: "MATERIAL", tier: 3, rarity: "RARO", icon: "🐠", stackable: true, maxStack: 999 }),
+  PEIXE_ASTRAL: createItem({ templateId: "PEIXE_ASTRAL", name: "Peixe Astral", category: "MATERIAL", tier: 5, rarity: "LENDARIO", icon: "✨", stackable: true, maxStack: 999 }),
+  MINERIO_FERRO: createItem({ templateId: "MINERIO_FERRO", name: "Minério de Ferro", category: "MATERIAL", tier: 1, rarity: "COMUM", icon: "⛏️", stackable: true, maxStack: 999 }),
+  CRISTAL_ESSENCIA: createItem({ templateId: "CRISTAL_ESSENCIA", name: "Cristal de Essência", category: "MATERIAL", tier: 3, rarity: "RARO", icon: "💎", stackable: true, maxStack: 999 }),
+  MINERIO_OBSIDIANO: createItem({ templateId: "MINERIO_OBSIDIANO", name: "Minério Obsidiano", category: "MATERIAL", tier: 4, rarity: "EPICO", icon: "🪨", stackable: true, maxStack: 999 }),
+  PEIXE_RIO: createItem({ templateId: "PEIXE_RIO", name: "Peixe do Refúgio", category: "MATERIAL", tier: 1, rarity: "COMUM", icon: "🐟", stackable: true, maxStack: 999 }),
+  PEIXE_CICATRIZ: createItem({ templateId: "PEIXE_CICATRIZ", name: "Peixe-Cicatriz", category: "MATERIAL", tier: 4, rarity: "EPICO", icon: "🐠", stackable: true, maxStack: 999 }),
+  LINGOTE_FERRO: createItem({ templateId: "LINGOTE_FERRO", name: "Lingote de Ferro de Lyss", category: "MATERIAL", tier: 2, rarity: "INCOMUM", icon: "🔩", stackable: true, maxStack: 999 }),
+  CRISTAL_REFINADO: createItem({ templateId: "CRISTAL_REFINADO", name: "Cristal de Essência Refinado", category: "MATERIAL", tier: 4, rarity: "EPICO", icon: "💠", stackable: true, maxStack: 999 }),
+  ISCA_CICATRIZ: createItem({ templateId: "ISCA_CICATRIZ", name: "Isca da Cicatriz", category: "MATERIAL", tier: 3, rarity: "RARO", icon: "🪱", stackable: true, maxStack: 999 }),
+  CALDO_MARCA_DAGUA: createItem({ templateId: "CALDO_MARCA_DAGUA", name: "Caldo da Marca-d'Água", category: "MATERIAL", tier: 4, rarity: "EPICO", icon: "🍲", stackable: true, maxStack: 999 }),
+};
+
+// Ferramentas têm progressão própria e não ocupam os slots de combate.
+// O personagem pode manter uma picareta e uma vara equipadas ao mesmo tempo.
+export const PROFESSION_TOOL_TEMPLATES: Record<string, Item> = Object.fromEntries(
+  TIERS.flatMap(tier => {
+    const pickaxe = createItem({
+      templateId: `PICARETA_T${tier}`,
+      name: `Picareta ${["de Madeira", "de Pedra", "de Aço", "de Cristal", "do Eclipse"][tier - 1]}`,
+      category: "FERRAMENTA", tier, rarity: tier === 1 ? "COMUM" : tier === 2 ? "INCOMUM" : tier === 3 ? "RARO" : tier === 4 ? "EPICO" : "LENDARIO",
+      profession: "MINERACAO", requiredSkill: (tier - 1) * 20, stackable: false, maxStack: 1, icon: "⛏️",
+      stats: { spd: 0.01 * tier }, uniqueEffect: `Permite mineração T${tier}`,
+    });
+    const rod = createItem({
+      templateId: `VARA_PESCA_T${tier}`,
+      name: `Vara de Pesca ${["de Bambu", "Reforçada", "de Aço", "de Cristal", "da Maré Eterna"][tier - 1]}`,
+      category: "FERRAMENTA", tier, rarity: tier === 1 ? "COMUM" : tier === 2 ? "INCOMUM" : tier === 3 ? "RARO" : tier === 4 ? "EPICO" : "LENDARIO",
+      profession: "PESCA", requiredSkill: (tier - 1) * 20, stackable: false, maxStack: 1, icon: "🎣",
+      stats: { spd: 0.01 * tier }, uniqueEffect: `Permite pesca T${tier}`,
+    });
+    return [[pickaxe.templateId, pickaxe], [rod.templateId, rod]] as [string, Item][];
+  }),
+);
+
 // Munição de T1 a T5. As flechas são equipáveis e ficam como preparação de build;
 // ainda não são consumidas pela caça automática.
 export const ARROW_TEMPLATES: Record<string, Item> = Object.fromEntries(TIERS.map(tier => {
@@ -117,6 +156,8 @@ export const UNIQUE_TEMPLATES: Record<string, Item> = {
   UNICO_SIGILO_INICIACAO: createItem({ templateId: "UNICO_SIGILO_INICIACAO", name: "Pulseira do Primeiro Eco", category: "PULSEIRA", slot: "PULSEIRA", tier: 1, rarity: "LENDARIO", stats: { hp: 60, mp: 40, hpRegen: 2, mpRegen: 2 }, icon: "✨", uniqueEffect: "Relíquia exclusiva por concluir o tutorial de Mythreon" }),
   SKIN_MANTO_NEBULOSA: createItem({ templateId: "SKIN_MANTO_NEBULOSA", name: "Manto da Nebulosa", category: "MATERIAL", tier: 5, rarity: "LENDARIO", stats: {}, icon: "🧥", uniqueEffect: "Skin cosmética: partículas de estrelas e brilho violeta; não altera combate." }),
   LUMINESCENCIA_MATRIZ: createItem({ templateId: "LUMINESCENCIA_MATRIZ", name: "Luminescência da Matriz", category: "MATERIAL", tier: 5, rarity: "LENDARIO", stats: {}, icon: "🌌", uniqueEffect: "Efeito visual cosmético para a Matriz equipada; não altera atributos." }),
+  LUMINESCENCIA_PET: createItem({ templateId: "LUMINESCENCIA_PET", name: "Aura da Besta Divina", category: "MATERIAL", tier: 5, rarity: "LENDARIO", stats: {}, icon: "🐾", uniqueEffect: "Aura cosmética do Pet ativo; não altera dano, nutrição ou atributos." }),
+  ADDON_BOSS_LUMINESCENTE: createItem({ templateId: "ADDON_BOSS_LUMINESCENTE", name: "Addon do Boss Luminescente", category: "MATERIAL", tier: 5, rarity: "LENDARIO", stats: {}, icon: "✨", uniqueEffect: "Aura cosmética para aparecer no Boss Diário; não altera combate." }),
 };
 
 // ─── FRAGMENTOS ───
@@ -151,4 +192,4 @@ export const MYTHREON_STORE_TEMPLATES: Record<string, Item> = {
   CHAVE_ROLETA_ARCANA: createItem({ templateId: "CHAVE_ROLETA_ARCANA", name: "Chave da Roleta Arcana", category: "MATERIAL", tier: 3, rarity: "EPICO", icon: "🗝️", stackable: true, maxStack: 999 }),
 };
 
-export const ALL_ITEM_TEMPLATES: Record<string, Item> = { ...ALL_EQUIPMENT_TEMPLATES, ...SWAMP_MATERIAL_TEMPLATES, ...ARROW_TEMPLATES, ...POTION_TEMPLATES, ...UNIQUE_TEMPLATES, ...FRAGMENT_TEMPLATES, ...DIVINE_BEAST_EGG_TEMPLATES, ...BEAST_TAMER_TEMPLATES, ...PET_FOOD_TEMPLATES, ...MYTHREON_STORE_TEMPLATES };
+export const ALL_ITEM_TEMPLATES: Record<string, Item> = { ...ALL_EQUIPMENT_TEMPLATES, ...SWAMP_MATERIAL_TEMPLATES, ...PROFESSION_TEMPLATES, ...PROFESSION_TOOL_TEMPLATES, ...ARROW_TEMPLATES, ...POTION_TEMPLATES, ...UNIQUE_TEMPLATES, ...FRAGMENT_TEMPLATES, ...DIVINE_BEAST_EGG_TEMPLATES, ...BEAST_TAMER_TEMPLATES, ...PET_FOOD_TEMPLATES, ...MYTHREON_STORE_TEMPLATES };
