@@ -12,6 +12,7 @@
 - [Ativação Cérebro.bat](../Ativação Cérebro.bat)
 - [api/premium.js](../api/premium.js)
 - [api/world.js](../api/world.js)
+- [docs/jornal/releases.json](../docs/jornal/releases.json)
 - [docs/launcher-manifest.example.json](../docs/launcher-manifest.example.json)
 - [imagens/WhatsApp Image 2026-10-30 at 00.42.53.jpeg](../imagens/WhatsApp Image 2026-10-30 at 00.42.53.jpeg)
 - [imagens/WhatsApp Image 2026-10-30 at 00.42.54 (1).jpeg](../imagens/WhatsApp Image 2026-10-30 at 00.42.54 (1).jpeg)

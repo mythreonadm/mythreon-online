@@ -51,7 +51,7 @@ Capturas em node_modules/.cache/cosmetics-ui/ e node_modules/.cache/boss-arena/ 
 
 ## Artes e limites
 
-O Manto da Nebulosa procura public/assets/players/skins/SKIN_MANTO_NEBULOSA.png. Sem essa arte, mantém humano de base e brilho. O ícone da aura nova é public/assets/items/LUMINESCENCIA_PET.png. Prompts em [[docs/ARTE_ITENS_PENDENTES|Artes pendentes]], seção Pack 55.
+O Manto da Nebulosa usa `public/assets/players/skins/SKIN_MANTO_NEBULOSA.png`, produzido no Pack 61 com fundo transparente. O ícone da aura nova usa `public/assets/items/LUMINESCENCIA_PET.png`, também produzido no Pack 61. Os prompts históricos permanecem em [[docs/ARTE_ITENS_PENDENTES|Artes pendentes]], seção Pack 55.
 
 A prévia da caça ainda mostra quadriculado na arte atual do Elarion; não foi considerada corrigida por CSS ou pela aura. Rever a transparência real dessa imagem é uma tarefa de arte separada.
 

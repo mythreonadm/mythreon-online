@@ -15,6 +15,7 @@
 - [src/data/dailyBoss.ts](../src/data/dailyBoss.ts) — DailyBossStatus, DailyBossTemplate, DAILY_BOSS_TEMPLATES, dailyCycleKey, dailyBossTemplate, findBossEnemy
 - [src/data/dailyCalendar.ts](../src/data/dailyCalendar.ts) — CALENDAR_COUPON_PRICE, CALENDAR_WEEK_DAYS, CALENDAR_WEEK_FRAGMENTS, CALENDAR_MAX_GOLD_STREAK, CALENDAR_MONTHLY_REWARDS, calendarDayKey, validCalendarDay, calendarMonthInfo, calendarClaimedDays, calendarUnlockedSkins, calendarProgress, calendarWeeklyMilestoneKey
 - [src/data/farm.ts](../src/data/farm.ts) — FarmSeed, FARM_SEEDS, FARM_RECIPES, farmRecipe, FARM_MAX_PLOTS, FARM_FERTILITY_MAX, FARM_FERTILITY_MIN, FARM_FERTILITY_LOSS_PER_HARVEST, FARM_FERTILITY_COMPOST_GAIN, FarmExpansionCost, farmExpansionCost, farmSeed
+- [src/data/journal-releases.json](../src/data/journal-releases.json)
 - [src/data/mythreonEconomy.ts](../src/data/mythreonEconomy.ts) — MYTHREON_ECONOMY, MythreonOfferKind, MythreonOffer, MYTHREON_OFFERS, getMythreonOffer, MYTHREON_DONATION_PACKS, PREMIUM_BENEFITS, MYTHREON_PREMIUM_PLANS, shardChance
 - [src/data/mythreonJournal.ts](../src/data/mythreonJournal.ts) — JournalKind, JournalEntry, MYTHREON_JOURNAL, journalKindClass
 - [src/data/potionEconomy.ts](../src/data/potionEconomy.ts) — getPotionUsePrice

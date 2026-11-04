@@ -25,6 +25,7 @@ As notas abaixo são as fontes preservadas para decisões, explicações e proce
 | Guia de arte das próximas fases | [[docs/ARTE_MYTHREON_FASES_FUTURAS|Arte: Pets, Ferreiro, Pesca e Jornal]] |
 | Pets, atividades e Boss Diário | [[docs/conhecimento/Pets-Atividades-Boss-Diario|Pets, atividades e Boss Diário]] |
 | Contexto, arquitetura e decisões anteriores | [[CEREBRO_MYTHREON|Cérebro e registro de continuidade]] |
+| Porta de lançamento, Jornal e artes finais | [[docs/conhecimento/Pack-61-Porta-de-Lancamento-2026-11-04|Pack 61: porta de lançamento]] |
 
 ## Evidências de balanceamento
 

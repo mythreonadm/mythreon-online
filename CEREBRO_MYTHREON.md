@@ -495,3 +495,11 @@ O catálogo de Cards agora tem 48 espécies e valida cada template contra o mob 
 Compatibilidade sazonal: `seasonCardTemplateIds("2026-11")` exclui os dez IDs introduzidos após a abertura e mantém 38 no denominador. A partir de `2026-12`, o catálogo sazonal tem 48. `cards.season.read` calcula espécies únicas filtradas e preserva o `total_cards` já gravado no conflito; `cards.season.claim` usa o snapshot persistido. Isso evita que uma expansão no meio do mês rebaixe coleções antigas.
 
 Arquivos autorais: `src/data/cards.ts`, `server/world.ts`, `src/ui/CardsGuide.tsx`, `src/data/mythreonJournal.ts`, `scripts/cards-check.ts`, `docs/conhecimento/Pack-60-Cards-Veyra-Kaelor-e-Temporada-2026-11-04.md`. Validações pendentes desta continuidade: rodar `cards:check`, `online:check`, typecheck, bundle/build, diff --check e brain:sync; gerar runtime antes de qualquer publicação. Sem migration, commit ou deploy.
+
+## Continuidade — Pack 61 — Porta de lançamento — 04/11/2026
+
+O fechamento de lançamento ganhou uma porta verificável em `docs/RELEASE_CHECKLIST_MYTHREON.md`: P0 para playtests e homologação, P1 para publicação comercial e P2 para Android nativo/expansões. O build online foi corrigido para compilar os runtimes com `absWorkingDir` e entradas relativas explícitas, evitando o erro de resolução do esbuild em caminhos OneDrive.
+
+O Jornal deixou de depender apenas de edição manual em `src/data/mythreonJournal.ts`: entradas de release ficam em `docs/jornal/releases.json`, `npm run journal:sync` gera `src/data/journal-releases.json` e o catálogo é mesclado ao Jornal da Wiki. `journal:check`, `release:gate`, `market-ui-check` e `verify-windows` agora fazem parte dos scripts oficiais.
+
+As artes que tinham referência direta mas não arquivo foram produzidas em pixel art transparente: `public/assets/players/skins/SKIN_MANTO_NEBULOSA.png` e `public/assets/items/LUMINESCENCIA_PET.png`. O inventário restante foi preservado; não recriar artes já aprovadas. Evidências: `journal:check`, `brain:check`, `online:check`, `typecheck`, `release:gate` e `build` passaram. O build mantém apenas o aviso de chunk principal acima de 500 kB. Checkout real, assinatura Windows, APK/AAB Android, concorrência e homologação de produção continuam pendentes; não anunciar como concluídos.

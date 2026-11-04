@@ -82,6 +82,7 @@
 - [public/assets/items/FRAGMENTO_RARO.png](../public/assets/items/FRAGMENTO_RARO.png)
 - [public/assets/items/ISCA_COMUM.png](../public/assets/items/ISCA_COMUM.png)
 - [public/assets/items/ISCA_RARA.png](../public/assets/items/ISCA_RARA.png)
+- [public/assets/items/LUMINESCENCIA_PET.png](../public/assets/items/LUMINESCENCIA_PET.png)
 - [public/assets/items/LUVAS_T1.png](../public/assets/items/LUVAS_T1.png)
 - [public/assets/items/LUVAS_T2.png](../public/assets/items/LUVAS_T2.png)
 - [public/assets/items/LUVAS_T3.png](../public/assets/items/LUVAS_T3.png)

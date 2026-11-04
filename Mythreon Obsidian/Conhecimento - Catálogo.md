@@ -79,6 +79,7 @@
 - [[docs/conhecimento/Pack-58-Cenas-e-Iscas-de-Profissoes-2026-11-04|Pack 58 — cenas de profissões e isca utilizável]] — Cenas de coleta com artes existentes e consumo opcional e atômico da Isca da Cicatriz.
 - [[docs/conhecimento/Pack-59-Cards-Evolucao-e-Bonus-Reais-2026-11-04|Pack 59 — Cards: evolução e bônus reais]] — Evolução real de Cards por cópias livres/gold e bônus compartilhados entre combate, Álbum e Personagem.
 - [[docs/conhecimento/Pack-60-Cards-Veyra-Kaelor-e-Temporada-2026-11-04|Pack 60 — Cards de Veyra/Kaelor e catálogo sazonal]] — Catálogo de Cards dos dez monstros de Pântano de Veyra e Deserto de Kaelor, com compatibilidade sazonal retroativa.
+- [[docs/conhecimento/Pack-61-Porta-de-Lancamento-2026-11-04|Pack 61 — Porta de lançamento, Jornal e artes finais]] — a revisar
 - [[docs/conhecimento/Pets-Atividades-Boss-Diario|Pets, atividades e Boss Diário]] — em desenvolvimento
 - [[docs/conhecimento/Pets-Ovos-Migracao-2026-11-03|Migração de Bestas Divinas para Pets e Ovos]] — a revisar
 - [[docs/conhecimento/Registro de problemas|Registro de problemas]] — Problemas de documentação, sincronização e continuidade com suas evidências.

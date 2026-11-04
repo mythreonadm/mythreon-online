@@ -11,7 +11,9 @@ export interface JournalEntry {
   active?: boolean;
 }
 
-export const MYTHREON_JOURNAL: JournalEntry[] = [
+import releaseEntries from "./journal-releases.json";
+
+const LEGACY_MYTHREON_JOURNAL: JournalEntry[] = [
   {
     id: "pack-60-biome-cards", date: "04/11/2026", title: "Memórias do lodo e do vidro", kind: "ATUALIZAÇÃO",
     summary: "Dez novos Cards chegam com as criaturas de Pântano de Veyra e Deserto de Kaelor.",
@@ -119,6 +121,12 @@ export const MYTHREON_JOURNAL: JournalEntry[] = [
     body: "As próximas inscrições de teste vão priorizar duas contas em dispositivos diferentes. Toda falha de sincronização deve ser anotada com horário, tela e ação para que o Cérebro de Mythreon possa rastrear a origem.",
     tags: ["Teste", "Online", "Roadmap"],
   },
+];
+
+/** Entradas editoriais são sincronizadas de docs/jornal/releases.json no build. */
+export const MYTHREON_JOURNAL: JournalEntry[] = [
+  ...(releaseEntries as JournalEntry[]),
+  ...LEGACY_MYTHREON_JOURNAL,
 ];
 
 export function journalKindClass(kind: JournalKind) {

@@ -66,6 +66,8 @@ As artes existentes MINERIO_FERRO.png, CRISTAL_ESSENCIA.png, MINERIO_OBSIDIANO.p
 
 ## Pack 55 — guarda-roupa e aura do Pet
 
+As duas artes desta seção foram produzidas no Pack 61 e já estão no projeto. Mantenha os prompts abaixo como referência visual; não recrie os arquivos sem necessidade.
+
 A arte mensal e o addon do Boss já foram conectados, sem precisar recortá-los novamente. Faltam estes dois arquivos:
 
 ### SKIN_MANTO_NEBULOSA.png — personagem humano completo

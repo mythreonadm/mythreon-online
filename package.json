@@ -9,13 +9,15 @@
     "brain:watch": "node scripts/brain-service.mjs",
     "brain:seal": "node scripts/mythreon-brain.mjs --once --seal",
     "brain:open": "node scripts/mythreon-brain.mjs --open",
-    "prebuild": "node scripts/mythreon-brain.mjs --once",
+    "prebuild": "npm run journal:sync && node scripts/mythreon-brain.mjs --once",
     "build": "npm run online:bundle && vite build",
     "preview": "vite preview",
     "desktop:start": "npm run build && electron .",
     "desktop:package": "npm run build && electron-builder --win --dir --x64",
     "desktop:portable": "npm run build && electron-builder --win portable --x64",
     "brain:check": "node scripts/brain-check.mjs",
+    "journal:sync": "node scripts/journal-sync.mjs",
+    "journal:check": "node scripts/journal-check.mjs",
     "balance:check": "node scripts/balance-audit.cjs --check",
     "journey:check": "node scripts/journey-check.cjs",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.server.json",
@@ -31,6 +33,9 @@
     "online:doctor": "node scripts/online-doctor.mjs",
     "online:bundle": "node scripts/build-online-runtime.mjs",
     "online:bundle-check": "node scripts/build-online-runtime.mjs --check"
+    ,"market-ui-check": "node scripts/market-ui-check.cjs",
+    "verify-windows": "node scripts/verify-windows.cjs",
+    "release:gate": "node scripts/release-gate.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",

@@ -1,6 +1,6 @@
 # Mythreon Online — checklist até o lançamento
 
-Atualizado em 03/11/2026. Este arquivo é o plano operacional do lançamento e deve ser revisado no Cérebro/Obsidian após cada rodada.
+Atualizado em 04/11/2026. Este arquivo é o plano operacional do lançamento e deve ser lido junto com [[docs/RELEASE_CHECKLIST_MYTHREON|a porta de lançamento]] após cada rodada.
 
 ## Estado atual
 
@@ -51,6 +51,8 @@ Atualizado em 03/11/2026. Este arquivo é o plano operacional do lançamento e d
 20. Adicionar eventos sazonais, conquistas de treino e rankings por temporada. **Pack 29 adicionou fila de matchmaking e histórico sazonal do PvP; Pack 33 deixou a origem dos bônus de Cards visível no Personagem; Pack 34 adicionou histórico auditável do Boss Diário; faltam ligas, recompensas e homologação concorrente.**
 
 ## Artes que ainda faltam
+
+O inventário abaixo continua válido como catálogo de nomes. Os arquivos já presentes não devem ser recriados; faltam principalmente variações animadas, transparências finais e fundos opcionais. Use `docs/ARTE_ITENS_PENDENTES.md` como fonte dos prompts e `public/assets/` como fonte da verdade visual.
 
 Salve todas em `C:\Users\dreey\OneDrive\Área de Trabalho\MYTHREON ONLINE\public\assets\` com os nomes exatos.
 

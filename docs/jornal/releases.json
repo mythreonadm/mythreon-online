@@ -1,0 +1,21 @@
+[
+  {
+    "id": "release-gate-pack-61",
+    "date": "04/11/2026",
+    "title": "A última travessia antes da abertura",
+    "kind": "AVISO",
+    "summary": "O Refúgio entra em uma rodada final de testes antes do congelamento da versão pública.",
+    "body": "Mercado Negro, Loja Mythreon, Jornal, cliente Windows e a preparação mobile passam a ser revisados como uma única jornada. Durante os próximos testes, registre horários, dispositivo, mapa, ação e qualquer retorno visual para que o Cérebro de Mythreon possa fechar a versão sem perder segurança.",
+    "tags": ["Lançamento", "Teste", "Mercado", "Premium"],
+    "active": true
+  },
+  {
+    "id": "release-art-pipeline",
+    "date": "04/11/2026",
+    "title": "A identidade visual toma forma",
+    "kind": "ATUALIZAÇÃO",
+    "summary": "As artes finais passam a seguir pranchas agrupadas e nomes estáveis para reduzir retrabalho.",
+    "body": "Itens, monstros, fundos, efeitos e elementos de interface devem ser conferidos por nome antes de entrar no jogo. A transparência dos sprites é preservada e os fallbacks por emoji continuam disponíveis para não bloquear a jogatina.",
+    "tags": ["Arte", "Pixelart", "Identidade visual"]
+  }
+]

@@ -17,6 +17,7 @@
 - [docs/ARTE_ITENS_PENDENTES.md](../docs/ARTE_ITENS_PENDENTES.md)
 - [docs/ARTE_MYTHREON_FASES_FUTURAS.md](../docs/ARTE_MYTHREON_FASES_FUTURAS.md)
 - [docs/ATIVAR_MUNDO_ONLINE.md](../docs/ATIVAR_MUNDO_ONLINE.md)
+- [docs/RELEASE_CHECKLIST_MYTHREON.md](../docs/RELEASE_CHECKLIST_MYTHREON.md)
 - [docs/ROADMAP_LANCAMENTO.md](../docs/ROADMAP_LANCAMENTO.md)
 - [ideiasclaudemythreon.md](../ideiasclaudemythreon.md)
 

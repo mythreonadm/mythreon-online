@@ -19,6 +19,7 @@
 - [docs/conhecimento/Pets-Atividades-Boss-Diario.md](../docs/conhecimento/Pets-Atividades-Boss-Diario.md)
 - [docs/conhecimento/Pets-Ovos-Migracao-2026-11-03.md](../docs/conhecimento/Pets-Ovos-Migracao-2026-11-03.md)
 - [docs/conhecimento/Shop-Premium-Beasts.md](../docs/conhecimento/Shop-Premium-Beasts.md)
+- [public/assets/items/LUMINESCENCIA_PET.png](../public/assets/items/LUMINESCENCIA_PET.png)
 - [public/assets/pets/divine-beast-aster.png](../public/assets/pets/divine-beast-aster.png)
 - [public/assets/pets/divine-beast-asterion.png](../public/assets/pets/divine-beast-asterion.png)
 - [public/assets/pets/divine-beast-azhar.png](../public/assets/pets/divine-beast-azhar.png)
