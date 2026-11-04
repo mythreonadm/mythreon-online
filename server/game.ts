@@ -44,7 +44,7 @@ export function executeGame(world:WorldState,action?:string,args:unknown[]=[]):{
   else if(action==='equipDivineBeast'){result=s.equipDivineBeast(uid(args[0]) as any);}
   else if(action==='hatchEgg'){result=s.hatchEgg(uid(args[0]));if(!(result as any)?.success)throw Error((result as any)?.error??'Não foi possível eclodir o ovo.');}
   else if(action==='combineBeast'){result=s.combineBeast(uid(args[0]) as any);if(!(result as any)?.success)throw Error((result as any)?.error??'Não foi possível aprimorar a linhagem.');}
-  else if(action==='sellDivineBeast'){result=s.sellDivineBeast(uid(args[0]) as any);if(!(result as any)?.success)throw Error((result as any)?.error??'Não foi possível vender o pet.');}
+  else if(action==='sellDivineBeast'){result=s.sellDivineBeast(uid(args[0]) as any,args[1]?uid(args[1]):undefined);if(!(result as any)?.success)throw Error((result as any)?.error??'Não foi possível vender o pet.');}
   else if(action==='feedDivineBeast'){result=s.feedDivineBeast(uid(args[0]) as any, uid(args[1]));if(!(result as any)?.success)throw Error((result as any)?.error??'Não foi possível alimentar a Besta.');}
   else if(action==='elevateItemTier'){result=s.elevateItemTier(uid(args[0]));if(!(result as any)?.success)throw Error((result as any)?.error??'Não foi possível elevar o Tier.');}
   else if(action==='rerollSpecificAffix'){result=s.rerollSpecificAffix(uid(args[0]), uid(args[1]) as any);if(!(result as any)?.success)throw Error((result as any)?.error??'Não foi possível sortear o atributo.');}
@@ -75,6 +75,8 @@ export function executeGame(world:WorldState,action?:string,args:unknown[]=[]):{
   else if(action==='forgeFragments'){const id=uid(args[0]);if(!['FRAGMENTO_COMUM','FRAGMENTO_RARO'].includes(id))throw Error('Receita inválida.');result=s.forgeFragments(id);if(!(result as any)?.success)throw Error((result as any)?.error??'Não foi possível fundir os fragmentos.');}
   else if(action==='refineMythreonCoins'){const amount=args[0]===undefined?1:Number(args[0]);if(!Number.isInteger(amount)||amount<1||amount>100)throw Error('Quantidade de Coins inválida.');result=s.refineMythreonCoins(amount);if(!(result as any)?.success)throw Error((result as any)?.error??'Não foi possível refinar a energia.');}
   else if(action==='buyMythreonOffer'){const id=uid(args[0]);if(!getMythreonOffer(id))throw Error('Oferta inválida.');result=s.buyMythreonOffer(id);if(!(result as any)?.success)throw Error((result as any)?.error??'Não foi possível concluir a compra.');}
+  else if(action==='buyMythreonBoost'){const id=uid(args[0]);const offer=getMythreonOffer(id);if(!offer||offer.kind!=='BOOST')throw Error('Tomo ou bônus inválido.');result=s.buyMythreonBoost(id);if(!(result as any)?.success)throw Error((result as any)?.error??'Não foi possível ativar o bônus.');}
+  else if(action==='openMythreonRoulette'){if(args.length)throw Error('Parâmetros inesperados.');result=s.openMythreonRoulette();if(!(result as any)?.success)throw Error((result as any)?.error??'Não foi possível abrir a roleta.');}
   else throw Error('Ação não permitida.');
   if(action==='activateBuff')store.getState().character!.onlineBalloonUntil=undefined;
   if(action==='upgradeItem'&&(result as any)?.success)world.counters.forges++;

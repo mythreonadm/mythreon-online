@@ -19,7 +19,10 @@
 - [[docs/conhecimento/Jornada-Lore-Biomas|Jornada, lore e biomas]]
 - [[docs/conhecimento/Laboratorio-de-Builds-e-Windows|Laboratório de Builds e Windows]]
 - [[docs/conhecimento/Linkar-Itens-no-Chat-2026-11-03|Linkar itens no chat]]
+- [[docs/conhecimento/Loja-Mythreon-Economia-Premium-2026-11-03|Loja Mythreon — economia, Premium e monetização segura]]
 - [[docs/conhecimento/Operacao do Cerebro e Obsidian|Operação do Cérebro e Obsidian]]
+- [[docs/conhecimento/Pack-01-Fundacao-Matriz-Pets-Online-2026-11-03|Pack 01 — Fundação de Evolução e Conteúdo]]
+- [[docs/conhecimento/Pack-02-Cativeiro-Personalizacao-2026-11-03|Objetivo]]
 - [[docs/conhecimento/Pets-Atividades-Boss-Diario|Pets, atividades e Boss Diário]]
 - [[docs/conhecimento/Pets-Ovos-Migracao-2026-11-03|Migração de Bestas Divinas para Pets e Ovos]]
 - [[docs/conhecimento/Registro de problemas|Registro de problemas]]
@@ -46,7 +49,10 @@
 - [docs/conhecimento/Jornada-Lore-Biomas.md](../docs/conhecimento/Jornada-Lore-Biomas.md)
 - [docs/conhecimento/Laboratorio-de-Builds-e-Windows.md](../docs/conhecimento/Laboratorio-de-Builds-e-Windows.md)
 - [docs/conhecimento/Linkar-Itens-no-Chat-2026-11-03.md](../docs/conhecimento/Linkar-Itens-no-Chat-2026-11-03.md)
+- [docs/conhecimento/Loja-Mythreon-Economia-Premium-2026-11-03.md](../docs/conhecimento/Loja-Mythreon-Economia-Premium-2026-11-03.md)
 - [docs/conhecimento/Operacao do Cerebro e Obsidian.md](../docs/conhecimento/Operacao do Cerebro e Obsidian.md)
+- [docs/conhecimento/Pack-01-Fundacao-Matriz-Pets-Online-2026-11-03.md](../docs/conhecimento/Pack-01-Fundacao-Matriz-Pets-Online-2026-11-03.md)
+- [docs/conhecimento/Pack-02-Cativeiro-Personalizacao-2026-11-03.md](../docs/conhecimento/Pack-02-Cativeiro-Personalizacao-2026-11-03.md)
 - [docs/conhecimento/Pets-Atividades-Boss-Diario.md](../docs/conhecimento/Pets-Atividades-Boss-Diario.md)
 - [docs/conhecimento/Pets-Ovos-Migracao-2026-11-03.md](../docs/conhecimento/Pets-Ovos-Migracao-2026-11-03.md)
 - [docs/conhecimento/Registro de problemas.md](../docs/conhecimento/Registro de problemas.md)

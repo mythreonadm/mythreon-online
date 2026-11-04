@@ -133,13 +133,13 @@ export function analyzeBuild(snapshot: Character, zoneId: string, progress?: (te
   if (compareCollection) {
     for (const race of races.slice(0, 6)) {
       if (race.id === char.activeRace?.id) continue;
-      const changed = structuredClone(char); changed.activeRace = structuredClone(race); changed.raceId = race.id; changed.activeDivineBeastId = undefined;
-      evaluate(`race-${race.id}`, `Matriz: ${race.name}`, changed, ["Equipar esta Matriz já descoberta; suspende a Beast ativa.", "Equipamentos, gold e configuração de poções permanecem iguais."]);
+      const changed = structuredClone(char); changed.activeRace = structuredClone(race); changed.raceId = race.id;
+      evaluate(`race-${race.id}`, `Matriz: ${race.name}`, changed, ["Equipar esta Matriz já descoberta; o pet ativo permanece ao lado do herói.", "Equipamentos, gold e configuração de poções permanecem iguais."]);
     }
     for (const beast of (char.divineBeasts ?? []).slice(0, 12)) {
       if (beast.id === char.activeDivineBeastId || !DIVINE_BEASTS[beast.id]) continue;
-      const changed = structuredClone(char); changed.activeRace = undefined; changed.raceId = undefined; changed.activeDivineBeastId = beast.id;
-      evaluate(`beast-${beast.id}`, `Beast: ${DIVINE_BEASTS[beast.id].name}`, changed, ["Ativar esta Beast já vinculada; suspende a Matriz ativa.", "Equipamentos, gold e configuração de poções permanecem iguais."]);
+      const changed = structuredClone(char); changed.activeDivineBeastId = beast.id;
+      evaluate(`beast-${beast.id}`, `Pet: ${DIVINE_BEASTS[beast.id].name}`, changed, ["Ativar este pet já vinculado; a Matriz ativa permanece equipada.", "Equipamentos, gold e configuração de poções permanecem iguais."]);
     }
   }
   progress?.("Verificando cinco vitórias consecutivas…");

@@ -156,7 +156,7 @@
 - [public/assets/items/prancha-mythreon-ovos-baus-ferreiro.png](../public/assets/items/prancha-mythreon-ovos-baus-ferreiro.png)
 - [public/assets/items/prancha-mythreon-pesca-mineracao.png](../public/assets/items/prancha-mythreon-pesca-mineracao.png)
 - [src/data/backpacks.ts](../src/data/backpacks.ts) — BACKPACKS, DEFAULT_BACKPACK
-- [src/data/items.ts](../src/data/items.ts) — createItem, SWAMP_EQUIPMENT_TEMPLATES, ALL_EQUIPMENT_TEMPLATES, SWAMP_MATERIAL_TEMPLATES, ARROW_TEMPLATES, POTION_TEMPLATES, UNIQUE_TEMPLATES, FRAGMENT_TEMPLATES, DIVINE_BEAST_EGG_TEMPLATES, BEAST_TAMER_TEMPLATES, PET_FOOD_TEMPLATES, ALL_ITEM_TEMPLATES
+- [src/data/items.ts](../src/data/items.ts) — createItem, SWAMP_EQUIPMENT_TEMPLATES, ALL_EQUIPMENT_TEMPLATES, SWAMP_MATERIAL_TEMPLATES, ARROW_TEMPLATES, POTION_TEMPLATES, UNIQUE_TEMPLATES, FRAGMENT_TEMPLATES, DIVINE_BEAST_EGG_TEMPLATES, BEAST_TAMER_TEMPLATES, PET_FOOD_TEMPLATES, MYTHREON_STORE_TEMPLATES
 - [src/engine/depot.ts](../src/engine/depot.ts) — getDepotUsedSlots, depositItem, withdrawItem, depositMany, withdrawMany
 - [src/engine/forge.ts](../src/engine/forge.ts) — FORGE_CATEGORIES, getUpgradeCost, forgeFragments, upgradeItemLevel, rerollItemAffixes, elevateItemTier, rerollSpecificAffix
 - [src/engine/inventory.ts](../src/engine/inventory.ts) — getUsedSlots, canAddItem, addItem, removeItem, countByTemplate, equipItem, unequipItem

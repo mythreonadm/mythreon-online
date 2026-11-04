@@ -24,6 +24,7 @@ import { QUESTS } from "../data/quests";
 import { ALL_ITEM_TEMPLATES } from "../data/items";
 import { playAttackSfx, playCombatSfx } from "../utils/sfx";
 import { DailyCalendar } from "./DailyCalendar";
+import { appearanceStyle } from "../utils/appearance";
 
 interface ZoneViewProps { onOpenQuest: (questId: string) => void; trackedQuestId?: string | null; }
 
@@ -494,7 +495,7 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
                     src={getPlayerVisual()} 
                     alt={playerLineage.name} 
                     className="w-full h-full object-contain drop-shadow-[0_10px_10px_rgba(0,0,0,0.8)]" 
-                    style={{ imageRendering: "pixelated" }} 
+                    style={{ imageRendering: "pixelated", ...(playerLineage.id === "HUMANO" ? appearanceStyle(character.appearance) : {}) }}
                     onAllSourcesFail={() => setPlayerImageError(true)}
                   />
                 ) : (

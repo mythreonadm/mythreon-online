@@ -94,6 +94,7 @@ export interface DivineBeastTemplate {
 
 export interface DivineBeastInstance {
   id: DivineBeastId;
+  instanceId?: string;
   obtainedAt: number;
   rarity?: Rarity;
 }
@@ -102,6 +103,13 @@ export interface DivineBeastNeeds {
   nutrition: number;
   mood: number;
   updatedAt: number;
+}
+
+export interface DivineBeastIncubator {
+  eggUid: string;
+  tier: 1 | 2 | 3 | 4 | 5;
+  startedAt: number;
+  completesAt: number;
 }
 
 export interface Backpack {
@@ -187,6 +195,8 @@ export interface Character {
   hp: number; hpMax: number; mp: number; mpMax: number; baseStats: ItemStats;
   appearance?: CharacterAppearance;
   mythreonShards?: number; mythreonCoins?: number;
+  /** Buffs da Loja Mythreon: chave -> timestamp de expiração; 0 significa eterno. */
+  mythreonBoosts?: Record<string, number>;
   equipped: Partial<Record<SlotType, Item>>; inventory: Inventory;
   raceId?: string; activeRace?: Race; killsInZone: number; currentZoneId?: string;
   activeEnemyId?: string;
@@ -257,6 +267,7 @@ export interface Character {
   activeDivineBeastId?: DivineBeastId;
   divineBeastNeeds?: Partial<Record<DivineBeastId, DivineBeastNeeds>>;
   divineBeastAttackTimerMs?: number;
+  divineBeastIncubator?: DivineBeastIncubator;
   huntStatsByZone?: Record<string, HuntZoneStats>;
   fightEnemyId?: string;
   fightDamageDealt?: number;

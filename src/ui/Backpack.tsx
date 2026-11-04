@@ -101,36 +101,42 @@ export function Backpack() {
   };
 
   const equipBestPowerItems = async () => {
-    if (!window.confirm("Equipar automaticamente os itens com maior potência estimada por slot? Essa escolha considera uma pontuação geral e pode não combinar com os atributos da sua build.")) return;
-    const candidates = [...character.inventory.items].filter(item => item.slot).sort((a, b) => getItemScore(b) - getItemScore(a));
+    if (!window.confirm("Equipar todos os itens de maior potência disponíveis, um por slot? Essa escolha considera uma pontuação geral e pode não combinar com os atributos da sua build.")) return;
+
     let equippedCount = 0;
-    const usedRingUids = new Set<string>();
-    for (const item of candidates) {
+    const inventory = [...character.inventory.items].filter(item => item.slot);
+    const equipOne = async (uid: string) => {
+      if (online) {
+        const response = await onlineAction('world.command', { action: 'equip', args: [uid, false] });
+        return response?.result?.success !== false;
+      }
+      return useGameStore.getState().equip(uid).success;
+    };
+
+    // Cada slot recebe o melhor candidato disponível. O estado é lido novamente
+    // após cada operação para que a troca anterior já entre no próximo cálculo.
+    const regularSlots = [...new Set(inventory.map(item => item.slot).filter((slot): slot is NonNullable<typeof slot> => !!slot && slot !== "ANEL_I"))];
+    for (const slot of regularSlots) {
+      const best = inventory.filter(item => item.slot === slot).sort((a, b) => getItemScore(b) - getItemScore(a))[0];
       const current = useGameStore.getState().character;
-      if (!current || !item.slot) continue;
-      if (item.slot === "BACKPACK") {
-        if ((item.slots ?? 0) > current.inventory.backpack.slots) {
-          const result = online ? await onlineAction('world.command', { action: 'equip', args: [item.uid, false] }) : useGameStore.getState().equip(item.uid);
-          if (online ? result?.result?.success !== false : result?.success) equippedCount++;
-        }
-        continue;
-      }
-      if (item.slot === "ANEL_I") {
-        if (usedRingUids.has(item.uid)) continue;
-        const ringSlot = !current.equipped.ANEL_I ? "ANEL_I" : !current.equipped.ANEL_II ? "ANEL_II" : getItemScore(current.equipped.ANEL_I) <= getItemScore(current.equipped.ANEL_II) ? "ANEL_I" : "ANEL_II";
-        const ringScore = getItemScore(current.equipped[ringSlot]);
-        if (getItemScore(item) <= ringScore) continue;
-        const result = online ? await onlineAction('world.command', { action: 'equip', args: [item.uid, false] }) : useGameStore.getState().equip(item.uid);
-        if (online ? result?.result?.success !== false : result?.success) { equippedCount++; usedRingUids.add(item.uid); }
-        continue;
-      }
-      const slot = item.slot;
-      if (getItemScore(item) > getItemScore(current.equipped[slot])) {
-        const result = online ? await onlineAction('world.command', { action: 'equip', args: [item.uid, false] }) : useGameStore.getState().equip(item.uid);
-        if (online ? result?.result?.success !== false : result?.success) equippedCount++;
-      }
+      if (!best || !current) continue;
+      const isBetterBackpack = slot === "BACKPACK" && (best.slots ?? 0) > current.inventory.backpack.slots;
+      const isBetterEquipment = slot !== "BACKPACK" && getItemScore(best) > getItemScore(current.equipped[slot]);
+      if ((isBetterBackpack || isBetterEquipment) && await equipOne(best.uid)) equippedCount++;
     }
-    alert(equippedCount ? `${equippedCount} item(ns) equipado(s) por maior potência estimada. Revise a sinergia dos atributos da sua build.` : "Nenhum item da mochila superou o equipamento atual por potência estimada.");
+
+    // Anéis usam dois slots: os melhores dois anéis da mochila são avaliados
+    // separadamente, respeitando o slot vazio ou o anel de menor potência.
+    const ringCandidates = inventory.filter(item => item.slot === "ANEL_I").sort((a, b) => getItemScore(b) - getItemScore(a));
+    for (const ring of ringCandidates) {
+      const current = useGameStore.getState().character;
+      if (!current) continue;
+      const ringSlot = !current.equipped.ANEL_I ? "ANEL_I" : !current.equipped.ANEL_II ? "ANEL_II" : getItemScore(current.equipped.ANEL_I) <= getItemScore(current.equipped.ANEL_II) ? "ANEL_I" : "ANEL_II";
+      if (getItemScore(ring) <= getItemScore(current.equipped[ringSlot])) continue;
+      if (await equipOne(ring.uid)) equippedCount++;
+    }
+
+    alert(equippedCount ? `${equippedCount} item(ns) de maior potência equipado(s), incluindo todos os slots disponíveis. Revise a sinergia dos atributos da sua build.` : "Nenhum item da mochila superou o equipamento atual por potência estimada.");
   };
 
   const equippedItem = selectedItem ? getEquippedForTarget(character, selectedItem) : undefined;
@@ -153,7 +159,7 @@ export function Backpack() {
           <span className={`rounded px-2 py-1 text-xs font-bold ${used >= total ? "bg-red-900/70 text-red-200" : used >= total - 3 ? "bg-yellow-900/60 text-yellow-200" : "bg-black/30 text-gray-400"}`}>{used}/{total} espaços{used >= total ? " · CHEIA" : ""}</span>
           <button onClick={selectAll} className="text-xs bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 rounded">Selecionar Tudo</button>
           <button onClick={selectAllForSale} className="text-xs bg-emerald-800 hover:bg-emerald-700 border border-emerald-500/40 text-white px-2 py-1 rounded font-bold">Selecionar todos para vender</button>
-          <button onClick={equipBestPowerItems} title="A pontuação geral pode ignorar a sinergia dos atributos da sua build." className="text-xs bg-emerald-800 hover:bg-emerald-700 border border-emerald-500/40 text-white px-3 py-1.5 rounded font-bold">⚡ Equipar maior potência</button>
+          <button onClick={equipBestPowerItems} title="Equipa automaticamente o melhor item disponível em cada slot." className="text-xs bg-emerald-800 hover:bg-emerald-700 border border-emerald-500/40 text-white px-3 py-1.5 rounded font-bold">⚡ Equipar todos os itens de maior potência</button>
         </div>
         <div className="flex items-center gap-2 text-sm flex-wrap">
           <span className="text-gray-400">Bolsa:</span>

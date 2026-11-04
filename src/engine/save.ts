@@ -62,6 +62,7 @@ export function createNewCharacter(name: string, appearance?: CharacterAppearanc
     divineBeasts: [],
     divineBeastNeeds: {},
     divineBeastAttackTimerMs: 0,
+    divineBeastIncubator: undefined,
     depot: [],
     depotMax: 300,
     farm: { plots: [{ id: "plot-1" }], unlockedPlots: 1, skills: { planting: 0, harvesting: 0 }, lastActionAt: Date.now() },
@@ -143,8 +144,10 @@ export function loadGame(): SaveFile | null {
       // Migração para cartas
       if (!data.character.cards) data.character.cards = [];
       if (!Array.isArray(data.character.divineBeasts)) data.character.divineBeasts = [];
+      data.character.divineBeasts = data.character.divineBeasts.map((beast: any, index: number) => ({ ...beast, instanceId: beast.instanceId ?? `legacy-beast-${beast.id}-${beast.obtainedAt ?? index}` }));
       if (!data.character.divineBeastNeeds || typeof data.character.divineBeastNeeds !== "object") data.character.divineBeastNeeds = {};
       if (!Number.isFinite(data.character.divineBeastAttackTimerMs)) data.character.divineBeastAttackTimerMs = 0;
+      if (data.character.divineBeastIncubator && (!data.character.divineBeastIncubator.eggUid || !Number.isFinite(data.character.divineBeastIncubator.completesAt))) data.character.divineBeastIncubator = undefined;
       
       // Migração para o Depot
       if (!data.character.depot) data.character.depot = [];

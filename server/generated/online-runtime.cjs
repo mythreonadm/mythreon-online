@@ -141,7 +141,9 @@ var UNIQUE_TEMPLATES = {
   UNICO_OLHO_ASTERION: createItem({ templateId: "UNICO_OLHO_ASTERION", name: "Olho de Asterion", category: "ARMADURA", slot: "CAPACETE", tier: 4, rarity: "LENDARIO", stats: { arm: 100, hp: 1500, crit: 0.1, hit: 0.1 }, rareDropBonus: 0.15, dropBonus: 0.05, icon: "\u{1F441}\uFE0F", uniqueEffect: "+15% de raridade alta" }),
   UNICO_PRESA_DEVORADOR: createItem({ templateId: "UNICO_PRESA_DEVORADOR", name: "Presa do Devorador", category: "ARMA", slot: "ARMA_PRINCIPAL", tier: 5, rarity: "LENDARIO", stats: { atk: 500, def: 80 }, lifesteal: 0.08, icon: "\u{1F9B7}", uniqueEffect: "Rouba 8% do dano como vida" }),
   UNICO_ANEL_GUARDIA: createItem({ templateId: "UNICO_ANEL_GUARDIA", name: "Anel da Guarda Eterna", category: "JOIA", slot: "ANEL_I", tier: 5, rarity: "LENDARIO", stats: { hp: 250, arm: 20 }, preventsDeathDrop: true, icon: "\u{1F48D}", uniqueEffect: "Impede 100% das perdas de itens ao morrer" }),
-  UNICO_SIGILO_INICIACAO: createItem({ templateId: "UNICO_SIGILO_INICIACAO", name: "Pulseira do Primeiro Eco", category: "PULSEIRA", slot: "PULSEIRA", tier: 1, rarity: "LENDARIO", stats: { hp: 60, mp: 40, hpRegen: 2, mpRegen: 2 }, icon: "\u2728", uniqueEffect: "Rel\xEDquia exclusiva por concluir o tutorial de Mythreon" })
+  UNICO_SIGILO_INICIACAO: createItem({ templateId: "UNICO_SIGILO_INICIACAO", name: "Pulseira do Primeiro Eco", category: "PULSEIRA", slot: "PULSEIRA", tier: 1, rarity: "LENDARIO", stats: { hp: 60, mp: 40, hpRegen: 2, mpRegen: 2 }, icon: "\u2728", uniqueEffect: "Rel\xEDquia exclusiva por concluir o tutorial de Mythreon" }),
+  SKIN_MANTO_NEBULOSA: createItem({ templateId: "SKIN_MANTO_NEBULOSA", name: "Manto da Nebulosa", category: "MATERIAL", tier: 5, rarity: "LENDARIO", stats: {}, icon: "\u{1F9E5}", uniqueEffect: "Skin cosm\xE9tica: part\xEDculas de estrelas e brilho violeta; n\xE3o altera combate." }),
+  LUMINESCENCIA_MATRIZ: createItem({ templateId: "LUMINESCENCIA_MATRIZ", name: "Luminesc\xEAncia da Matriz", category: "MATERIAL", tier: 5, rarity: "LENDARIO", stats: {}, icon: "\u{1F30C}", uniqueEffect: "Efeito visual cosm\xE9tico para a Matriz equipada; n\xE3o altera atributos." })
 };
 var FRAGMENT_TEMPLATES = {
   FRAGMENTO_COMUM: createItem({ templateId: "FRAGMENTO_COMUM", name: "Fragmento Comum", category: "FRAGMENTO", tier: 1, rarity: "COMUM", icon: "\u{1FAA8}", stackable: true, maxStack: 999, quantity: 1, stats: {} }),
@@ -163,7 +165,11 @@ var PET_FOOD_TEMPLATES = {
   FRUTA_MEL: createItem({ templateId: "FRUTA_MEL", name: "Fruta de Mel", category: "MATERIAL", tier: 1, rarity: "INCOMUM", icon: "\u{1F36F}", stackable: true, maxStack: 999 }),
   MELANCIA_LUNAR: createItem({ templateId: "MELANCIA_LUNAR", name: "Melancia Lunar", category: "MATERIAL", tier: 2, rarity: "RARO", icon: "\u{1F349}", stackable: true, maxStack: 999 })
 };
-var ALL_ITEM_TEMPLATES = { ...ALL_EQUIPMENT_TEMPLATES, ...SWAMP_MATERIAL_TEMPLATES, ...ARROW_TEMPLATES, ...POTION_TEMPLATES, ...UNIQUE_TEMPLATES, ...FRAGMENT_TEMPLATES, ...DIVINE_BEAST_EGG_TEMPLATES, ...BEAST_TAMER_TEMPLATES, ...PET_FOOD_TEMPLATES };
+var MYTHREON_STORE_TEMPLATES = {
+  BAU_SUPRIMENTOS_MYTHREON: createItem({ templateId: "BAU_SUPRIMENTOS_MYTHREON", name: "Ba\xFA de Suprimentos Mythreon", category: "MATERIAL", tier: 2, rarity: "RARO", icon: "\u{1F381}", stackable: true, maxStack: 999 }),
+  CHAVE_ROLETA_ARCANA: createItem({ templateId: "CHAVE_ROLETA_ARCANA", name: "Chave da Roleta Arcana", category: "MATERIAL", tier: 3, rarity: "EPICO", icon: "\u{1F5DD}\uFE0F", stackable: true, maxStack: 999 })
+};
+var ALL_ITEM_TEMPLATES = { ...ALL_EQUIPMENT_TEMPLATES, ...SWAMP_MATERIAL_TEMPLATES, ...ARROW_TEMPLATES, ...POTION_TEMPLATES, ...UNIQUE_TEMPLATES, ...FRAGMENT_TEMPLATES, ...DIVINE_BEAST_EGG_TEMPLATES, ...BEAST_TAMER_TEMPLATES, ...PET_FOOD_TEMPLATES, ...MYTHREON_STORE_TEMPLATES };
 
 // src/engine/training.ts
 var TRAINING_MILESTONES = [
@@ -570,7 +576,7 @@ var ATTACKS = {
 };
 function getBeastCombat(char) {
   const id = char.activeDivineBeastId;
-  if (!id || char.activeRace || !(char.divineBeasts ?? []).some((b) => b.id === id)) return null;
+  if (!id || !(char.divineBeasts ?? []).some((b) => b.id === id)) return null;
   const beast = DIVINE_BEASTS[id];
   const [name, element] = ATTACKS[id];
   return { beast, name, element, cooldown: 2, cooldownSeconds: 5, mana: 8 + Math.floor(char.level * 0.5), multiplier: 2.4 };
@@ -1739,6 +1745,7 @@ function createNewCharacter(name, appearance) {
     divineBeasts: [],
     divineBeastNeeds: {},
     divineBeastAttackTimerMs: 0,
+    divineBeastIncubator: void 0,
     depot: [],
     depotMax: 300,
     farm: { plots: [{ id: "plot-1" }], unlockedPlots: 1, skills: { planting: 0, harvesting: 0 }, lastActionAt: Date.now() }
@@ -1820,8 +1827,10 @@ function loadGame() {
       if (!Number.isFinite(data.character.staminaUpdatedAt)) data.character.staminaUpdatedAt = Date.now();
       if (!data.character.cards) data.character.cards = [];
       if (!Array.isArray(data.character.divineBeasts)) data.character.divineBeasts = [];
+      data.character.divineBeasts = data.character.divineBeasts.map((beast, index) => ({ ...beast, instanceId: beast.instanceId ?? `legacy-beast-${beast.id}-${beast.obtainedAt ?? index}` }));
       if (!data.character.divineBeastNeeds || typeof data.character.divineBeastNeeds !== "object") data.character.divineBeastNeeds = {};
       if (!Number.isFinite(data.character.divineBeastAttackTimerMs)) data.character.divineBeastAttackTimerMs = 0;
+      if (data.character.divineBeastIncubator && (!data.character.divineBeastIncubator.eggUid || !Number.isFinite(data.character.divineBeastIncubator.completesAt))) data.character.divineBeastIncubator = void 0;
       if (!data.character.depot) data.character.depot = [];
       if (!data.character.farm || !Array.isArray(data.character.farm.plots)) data.character.farm = { plots: [{ id: "plot-1" }], unlockedPlots: 1, skills: { planting: 0, harvesting: 0 }, lastActionAt: Date.now() };
       data.character.farm.skills ??= { planting: 0, harvesting: 0 };
@@ -2472,9 +2481,21 @@ var MYTHREON_ECONOMY = {
   shardLevelBonus: 5e-5
 };
 var MYTHREON_OFFERS = [
-  { id: "BLACK_SIGIL", name: "Sigilo do Primeiro Eco", description: "Rel\xEDquia do despertar de um novo aventureiro.", icon: "\u2728", templateId: "UNICO_SIGILO_INICIACAO", priceCoins: 8 },
-  { id: "GUARD_RING", name: "Anel da Guarda Eterna", description: "Protege os itens contra a perda ao morrer.", icon: "\u{1F48D}", templateId: "UNICO_ANEL_GUARDIA", priceCoins: 75 },
-  { id: "EPIC_FRAGMENT", name: "N\xFAcleo de Fragmento \xC9pico", description: "Material raro para forjas de alto n\xEDvel.", icon: "\u{1F52E}", templateId: "FRAGMENTO_EPICO", priceCoins: 1 }
+  { id: "BLACK_SIGIL", name: "Sigilo do Primeiro Eco", description: "Rel\xEDquia do despertar de um novo aventureiro.", icon: "\u2728", templateId: "UNICO_SIGILO_INICIACAO", priceCoins: 8, kind: "ITEM", tags: ["rel\xEDquia"] },
+  { id: "GUARD_RING", name: "Anel da Guarda Eterna", description: "Protege os itens contra a perda ao morrer.", icon: "\u{1F48D}", templateId: "UNICO_ANEL_GUARDIA", priceCoins: 75, kind: "ITEM", tags: ["prote\xE7\xE3o"] },
+  { id: "EPIC_FRAGMENT", name: "N\xFAcleo de Fragmento \xC9pico", description: "Material raro para forjas de alto n\xEDvel.", icon: "\u{1F52E}", templateId: "FRAGMENTO_EPICO", priceCoins: 1, kind: "ITEM", tags: ["forja"] },
+  { id: "TOME_SABEDORIA_1H", name: "Tomo da Sabedoria Eterna \xB7 1h", description: "+20% de dano de habilidades elementais por 1 hora. N\xE3o substitui uma boa build.", icon: "\u{1F4D6}", priceCoins: 20, kind: "BOOST", boostKey: "TOMO_SABEDORIA", durationHours: 1, skillDmgPct: 0.2, tags: ["buff", "progress\xE3o"] },
+  { id: "TOME_SABEDORIA_4H", name: "Tomo da Sabedoria Eterna \xB7 4h", description: "+20% de dano de habilidades elementais por 4 horas.", icon: "\u{1F4D8}", priceCoins: 60, kind: "BOOST", boostKey: "TOMO_SABEDORIA", durationHours: 4, skillDmgPct: 0.2, tags: ["buff", "progress\xE3o"] },
+  { id: "TOME_SABEDORIA_12H", name: "Tomo da Sabedoria Eterna \xB7 12h", description: "+20% de dano de habilidades elementais por 12 horas.", icon: "\u{1F4D9}", priceCoins: 150, kind: "BOOST", boostKey: "TOMO_SABEDORIA", durationHours: 12, skillDmgPct: 0.2, tags: ["buff", "progress\xE3o"] },
+  { id: "TOME_SABEDORIA_24H", name: "Tomo da Sabedoria Eterna \xB7 24h", description: "+20% de dano de habilidades elementais por 24 horas.", icon: "\u{1F4D5}", priceCoins: 260, kind: "BOOST", boostKey: "TOMO_SABEDORIA", durationHours: 24, skillDmgPct: 0.2, tags: ["buff", "progress\xE3o"] },
+  { id: "TOME_SABEDORIA_ETERNAL", name: "Tomo da Sabedoria Eterna \xB7 Eterno", description: "+20% de dano de habilidades elementais permanente. Custo alto, efeito limitado e sem substituir uma build bem treinada.", icon: "\u{1F4DC}", priceCoins: 1500, kind: "BOOST", boostKey: "TOMO_SABEDORIA", durationHours: 0, skillDmgPct: 0.2, tags: ["buff", "eterno"] },
+  { id: "PET_EGG_T3", name: "Ovo de Besta Divina \xB7 Raro", description: "Ovo de tier 3 para a Incubadora de Pets.", icon: "\u{1F95A}", templateId: "OVO_BESTA_T3", priceCoins: 35, kind: "ITEM", tags: ["pet"] },
+  { id: "PET_EGG_T4", name: "Ovo de Besta Divina \xB7 \xC9pico", description: "Ovo de tier 4 com chances melhores de Pets raros.", icon: "\u{1F31F}", templateId: "OVO_BESTA_T4", priceCoins: 95, kind: "ITEM", tags: ["pet"] },
+  { id: "PET_EGG_T5", name: "Ovo de Besta Divina \xB7 Lend\xE1rio", description: "Ovo de tier 5: a maior chance de uma linhagem extraordin\xE1ria.", icon: "\u{1F4A0}", templateId: "OVO_BESTA_T5", priceCoins: 260, kind: "ITEM", tags: ["pet"] },
+  { id: "SUPPLY_CHEST", name: "Ba\xFA de Suprimentos", description: "Fragmentos e materiais \xFAteis para a pr\xF3xima etapa da jornada.", icon: "\u{1F381}", templateId: "BAU_SUPRIMENTOS_MYTHREON", priceCoins: 12, kind: "ITEM", tags: ["suprimentos"] },
+  { id: "ROULETTE_KEY", name: "Chave da Roleta Arcana", description: "Abre um pr\xEAmio aleat\xF3rio na Roleta de Mythreon.", icon: "\u{1F5DD}\uFE0F", templateId: "CHAVE_ROLETA_ARCANA", priceCoins: 8, kind: "ITEM", tags: ["roleta"] },
+  { id: "SKIN_CAPE_NEBULA", name: "Skin \xB7 Manto da Nebulosa", description: "Cosm\xE9tico exclusivo: brilho sutil, sem b\xF4nus de combate.", icon: "\u{1F9E5}", templateId: "SKIN_MANTO_NEBULOSA", priceCoins: 180, kind: "ITEM", tags: ["skin", "cosm\xE9tico"] },
+  { id: "MATRIX_LUMINESCENCE", name: "Luminesc\xEAncia da Matriz", description: "Efeito visual arcano para Matrizes equipadas. Sem aumento de atributos.", icon: "\u{1F30C}", templateId: "LUMINESCENCIA_MATRIZ", priceCoins: 120, kind: "ITEM", tags: ["cosm\xE9tico"] }
 ];
 var getMythreonOffer = (id) => MYTHREON_OFFERS.find((offer) => offer.id === id);
 function shardChance(enemy) {
@@ -2486,6 +2507,8 @@ function shardChance(enemy) {
 function buildProfile(char) {
   const bp = char.inventory.backpack;
   const p = { xpPct: (bp.xpBonus ?? 0) + (char.premium ? 0.1 : 0), goldPct: 0, dropPct: bp.dropBonus ?? 0, rarePct: bp.rareDropBonus ?? 0, healPct: 0, skillDmgPct: 0, cdReduce: 0, lifesteal: 0 };
+  const tomeUntil = char.mythreonBoosts?.TOMO_SABEDORIA;
+  if (tomeUntil !== void 0 && (tomeUntil === 0 || tomeUntil > Date.now())) p.skillDmgPct += 0.2;
   for (const [vialId, expiry] of Object.entries(char.activeVials ?? {})) {
     if (expiry > Date.now()) p.xpPct += VIALS[vialId]?.xpPct ?? 0;
   }
@@ -2859,7 +2882,7 @@ function processTick(char, zone, isOffline) {
       if (availableBeasts.length > 0 && Math.random() < availableBeasts[0].dropChance) {
         const beast = availableBeasts[Math.floor(Math.random() * availableBeasts.length)];
         if (!char.divineBeasts) char.divineBeasts = [];
-        char.divineBeasts.push({ id: beast.id, obtainedAt: Date.now() });
+        char.divineBeasts.push({ id: beast.id, instanceId: `drop-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, obtainedAt: Date.now() });
         result.divineBeastsDropped.push(beast.id);
         bondedBeastName = beast.name;
       }
@@ -3438,6 +3461,9 @@ function rollEggRarity(tier) {
   }
   return "COMUM";
 }
+function eggIncubationMs(tier) {
+  return [0, 60, 180, 480, 1200, 2400][Math.max(1, Math.min(5, Math.floor(tier)))] * 1e3;
+}
 function createGameStore(runtime = {}) {
   let tickInterval = null;
   const notify = runtime.notify ?? ((message) => {
@@ -3787,12 +3813,25 @@ function createGameStore(runtime = {}) {
       if (!character) return { success: false, error: "Sem personagem" };
       const egg = character.inventory.items.find((item) => item.uid === uid);
       if (!egg || !DIVINE_BEAST_EGG_TEMPLATES[egg.templateId]) return { success: false, error: "Escolha um Ovo de Besta Divina." };
+      const now = Date.now();
+      const incubator = character.divineBeastIncubator;
+      if (!incubator) {
+        const next2 = structuredClone(character);
+        next2.divineBeastIncubator = { eggUid: uid, tier: egg.tier, startedAt: now, completesAt: now + eggIncubationMs(egg.tier) };
+        set({ character: next2 });
+        get().save();
+        notify(`Incuba\xE7\xE3o iniciada. O ovo estar\xE1 pronto em ${Math.ceil(eggIncubationMs(egg.tier) / 1e3)}s.`);
+        return { success: true, started: true, readyAt: next2.divineBeastIncubator.completesAt };
+      }
+      if (incubator.eggUid !== uid) return { success: false, error: "J\xE1 existe um ovo na incubadora. Aguarde a eclos\xE3o antes de iniciar outro." };
+      if (now < incubator.completesAt) return { success: false, error: `A incuba\xE7\xE3o termina em ${Math.ceil((incubator.completesAt - now) / 1e3)}s.`, remainingMs: incubator.completesAt - now };
       const rarity = rollEggRarity(egg.tier);
       const ids = Object.keys(DIVINE_BEASTS);
       const beastId = ids[Math.floor(Math.random() * ids.length)];
       const next = structuredClone(character);
       removeItem(next.inventory, uid, 1);
-      next.divineBeasts = [...next.divineBeasts ?? [], { id: beastId, rarity, obtainedAt: Date.now() }];
+      next.divineBeastIncubator = void 0;
+      next.divineBeasts = [...next.divineBeasts ?? [], { id: beastId, instanceId: generateId(), rarity, obtainedAt: Date.now() }];
       set({ character: next });
       get().save();
       notify(`O ovo eclodiu: ${DIVINE_BEASTS[beastId].name} \xB7 ${rarity}!`);
@@ -3816,13 +3855,13 @@ function createGameStore(runtime = {}) {
       next.divineBeasts = (next.divineBeasts ?? []).filter((_, index) => !consume.has(index));
       removeItem(next.inventory, ration.uid, 1);
       const rarity = rank[current + 1];
-      next.divineBeasts.push({ id, rarity, obtainedAt: Date.now() });
+      next.divineBeasts.push({ id, instanceId: generateId(), rarity, obtainedAt: Date.now() });
       set({ character: next });
       get().save();
       notify(`A linhagem foi aprimorada para ${rarity}!`);
       return { success: true, rarity };
     },
-    sellDivineBeast: (id) => {
+    sellDivineBeast: (id, instanceId) => {
       const { character } = get();
       if (!character) return { success: false, error: "Sem personagem" };
       const copies = (character.divineBeasts ?? []).filter((beast) => beast.id === id);
@@ -3831,7 +3870,7 @@ function createGameStore(runtime = {}) {
       const next = structuredClone(character);
       const indexed = (next.divineBeasts ?? []).map((beast, index) => ({ beast, index })).filter((entry) => entry.beast.id === id);
       indexed.sort((a, b) => rank.indexOf(a.beast.rarity ?? "COMUM") - rank.indexOf(b.beast.rarity ?? "COMUM") || a.beast.obtainedAt - b.beast.obtainedAt);
-      const candidate = indexed[0];
+      const candidate = instanceId ? indexed.find((entry) => entry.beast.instanceId === instanceId) : indexed[0];
       if (!candidate) return { success: false, error: "Pet n\xE3o encontrado no cativeiro." };
       const gold = divineBeastSellValue(candidate.beast.rarity);
       next.divineBeasts = (next.divineBeasts ?? []).filter((_, index) => index !== candidate.index);
@@ -4227,16 +4266,66 @@ function createGameStore(runtime = {}) {
     buyMythreonOffer: (offerId) => {
       const { character } = get();
       const offer = getMythreonOffer(offerId);
-      if (!character || !offer) return { success: false, error: "Oferta inv\xE1lida." };
+      if (!character || !offer || offer.kind === "BOOST") return { success: false, error: "Oferta de item inv\xE1lida." };
       if ((character.mythreonCoins ?? 0) < offer.priceCoins) return { success: false, error: `Voc\xEA precisa de ${offer.priceCoins} Mythreon Coins.` };
       const next = JSON.parse(JSON.stringify(character));
-      const item = makeEquipment(offer.templateId, offer.templateId === "FRAGMENTO_EPICO" ? "EPICO" : "LENDARIO");
+      const template = offer.templateId ? ALL_ITEM_TEMPLATES[offer.templateId] : void 0;
+      const item = template?.category === "MATERIAL" ? makeMaterial(template.templateId) : template ? makeEquipment(template.templateId, template.rarity) : null;
       if (!item || !addItem(next.inventory, item)) return { success: false, error: "Bolsa cheia. Libere um espa\xE7o antes de comprar." };
       next.mythreonCoins = (next.mythreonCoins ?? 0) - offer.priceCoins;
       set({ character: next });
       get().save();
       notify(`${offer.name} foi entregue na mochila.`);
       return { success: true };
+    },
+    buyMythreonBoost: (offerId) => {
+      const { character } = get();
+      const offer = getMythreonOffer(offerId);
+      if (!character || !offer || offer.kind !== "BOOST" || !offer.boostKey) return { success: false, error: "Boost inv\xE1lido." };
+      if ((character.mythreonCoins ?? 0) < offer.priceCoins) return { success: false, error: `Voc\xEA precisa de ${offer.priceCoins} Mythreon Coins.` };
+      const next = structuredClone(character);
+      next.mythreonCoins = (next.mythreonCoins ?? 0) - offer.priceCoins;
+      next.mythreonBoosts ??= {};
+      const now = Date.now();
+      const current = next.mythreonBoosts[offer.boostKey];
+      if (offer.durationHours === 0) next.mythreonBoosts[offer.boostKey] = 0;
+      else {
+        const base = current !== void 0 && (current === 0 || current > now) ? current : now;
+        next.mythreonBoosts[offer.boostKey] = base + (offer.durationHours ?? 1) * 60 * 60 * 1e3;
+      }
+      set({ character: next });
+      get().save();
+      notify(`${offer.name} ativado. A Ess\xEAncia reconhece seu foco.`);
+      return { success: true };
+    },
+    openMythreonRoulette: () => {
+      const { character } = get();
+      if (!character) return { success: false, error: "Sem personagem." };
+      const key = character.inventory.items.find((item) => item.templateId === "CHAVE_ROLETA_ARCANA");
+      if (!key) return { success: false, error: "Voc\xEA precisa de uma Chave da Roleta Arcana." };
+      const rewards = [
+        { label: "1.500 gold", gold: 1500 },
+        { label: "5 Fragmentos Raros", templateId: "FRAGMENTO_RARO", quantity: 5 },
+        { label: "20 Fragmentos Comuns", templateId: "FRAGMENTO_COMUM", quantity: 20 },
+        { label: "Ovo de Besta Divina Raro", templateId: "OVO_BESTA_T3", quantity: 1 },
+        { label: "Ovo de Besta Divina \xC9pico", templateId: "OVO_BESTA_T4", quantity: 1 },
+        { label: "Ba\xFA de Suprimentos Mythreon", templateId: "BAU_SUPRIMENTOS_MYTHREON", quantity: 1 }
+      ];
+      const reward = rewards[Math.floor(Math.random() * rewards.length)];
+      const next = structuredClone(character);
+      removeItem(next.inventory, key.uid, 1);
+      if (reward.gold) next.gold += reward.gold;
+      if (reward.templateId) {
+        const template = ALL_ITEM_TEMPLATES[reward.templateId];
+        const item = template?.category === "MATERIAL" ? makeMaterial(reward.templateId) : template ? makeEquipment(reward.templateId, template.rarity) : null;
+        if (!item) return { success: false, error: "Pr\xEAmio indispon\xEDvel." };
+        item.quantity = reward.quantity ?? 1;
+        if (!addItem(next.inventory, item)) return { success: false, error: "Libere espa\xE7o na mochila antes de abrir a roleta." };
+      }
+      set({ character: next });
+      get().save();
+      notify(`\u{1F3B0} Roleta Arcana: ${reward.label}!`);
+      return { success: true, reward: reward.label };
     },
     buyCalendarCoupon: () => {
       const { character } = get();
@@ -4506,7 +4595,7 @@ function executeGame(world, action, args = []) {
       result = s.combineBeast(uid(args[0]));
       if (!result?.success) throw Error(result?.error ?? "N\xE3o foi poss\xEDvel aprimorar a linhagem.");
     } else if (action === "sellDivineBeast") {
-      result = s.sellDivineBeast(uid(args[0]));
+      result = s.sellDivineBeast(uid(args[0]), args[1] ? uid(args[1]) : void 0);
       if (!result?.success) throw Error(result?.error ?? "N\xE3o foi poss\xEDvel vender o pet.");
     } else if (action === "feedDivineBeast") {
       result = s.feedDivineBeast(uid(args[0]), uid(args[1]));
@@ -4595,6 +4684,16 @@ function executeGame(world, action, args = []) {
       if (!getMythreonOffer(id)) throw Error("Oferta inv\xE1lida.");
       result = s.buyMythreonOffer(id);
       if (!result?.success) throw Error(result?.error ?? "N\xE3o foi poss\xEDvel concluir a compra.");
+    } else if (action === "buyMythreonBoost") {
+      const id = uid(args[0]);
+      const offer = getMythreonOffer(id);
+      if (!offer || offer.kind !== "BOOST") throw Error("Tomo ou b\xF4nus inv\xE1lido.");
+      result = s.buyMythreonBoost(id);
+      if (!result?.success) throw Error(result?.error ?? "N\xE3o foi poss\xEDvel ativar o b\xF4nus.");
+    } else if (action === "openMythreonRoulette") {
+      if (args.length) throw Error("Par\xE2metros inesperados.");
+      result = s.openMythreonRoulette();
+      if (!result?.success) throw Error(result?.error ?? "N\xE3o foi poss\xEDvel abrir a roleta.");
     } else throw Error("A\xE7\xE3o n\xE3o permitida.");
     if (action === "activateBuff") store.getState().character.onlineBalloonUntil = void 0;
     if (action === "upgradeItem" && result?.success) world.counters.forges++;

@@ -17,7 +17,10 @@
 - [[docs/conhecimento/Jornada-Lore-Biomas|Jornada, lore e biomas]] — Introdução guiada, economia inicial gradual e travessias por NPC ligam a lore aos sete biomas.
 - [[docs/conhecimento/Laboratorio-de-Builds-e-Windows|Laboratório de Builds e Windows]] — Laboratório isolado de combate e primeira distribuição Windows de desenvolvimento.
 - [[docs/conhecimento/Linkar-Itens-no-Chat-2026-11-03|Linkar itens no chat]] — a revisar
+- [[docs/conhecimento/Loja-Mythreon-Economia-Premium-2026-11-03|Loja Mythreon — economia, Premium e monetização segura]] — a revisar
 - [[docs/conhecimento/Operacao do Cerebro e Obsidian|Operação do Cérebro e Obsidian]] — Como iniciar, conferir, escrever e recuperar o conhecimento do Mythreon.
+- [[docs/conhecimento/Pack-01-Fundacao-Matriz-Pets-Online-2026-11-03|Pack 01 — Fundação de Evolução e Conteúdo]] — a revisar
+- [[docs/conhecimento/Pack-02-Cativeiro-Personalizacao-2026-11-03|Objetivo]] — concluído
 - [[docs/conhecimento/Pets-Atividades-Boss-Diario|Pets, atividades e Boss Diário]] — em desenvolvimento
 - [[docs/conhecimento/Pets-Ovos-Migracao-2026-11-03|Migração de Bestas Divinas para Pets e Ovos]] — a revisar
 - [[docs/conhecimento/Registro de problemas|Registro de problemas]] — Problemas de documentação, sincronização e continuidade com suas evidências.

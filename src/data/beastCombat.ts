@@ -11,7 +11,9 @@ const ATTACKS: Record<DivineBeastId, [string, Element]> = {
 };
 export function getBeastCombat(char: Character) {
  const id = char.activeDivineBeastId;
- if (!id || char.activeRace || !(char.divineBeasts ?? []).some(b => b.id === id)) return null;
+ // A Besta Divina complementa a Matriz: a transformação permanece equipada
+ // e o pet atua como ataque auxiliar independente.
+ if (!id || !(char.divineBeasts ?? []).some(b => b.id === id)) return null;
  const beast = DIVINE_BEASTS[id];
  const [name, element] = ATTACKS[id];
  return { beast, name, element, cooldown: 2, cooldownSeconds: 5, mana: 8 + Math.floor(char.level * 0.5), multiplier: 2.4 };

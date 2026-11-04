@@ -8,7 +8,7 @@ import { ZONES } from "../data/zones";
 import { createNewCharacter, loadGame, saveGame } from "../engine/save";
 import { processTick } from "../engine/combat";
 import { equipItem, unequipItem, addItem, removeItem } from "../engine/inventory";
-import { makeEquipment } from "../engine/drops";
+import { makeEquipment, makeMaterial } from "../engine/drops";
 import { recalcStats, skillXpToNextLevel } from "../engine/stats";
 import { findNamedRace, generateRaceName, generateRaceId, generateRaceBonus } from "../data/races";
 import { sellItem, sellSelectedItems } from "../engine/shop";
@@ -16,11 +16,12 @@ import { salvageAllEquipment, salvageSelectedEquipment } from "../engine/salvage
 import { updateQuestProgress, claimQuestReward, trackRaceDiscovery, trackQuestAction } from "../engine/questEngine";
 import { upgradeItemLevel, rerollItemAffixes, forgeFragments, elevateItemTier, rerollSpecificAffix } from "../engine/forge";
 import { depositItem as engineDeposit, withdrawItem as engineWithdraw, depositMany as engineDepositMany, withdrawMany as engineWithdrawMany } from "../engine/depot";
-import { FRAGMENT_TEMPLATES, DIVINE_BEAST_EGG_TEMPLATES, UNIQUE_TEMPLATES, createItem } from "../data/items";
+import { FRAGMENT_TEMPLATES, DIVINE_BEAST_EGG_TEMPLATES, UNIQUE_TEMPLATES, ALL_ITEM_TEMPLATES, createItem } from "../data/items";
 import { divineBeastSellValue, DIVINE_BEASTS } from "../data/divineBeasts";
 import { QUESTS } from "../data/quests";
 import { getMythreonOffer, MYTHREON_ECONOMY } from "../data/mythreonEconomy";
 import { farmSeed, farmYield, FARM_SEEDS, farmExpansionCost, farmRecipe, farmRecipeOutput, FARM_RECIPES } from "../data/farm";
+import { generateId } from "../utils/id";
 
 export interface GameState {
   character: Character | null;
@@ -59,9 +60,9 @@ export interface GameState {
   equipRace: (race: Race) => void;
   unequipRace: () => void;
   equipDivineBeast: (id: DivineBeastId) => { success: boolean; error?: string };
-  hatchEgg: (uid: string) => { success: boolean; beastId?: DivineBeastId; rarity?: Rarity; error?: string };
+  hatchEgg: (uid: string) => { success: boolean; started?: boolean; readyAt?: number; remainingMs?: number; beastId?: DivineBeastId; rarity?: Rarity; error?: string };
   combineBeast: (id: DivineBeastId) => { success: boolean; rarity?: Rarity; error?: string };
-  sellDivineBeast: (id: DivineBeastId) => { success: boolean; gold?: number; error?: string };
+  sellDivineBeast: (id: DivineBeastId, instanceId?: string) => { success: boolean; gold?: number; error?: string };
   feedDivineBeast: (id: DivineBeastId, foodUid: string) => { success: boolean; error?: string };
   unequipDivineBeast: () => void;
   sellItem: (uid: string, qty?: number) => void;
@@ -85,6 +86,8 @@ export interface GameState {
   forgeFragments: (fromTemplateId: string) => { success: boolean; error?: string; crafted?: number };
   refineMythreonCoins: (amount?: number) => { success: boolean; coins?: number; error?: string };
   buyMythreonOffer: (offerId: string) => { success: boolean; error?: string };
+  buyMythreonBoost: (offerId: string) => { success: boolean; error?: string };
+  openMythreonRoulette: () => { success: boolean; reward?: string; error?: string };
   buyCalendarCoupon: () => { success: boolean; error?: string };
   claimDailyCalendar: () => { success: boolean; reward?: string; error?: string };
   plantFarmSeed: (plotId: string, seedId: string) => { success: boolean; error?: string };
@@ -129,6 +132,11 @@ function rollEggRarity(tier: number): Rarity {
   const roll = Math.random() * 100; let cursor = 0;
   for (const [index, chance] of (EGG_RARITY_TABLES[Math.max(1, Math.min(5, tier))] ?? EGG_RARITY_TABLES[1]).entries()) { cursor += chance; if (roll < cursor) return RARITY_ORDER[index]; }
   return "COMUM";
+}
+function eggIncubationMs(tier: number): number {
+  // Tempo curto para o beta, mas suficiente para transformar a eclosão em uma
+  // decisão de progressão, sem bloquear o primeiro ciclo de testes.
+  return [0, 60, 180, 480, 1200, 2400][Math.max(1, Math.min(5, Math.floor(tier)))] * 1000;
 }
 
 export function createGameStore(runtime: {server?: boolean; persist?: (character: Character,races: Race[])=>void; notify?: (message:string)=>void} = {}) {
@@ -452,12 +460,24 @@ return create<GameState>((set, get) => ({
     if (!character) return { success: false, error: "Sem personagem" };
     const egg = character.inventory.items.find(item => item.uid === uid);
     if (!egg || !DIVINE_BEAST_EGG_TEMPLATES[egg.templateId]) return { success: false, error: "Escolha um Ovo de Besta Divina." };
+    const now = Date.now();
+    const incubator = character.divineBeastIncubator;
+    if (!incubator) {
+      const next = structuredClone(character);
+      next.divineBeastIncubator = { eggUid: uid, tier: egg.tier, startedAt: now, completesAt: now + eggIncubationMs(egg.tier) };
+      set({ character: next }); get().save();
+      notify(`Incubação iniciada. O ovo estará pronto em ${Math.ceil(eggIncubationMs(egg.tier) / 1000)}s.`);
+      return { success: true, started: true, readyAt: next.divineBeastIncubator.completesAt };
+    }
+    if (incubator.eggUid !== uid) return { success: false, error: "Já existe um ovo na incubadora. Aguarde a eclosão antes de iniciar outro." };
+    if (now < incubator.completesAt) return { success: false, error: `A incubação termina em ${Math.ceil((incubator.completesAt - now) / 1000)}s.`, remainingMs: incubator.completesAt - now };
     const rarity = rollEggRarity(egg.tier);
     const ids = Object.keys(DIVINE_BEASTS) as DivineBeastId[];
     const beastId = ids[Math.floor(Math.random() * ids.length)];
     const next = structuredClone(character);
     removeItem(next.inventory, uid, 1);
-    next.divineBeasts = [...(next.divineBeasts ?? []), { id: beastId, rarity, obtainedAt: Date.now() }];
+    next.divineBeastIncubator = undefined;
+    next.divineBeasts = [...(next.divineBeasts ?? []), { id: beastId, instanceId: generateId(), rarity, obtainedAt: Date.now() }];
     set({ character: next }); get().save();
     notify(`O ovo eclodiu: ${DIVINE_BEASTS[beastId].name} · ${rarity}!`);
     return { success: true, beastId, rarity };
@@ -481,13 +501,13 @@ return create<GameState>((set, get) => ({
     next.divineBeasts = (next.divineBeasts ?? []).filter((_, index) => !consume.has(index));
     removeItem(next.inventory, ration.uid, 1);
     const rarity = rank[current + 1];
-    next.divineBeasts.push({ id, rarity, obtainedAt: Date.now() });
+    next.divineBeasts.push({ id, instanceId: generateId(), rarity, obtainedAt: Date.now() });
     set({ character: next }); get().save();
     notify(`A linhagem foi aprimorada para ${rarity}!`);
     return { success: true, rarity };
   },
 
-  sellDivineBeast: (id) => {
+  sellDivineBeast: (id, instanceId) => {
     const { character } = get();
     if (!character) return { success: false, error: "Sem personagem" };
     const copies = (character.divineBeasts ?? []).filter(beast => beast.id === id);
@@ -496,7 +516,7 @@ return create<GameState>((set, get) => ({
     const next = structuredClone(character);
     const indexed = (next.divineBeasts ?? []).map((beast, index) => ({ beast, index })).filter(entry => entry.beast.id === id);
     indexed.sort((a, b) => (rank.indexOf(a.beast.rarity ?? "COMUM") - rank.indexOf(b.beast.rarity ?? "COMUM")) || (a.beast.obtainedAt - b.beast.obtainedAt));
-    const candidate = indexed[0];
+    const candidate = instanceId ? indexed.find(entry => entry.beast.instanceId === instanceId) : indexed[0];
     if (!candidate) return { success: false, error: "Pet não encontrado no cativeiro." };
     const gold = divineBeastSellValue(candidate.beast.rarity);
     next.divineBeasts = (next.divineBeasts ?? []).filter((_, index) => index !== candidate.index);
@@ -805,13 +825,59 @@ return create<GameState>((set, get) => ({
   buyMythreonOffer: (offerId) => {
     const { character } = get();
     const offer = getMythreonOffer(offerId);
-    if (!character || !offer) return { success: false, error: "Oferta inválida." };
+    if (!character || !offer || offer.kind === "BOOST") return { success: false, error: "Oferta de item inválida." };
     if ((character.mythreonCoins ?? 0) < offer.priceCoins) return { success: false, error: `Você precisa de ${offer.priceCoins} Mythreon Coins.` };
     const next = JSON.parse(JSON.stringify(character));
-    const item = makeEquipment(offer.templateId, offer.templateId === "FRAGMENTO_EPICO" ? "EPICO" : "LENDARIO");
+    const template = offer.templateId ? ALL_ITEM_TEMPLATES[offer.templateId] : undefined;
+    const item = template?.category === "MATERIAL" ? makeMaterial(template.templateId) : template ? makeEquipment(template.templateId, template.rarity) : null;
     if (!item || !addItem(next.inventory, item)) return { success: false, error: "Bolsa cheia. Libere um espaço antes de comprar." };
     next.mythreonCoins = (next.mythreonCoins ?? 0) - offer.priceCoins;
     set({ character: next }); get().save(); notify(`${offer.name} foi entregue na mochila.`); return { success: true };
+  },
+
+  buyMythreonBoost: (offerId) => {
+    const { character } = get();
+    const offer = getMythreonOffer(offerId);
+    if (!character || !offer || offer.kind !== "BOOST" || !offer.boostKey) return { success: false, error: "Boost inválido." };
+    if ((character.mythreonCoins ?? 0) < offer.priceCoins) return { success: false, error: `Você precisa de ${offer.priceCoins} Mythreon Coins.` };
+    const next = structuredClone(character);
+    next.mythreonCoins = (next.mythreonCoins ?? 0) - offer.priceCoins;
+    next.mythreonBoosts ??= {};
+    const now = Date.now();
+    const current = next.mythreonBoosts[offer.boostKey];
+    if (offer.durationHours === 0) next.mythreonBoosts[offer.boostKey] = 0;
+    else {
+      const base = current !== undefined && (current === 0 || current > now) ? current : now;
+      next.mythreonBoosts[offer.boostKey] = base + (offer.durationHours ?? 1) * 60 * 60 * 1000;
+    }
+    set({ character: next }); get().save(); notify(`${offer.name} ativado. A Essência reconhece seu foco.`); return { success: true };
+  },
+
+  openMythreonRoulette: () => {
+    const { character } = get();
+    if (!character) return { success: false, error: "Sem personagem." };
+    const key = character.inventory.items.find(item => item.templateId === "CHAVE_ROLETA_ARCANA");
+    if (!key) return { success: false, error: "Você precisa de uma Chave da Roleta Arcana." };
+    const rewards = [
+      { label: "1.500 gold", gold: 1500 },
+      { label: "5 Fragmentos Raros", templateId: "FRAGMENTO_RARO", quantity: 5 },
+      { label: "20 Fragmentos Comuns", templateId: "FRAGMENTO_COMUM", quantity: 20 },
+      { label: "Ovo de Besta Divina Raro", templateId: "OVO_BESTA_T3", quantity: 1 },
+      { label: "Ovo de Besta Divina Épico", templateId: "OVO_BESTA_T4", quantity: 1 },
+      { label: "Baú de Suprimentos Mythreon", templateId: "BAU_SUPRIMENTOS_MYTHREON", quantity: 1 },
+    ];
+    const reward = rewards[Math.floor(Math.random() * rewards.length)];
+    const next = structuredClone(character);
+    removeItem(next.inventory, key.uid, 1);
+    if (reward.gold) next.gold += reward.gold;
+    if (reward.templateId) {
+      const template = ALL_ITEM_TEMPLATES[reward.templateId];
+      const item = template?.category === "MATERIAL" ? makeMaterial(reward.templateId) : template ? makeEquipment(reward.templateId, template.rarity) : null;
+      if (!item) return { success: false, error: "Prêmio indisponível." };
+      item.quantity = reward.quantity ?? 1;
+      if (!addItem(next.inventory, item)) return { success: false, error: "Libere espaço na mochila antes de abrir a roleta." };
+    }
+    set({ character: next }); get().save(); notify(`🎰 Roleta Arcana: ${reward.label}!`); return { success: true, reward: reward.label };
   },
 
   buyCalendarCoupon: () => {

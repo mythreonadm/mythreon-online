@@ -115,6 +115,8 @@ export const UNIQUE_TEMPLATES: Record<string, Item> = {
   UNICO_PRESA_DEVORADOR: createItem({ templateId: "UNICO_PRESA_DEVORADOR", name: "Presa do Devorador", category: "ARMA", slot: "ARMA_PRINCIPAL", tier: 5, rarity: "LENDARIO", stats: { atk: 500, def: 80 }, lifesteal: 0.08, icon: "🦷", uniqueEffect: "Rouba 8% do dano como vida" }),
   UNICO_ANEL_GUARDIA: createItem({ templateId: "UNICO_ANEL_GUARDIA", name: "Anel da Guarda Eterna", category: "JOIA", slot: "ANEL_I", tier: 5, rarity: "LENDARIO", stats: { hp: 250, arm: 20 }, preventsDeathDrop: true, icon: "💍", uniqueEffect: "Impede 100% das perdas de itens ao morrer" }),
   UNICO_SIGILO_INICIACAO: createItem({ templateId: "UNICO_SIGILO_INICIACAO", name: "Pulseira do Primeiro Eco", category: "PULSEIRA", slot: "PULSEIRA", tier: 1, rarity: "LENDARIO", stats: { hp: 60, mp: 40, hpRegen: 2, mpRegen: 2 }, icon: "✨", uniqueEffect: "Relíquia exclusiva por concluir o tutorial de Mythreon" }),
+  SKIN_MANTO_NEBULOSA: createItem({ templateId: "SKIN_MANTO_NEBULOSA", name: "Manto da Nebulosa", category: "MATERIAL", tier: 5, rarity: "LENDARIO", stats: {}, icon: "🧥", uniqueEffect: "Skin cosmética: partículas de estrelas e brilho violeta; não altera combate." }),
+  LUMINESCENCIA_MATRIZ: createItem({ templateId: "LUMINESCENCIA_MATRIZ", name: "Luminescência da Matriz", category: "MATERIAL", tier: 5, rarity: "LENDARIO", stats: {}, icon: "🌌", uniqueEffect: "Efeito visual cosmético para a Matriz equipada; não altera atributos." }),
 };
 
 // ─── FRAGMENTOS ───
@@ -144,4 +146,9 @@ export const PET_FOOD_TEMPLATES: Record<string, Item> = {
   MELANCIA_LUNAR: createItem({ templateId: "MELANCIA_LUNAR", name: "Melancia Lunar", category: "MATERIAL", tier: 2, rarity: "RARO", icon: "🍉", stackable: true, maxStack: 999 }),
 };
 
-export const ALL_ITEM_TEMPLATES: Record<string, Item> = { ...ALL_EQUIPMENT_TEMPLATES, ...SWAMP_MATERIAL_TEMPLATES, ...ARROW_TEMPLATES, ...POTION_TEMPLATES, ...UNIQUE_TEMPLATES, ...FRAGMENT_TEMPLATES, ...DIVINE_BEAST_EGG_TEMPLATES, ...BEAST_TAMER_TEMPLATES, ...PET_FOOD_TEMPLATES };
+export const MYTHREON_STORE_TEMPLATES: Record<string, Item> = {
+  BAU_SUPRIMENTOS_MYTHREON: createItem({ templateId: "BAU_SUPRIMENTOS_MYTHREON", name: "Baú de Suprimentos Mythreon", category: "MATERIAL", tier: 2, rarity: "RARO", icon: "🎁", stackable: true, maxStack: 999 }),
+  CHAVE_ROLETA_ARCANA: createItem({ templateId: "CHAVE_ROLETA_ARCANA", name: "Chave da Roleta Arcana", category: "MATERIAL", tier: 3, rarity: "EPICO", icon: "🗝️", stackable: true, maxStack: 999 }),
+};
+
+export const ALL_ITEM_TEMPLATES: Record<string, Item> = { ...ALL_EQUIPMENT_TEMPLATES, ...SWAMP_MATERIAL_TEMPLATES, ...ARROW_TEMPLATES, ...POTION_TEMPLATES, ...UNIQUE_TEMPLATES, ...FRAGMENT_TEMPLATES, ...DIVINE_BEAST_EGG_TEMPLATES, ...BEAST_TAMER_TEMPLATES, ...PET_FOOD_TEMPLATES, ...MYTHREON_STORE_TEMPLATES };

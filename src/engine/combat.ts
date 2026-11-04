@@ -24,6 +24,8 @@ interface Profile { xpPct: number; goldPct: number; dropPct: number; rarePct: nu
 export function buildProfile(char: Character): Profile {
   const bp = char.inventory.backpack;
   const p: Profile = { xpPct: (bp.xpBonus ?? 0) + (char.premium ? 0.10 : 0), goldPct: 0, dropPct: bp.dropBonus ?? 0, rarePct: bp.rareDropBonus ?? 0, healPct: 0, skillDmgPct: 0, cdReduce: 0, lifesteal: 0 };
+  const tomeUntil = char.mythreonBoosts?.TOMO_SABEDORIA;
+  if (tomeUntil !== undefined && (tomeUntil === 0 || tomeUntil > Date.now())) p.skillDmgPct += 0.20;
   for (const [vialId, expiry] of Object.entries(char.activeVials ?? {})) {
     if (expiry > Date.now()) p.xpPct += (VIALS[vialId] as any)?.xpPct ?? 0;
   }
@@ -377,7 +379,7 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
       if (availableBeasts.length > 0 && Math.random() < availableBeasts[0].dropChance) {
         const beast = availableBeasts[Math.floor(Math.random() * availableBeasts.length)];
         if (!char.divineBeasts) char.divineBeasts = [];
-        char.divineBeasts.push({ id: beast.id, obtainedAt: Date.now() });
+        char.divineBeasts.push({ id: beast.id, instanceId: `drop-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, obtainedAt: Date.now() });
         result.divineBeastsDropped!.push(beast.id);
         bondedBeastName = beast.name;
       }

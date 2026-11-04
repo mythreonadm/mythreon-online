@@ -4,12 +4,14 @@
 
 ## Conhecimento relacionado
 
+- [[docs/conhecimento/Pack-01-Fundacao-Matriz-Pets-Online-2026-11-03|Pack 01 — Fundação de Evolução e Conteúdo]]
 - [[docs/conhecimento/Pets-Atividades-Boss-Diario|Pets, atividades e Boss Diário]]
 - [[docs/conhecimento/Pets-Ovos-Migracao-2026-11-03|Migração de Bestas Divinas para Pets e Ovos]]
 - [[docs/conhecimento/Shop-Premium-Beasts|Shop, premium e Divine Beasts]]
 
 ## Código e recursos
 
+- [docs/conhecimento/Pack-01-Fundacao-Matriz-Pets-Online-2026-11-03.md](../docs/conhecimento/Pack-01-Fundacao-Matriz-Pets-Online-2026-11-03.md)
 - [docs/conhecimento/Pets-Atividades-Boss-Diario.md](../docs/conhecimento/Pets-Atividades-Boss-Diario.md)
 - [docs/conhecimento/Pets-Ovos-Migracao-2026-11-03.md](../docs/conhecimento/Pets-Ovos-Migracao-2026-11-03.md)
 - [docs/conhecimento/Shop-Premium-Beasts.md](../docs/conhecimento/Shop-Premium-Beasts.md)
