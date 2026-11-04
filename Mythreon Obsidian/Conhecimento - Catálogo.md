@@ -21,6 +21,7 @@
 - [[docs/conhecimento/Operacao do Cerebro e Obsidian|Operação do Cérebro e Obsidian]] — Como iniciar, conferir, escrever e recuperar o conhecimento do Mythreon.
 - [[docs/conhecimento/Pack-01-Fundacao-Matriz-Pets-Online-2026-11-03|Pack 01 — Fundação de Evolução e Conteúdo]] — a revisar
 - [[docs/conhecimento/Pack-02-Cativeiro-Personalizacao-2026-11-03|Objetivo]] — concluído
+- [[docs/conhecimento/Pack-03-Feedback-Ataque-Pet-2026-11-03|Objetivo]] — concluído
 - [[docs/conhecimento/Pets-Atividades-Boss-Diario|Pets, atividades e Boss Diário]] — em desenvolvimento
 - [[docs/conhecimento/Pets-Ovos-Migracao-2026-11-03|Migração de Bestas Divinas para Pets e Ovos]] — a revisar
 - [[docs/conhecimento/Registro de problemas|Registro de problemas]] — Problemas de documentação, sincronização e continuidade com suas evidências.

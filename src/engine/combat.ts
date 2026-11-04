@@ -317,6 +317,9 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
       const damage = Math.max(1, Math.round(mitigatedDamage(raw, enemy.arm * 0.5) * elementMultiplier(bond.element, enemy.element) * (1 - resistance)));
       dealt += damage; elementalThisTick += damage;
       result.lastDamage = (result.lastDamage ?? 0) + damage;
+      result.beastDamage = damage;
+      result.beastElement = bond.element;
+      result.beastName = bond.beast.name;
       result.damageBreakdown!.elemental[bond.element] = (result.damageBreakdown!.elemental[bond.element] ?? 0) + damage;
       encounterDamageBreakdown.elemental[bond.element] = (encounterDamageBreakdown.elemental[bond.element] ?? 0) + damage;
       result.log.push(bond.beast.name + ' usa ' + bond.name + ': ' + damage + ' de dano ' + bond.element.toLowerCase() + '.');

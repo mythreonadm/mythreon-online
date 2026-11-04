@@ -23,6 +23,7 @@
 - [[docs/conhecimento/Operacao do Cerebro e Obsidian|Operação do Cérebro e Obsidian]]
 - [[docs/conhecimento/Pack-01-Fundacao-Matriz-Pets-Online-2026-11-03|Pack 01 — Fundação de Evolução e Conteúdo]]
 - [[docs/conhecimento/Pack-02-Cativeiro-Personalizacao-2026-11-03|Objetivo]]
+- [[docs/conhecimento/Pack-03-Feedback-Ataque-Pet-2026-11-03|Objetivo]]
 - [[docs/conhecimento/Pets-Atividades-Boss-Diario|Pets, atividades e Boss Diário]]
 - [[docs/conhecimento/Pets-Ovos-Migracao-2026-11-03|Migração de Bestas Divinas para Pets e Ovos]]
 - [[docs/conhecimento/Registro de problemas|Registro de problemas]]
@@ -53,6 +54,7 @@
 - [docs/conhecimento/Operacao do Cerebro e Obsidian.md](../docs/conhecimento/Operacao do Cerebro e Obsidian.md)
 - [docs/conhecimento/Pack-01-Fundacao-Matriz-Pets-Online-2026-11-03.md](../docs/conhecimento/Pack-01-Fundacao-Matriz-Pets-Online-2026-11-03.md)
 - [docs/conhecimento/Pack-02-Cativeiro-Personalizacao-2026-11-03.md](../docs/conhecimento/Pack-02-Cativeiro-Personalizacao-2026-11-03.md)
+- [docs/conhecimento/Pack-03-Feedback-Ataque-Pet-2026-11-03.md](../docs/conhecimento/Pack-03-Feedback-Ataque-Pet-2026-11-03.md)
 - [docs/conhecimento/Pets-Atividades-Boss-Diario.md](../docs/conhecimento/Pets-Atividades-Boss-Diario.md)
 - [docs/conhecimento/Pets-Ovos-Migracao-2026-11-03.md](../docs/conhecimento/Pets-Ovos-Migracao-2026-11-03.md)
 - [docs/conhecimento/Registro de problemas.md](../docs/conhecimento/Registro de problemas.md)

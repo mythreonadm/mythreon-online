@@ -347,6 +347,10 @@ export interface TickResult {
   usedMp?: boolean;
   comboHitDamage?: [number, number];
   comboRank?: "ouro" | "prata" | "bronze";
+  /** Dano separado da Besta/Pet para que a interface mostre o ataque auxiliar. */
+  beastDamage?: number;
+  beastElement?: Element;
+  beastName?: string;
   deathData?: DeathReportData;
   cardsDropped?: CardInstance[];
   damageDealt?: number;

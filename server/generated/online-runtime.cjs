@@ -2824,6 +2824,9 @@ function processTick(char, zone, isOffline) {
       dealt += damage;
       elementalThisTick += damage;
       result.lastDamage = (result.lastDamage ?? 0) + damage;
+      result.beastDamage = damage;
+      result.beastElement = bond.element;
+      result.beastName = bond.beast.name;
       result.damageBreakdown.elemental[bond.element] = (result.damageBreakdown.elemental[bond.element] ?? 0) + damage;
       encounterDamageBreakdown.elemental[bond.element] = (encounterDamageBreakdown.elemental[bond.element] ?? 0) + damage;
       result.log.push(bond.beast.name + " usa " + bond.name + ": " + damage + " de dano " + bond.element.toLowerCase() + ".");

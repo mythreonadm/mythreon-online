@@ -60,6 +60,8 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
   
   const [isHurt, setIsHurt] = useState(false);
   const [floatingDamage, setFloatingDamage] = useState<number | null>(null);
+  const [petDamage, setPetDamage] = useState<number | null>(null);
+  const [petAttackPulse, setPetAttackPulse] = useState(false);
   const [isAttacking, setIsAttacking] = useState(false);
   const [showProjectile, setShowProjectile] = useState(false);
   const [balloon, setBalloon] = useState<{ x: number; y: number } | null>(null);
@@ -216,14 +218,19 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
       if (lastTickResult.lastDamage) {
         setTimeout(() => { setIsHurt(true); setFloatingDamage(lastTickResult.lastDamage!); }, 250); 
       }
+      if (lastTickResult.beastDamage) {
+        setPetDamage(lastTickResult.beastDamage);
+        setPetAttackPulse(canAnimate);
+      }
       const timer1 = setTimeout(() => { setIsAttacking(false); setShowProjectile(false); }, canAnimate ? 600 : 150);
       const timer2 = setTimeout(() => { setIsHurt(false); setFloatingDamage(null); }, 1000);
+      const timerPet = setTimeout(() => { setPetDamage(null); setPetAttackPulse(false); }, canAnimate ? 900 : 650);
       if (lastTickResult.comboHitDamage) {
         setComboBurst(true);
         const timer3 = setTimeout(() => setComboBurst(false), 900);
-        return () => { clearTimeout(timer1); clearTimeout(timer2); clearTimeout(timer3); };
+        return () => { clearTimeout(timer1); clearTimeout(timer2); clearTimeout(timer3); clearTimeout(timerPet); };
       }
-      return () => { clearTimeout(timer1); clearTimeout(timer2); };
+      return () => { clearTimeout(timer1); clearTimeout(timer2); clearTimeout(timerPet); };
     }
   }, [lastTickResult, isTickRunning, animationsEnabled, effectsEnabled, videoMode]);
 
@@ -486,7 +493,7 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
           <div className="relative z-20 flex justify-between items-end px-4 md:px-20 pb-8 md:pb-12 h-[300px] md:h-[500px]">
             <div className="flex flex-col items-center relative translate-y-2 md:translate-y-4">
               
-              {activeBond && <div className="absolute bottom-16 left-full ml-1 md:ml-4 flex w-20 md:w-32 flex-col items-center" title={activeBond.name + ' · ' + activeBond.element}><AssetImage removeWhite src={activeBond.beast.sprite} alt={activeBond.beast.name} className="h-24 w-24 md:h-36 md:w-36 object-contain [image-rendering:pixelated]" /><span className="rounded bg-black/70 px-2 text-[10px] text-arcane-gold">{activeBond.beast.name}</span></div>}
+              {activeBond && <div className={`absolute bottom-16 left-full ml-1 md:ml-4 flex w-20 md:w-32 flex-col items-center ${petAttackPulse ? "animate-pulse drop-shadow-[0_0_22px_rgba(45,212,191,.95)]" : ""}`} title={activeBond.name + ' · ' + activeBond.element}><div className="relative"><AssetImage removeWhite src={activeBond.beast.sprite} alt={activeBond.beast.name} className="h-24 w-24 md:h-36 md:w-36 object-contain [image-rendering:pixelated]" />{petDamage !== null && <span className="damage-number absolute -top-5 left-1/2 -translate-x-1/2 whitespace-nowrap text-lg font-black text-teal-200 drop-shadow-[0_2px_3px_rgba(0,0,0,1)]">-{petDamage}</span>}</div><span className="rounded bg-black/70 px-2 text-[10px] text-arcane-gold">{activeBond.beast.name}</span></div>}
               {/* SPRITE DO JOGADOR (Agora baseado na Linhagem) */}
               <div className={`combat-sprite combat-sprite-player relative w-24 h-24 md:w-40 md:h-40 flex items-center justify-center transition-transform ${weaponAnimClass}`}>
                 {!playerImageError ? (
@@ -529,6 +536,9 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
               <div className={videoMode === "compat" ? "absolute left-[54%] top-[48%] -translate-y-1/2 z-30 rounded-full border-2 border-amber-300 bg-amber-500/20 px-3 py-1 text-sm font-black text-amber-100 shadow-[0_0_22px_rgba(251,191,36,.9)]" : "absolute left-[30%] top-1/2 -translate-y-1/2 text-4xl md:text-6xl projectile z-30"} aria-label="Impacto do ataque">
                 {videoMode === "compat" ? "✦ HIT" : spellEmoji}
               </div>
+            )}
+            {petAttackPulse && activeBond && (
+              <div className="absolute left-[49%] top-[42%] -translate-y-1/2 text-3xl md:text-5xl z-30 animate-ping drop-shadow-[0_0_18px_rgba(45,212,191,.95)]" aria-label={`Ataque de ${activeBond.beast.name}`}>✦</div>
             )}
 
             {currentMob && (
