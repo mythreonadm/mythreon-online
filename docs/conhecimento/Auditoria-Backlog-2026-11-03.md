@@ -19,17 +19,19 @@ Atualizado em 03/11/2026 após a migração de Bestas Divinas para Pets e a corr
 ## P0 — precisa ser concluído antes de abrir ao público
 
 1. Testar Matriz + Pet em caça local e online, incluindo recarregar a página e trocar de dispositivo.
-2. Exibir o sprite do Pet ao lado do personagem durante a hunt; hoje o dano/bônus existe, mas a apresentação visual ainda precisa ser fechada.
-3. Criar feedback visual e sonoro do ataque do Pet, com fallback para dispositivos que não carregam animações.
-4. Tornar a incubação realmente baseada em tempo, caso o design final seja “chocar depois de X minutos”; atualmente o botão eclode imediatamente.
-5. Renderizar as combinações de aparência no sprite humano real; os campos são salvos, mas ainda precisam de artes/variações finais.
-6. Implementar irrigação, fertilidade, tempo de rega e receitas completas da Fazenda; o cultivo atual usa crescimento por timestamp.
-7. Revisar todos os itens sem arte e substituir o fallback emoji por PNG/GIF final.
-8. Fazer bateria de testes de duplicação de itens, gold, coins, ovos, pets e trocas concorrentes.
-9. Balancear dano, XP, gold, loot, ovos, Pets, Matriz e Bless usando métricas reais de 20 hunts por faixa de nível.
-10. Testar mobile: cabeçalho, combo, pop-ups, chat, Fazenda, Pets e arrastar/rolar sem bloqueios.
-11. Validar cadastro por e-mail, recuperação de senha, confirmação SMTP e Google OAuth em produção.
-12. Rodar `npm run typecheck`, `npm run build`, `npm run online:check`, `npm run journey:check` e `npm run brain:check` antes de cada deploy.
+2. Exibir o sprite do Pet ao lado do personagem durante a hunt; implementação local concluída no Pack 08, faltando playtest em celular e artes finais.
+3. Criar feedback visual e sonoro do ataque do Pet, com fallback para dispositivos que não carregam animações; implementação local concluída no Pack 08, faltando validação em aparelhos reais.
+4. Validar o combo manual sem latência percebida; resposta imediata implementada no Pack 09, faltando playtest local/online e no celular.
+5. Validar a janela visual do combo e o reset por atraso; barra de ritmo e proteção contra tecla repetida implementadas no Pack 10.
+6. Validar a incubação temporizada em diferentes dispositivos; duração, progresso visual e estado pronto concluídos no Pack 12.
+7. Validar a personalização visual humana em diferentes dispositivos; sprite humano-v2, filtros e persistência concluídos no Pack 14.
+8. Completar receitas de maior tier e medir a economia da Fazenda; irrigação, fertilidade, composto e skill de Irrigação/Fertilidade concluídos nos Packs 11 e 13.
+9. Revisar todos os itens sem arte e substituir o fallback emoji por PNG/GIF final.
+10. Fazer bateria de testes de duplicação de itens, gold, coins, ovos, pets e trocas concorrentes. **Pack 16: reserva idempotente por `requestId` aplicada no servidor; falta o teste manual em dois dispositivos e queda de rede real.**
+11. Balancear dano, XP, gold, loot, ovos, Pets, Matriz e Bless usando métricas reais de 20 hunts por faixa de nível. **Pack 15: auditoria determinística inicial concluída; falta o playtest real segmentado antes de alterar números.**
+12. Testar mobile: cabeçalho, combo, pop-ups, chat, Fazenda, Pets e arrastar/rolar sem bloqueios.
+13. Validar cadastro por e-mail, recuperação de senha, confirmação SMTP e Google OAuth em produção.
+14. Rodar `npm run typecheck`, `npm run build`, `npm run online:check`, `npm run journey:check` e `npm run brain:check` antes de cada deploy.
 
 ## P1 — melhorias importantes depois do núcleo estável
 
@@ -55,4 +57,4 @@ Atualizado em 03/11/2026 após a migração de Bestas Divinas para Pets e a corr
 
 ## Regra de prioridade
 
-Não adicionar sistemas novos enquanto os itens P0 1–12 não estiverem testados. O próximo ciclo recomendado é: **Matriz + Pet visível → Personalização com sprites → incubação temporizada → Fazenda completa → balanceamento → testes de produção**.
+Não adicionar sistemas novos enquanto os itens P0 1–12 não estiverem testados. O ciclo atual é: **Matriz + Pet visível → Personalização com sprites → incubação temporizada → Fazenda completa → auditoria determinística → playtest real de 20 hunts → ajustes de balanceamento → testes de produção**.

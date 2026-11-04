@@ -1,0 +1,9 @@
+{
+  "version": "0.1.1",
+  "url": "https://cdn.exemplo.com/Mythreon-Online-0.1.1-Windows-x64.exe",
+  "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "notes": "Pack 6: launcher e melhorias de estabilidade.",
+  "mandatory": false,
+  "platform": "win32",
+  "arch": "x64"
+}

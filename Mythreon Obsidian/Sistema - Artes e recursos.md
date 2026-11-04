@@ -4,13 +4,14 @@
 
 ## Conhecimento relacionado
 
-- [[docs/conhecimento/00 - Fonte de conhecimento|Consultar as notas autorais]]
+- [[docs/conhecimento/Pack-14-Personalizacao-Sprite-2026-11-04|Pack 14 — Personalização visual do humano]]
 
 ## Código e recursos
 
 - [docs/anexos/online-teste-ranking.png](../docs/anexos/online-teste-ranking.png)
 - [docs/anexos/online-teste-troca.png](../docs/anexos/online-teste-troca.png)
 - [docs/anexos/raridades-hp-mp.png](../docs/anexos/raridades-hp-mp.png)
+- [docs/conhecimento/Pack-14-Personalizacao-Sprite-2026-11-04.md](../docs/conhecimento/Pack-14-Personalizacao-Sprite-2026-11-04.md)
 - [imagens/ARQUEIRO04.png](../imagens/ARQUEIRO04.png)
 - [imagens/ARQUEIRO1.png](../imagens/ARQUEIRO1.png)
 - [imagens/ARQUEIRO2.png](../imagens/ARQUEIRO2.png)

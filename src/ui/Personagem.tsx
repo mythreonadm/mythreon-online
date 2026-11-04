@@ -1,6 +1,6 @@
 import { RARITY_FRAME } from './itemRarity';
 import { formatVital, vitalPercent } from '../utils/vitals';
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { AssetImage } from "./AssetImage";
 import { useGameStore } from "../store/gameStore";
 import { VIALS } from "../data/vials";
@@ -14,6 +14,7 @@ import { Item } from "../types";
 import { ELEMENTS } from "../data/elementalChart";
 import { getGearScore } from "../engine/gearScore";
 import { CharacterCustomization } from "./CharacterCustomization";
+import { appearanceLabel, appearanceStyle } from "../utils/appearance";
 
 const SLOTS: { key: SlotType; label: string; icon: string; column: number; row: number }[] = [
   { key: "CAPACETE", label: "Capacete", icon: "🎩", column: 2, row: 1 },
@@ -47,6 +48,8 @@ export function Personagem() {
 
   const s = character.baseStats;
   const lineage = getLineageByAttack(character.activeRace?.ataqueId);
+  const humanForm = !character.activeRace;
+  const visualSource = humanForm ? "/assets/players/humano-v2.png" : lineage.sprite;
   const activeBeast = character.activeDivineBeastId ? DIVINE_BEASTS[character.activeDivineBeastId] : undefined;
   const equippedInPicker = slotPicker ? character.equipped[slotPicker] : undefined;
   const compatibleItems = slotPicker ? character.inventory.items.filter(item => slotPicker === "ANEL_I" || slotPicker === "ANEL_II"
@@ -57,6 +60,8 @@ export function Personagem() {
     .filter(([_, time]) => time > Date.now())
     .map(([id]) => VIALS[id])
     .filter(Boolean);
+
+  useEffect(() => { setImgError(false); }, [visualSource]);
 
   const formatStat = (val: number | undefined, isPct = false) => {
     if (val === undefined) return "0";
@@ -79,10 +84,10 @@ export function Personagem() {
             {!imgError ? (
               <AssetImage
                 key={lineage.id}
-                src={lineage.sprite}
-                alt={lineage.name}
+                src={visualSource}
+                alt={humanForm ? appearanceLabel(character.appearance) : lineage.name}
                 className="w-full h-full object-contain p-2"
-                style={{ imageRendering: "pixelated" }}
+                style={{ imageRendering: "pixelated", ...(humanForm ? appearanceStyle(character.appearance) : {}) }}
                 onError={() => setImgError(true)}
               />
             ) : (
@@ -95,6 +100,7 @@ export function Personagem() {
               Nível {character.level} · {lineage.name}
               {character.activeRace && ` · ${character.activeRace.name}`}
             </p>
+            {humanForm && <div className="mt-2 flex flex-wrap gap-1.5 text-[10px] text-slate-300"><span className="rounded border border-arcane-cyan/30 bg-arcane-cyan/10 px-2 py-1">{appearanceLabel(character.appearance)}</span><span className="rounded border border-white/10 bg-black/20 px-2 py-1">Pele: {character.appearance?.skin ?? "MORENA"}</span><span className="rounded border border-white/10 bg-black/20 px-2 py-1">Cabelo: {character.appearance?.hairColor ?? "NEGRO"}</span><span className="rounded border border-white/10 bg-black/20 px-2 py-1">Roupa: {character.appearance?.outfitColor ?? "OCRE"}</span></div>}
             <div className="mt-2 inline-flex rounded-lg border border-arcane-gold/50 bg-arcane-gold/10 px-3 py-1 text-sm font-black text-arcane-gold">⚔ Gear Score: {getGearScore(character).toLocaleString('pt-BR')}</div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3">
               <MiniBar label="HP" current={character.hp} max={character.hpMax} color="bg-gradient-to-r from-red-600 to-red-400" />

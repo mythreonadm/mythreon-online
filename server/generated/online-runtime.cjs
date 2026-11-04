@@ -1748,7 +1748,7 @@ function createNewCharacter(name, appearance) {
     divineBeastIncubator: void 0,
     depot: [],
     depotMax: 300,
-    farm: { plots: [{ id: "plot-1" }], unlockedPlots: 1, skills: { planting: 0, harvesting: 0 }, lastActionAt: Date.now() }
+    farm: { plots: [{ id: "plot-1", fertility: 100 }], unlockedPlots: 1, skills: { planting: 0, harvesting: 0, irrigation: 0, fertility: 0 }, lastActionAt: Date.now() }
   };
 }
 function saveGame(char, races) {
@@ -1832,8 +1832,11 @@ function loadGame() {
       if (!Number.isFinite(data.character.divineBeastAttackTimerMs)) data.character.divineBeastAttackTimerMs = 0;
       if (data.character.divineBeastIncubator && (!data.character.divineBeastIncubator.eggUid || !Number.isFinite(data.character.divineBeastIncubator.completesAt))) data.character.divineBeastIncubator = void 0;
       if (!data.character.depot) data.character.depot = [];
-      if (!data.character.farm || !Array.isArray(data.character.farm.plots)) data.character.farm = { plots: [{ id: "plot-1" }], unlockedPlots: 1, skills: { planting: 0, harvesting: 0 }, lastActionAt: Date.now() };
-      data.character.farm.skills ??= { planting: 0, harvesting: 0 };
+      if (!data.character.farm || !Array.isArray(data.character.farm.plots)) data.character.farm = { plots: [{ id: "plot-1", fertility: 100 }], unlockedPlots: 1, skills: { planting: 0, harvesting: 0, irrigation: 0, fertility: 0 }, lastActionAt: Date.now() };
+      data.character.farm.skills ??= { planting: 0, harvesting: 0, irrigation: 0, fertility: 0 };
+      data.character.farm.skills.irrigation ??= 0;
+      data.character.farm.skills.fertility ??= 0;
+      for (const plot of data.character.farm.plots) plot.fertility ??= 100;
       if (Array.isArray(data.character.inventory?.items)) {
         const normalized = [];
         for (const item of data.character.inventory.items) {
@@ -3398,10 +3401,17 @@ var FARM_SEEDS = [
 var FARM_RECIPES = [
   { id: "RECEITA_SOPA_CENOURA", name: "Sopa de Cenoura de Lyss", icon: "\u{1F372}", ingredients: [{ templateId: "COLHEITA_CENOURA", name: "Cenoura", quantity: 2, icon: "\u{1F955}" }, { templateId: "COLHEITA_TRIGO", name: "Trigo de Lyss", quantity: 1, icon: "\u{1F33E}" }], outputTemplateId: "SOPA_CENOURA_LYSS", outputName: "Sopa de Cenoura de Lyss", outputIcon: "\u{1F372}", outputQuantity: 1, sellValue: 85 },
   { id: "RECEITA_ELIXIR_MELANCIA", name: "Elixir de Mar\xE9 Doce", icon: "\u{1F9EA}", ingredients: [{ templateId: "COLHEITA_MELANCIA", name: "Melancia", quantity: 2, icon: "\u{1F349}" }, { templateId: "COLHEITA_LUMINA", name: "Fruto Lumina", quantity: 1, icon: "\u{1F506}" }], outputTemplateId: "ELIXIR_MARE_DOCE", outputName: "Elixir de Mar\xE9 Doce", outputIcon: "\u{1F9EA}", outputQuantity: 1, sellValue: 220 },
-  { id: "RECEITA_PAO_LYSS", name: "P\xE3o R\xFAnico de Lyss", icon: "\u{1F35E}", ingredients: [{ templateId: "COLHEITA_TRIGO", name: "Trigo de Lyss", quantity: 3, icon: "\u{1F33E}" }, { templateId: "COLHEITA_LUMINA", name: "Fruto Lumina", quantity: 1, icon: "\u{1F506}" }], outputTemplateId: "PAO_RUNICO_LYSS", outputName: "P\xE3o R\xFAnico de Lyss", outputIcon: "\u{1F35E}", outputQuantity: 2, sellValue: 180 }
+  { id: "RECEITA_PAO_LYSS", name: "P\xE3o R\xFAnico de Lyss", icon: "\u{1F35E}", ingredients: [{ templateId: "COLHEITA_TRIGO", name: "Trigo de Lyss", quantity: 3, icon: "\u{1F33E}" }, { templateId: "COLHEITA_LUMINA", name: "Fruto Lumina", quantity: 1, icon: "\u{1F506}" }], outputTemplateId: "PAO_RUNICO_LYSS", outputName: "P\xE3o R\xFAnico de Lyss", outputIcon: "\u{1F35E}", outputQuantity: 2, sellValue: 180 },
+  { id: "RECEITA_COMPOSTO_LYSS", name: "Composto F\xE9rtil de Lyss", icon: "\u{1FAB4}", ingredients: [{ templateId: "COLHEITA_TRIGO", name: "Trigo de Lyss", quantity: 2, icon: "\u{1F33E}" }, { templateId: "COLHEITA_CENOURA", name: "Cenoura", quantity: 1, icon: "\u{1F955}" }], outputTemplateId: "COMPOSTO_LYSS", outputName: "Composto F\xE9rtil de Lyss", outputIcon: "\u{1FAB4}", outputQuantity: 1, sellValue: 0 },
+  { id: "RECEITA_BANQUETE_BESTA", name: "Banquete da Besta", icon: "\u{1F356}", ingredients: [{ templateId: "COLHEITA_MELANCIA", name: "Melancia", quantity: 2, icon: "\u{1F349}" }, { templateId: "COLHEITA_CENOURA", name: "Cenoura", quantity: 2, icon: "\u{1F955}" }, { templateId: "COLHEITA_LUMINA", name: "Fruto Lumina", quantity: 1, icon: "\u{1F506}" }], outputTemplateId: "BANQUETE_BESTA", outputName: "Banquete da Besta", outputIcon: "\u{1F356}", outputQuantity: 1, sellValue: 420 },
+  { id: "RECEITA_ELIXIR_ESSENCIA", name: "Elixir da Ess\xEAncia", icon: "\u{1F4A0}", ingredients: [{ templateId: "COLHEITA_LUMINA", name: "Fruto Lumina", quantity: 2, icon: "\u{1F506}" }, { templateId: "COLHEITA_MELANCIA", name: "Melancia", quantity: 2, icon: "\u{1F349}" }, { templateId: "COLHEITA_TRIGO", name: "Trigo de Lyss", quantity: 2, icon: "\u{1F33E}" }], outputTemplateId: "ELIXIR_ESSENCIA", outputName: "Elixir da Ess\xEAncia", outputIcon: "\u{1F4A0}", outputQuantity: 1, sellValue: 720 }
 ];
 var farmRecipe = (id) => FARM_RECIPES.find((recipe) => recipe.id === id);
 var FARM_MAX_PLOTS = 12;
+var FARM_FERTILITY_MAX = 100;
+var FARM_FERTILITY_MIN = 25;
+var FARM_FERTILITY_LOSS_PER_HARVEST = 12;
+var FARM_FERTILITY_COMPOST_GAIN = 25;
 function farmExpansionCost(unlockedPlots) {
   if (unlockedPlots >= FARM_MAX_PLOTS) return null;
   const nextPlot = unlockedPlots + 1;
@@ -3411,11 +3421,13 @@ function farmExpansionCost(unlockedPlots) {
   return { kind: "coins", amount: 500, label: "500 Mythreon Coins" };
 }
 var farmSeed = (id) => FARM_SEEDS.find((seed) => seed.id === id);
-function farmYield(seed) {
-  return { uid: `farm-${seed.yieldId}-${Date.now()}-${Math.random()}`, templateId: seed.yieldId, name: seed.yieldName, category: "MATERIAL", tier: 1, rarity: "COMUM", stats: {}, affixes: [], upgradeLevel: 0, stackable: true, maxStack: 999, quantity: seed.yieldQty, icon: seed.yieldIcon };
+function farmYield(seed, fertility = FARM_FERTILITY_MAX, harvestingSkill = 0) {
+  const fertilityPenalty = fertility < 50 ? 1 : 0;
+  const skillBonus = Math.floor(Math.max(0, harvestingSkill) / 10);
+  return { uid: `farm-${seed.yieldId}-${Date.now()}-${Math.random()}`, templateId: seed.yieldId, name: seed.yieldName, category: "MATERIAL", tier: 1, rarity: "COMUM", stats: {}, affixes: [], upgradeLevel: 0, stackable: true, maxStack: 999, quantity: Math.max(1, seed.yieldQty - fertilityPenalty + skillBonus), icon: seed.yieldIcon };
 }
 function farmRecipeOutput(recipe) {
-  return { uid: `farm-recipe-${recipe.outputTemplateId}-${Date.now()}-${Math.random()}`, templateId: recipe.outputTemplateId, name: recipe.outputName, category: "MATERIAL", tier: 2, rarity: "INCOMUM", stats: {}, affixes: [], upgradeLevel: 0, stackable: true, maxStack: 999, quantity: recipe.outputQuantity, icon: recipe.outputIcon };
+  return { uid: `farm-recipe-${recipe.outputTemplateId}-${Date.now()}-${Math.random()}`, templateId: recipe.outputTemplateId, name: recipe.outputName, category: "MATERIAL", tier: recipe.id.includes("ESSENCIA") || recipe.id.includes("BANQUETE") ? 3 : recipe.id.includes("COMPOSTO") ? 1 : 2, rarity: recipe.id.includes("ESSENCIA") ? "RARO" : recipe.id.includes("BANQUETE") ? "EPICO" : recipe.id.includes("COMPOSTO") ? "COMUM" : "INCOMUM", stats: {}, affixes: [], upgradeLevel: 0, stackable: true, maxStack: 999, quantity: recipe.outputQuantity, icon: recipe.outputIcon };
 }
 
 // src/store/gameStore.ts
@@ -3672,6 +3684,9 @@ function createGameStore(runtime = {}) {
       updated.comboPower = power;
       set({ character: updated });
       get().save();
+      if (!runtime.server) queueMicrotask(() => {
+        if (get().isTickRunning) get().tick();
+      });
       return { success: true };
     },
     stopHunting: () => {
@@ -3959,25 +3974,72 @@ function createGameStore(runtime = {}) {
       const seed = farmSeed(seedId);
       if (!seed) return { success: false, error: "Semente inv\xE1lida." };
       const next = JSON.parse(JSON.stringify(character));
-      next.farm ??= { plots: [], unlockedPlots: 1, lastActionAt: Date.now(), skills: { planting: 0, harvesting: 0 } };
-      next.farm.skills ??= { planting: 0, harvesting: 0 };
+      next.farm ??= { plots: [], unlockedPlots: 1, lastActionAt: Date.now(), skills: { planting: 0, harvesting: 0, irrigation: 0, fertility: 0 } };
+      next.farm.skills ??= { planting: 0, harvesting: 0, irrigation: 0, fertility: 0 };
       const plot = next.farm.plots.find((entry) => entry.id === plotId);
       if (!plot || next.farm.plots.indexOf(plot) >= next.farm.unlockedPlots) return { success: false, error: "Canteiro bloqueado." };
       if (plot.seedId) return { success: false, error: "Este canteiro j\xE1 est\xE1 plantado." };
       if (next.gold < seed.cost) return { success: false, error: "Gold insuficiente para comprar esta semente." };
+      const fertility = Math.max(FARM_FERTILITY_MIN, Math.min(FARM_FERTILITY_MAX, Number(plot.fertility ?? FARM_FERTILITY_MAX)));
       const skill = Number(next.farm.skills.planting ?? 0);
       const speedBonus = Math.min(0.25, skill * 0.01);
-      const growMs = Math.max(3e4, Math.round(seed.growMs * (1 - speedBonus)));
+      const fertilityPenalty = (FARM_FERTILITY_MAX - fertility) / 200;
+      const growMs = Math.max(3e4, Math.round(seed.growMs * (1 - speedBonus + fertilityPenalty)));
       next.gold -= seed.cost;
+      plot.fertility = fertility;
       plot.seedId = seed.id;
       plot.plantedAt = Date.now();
       plot.readyAt = Date.now() + growMs;
       plot.wateredAt = Date.now();
+      plot.waterCount = 0;
       next.farm.skills.planting += 1;
       next.farm.lastActionAt = Date.now();
       set({ character: next });
       get().save();
       return { success: true };
+    },
+    waterFarmPlot: (plotId) => {
+      const { character } = get();
+      if (!character) return { success: false, error: "Personagem indispon\xEDvel." };
+      const next = JSON.parse(JSON.stringify(character));
+      const plot = next.farm?.plots?.find((entry) => entry.id === plotId);
+      if (!plot?.seedId || !plot.readyAt) return { success: false, error: "Este canteiro n\xE3o possui uma planta\xE7\xE3o ativa." };
+      const now = Date.now();
+      if (now >= plot.readyAt) return { success: false, error: "A planta\xE7\xE3o j\xE1 est\xE1 pronta para colher." };
+      const waterCount = Number(plot.waterCount ?? 0);
+      if (waterCount >= 3) return { success: false, error: "Esta planta\xE7\xE3o j\xE1 recebeu toda a irriga\xE7\xE3o poss\xEDvel." };
+      if (plot.wateredAt && now - plot.wateredAt < 6e4) return { success: false, error: `A terra ainda est\xE1 \xFAmida. Aguarde ${Math.ceil((6e4 - (now - plot.wateredAt)) / 1e3)}s.` };
+      const remaining = Math.max(3e4, plot.readyAt - now);
+      const reduction = Math.max(5e3, Math.round(remaining * 0.08));
+      plot.readyAt = Math.max(now + 3e4, plot.readyAt - reduction);
+      plot.wateredAt = now;
+      plot.waterCount = waterCount + 1;
+      next.farm.skills ??= { planting: 0, harvesting: 0, irrigation: 0, fertility: 0 };
+      next.farm.skills.irrigation = Number(next.farm.skills.irrigation ?? 0) + 1;
+      next.farm.lastActionAt = now;
+      set({ character: next });
+      get().save();
+      return { success: true, secondsReduced: Math.round(reduction / 1e3) };
+    },
+    fertilizeFarmPlot: (plotId) => {
+      const { character } = get();
+      if (!character) return { success: false, error: "Personagem indispon\xEDvel." };
+      const next = JSON.parse(JSON.stringify(character));
+      const plot = next.farm?.plots?.find((entry) => entry.id === plotId);
+      if (!plot) return { success: false, error: "Canteiro n\xE3o encontrado." };
+      if (plot.seedId) return { success: false, error: "Adube o canteiro entre colheitas, antes de plantar novamente." };
+      const current = Math.max(FARM_FERTILITY_MIN, Math.min(FARM_FERTILITY_MAX, Number(plot.fertility ?? FARM_FERTILITY_MAX)));
+      if (current >= FARM_FERTILITY_MAX) return { success: false, error: "Este canteiro j\xE1 est\xE1 com fertilidade m\xE1xima." };
+      const compost = next.inventory.items.find((item) => item.templateId === "COMPOSTO_LYSS");
+      if (!compost) return { success: false, error: "\xC9 necess\xE1rio um Composto F\xE9rtil de Lyss." };
+      removeItem(next.inventory, compost.uid, 1);
+      plot.fertility = Math.min(FARM_FERTILITY_MAX, current + FARM_FERTILITY_COMPOST_GAIN);
+      next.farm.skills ??= { planting: 0, harvesting: 0, irrigation: 0, fertility: 0 };
+      next.farm.skills.fertility = Number(next.farm.skills.fertility ?? 0) + 1;
+      next.farm.lastActionAt = Date.now();
+      set({ character: next });
+      get().save();
+      return { success: true, fertility: plot.fertility };
     },
     harvestFarmPlot: (plotId) => {
       const { character } = get();
@@ -3987,17 +4049,21 @@ function createGameStore(runtime = {}) {
       const seed = plot?.seedId ? farmSeed(plot.seedId) : void 0;
       if (!plot || !seed) return { success: false, error: "N\xE3o h\xE1 cultivo neste canteiro." };
       if (!plot.readyAt || Date.now() < plot.readyAt) return { success: false, error: "A planta\xE7\xE3o ainda est\xE1 crescendo." };
-      next.farm.skills ??= { planting: 0, harvesting: 0 };
-      addItem(next.inventory, farmYield(seed));
+      next.farm.skills ??= { planting: 0, harvesting: 0, irrigation: 0, fertility: 0 };
+      const fertility = Math.max(FARM_FERTILITY_MIN, Math.min(FARM_FERTILITY_MAX, Number(plot.fertility ?? FARM_FERTILITY_MAX)));
+      const quantity = farmYield(seed, fertility, Number(next.farm.skills.harvesting ?? 0));
+      addItem(next.inventory, quantity);
+      plot.fertility = Math.max(FARM_FERTILITY_MIN, fertility - FARM_FERTILITY_LOSS_PER_HARVEST);
       plot.seedId = void 0;
       plot.plantedAt = void 0;
       plot.readyAt = void 0;
       plot.wateredAt = void 0;
+      plot.waterCount = void 0;
       next.farm.skills.harvesting += 1;
       next.farm.lastActionAt = Date.now();
       set({ character: next });
       get().save();
-      return { success: true, quantity: seed.yieldQty };
+      return { success: true, quantity: quantity.quantity };
     },
     unlockFarmPlot: () => {
       const { character } = get();
@@ -4014,7 +4080,7 @@ function createGameStore(runtime = {}) {
         next.mythreonCoins = (next.mythreonCoins ?? 0) - cost.amount;
       }
       next.farm.unlockedPlots += 1;
-      next.farm.plots.push({ id: `plot-${next.farm.unlockedPlots}` });
+      next.farm.plots.push({ id: `plot-${next.farm.unlockedPlots}`, fertility: FARM_FERTILITY_MAX });
       set({ character: next });
       get().save();
       return { success: true };
@@ -4496,6 +4562,11 @@ function normalizeLegacyItems(character) {
 function executeGame(world, action, args = []) {
   normalizeArrowItems(world.character);
   normalizeLegacyItems(world.character);
+  world.character.farm ??= { plots: [{ id: "plot-1", fertility: 100 }], unlockedPlots: 1, skills: { planting: 0, harvesting: 0, irrigation: 0, fertility: 0 }, lastActionAt: Date.now() };
+  world.character.farm.skills ??= { planting: 0, harvesting: 0, irrigation: 0, fertility: 0 };
+  world.character.farm.skills.irrigation ??= 0;
+  world.character.farm.skills.fertility ??= 0;
+  for (const plot of world.character.farm.plots) plot.fertility ??= 100;
   const expectedXp = xpToNextLevel(world.character.level);
   if (world.character.xpToNext !== expectedXp) {
     world.character.xp = Math.floor(world.character.xp / Math.max(1, world.character.xpToNext) * expectedXp);
@@ -4528,7 +4599,7 @@ function executeGame(world, action, args = []) {
     if (s.isTickRunning && ["sellItem", "sellSelected", "salvageAll", "salvageSelected", "upgradeItem", "rerollItem"].includes(action)) throw Error("Saia da ca\xE7a para acessar o Ferreiro.");
     if (action === "activateBuff" && (!s.isTickRunning || !s.character?.onlineBalloonUntil || s.character.onlineBalloonUntil < now)) throw Error("Este eco de b\xF4nus expirou. Aguarde outro durante a ca\xE7a.");
     const zero = ["finishIntro", "clearOfflineReport", "clearDeathReport", "startHealing", "cancelHealing", "stopHunting", "stopTraining", "unequipRace", "unequipDivineBeast", "activateBuff", "buyTrainingBoost", "buyBless", "refreshCompendium"];
-    const strings = ["unlockZone", "setActiveEnemy", "setCurrentZone", "acceptQuest", "claimQuest", "upgradeItem", "rerollItem", "depositItem", "withdrawItem", "discardItem", "plantFarmSeed", "harvestFarmPlot", "cookFarmRecipe"];
+    const strings = ["unlockZone", "setActiveEnemy", "setCurrentZone", "acceptQuest", "claimQuest", "upgradeItem", "rerollItem", "depositItem", "withdrawItem", "discardItem", "plantFarmSeed", "waterFarmPlot", "fertilizeFarmPlot", "harvestFarmPlot", "cookFarmRecipe"];
     const uid = (v) => {
       if (typeof v !== "string" || v.length < 1 || v.length > 128) throw Error("Identificador inv\xE1lido.");
       return v;
@@ -4849,8 +4920,12 @@ async function handleWorld(db, owner, request) {
   let cached = null;
   if (!readonly.includes(op)) {
     const requestId = uuid(request.requestId);
-    const prev = await db.query("select response from public.world_operations where owner_id=$1 and request_id=$2", [owner, requestId]);
-    cached = prev.rows[0]?.response;
+    const reserved = await db.query("insert into public.world_operations(owner_id,request_id,response) values($1,$2,null) on conflict(owner_id,request_id) do nothing returning request_id", [owner, requestId]);
+    if (!reserved.rows.length) {
+      const prev = await db.query("select response from public.world_operations where owner_id=$1 and request_id=$2 for update", [owner, requestId]);
+      if (prev.rows[0]?.response === null) throw Error("Esta a\xE7\xE3o j\xE1 est\xE1 sendo processada. Aguarde a confirma\xE7\xE3o.");
+      cached = prev.rows[0]?.response;
+    }
   }
   let receipt = cached ?? {}, actor;
   if (!cached) {
@@ -5001,7 +5076,7 @@ async function handleWorld(db, owner, request) {
         await commitCharacter(db, actor);
       } else if (op !== "social.read") throw Error("Opera\xE7\xE3o n\xE3o permitida.");
     }
-    if (!readonly.includes(op)) await db.query("insert into public.world_operations(owner_id,request_id,response) values($1,$2,$3)", [owner, request.requestId, JSON.stringify(receipt)]);
+    if (!readonly.includes(op)) await db.query("update public.world_operations set response=$3 where owner_id=$1 and request_id=$2", [owner, request.requestId, JSON.stringify(receipt)]);
   }
   const list = (await db.query("select id,name,revision,created_at from public.world_characters where owner_id=$1 order by created_at", [owner])).rows;
   const id = actor?.id ?? request.characterId;

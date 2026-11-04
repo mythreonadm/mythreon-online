@@ -9,7 +9,14 @@
     "EPICO": 1780,
     "LENDARIO": 193
   },
-  "assertions": [],
+  "assertions": [
+    "Treino sem ticks gratuitos, conquista única de 5 min, maestria só por prática e limite de 30%",
+    "Armadura tem redução crescente limitada a 70%",
+    "Recalcular não ressuscita nem recarrega mana zero",
+    "XP necessário monotônico nos níveis 1–150",
+    "Premium adiciona exatamente 10 pontos percentuais de bônus de XP",
+    "As 12 Bestas usam seu ataque elemental e consomem MP"
+  ],
   "rows": [
     {
       "zone": "Bosque de Lyss",
@@ -311,12 +318,12 @@
       "route": "Humano",
       "level": 15,
       "winPct": 100,
-      "seconds": 43,
-      "dealt": 661,
-      "taken": 504,
-      "gold": 133,
+      "seconds": 44,
+      "dealt": 666,
+      "taken": 513,
+      "gold": 130,
       "potionCost": 0,
-      "netGold": 133,
+      "netGold": 130,
       "xp": 128
     },
     {
@@ -326,11 +333,11 @@
       "level": 15,
       "winPct": 100,
       "seconds": 23,
-      "dealt": 761,
-      "taken": 206,
-      "gold": 133,
+      "dealt": 745,
+      "taken": 226,
+      "gold": 140,
       "potionCost": 0,
-      "netGold": 133,
+      "netGold": 140,
       "xp": 130
     },
     {
@@ -339,9 +346,9 @@
       "route": "Beast",
       "level": 15,
       "winPct": 100,
-      "seconds": 16,
-      "dealt": 755,
-      "taken": 147,
+      "seconds": 15,
+      "dealt": 722,
+      "taken": 144,
       "gold": 126,
       "potionCost": 0,
       "netGold": 126,
@@ -353,13 +360,13 @@
       "route": "Humano",
       "level": 11,
       "winPct": 100,
-      "seconds": 25,
-      "dealt": 485,
-      "taken": 149,
-      "gold": 32,
+      "seconds": 26,
+      "dealt": 507,
+      "taken": 164,
+      "gold": 36,
       "potionCost": 0,
-      "netGold": 32,
-      "xp": 70
+      "netGold": 36,
+      "xp": 75
     },
     {
       "zone": "Pico de Dhor",
@@ -676,8 +683,8 @@
       "level": 24,
       "winPct": 100,
       "seconds": 32,
-      "dealt": 2401,
-      "taken": 966,
+      "dealt": 2365,
+      "taken": 959,
       "gold": 757,
       "potionCost": 0,
       "netGold": 757,

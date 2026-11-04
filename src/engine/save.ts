@@ -65,7 +65,7 @@ export function createNewCharacter(name: string, appearance?: CharacterAppearanc
     divineBeastIncubator: undefined,
     depot: [],
     depotMax: 300,
-    farm: { plots: [{ id: "plot-1" }], unlockedPlots: 1, skills: { planting: 0, harvesting: 0 }, lastActionAt: Date.now() },
+    farm: { plots: [{ id: "plot-1", fertility: 100 }], unlockedPlots: 1, skills: { planting: 0, harvesting: 0, irrigation: 0, fertility: 0 }, lastActionAt: Date.now() },
   };
 }
 
@@ -151,8 +151,11 @@ export function loadGame(): SaveFile | null {
       
       // Migração para o Depot
       if (!data.character.depot) data.character.depot = [];
-      if (!data.character.farm || !Array.isArray(data.character.farm.plots)) data.character.farm = { plots: [{ id: "plot-1" }], unlockedPlots: 1, skills: { planting: 0, harvesting: 0 }, lastActionAt: Date.now() };
-      data.character.farm.skills ??= { planting: 0, harvesting: 0 };
+      if (!data.character.farm || !Array.isArray(data.character.farm.plots)) data.character.farm = { plots: [{ id: "plot-1", fertility: 100 }], unlockedPlots: 1, skills: { planting: 0, harvesting: 0, irrigation: 0, fertility: 0 }, lastActionAt: Date.now() };
+      data.character.farm.skills ??= { planting: 0, harvesting: 0, irrigation: 0, fertility: 0 };
+      data.character.farm.skills.irrigation ??= 0;
+      data.character.farm.skills.fertility ??= 0;
+      for (const plot of data.character.farm.plots) plot.fertility ??= 100;
       // Migra saves antigos: itens não empilháveis (especialmente flechas) são sempre unidades únicas.
       if (Array.isArray(data.character.inventory?.items)) {
         const normalized: any[] = [];

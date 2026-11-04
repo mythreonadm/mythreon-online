@@ -58,6 +58,7 @@ Não existe ainda um `.exe` ou APK final neste Pack; a arquitetura fica preparad
 - Teste visual Electron aprovado.
 - Build de produção e runtime online aprovados.
 - Cérebro/Obsidian sincronizados.
+- Smoke test nativo do Electron aprovado: interface renderizada, asset local, WebCrypto, renderer isolado e Worker do Laboratório.
 
 # Próxima etapa
 

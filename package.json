@@ -16,6 +16,7 @@
     "desktop:package": "npm run build && electron-builder --win --dir --x64",
     "desktop:portable": "npm run build && electron-builder --win portable --x64",
     "brain:check": "node scripts/brain-check.mjs",
+    "balance:check": "node scripts/balance-audit.cjs --check",
     "journey:check": "node scripts/journey-check.cjs",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.server.json",
     "online:check": "node scripts/run-ts-check.cjs scripts/online-check.ts",

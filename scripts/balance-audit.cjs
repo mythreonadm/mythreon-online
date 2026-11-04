@@ -66,7 +66,10 @@ if(process.argv.includes('--check')) {
   const c=createNewCharacter('Checks'); c.hp=0;c.mp=0;stats.recalcStats(c);assert.equal(c.hp,0);assert.equal(c.mp,0);assertions.push('Recalcular não ressuscita nem recarrega mana zero');
   for(let level=2;level<=150;level++)assert.ok(stats.xpToNextLevel(level)>=stats.xpToNextLevel(level-1));assertions.push('XP necessário monotônico nos níveis 1–150');
   c.premium=false;const free=buildProfile(c).xpPct;c.premium=true;assert.ok(Math.abs(buildProfile(c).xpPct-free-0.1)<1e-9);assertions.push('Premium adiciona exatamente 10 pontos percentuais de bônus de XP');
-  for(const id of DIVINE_BEAST_ORDER){const p=createNewCharacter(id);p.level=70;p.divineBeasts=[{id,obtainedAt:0}];p.activeDivineBeastId=id;p.tickCount=2;stats.recalcStats(p);p.hp=p.hpMax;p.mp=p.mpMax;const z=structuredClone(ZONES.BOSQUE_LYSS);z.enemies[0].hp=100000;const r=processTick(p,z,false);assert.ok(r.usedMp);assert.ok(Object.values(r.damageBreakdown.elemental).some(v=>v>0));}assertions.push('As 12 Beasts usam seu ataque elemental e consomem MP');
+  for(const id of DIVINE_BEAST_ORDER){const p=createNewCharacter(id);p.level=70;p.divineBeasts=[{id,obtainedAt:0}];p.activeDivineBeastId=id;
+    // O primeiro tick incrementa o contador antes de resolver o ataque. As Bestas
+    // atacam a cada 2 ticks, então começamos em 1 para testar exatamente o pulso.
+    p.tickCount=1;stats.recalcStats(p);p.hp=p.hpMax;p.mp=p.mpMax;const z=structuredClone(ZONES.BOSQUE_LYSS);z.enemies[0].hp=100000;const r=processTick(p,z,false);assert.ok(r.usedMp);assert.ok(Object.values(r.damageBreakdown.elemental).some(v=>v>0));}assertions.push('As 12 Bestas usam seu ataque elemental e consomem MP');
 }
 const report={seed:20261102,samplesPerScenario:12,gear:process.argv.includes('--prepared')?'Raro do tier com poções pagas, sem upgrades/vials; HP e MP cheios, orçamento inicial 100000 gold':'Comum do tier sem poções/upgrades/vials; HP e MP cheios',rarity,assertions,rows};
 const name=process.argv.includes('--baseline')?'balanceamento-antes':process.argv.includes('--prepared')?'balanceamento-preparado':'balanceamento-depois';

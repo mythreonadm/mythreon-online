@@ -11,6 +11,7 @@
 - [.gitignore](../.gitignore)
 - [Ativação Cérebro.bat](../Ativação Cérebro.bat)
 - [api/world.js](../api/world.js)
+- [docs/launcher-manifest.example.json](../docs/launcher-manifest.example.json)
 - [imagens/WhatsApp Image 2026-10-30 at 00.42.53.jpeg](../imagens/WhatsApp Image 2026-10-30 at 00.42.53.jpeg)
 - [imagens/WhatsApp Image 2026-10-30 at 00.42.54 (1).jpeg](../imagens/WhatsApp Image 2026-10-30 at 00.42.54 (1).jpeg)
 - [imagens/WhatsApp Image 2026-10-30 at 00.42.54.jpeg](../imagens/WhatsApp Image 2026-10-30 at 00.42.54.jpeg)

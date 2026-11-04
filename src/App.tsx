@@ -34,6 +34,7 @@ import { activateSaveAccount } from "./engine/save";
 import { getTutorialQuestSignal } from "./utils/questSignals";
 import { QuestTracker } from "./ui/QuestTracker";
 import { SettingsPanel } from "./ui/SettingsPanel";
+import { DesktopUpdateNotice } from "./ui/DesktopUpdateNotice";
 import { QUESTS } from "./data/quests";
 import { checkQuestCompletion } from "./engine/questEngine";
 import { ZONES } from "./data/zones";
@@ -190,6 +191,7 @@ useEffect(() => {
     <div className="min-h-screen bg-arcane-bg text-white pb-10 font-sans relative">
       <AudioManager />
       <OnlineNotice/>
+      <DesktopUpdateNotice />
       <OnlineTradeWindow/>
       <OfflineModal />
       <DeathScreen />

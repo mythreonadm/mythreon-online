@@ -20,7 +20,7 @@ import { FRAGMENT_TEMPLATES, DIVINE_BEAST_EGG_TEMPLATES, UNIQUE_TEMPLATES, ALL_I
 import { divineBeastSellValue, DIVINE_BEASTS } from "../data/divineBeasts";
 import { QUESTS } from "../data/quests";
 import { getMythreonOffer, MYTHREON_ECONOMY } from "../data/mythreonEconomy";
-import { farmSeed, farmYield, FARM_SEEDS, farmExpansionCost, farmRecipe, farmRecipeOutput, FARM_RECIPES } from "../data/farm";
+import { farmSeed, farmYield, FARM_SEEDS, farmExpansionCost, farmRecipe, farmRecipeOutput, FARM_RECIPES, FARM_FERTILITY_MAX, FARM_FERTILITY_MIN, FARM_FERTILITY_LOSS_PER_HARVEST, FARM_FERTILITY_COMPOST_GAIN } from "../data/farm";
 import { generateId } from "../utils/id";
 
 export interface GameState {
@@ -91,6 +91,8 @@ export interface GameState {
   buyCalendarCoupon: () => { success: boolean; error?: string };
   claimDailyCalendar: () => { success: boolean; reward?: string; error?: string };
   plantFarmSeed: (plotId: string, seedId: string) => { success: boolean; error?: string };
+  waterFarmPlot: (plotId: string) => { success: boolean; error?: string; secondsReduced?: number };
+  fertilizeFarmPlot: (plotId: string) => { success: boolean; error?: string; fertility?: number };
   harvestFarmPlot: (plotId: string) => { success: boolean; error?: string; quantity?: number };
   unlockFarmPlot: () => { success: boolean; error?: string };
   cookFarmRecipe: (recipeId: string) => { success: boolean; error?: string; quantity?: number };
@@ -327,6 +329,12 @@ return create<GameState>((set, get) => ({
     updated.comboReadyUntil = now + 12_000;
     updated.comboPower = power;
     set({ character: updated }); get().save();
+    // No modo local, resolve o próximo golpe imediatamente. Antes disso o
+    // combo ficava aguardando o próximo intervalo de caça (até 3s), fazendo
+    // o toque parecer atrasado. O servidor já executa o tick na mesma
+    // transação de `armSpecialCombo`, portanto esta aceleração só vale para
+    // a sessão local e não altera o balanceamento online.
+    if (!runtime.server) queueMicrotask(() => { if (get().isTickRunning) get().tick(); });
     return { success: true };
   },
 
@@ -594,19 +602,44 @@ return create<GameState>((set, get) => ({
   plantFarmSeed: (plotId, seedId) => {
     const { character } = get(); if (!character) return { success: false, error: "Personagem indisponível." };
     const seed = farmSeed(seedId); if (!seed) return { success: false, error: "Semente inválida." };
-    const next = JSON.parse(JSON.stringify(character)); next.farm ??= { plots: [], unlockedPlots: 1, lastActionAt: Date.now(), skills: { planting: 0, harvesting: 0 } }; next.farm.skills ??= { planting: 0, harvesting: 0 };
+    const next = JSON.parse(JSON.stringify(character)); next.farm ??= { plots: [], unlockedPlots: 1, lastActionAt: Date.now(), skills: { planting: 0, harvesting: 0, irrigation: 0, fertility: 0 } }; next.farm.skills ??= { planting: 0, harvesting: 0, irrigation: 0, fertility: 0 };
     const plot = next.farm.plots.find((entry: any) => entry.id === plotId);
     if (!plot || next.farm.plots.indexOf(plot) >= next.farm.unlockedPlots) return { success: false, error: "Canteiro bloqueado." };
     if (plot.seedId) return { success: false, error: "Este canteiro já está plantado." };
     if (next.gold < seed.cost) return { success: false, error: "Gold insuficiente para comprar esta semente." };
-    const skill = Number(next.farm.skills.planting ?? 0); const speedBonus = Math.min(0.25, skill * 0.01); const growMs = Math.max(30_000, Math.round(seed.growMs * (1 - speedBonus)));
-    next.gold -= seed.cost; plot.seedId = seed.id; plot.plantedAt = Date.now(); plot.readyAt = Date.now() + growMs; plot.wateredAt = Date.now(); next.farm.skills.planting += 1; next.farm.lastActionAt = Date.now(); set({ character: next }); get().save(); return { success: true };
+    const fertility = Math.max(FARM_FERTILITY_MIN, Math.min(FARM_FERTILITY_MAX, Number(plot.fertility ?? FARM_FERTILITY_MAX)));
+    const skill = Number(next.farm.skills.planting ?? 0); const speedBonus = Math.min(0.25, skill * 0.01); const fertilityPenalty = (FARM_FERTILITY_MAX - fertility) / 200; const growMs = Math.max(30_000, Math.round(seed.growMs * (1 - speedBonus + fertilityPenalty)));
+    next.gold -= seed.cost; plot.fertility = fertility; plot.seedId = seed.id; plot.plantedAt = Date.now(); plot.readyAt = Date.now() + growMs; plot.wateredAt = Date.now(); plot.waterCount = 0; next.farm.skills.planting += 1; next.farm.lastActionAt = Date.now(); set({ character: next }); get().save(); return { success: true };
+  },
+  waterFarmPlot: (plotId) => {
+    const { character } = get(); if (!character) return { success: false, error: "Personagem indisponível." };
+    const next = JSON.parse(JSON.stringify(character)); const plot = next.farm?.plots?.find((entry: any) => entry.id === plotId);
+    if (!plot?.seedId || !plot.readyAt) return { success: false, error: "Este canteiro não possui uma plantação ativa." };
+    const now = Date.now(); if (now >= plot.readyAt) return { success: false, error: "A plantação já está pronta para colher." };
+    const waterCount = Number(plot.waterCount ?? 0); if (waterCount >= 3) return { success: false, error: "Esta plantação já recebeu toda a irrigação possível." };
+    if (plot.wateredAt && now - plot.wateredAt < 60_000) return { success: false, error: `A terra ainda está úmida. Aguarde ${Math.ceil((60_000 - (now - plot.wateredAt)) / 1000)}s.` };
+    const remaining = Math.max(30_000, plot.readyAt - now); const reduction = Math.max(5_000, Math.round(remaining * 0.08));
+    plot.readyAt = Math.max(now + 30_000, plot.readyAt - reduction); plot.wateredAt = now; plot.waterCount = waterCount + 1;
+    next.farm.skills ??= { planting: 0, harvesting: 0, irrigation: 0, fertility: 0 }; next.farm.skills.irrigation = Number(next.farm.skills.irrigation ?? 0) + 1; next.farm.lastActionAt = now;
+    set({ character: next }); get().save(); return { success: true, secondsReduced: Math.round(reduction / 1000) };
+  },
+  fertilizeFarmPlot: (plotId) => {
+    const { character } = get(); if (!character) return { success: false, error: "Personagem indisponível." };
+    const next = JSON.parse(JSON.stringify(character)); const plot = next.farm?.plots?.find((entry: any) => entry.id === plotId);
+    if (!plot) return { success: false, error: "Canteiro não encontrado." };
+    if (plot.seedId) return { success: false, error: "Adube o canteiro entre colheitas, antes de plantar novamente." };
+    const current = Math.max(FARM_FERTILITY_MIN, Math.min(FARM_FERTILITY_MAX, Number(plot.fertility ?? FARM_FERTILITY_MAX)));
+    if (current >= FARM_FERTILITY_MAX) return { success: false, error: "Este canteiro já está com fertilidade máxima." };
+    const compost = next.inventory.items.find((item: any) => item.templateId === "COMPOSTO_LYSS");
+    if (!compost) return { success: false, error: "É necessário um Composto Fértil de Lyss." };
+    removeItem(next.inventory, compost.uid, 1); plot.fertility = Math.min(FARM_FERTILITY_MAX, current + FARM_FERTILITY_COMPOST_GAIN);
+    next.farm.skills ??= { planting: 0, harvesting: 0, irrigation: 0, fertility: 0 }; next.farm.skills.fertility = Number(next.farm.skills.fertility ?? 0) + 1; next.farm.lastActionAt = Date.now(); set({ character: next }); get().save(); return { success: true, fertility: plot.fertility };
   },
   harvestFarmPlot: (plotId) => {
     const { character } = get(); if (!character) return { success: false, error: "Personagem indisponível." };
     const next = JSON.parse(JSON.stringify(character)); const plot = next.farm?.plots?.find((entry: any) => entry.id === plotId); const seed = plot?.seedId ? farmSeed(plot.seedId) : undefined;
     if (!plot || !seed) return { success: false, error: "Não há cultivo neste canteiro." }; if (!plot.readyAt || Date.now() < plot.readyAt) return { success: false, error: "A plantação ainda está crescendo." };
-    next.farm.skills ??= { planting: 0, harvesting: 0 }; addItem(next.inventory, farmYield(seed)); plot.seedId = undefined; plot.plantedAt = undefined; plot.readyAt = undefined; plot.wateredAt = undefined; next.farm.skills.harvesting += 1; next.farm.lastActionAt = Date.now(); set({ character: next }); get().save(); return { success: true, quantity: seed.yieldQty };
+    next.farm.skills ??= { planting: 0, harvesting: 0, irrigation: 0, fertility: 0 }; const fertility = Math.max(FARM_FERTILITY_MIN, Math.min(FARM_FERTILITY_MAX, Number(plot.fertility ?? FARM_FERTILITY_MAX))); const quantity = farmYield(seed, fertility, Number(next.farm.skills.harvesting ?? 0)); addItem(next.inventory, quantity); plot.fertility = Math.max(FARM_FERTILITY_MIN, fertility - FARM_FERTILITY_LOSS_PER_HARVEST); plot.seedId = undefined; plot.plantedAt = undefined; plot.readyAt = undefined; plot.wateredAt = undefined; plot.waterCount = undefined; next.farm.skills.harvesting += 1; next.farm.lastActionAt = Date.now(); set({ character: next }); get().save(); return { success: true, quantity: quantity.quantity };
   },
   unlockFarmPlot: () => {
     const { character } = get(); if (!character) return { success: false, error: "Personagem indisponível." };
@@ -621,7 +654,7 @@ return create<GameState>((set, get) => ({
       next.mythreonCoins = (next.mythreonCoins ?? 0) - cost.amount;
     }
     next.farm.unlockedPlots += 1;
-    next.farm.plots.push({ id: `plot-${next.farm.unlockedPlots}` });
+    next.farm.plots.push({ id: `plot-${next.farm.unlockedPlots}`, fertility: FARM_FERTILITY_MAX });
     set({ character: next }); get().save(); return { success: true };
   },
   cookFarmRecipe: (recipeId) => {

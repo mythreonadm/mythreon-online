@@ -24,6 +24,19 @@
 - [[docs/conhecimento/Pack-01-Fundacao-Matriz-Pets-Online-2026-11-03|Pack 01 — Fundação de Evolução e Conteúdo]]
 - [[docs/conhecimento/Pack-02-Cativeiro-Personalizacao-2026-11-03|Objetivo]]
 - [[docs/conhecimento/Pack-03-Feedback-Ataque-Pet-2026-11-03|Objetivo]]
+- [[docs/conhecimento/Pack-04-Online-Sem-Recuo-Desktop-Android-2026-11-03|Problema observado]]
+- [[docs/conhecimento/Pack-05-Auth-Downloads-Multiplataforma-2026-11-03|Entregue no código]]
+- [[docs/conhecimento/Pack-06-Launcher-Atualizador-2026-11-03|Pack 06 — Launcher atualizador seguro]]
+- [[docs/conhecimento/Pack-07-Launcher-Rollback-2026-11-03|Pack 07 — Atualização real com backup e rollback]]
+- [[docs/conhecimento/Pack-08-Pet-Feedback-na-Caca-2026-11-03|Pack 08 — Pet visível e feedback de combate]]
+- [[docs/conhecimento/Pack-09-Combo-Resposta-Imediata-2026-11-04|Pack 09 — Combo com resposta imediata]]
+- [[docs/conhecimento/Pack-10-Combo-Janela-de-Ritmo-2026-11-04|Pack 10 — Janela de ritmo do combo]]
+- [[docs/conhecimento/Pack-11-Fazenda-Irrigacao-2026-11-04|Pack 11 — Fazenda: irrigação e skill de cultivo]]
+- [[docs/conhecimento/Pack-12-Incubadora-2026-11-04|Pack 12 — Incubadora com progresso visual]]
+- [[docs/conhecimento/Pack-13-Fazenda-Fertilidade-2026-11-04|Pack 13 — Fazenda: fertilidade e receitas avançadas]]
+- [[docs/conhecimento/Pack-14-Personalizacao-Sprite-2026-11-04|Pack 14 — Personalização visual do humano]]
+- [[docs/conhecimento/Pack-15-Auditoria-Balanceamento-2026-11-04|Pack 15 — Auditoria de balanceamento]]
+- [[docs/conhecimento/Pack-16-Integridade-Online-2026-11-04|Pack 16 — Integridade online e ações idempotentes]]
 - [[docs/conhecimento/Pets-Atividades-Boss-Diario|Pets, atividades e Boss Diário]]
 - [[docs/conhecimento/Pets-Ovos-Migracao-2026-11-03|Migração de Bestas Divinas para Pets e Ovos]]
 - [[docs/conhecimento/Registro de problemas|Registro de problemas]]
@@ -55,6 +68,19 @@
 - [docs/conhecimento/Pack-01-Fundacao-Matriz-Pets-Online-2026-11-03.md](../docs/conhecimento/Pack-01-Fundacao-Matriz-Pets-Online-2026-11-03.md)
 - [docs/conhecimento/Pack-02-Cativeiro-Personalizacao-2026-11-03.md](../docs/conhecimento/Pack-02-Cativeiro-Personalizacao-2026-11-03.md)
 - [docs/conhecimento/Pack-03-Feedback-Ataque-Pet-2026-11-03.md](../docs/conhecimento/Pack-03-Feedback-Ataque-Pet-2026-11-03.md)
+- [docs/conhecimento/Pack-04-Online-Sem-Recuo-Desktop-Android-2026-11-03.md](../docs/conhecimento/Pack-04-Online-Sem-Recuo-Desktop-Android-2026-11-03.md)
+- [docs/conhecimento/Pack-05-Auth-Downloads-Multiplataforma-2026-11-03.md](../docs/conhecimento/Pack-05-Auth-Downloads-Multiplataforma-2026-11-03.md)
+- [docs/conhecimento/Pack-06-Launcher-Atualizador-2026-11-03.md](../docs/conhecimento/Pack-06-Launcher-Atualizador-2026-11-03.md)
+- [docs/conhecimento/Pack-07-Launcher-Rollback-2026-11-03.md](../docs/conhecimento/Pack-07-Launcher-Rollback-2026-11-03.md)
+- [docs/conhecimento/Pack-08-Pet-Feedback-na-Caca-2026-11-03.md](../docs/conhecimento/Pack-08-Pet-Feedback-na-Caca-2026-11-03.md)
+- [docs/conhecimento/Pack-09-Combo-Resposta-Imediata-2026-11-04.md](../docs/conhecimento/Pack-09-Combo-Resposta-Imediata-2026-11-04.md)
+- [docs/conhecimento/Pack-10-Combo-Janela-de-Ritmo-2026-11-04.md](../docs/conhecimento/Pack-10-Combo-Janela-de-Ritmo-2026-11-04.md)
+- [docs/conhecimento/Pack-11-Fazenda-Irrigacao-2026-11-04.md](../docs/conhecimento/Pack-11-Fazenda-Irrigacao-2026-11-04.md)
+- [docs/conhecimento/Pack-12-Incubadora-2026-11-04.md](../docs/conhecimento/Pack-12-Incubadora-2026-11-04.md)
+- [docs/conhecimento/Pack-13-Fazenda-Fertilidade-2026-11-04.md](../docs/conhecimento/Pack-13-Fazenda-Fertilidade-2026-11-04.md)
+- [docs/conhecimento/Pack-14-Personalizacao-Sprite-2026-11-04.md](../docs/conhecimento/Pack-14-Personalizacao-Sprite-2026-11-04.md)
+- [docs/conhecimento/Pack-15-Auditoria-Balanceamento-2026-11-04.md](../docs/conhecimento/Pack-15-Auditoria-Balanceamento-2026-11-04.md)
+- [docs/conhecimento/Pack-16-Integridade-Online-2026-11-04.md](../docs/conhecimento/Pack-16-Integridade-Online-2026-11-04.md)
 - [docs/conhecimento/Pets-Atividades-Boss-Diario.md](../docs/conhecimento/Pets-Atividades-Boss-Diario.md)
 - [docs/conhecimento/Pets-Ovos-Migracao-2026-11-03.md](../docs/conhecimento/Pets-Ovos-Migracao-2026-11-03.md)
 - [docs/conhecimento/Registro de problemas.md](../docs/conhecimento/Registro de problemas.md)
@@ -86,6 +112,7 @@
 - [[Mythreon Obsidian/Sistema - Divine Beasts|Divine Beasts]]
 - [[Mythreon Obsidian/Sistema - Itens e Ferreiro|Itens e Ferreiro]]
 - [[Mythreon Obsidian/Sistema - Missões|Missões]]
+- [[Mythreon Obsidian/Sistema - Contas e saves|Contas e saves]]
 - [[Mythreon Obsidian/Sistema - Atributos e progressão|Atributos e progressão]]
 - [[Mythreon Obsidian/Sistema - Artes e recursos|Artes e recursos]]
 - [[Mythreon Obsidian/Sistema - Windows|Windows]]

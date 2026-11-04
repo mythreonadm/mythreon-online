@@ -29,6 +29,7 @@ import { appearanceStyle } from "../utils/appearance";
 interface ZoneViewProps { onOpenQuest: (questId: string) => void; trackedQuestId?: string | null; }
 
 const metricNumber = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 0 });
+const COMBO_WINDOW_MS = 2400;
 const mapBackground = (theme: string) => `/assets/backgrounds/${theme}.png`;
 function describeDamageBreakdown(records: HuntEncounterRecord[], received = false) {
   const summary: DamageBreakdown = { physical: 0, elemental: {}, lifestealHealing: 0 };
@@ -62,6 +63,7 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
   const [floatingDamage, setFloatingDamage] = useState<number | null>(null);
   const [petDamage, setPetDamage] = useState<number | null>(null);
   const [petAttackPulse, setPetAttackPulse] = useState(false);
+  const [petImageError, setPetImageError] = useState(false);
   const [isAttacking, setIsAttacking] = useState(false);
   const [showProjectile, setShowProjectile] = useState(false);
   const [balloon, setBalloon] = useState<{ x: number; y: number } | null>(null);
@@ -96,6 +98,18 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
   }, []);
 
   useEffect(() => {
+    if (!comboStartedAt || comboProgress === 0) return;
+    const remaining = Math.max(0, COMBO_WINDOW_MS - (Date.now() - comboStartedAt));
+    const timer = window.setTimeout(() => {
+      setComboProgress(0);
+      setComboStartedAt(null);
+      setComboFeedback("bad");
+      window.setTimeout(() => setComboFeedback("idle"), 450);
+    }, remaining);
+    return () => window.clearTimeout(timer);
+  }, [comboStartedAt, comboProgress]);
+
+  useEffect(() => {
     const syncSettings = () => {
       setVideoMode((localStorage.getItem("mythreon_video_mode") as "auto" | "compat" | "reduced") || "auto");
       setAnimationsEnabled(localStorage.getItem("mythreon_animations_enabled") !== "false");
@@ -128,6 +142,7 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
   useEffect(() => {
     if (!isTickRunning) return;
     const onKey = (event: KeyboardEvent) => {
+      if (event.repeat) return;
       handleComboKey(event.key.toUpperCase());
     };
     window.addEventListener("keydown", onKey);
@@ -153,7 +168,7 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
   const playerLineage = getLineageByAttack(character.activeRace?.ataqueId);
 
   useEffect(() => {
-    setPlayerImageError(false); setEnemyImageError(false);
+    setPlayerImageError(false); setEnemyImageError(false); setPetImageError(false);
   }, [currentMob?.id, playerLineage.id]); // Reseta erro se o mob ou a raça mudar
 
   useEffect(() => {
@@ -211,7 +226,7 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
 
   useEffect(() => {
     if (isTickRunning && lastTickResult && (lastTickResult.attacked || lastTickResult.usedMp)) {
-      playCombatSfx(activeBond && lastTickResult.log?.some(line => line.includes(activeBond.name)) ? "beast" : "hit");
+      playCombatSfx(activeBond && (lastTickResult.beastDamage || lastTickResult.log?.some(line => line.includes(activeBond.name))) ? "beast" : "hit");
       playAttackSfx(character.activeRace?.ataqueId, !!lastTickResult.comboHitDamage);
       const canAnimate = animationsEnabled && effectsEnabled && videoMode !== "reduced";
       setIsAttacking(canAnimate); setShowProjectile(canAnimate && videoMode !== "compat");
@@ -394,7 +409,7 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
   // AQUI ESTÁ A GRANDE MUDANÇA VISUAL
   // O sprite agora vem da linhagem da raça, não da arma
   const getPlayerVisual = () => {
-    return playerLineage.sprite;
+    return playerLineage.id === "HUMANO" ? "/assets/players/humano-v2.png" : playerLineage.sprite;
   };
 
   const getPlayerFallbackEmoji = () => {
@@ -493,7 +508,7 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
           <div className="relative z-20 flex justify-between items-end px-4 md:px-20 pb-8 md:pb-12 h-[300px] md:h-[500px]">
             <div className="flex flex-col items-center relative translate-y-2 md:translate-y-4">
               
-              {activeBond && <div className={`absolute bottom-16 left-full ml-1 md:ml-4 flex w-20 md:w-32 flex-col items-center ${petAttackPulse ? "animate-pulse drop-shadow-[0_0_22px_rgba(45,212,191,.95)]" : ""}`} title={activeBond.name + ' · ' + activeBond.element}><div className="relative"><AssetImage removeWhite src={activeBond.beast.sprite} alt={activeBond.beast.name} className="h-24 w-24 md:h-36 md:w-36 object-contain [image-rendering:pixelated]" />{petDamage !== null && <span className="damage-number absolute -top-5 left-1/2 -translate-x-1/2 whitespace-nowrap text-lg font-black text-teal-200 drop-shadow-[0_2px_3px_rgba(0,0,0,1)]">-{petDamage}</span>}</div><span className="rounded bg-black/70 px-2 text-[10px] text-arcane-gold">{activeBond.beast.name}</span></div>}
+              {activeBond && <div className={`combat-pet-companion absolute bottom-16 left-full ml-1 flex w-24 md:ml-4 md:w-32 flex-col items-center ${petAttackPulse ? "animate-pulse drop-shadow-[0_0_22px_rgba(45,212,191,.95)]" : ""}`} title={`${activeBond.beast.name} · ${activeBond.element} · ataque a cada ${activeBond.cooldownSeconds}s`}><div className="relative grid h-24 w-24 place-items-center md:h-36 md:w-36">{!petImageError ? <AssetImage removeWhite src={activeBond.beast.sprite} alt={activeBond.beast.name} className="h-full w-full object-contain [image-rendering:pixelated]" onAllSourcesFail={() => setPetImageError(true)} /> : <span className="text-6xl leading-none drop-shadow-lg md:text-8xl" role="img" aria-label={activeBond.beast.name}>{activeBond.beast.emoji}</span>}{petDamage !== null && <span className="damage-number absolute -top-5 left-1/2 -translate-x-1/2 whitespace-nowrap text-lg font-black text-teal-200 drop-shadow-[0_2px_3px_rgba(0,0,0,1)]">-{petDamage}</span>}</div><span className="rounded bg-black/75 px-2 text-center text-[10px] font-bold text-arcane-gold">{activeBond.beast.name}</span><span className="mt-0.5 rounded-full border border-cyan-300/30 bg-black/60 px-1.5 text-[8px] text-cyan-100">✦ Pet ativo · {activeBond.cooldownSeconds}s</span></div>}
               {/* SPRITE DO JOGADOR (Agora baseado na Linhagem) */}
               <div className={`combat-sprite combat-sprite-player relative w-24 h-24 md:w-40 md:h-40 flex items-center justify-center transition-transform ${weaponAnimClass}`}>
                 {!playerImageError ? (
@@ -528,6 +543,7 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
               <div className="mt-1.5 grid grid-cols-3 gap-1.5 md:hidden" aria-label="Controles de toque do combo">
                 {comboKeys.map((key, index) => <button key={`${key}-${index}`} type="button" disabled={(character.comboCooldownUntil ?? 0) > comboClock} onClick={() => handleComboKey(key)} className={`min-h-10 rounded-lg border text-sm font-black transition active:scale-95 ${index < comboProgress ? "border-emerald-300 bg-emerald-900/80 text-emerald-100" : index === comboProgress ? "border-purple-300 bg-purple-900 text-purple-100 shadow-[0_0_12px_rgba(168,85,247,.65)]" : "border-white/15 bg-black/50 text-gray-300"}`} aria-label={`Etapa ${index + 1}: tecla ${key}`}>{index < comboProgress ? "✓" : key}</button>)}
               </div>
+              {comboProgress > 0 && comboStartedAt && <div className="mt-1.5 rounded border border-purple-300/30 bg-black/50 px-2 py-1" aria-live="polite"><div className="flex items-center justify-between text-[8px] font-bold uppercase tracking-wider text-purple-200"><span>Janela de ritmo</span><span>{(Math.max(0, COMBO_WINDOW_MS - (comboClock - comboStartedAt)) / 1000).toFixed(1)}s</span></div><div className="mt-1 h-1 overflow-hidden rounded bg-black/70"><div className="h-full rounded bg-gradient-to-r from-emerald-300 via-amber-300 to-red-400 transition-[width] duration-200" style={{ width: `${Math.max(0, Math.min(100, ((COMBO_WINDOW_MS - (comboClock - comboStartedAt)) / COMBO_WINDOW_MS) * 100))}%` }} /></div></div>}
               <div className="mt-1 hidden text-[8px] text-purple-200/80 md:block">PC: pressione {comboKeys.join(" + ")} · Celular: toque nos botões</div>
               </div>
             </div>

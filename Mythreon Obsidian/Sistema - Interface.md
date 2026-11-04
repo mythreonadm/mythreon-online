@@ -28,6 +28,7 @@
 - [[Mythreon Obsidian/Sistema - Estado|Estado]]
 - [[Mythreon Obsidian/Sistema - Tipos|Tipos]]
 - [[Mythreon Obsidian/Sistema - Artes e recursos|Artes e recursos]]
+- [[Mythreon Obsidian/Sistema - Windows|Windows]]
 - [[Mythreon Obsidian/Sistema - Mundo e História|Mundo e História]]
 
 [[Mythreon Obsidian/Mapa de Sistemas|Mapa técnico]]

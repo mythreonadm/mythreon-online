@@ -2,7 +2,12 @@
 
 Amostra determinística: 12 encontros por cenário. Matriz/Beast alternam 12 modelos; não é uma avaliação exaustiva de builds. Equipamento comum, sem poções. Sem vials. Limite de 120 ticks por encontro.
 
-
+- PASS: Treino sem ticks gratuitos, conquista única de 5 min, maestria só por prática e limite de 30%
+- PASS: Armadura tem redução crescente limitada a 70%
+- PASS: Recalcular não ressuscita nem recarrega mana zero
+- PASS: XP necessário monotônico nos níveis 1–150
+- PASS: Premium adiciona exatamente 10 pontos percentuais de bônus de XP
+- PASS: As 12 Bestas usam seu ataque elemental e consomem MP
 
 | Zona | Mob | Caminho | Nível | Vitórias % | Segundos médios | Dano recebido | Gold bruto | Poções | Gold líquido | XP |
 |---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
@@ -27,10 +32,10 @@ Amostra determinística: 12 encontros por cenário. Matriz/Beast alternam 12 mod
 | Bosque de Lyss | Javali-Musgoso | Humano | 7 | 100 | 9 | 15 | 19 | 0 | 19 | 44 |
 | Bosque de Lyss | Javali-Musgoso | Matriz | 7 | 100 | 7 | 8 | 18 | 0 | 18 | 42 |
 | Bosque de Lyss | Javali-Musgoso | Beast | 7 | 100 | 6 | 7 | 20 | 0 | 20 | 41 |
-| Bosque de Lyss | Espectro de Brasa | Humano | 15 | 100 | 43 | 504 | 133 | 0 | 133 | 128 |
-| Bosque de Lyss | Espectro de Brasa | Matriz | 15 | 100 | 23 | 206 | 133 | 0 | 133 | 130 |
-| Bosque de Lyss | Espectro de Brasa | Beast | 15 | 100 | 16 | 147 | 126 | 0 | 126 | 128 |
-| Pico de Dhor | Golem-Rocha | Humano | 11 | 100 | 25 | 149 | 32 | 0 | 32 | 70 |
+| Bosque de Lyss | Espectro de Brasa | Humano | 15 | 100 | 44 | 513 | 130 | 0 | 130 | 128 |
+| Bosque de Lyss | Espectro de Brasa | Matriz | 15 | 100 | 23 | 226 | 140 | 0 | 140 | 130 |
+| Bosque de Lyss | Espectro de Brasa | Beast | 15 | 100 | 15 | 144 | 126 | 0 | 126 | 128 |
+| Pico de Dhor | Golem-Rocha | Humano | 11 | 100 | 26 | 164 | 36 | 0 | 36 | 75 |
 | Pico de Dhor | Golem-Rocha | Matriz | 11 | 100 | 13 | 63 | 33 | 0 | 33 | 71 |
 | Pico de Dhor | Golem-Rocha | Beast | 11 | 100 | 12 | 62 | 36 | 0 | 36 | 79 |
 | Pico de Dhor | Urso-Fenda | Humano | 13 | 100 | 12 | 54 | 34 | 0 | 34 | 77 |
@@ -53,7 +58,7 @@ Amostra determinística: 12 encontros por cenário. Matriz/Beast alternam 12 mod
 | Pico de Dhor | Yeti-do-Cume | Beast | 22 | 100 | 11 | 140 | 75 | 0 | 75 | 160 |
 | Pico de Dhor | Colosso de Dhor | Humano | 24 | 0 | 37 | 1310 | 0 | 0 | 0 | 0 |
 | Pico de Dhor | Colosso de Dhor | Matriz | 24 | 75 | 44 | 1349 | 501 | 0 | 501 | 405 |
-| Pico de Dhor | Colosso de Dhor | Beast | 24 | 100 | 32 | 966 | 757 | 0 | 757 | 540 |
+| Pico de Dhor | Colosso de Dhor | Beast | 24 | 100 | 32 | 959 | 757 | 0 | 757 | 540 |
 | Mar de Azhar | Caranguejo-Colosso | Humano | 26 | 100 | 25 | 364 | 85 | 0 | 85 | 210 |
 | Mar de Azhar | Caranguejo-Colosso | Matriz | 26 | 100 | 16 | 209 | 86 | 0 | 86 | 213 |
 | Mar de Azhar | Caranguejo-Colosso | Beast | 26 | 100 | 12 | 140 | 83 | 0 | 83 | 210 |

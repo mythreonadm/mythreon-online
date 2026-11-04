@@ -15,7 +15,18 @@ export async function handleWorld(db:Database,owner:string,request:WorldRequest)
  uuid(owner);const op=request.operation,p=request.payload??{};if(typeof op!=='string')throw Error('Operação inválida.');
  await db.query('insert into public.world_accounts(id) values($1) on conflict do nothing',[owner]);await db.query('select id from public.world_accounts where id=$1 for update',[owner]);
  const readonly=['characters','world.read','social.read','ranking'];let cached:any=null;
- if(!readonly.includes(op)){const requestId=uuid(request.requestId);const prev=await db.query('select response from public.world_operations where owner_id=$1 and request_id=$2',[owner,requestId]);cached=prev.rows[0]?.response;}
+ if(!readonly.includes(op)){
+  const requestId=uuid(request.requestId);
+  // Reserva o request antes de executar o efeito. Isso fecha a janela em que
+  // duas tentativas iguais poderiam passar pelo SELECT ao mesmo tempo e
+  // aplicar uma troca/correio duas vezes.
+  const reserved=await db.query('insert into public.world_operations(owner_id,request_id,response) values($1,$2,null) on conflict(owner_id,request_id) do nothing returning request_id',[owner,requestId]);
+  if(!reserved.rows.length){
+   const prev=await db.query('select response from public.world_operations where owner_id=$1 and request_id=$2 for update',[owner,requestId]);
+   if(prev.rows[0]?.response===null)throw Error('Esta ação já está sendo processada. Aguarde a confirmação.');
+   cached=prev.rows[0]?.response;
+  }
+ }
  let receipt:any=cached??{}, actor:CharacterRow|undefined;
  if(!cached){
  if(op==='characters'){}
@@ -75,7 +86,7 @@ export async function handleWorld(db:Database,owner:string,request:WorldRequest)
    const mail=(await db.query('select * from public.world_mail where id=$1 and recipient_id=$2 for update',[uuid(p.id),actor.id])).rows[0];if(!mail)throw Error('Correio não encontrado.');if(mail.claimed_at)throw Error('Este correio já foi recebido.');receiveOffer(actor.state.character,{gold:Number(mail.gold),mythreonCoins:Number(mail.mythreon_coins??0),items:mail.items,fee:0});await db.query('update public.world_mail set claimed_at=now() where id=$1',[mail.id]);await commitCharacter(db,actor);
   }else if(op!=='social.read')throw Error('Operação não permitida.');
  }
- if(!readonly.includes(op))await db.query('insert into public.world_operations(owner_id,request_id,response) values($1,$2,$3)',[owner,request.requestId,JSON.stringify(receipt)]);
+ if(!readonly.includes(op))await db.query('update public.world_operations set response=$3 where owner_id=$1 and request_id=$2',[owner,request.requestId,JSON.stringify(receipt)]);
  }
  const list=(await db.query('select id,name,revision,created_at from public.world_characters where owner_id=$1 order by created_at',[owner])).rows;
  const id=actor?.id??request.characterId;

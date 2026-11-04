@@ -222,12 +222,15 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 .combat-sprite { z-index: 1; filter: drop-shadow(0 11px 10px rgba(0,0,0,.7)); }
 .combat-sprite-player::before, .combat-sprite-enemy::before { content: ""; position: absolute; z-index: -1; bottom: 4%; left: 12%; width: 76%; height: 24%; border-radius: 50%; background: radial-gradient(ellipse, rgba(214,180,106,.25), rgba(8,13,13,.1) 58%, transparent 72%); }
 .combat-sprite-enemy::before { background: radial-gradient(ellipse, rgba(200,112,87,.26), rgba(8,13,13,.1) 58%, transparent 72%); }
+.combat-pet-companion { z-index: 2; transition: filter .2s ease, transform .2s ease; }
+.combat-pet-companion::after { content: ""; position: absolute; z-index: -1; bottom: 24px; width: 72%; height: 18%; border-radius: 50%; background: radial-gradient(ellipse, rgba(45,212,191,.28), transparent 72%); pointer-events: none; }
 .combat-scene > .absolute.top-0 { padding: 14px 16px; }
 
 @media (max-width: 700px) {
   .brand-lockup { min-width: 0; }
   .game-brand-lockup { gap: 8px; }
   .brand-logo { height: 44px; max-width: 45vw; }
+  .combat-pet-companion { left: calc(100% - 20px); bottom: 66px; margin-left: 0; transform: scale(.88); transform-origin: bottom left; }
   .game-brand-banner { height: 62px; max-width: 62vw; }
   .brand-logo-entry { height: 80px; max-width: 100%; }
   .brand-sigil { width: 36px; height: 36px; flex-basis: 36px; }
@@ -251,6 +254,8 @@ html { scroll-behavior: smooth; scroll-padding-top: 92px; }
 .landing-nav, .landing-actions { display: flex; align-items: center; gap: 25px; }
 .landing-nav a, .landing-login { color: #d2d0ce; font-size: 13px; font-weight: 700; text-decoration: none; transition: color .2s ease; }
 .landing-nav a:hover, .landing-login:hover { color: var(--site-gold-light); }
+.landing-download-link { color: var(--site-gold-light); font-size: 12px; font-weight: 800; text-decoration: none; }
+.landing-download-link:hover { color: #fff4c7; }
 .landing-login { padding: 10px 4px; border: 0; background: transparent; cursor: pointer; }
 .landing-button { display: inline-flex; min-height: 52px; align-items: center; justify-content: center; gap: 9px; padding: 0 24px; border: 1px solid #ffe08a; border-radius: 11px; background: linear-gradient(180deg, #f7d36e, #d99520); box-shadow: 0 8px 24px rgba(211, 151, 43, .2), inset 0 1px rgba(255,255,255,.36); color: #211605; font-weight: 900; text-decoration: none; cursor: pointer; transition: transform .18s ease, filter .18s ease, box-shadow .18s ease; }
 .landing-button:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 12px 30px rgba(211, 151, 43, .3); }
@@ -271,6 +276,9 @@ html { scroll-behavior: smooth; scroll-padding-top: 92px; }
 .landing-proof { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 23px; color: #9c9eac; font-size: 11px; }
 .landing-proof > span { color: var(--site-gold); }
 .landing-proof i { width: 3px; height: 3px; border-radius: 50%; background: #7c7e89; }
+.landing-download-mini { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 18px; font-size: 11px; }
+.landing-download-mini a { color: var(--site-gold-light); font-weight: 900; text-decoration: none; }
+.landing-download-mini span { color: #858895; }
 .landing-world-card { position: relative; width: 100%; min-height: 365px; overflow: hidden; align-self: center; border: 1px solid rgba(230,181,79,.48); border-radius: 22px; background: #10131b; box-shadow: 0 35px 90px rgba(0,0,0,.56), 0 0 45px rgba(15, 118, 133, .11); transform: perspective(1200px) rotateY(-3deg); }
 .landing-world-image { position: absolute; inset: 0; overflow: hidden; background: #090b12; image-rendering: pixelated; transform: scale(1.02); }
 .landing-world-image::after { content: ""; position: absolute; inset: 0; z-index: 1; background: linear-gradient(180deg, rgba(5,8,13,.05) 22%, rgba(5,8,13,.16) 50%, #090b12 100%); }
@@ -291,6 +299,18 @@ html { scroll-behavior: smooth; scroll-padding-top: 92px; }
 .landing-feature-icon { display: grid; width: 43px; height: 43px; place-items: center; border: 1px solid rgba(230,181,79,.34); border-radius: 12px; background: rgba(230,181,79,.08); color: var(--site-gold-light); font-size: 23px; }
 .landing-feature h3 { margin: 20px 0 8px; color: #f0e8d7; font-family: Georgia,serif; font-size: 20px; }
 .landing-feature p { margin: 0; color: #a6a9b6; font-size: 13px; line-height: 1.75; }
+.landing-downloads { padding: 20px 0 120px; }
+.landing-download-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.landing-download-card { display: flex; min-height: 96px; align-items: center; gap: 13px; padding: 18px; border: 1px solid rgba(230,181,79,.26); border-radius: 14px; background: linear-gradient(145deg, rgba(31,31,43,.82), rgba(15,17,26,.9)); color: #f4f0e6; text-decoration: none; box-shadow: inset 0 1px rgba(255,255,255,.04); transition: transform .18s ease, border-color .18s ease, background .18s ease; }
+.landing-download-card:hover { transform: translateY(-3px); border-color: rgba(255,224,138,.72); background: linear-gradient(145deg, rgba(48,42,44,.9), rgba(17,19,28,.95)); }
+.landing-download-card-muted { border-color: rgba(223,207,165,.13); }
+.landing-download-icon { display: grid; width: 40px; height: 40px; flex: 0 0 40px; place-items: center; border: 1px solid rgba(230,181,79,.36); border-radius: 11px; background: rgba(230,181,79,.1); color: var(--site-gold-light); font-size: 22px; }
+.landing-download-card span:nth-child(2) { display: grid; flex: 1; gap: 4px; }
+.landing-download-card strong { font-family: Georgia,serif; font-size: 17px; }
+.landing-download-card small { color: #9699a8; font-size: 10px; }
+.landing-download-card b { color: var(--site-gold-light); font-size: 11px; white-space: nowrap; }
+.landing-download-note { margin: 15px 0 0; color: #747887; font-size: 10px; line-height: 1.6; }
+.landing-download-note code { color: #b7a77a; }
 .landing-journey { position: relative; isolation: isolate; display: flex; min-height: 340px; align-items: center; justify-content: space-between; gap: 40px; width: min(1200px, calc(100% - 48px)); margin: 0 auto 120px; padding: 52px clamp(28px, 7vw, 90px); overflow: hidden; border: 1px solid rgba(230,181,79,.27); border-radius: 20px; background: linear-gradient(90deg, rgba(13,14,21,.98), rgba(13,14,21,.84) 56%, rgba(13,14,21,.42)); box-shadow: 0 22px 70px rgba(0,0,0,.28); }
 .landing-journey-art { position: absolute; inset: 0; z-index: -1; opacity: .36; pointer-events: none; }
 .landing-journey > div:first-of-type { position: relative; max-width: 650px; z-index: 1; }
@@ -347,6 +367,7 @@ html { scroll-behavior: smooth; scroll-padding-top: 92px; }
   .landing-brand img { width: 132px; max-height: 42px; }
   .landing-nav { display: none; }
   .landing-actions { gap: 10px; }
+  .landing-download-link { font-size: 11px; }
   .landing-login { font-size: 12px; }
   .landing-button-small { min-height: 38px; padding: 0 11px; font-size: 11px; }
   .landing-hero { display: flex; min-height: 820px; flex-direction: column; align-items: stretch; justify-content: center; gap: 34px; padding: 128px 24px 95px; }
@@ -358,6 +379,7 @@ html { scroll-behavior: smooth; scroll-padding-top: 92px; }
   .landing-hero-buttons { gap: 9px; margin-top: 24px; }
   .landing-hero-buttons .landing-button { min-height: 47px; padding: 0 14px; font-size: 12px; }
   .landing-proof { font-size: 9px; line-height: 1.5; }
+  .landing-download-mini { font-size: 10px; }
   .landing-world-card { min-height: 230px; max-height: 260px; border-radius: 16px; transform: none; }
   .landing-world-stamp { top: 12px; left: 12px; }
   .landing-world-caption { right: 12px; bottom: 12px; left: 12px; font-size: 10px; }
@@ -371,6 +393,10 @@ html { scroll-behavior: smooth; scroll-padding-top: 92px; }
   .landing-feature { min-height: 0; padding: 19px; }
   .landing-feature h3 { margin: 13px 0 5px; font-size: 18px; }
   .landing-feature p { font-size: 12px; }
+  .landing-downloads { padding: 0 0 82px; }
+  .landing-download-grid { grid-template-columns: 1fr; gap: 10px; }
+  .landing-download-card { min-height: 78px; padding: 14px; }
+  .landing-download-card strong { font-size: 15px; }
   .landing-journey { width: calc(100% - 28px); min-height: 390px; align-items: flex-start; margin-bottom: 80px; padding: 32px 23px; border-radius: 16px; }
   .landing-journey h2 { font-size: 38px; }
   .landing-journey-seal { position: absolute; right: 18px; bottom: 18px; width: 75px; height: 75px; }
@@ -464,6 +490,11 @@ html { scroll-behavior: smooth; scroll-padding-top: 92px; }
 .online-button,.online-button-secondary { display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; gap:8px; padding:9px 14px; border-radius:8px; border:1px solid #d6b46a; background:#d6b46a; color:#101719; font-weight:700; font-size:13px; cursor:pointer; }
 .online-button-secondary { background:#142125; border-color:#3c5258; color:#dbe5df; }
 .online-button:disabled,.online-button-secondary:disabled { opacity:.45; cursor:wait; }
+.desktop-update-notice { display:flex; align-items:center; justify-content:space-between; gap:16px; max-width:1320px; margin:12px auto 0; padding:12px 16px; border:1px solid rgba(214,180,106,.55); border-radius:12px; background:linear-gradient(110deg,rgba(70,53,20,.45),rgba(17,29,31,.95)); color:#f4e4b2; box-shadow:0 8px 24px rgba(0,0,0,.2); }
+.desktop-update-notice strong { display:block; font-size:13px; }
+.desktop-update-notice p { margin:4px 0 0; font-size:12px; color:#c8d2ca; }
+.desktop-update-notice .desktop-update-error { color:#fca5a5; }
+@media (max-width:700px) { .desktop-update-notice { align-items:stretch; flex-direction:column; margin:10px 12px 0; } .desktop-update-notice .online-button { width:100%; } }
 .online-character { width:100%; display:flex; justify-content:space-between; align-items:center; gap:12px; text-align:left; padding:15px; border:1px solid #40565b; background:#0c161a; border-radius:10px; }
 .online-character:hover { border-color:#d6b46a; }
 .online-eyebrow { color:#c9ac6b; text-transform:uppercase; font-size:10px; letter-spacing:.16em; margin-bottom:8px; }

@@ -22,6 +22,19 @@
 - [[docs/conhecimento/Pack-01-Fundacao-Matriz-Pets-Online-2026-11-03|Pack 01 — Fundação de Evolução e Conteúdo]] — a revisar
 - [[docs/conhecimento/Pack-02-Cativeiro-Personalizacao-2026-11-03|Objetivo]] — concluído
 - [[docs/conhecimento/Pack-03-Feedback-Ataque-Pet-2026-11-03|Objetivo]] — concluído
+- [[docs/conhecimento/Pack-04-Online-Sem-Recuo-Desktop-Android-2026-11-03|Problema observado]] — concluído
+- [[docs/conhecimento/Pack-05-Auth-Downloads-Multiplataforma-2026-11-03|Entregue no código]] — implementado parcialmente
+- [[docs/conhecimento/Pack-06-Launcher-Atualizador-2026-11-03|Pack 06 — Launcher atualizador seguro]] — a revisar
+- [[docs/conhecimento/Pack-07-Launcher-Rollback-2026-11-03|Pack 07 — Atualização real com backup e rollback]] — a revisar
+- [[docs/conhecimento/Pack-08-Pet-Feedback-na-Caca-2026-11-03|Pack 08 — Pet visível e feedback de combate]] — a revisar
+- [[docs/conhecimento/Pack-09-Combo-Resposta-Imediata-2026-11-04|Pack 09 — Combo com resposta imediata]] — a revisar
+- [[docs/conhecimento/Pack-10-Combo-Janela-de-Ritmo-2026-11-04|Pack 10 — Janela de ritmo do combo]] — a revisar
+- [[docs/conhecimento/Pack-11-Fazenda-Irrigacao-2026-11-04|Pack 11 — Fazenda: irrigação e skill de cultivo]] — a revisar
+- [[docs/conhecimento/Pack-12-Incubadora-2026-11-04|Pack 12 — Incubadora com progresso visual]] — a revisar
+- [[docs/conhecimento/Pack-13-Fazenda-Fertilidade-2026-11-04|Pack 13 — Fazenda: fertilidade e receitas avançadas]] — a revisar
+- [[docs/conhecimento/Pack-14-Personalizacao-Sprite-2026-11-04|Pack 14 — Personalização visual do humano]] — a revisar
+- [[docs/conhecimento/Pack-15-Auditoria-Balanceamento-2026-11-04|Pack 15 — Auditoria de balanceamento]] — a revisar
+- [[docs/conhecimento/Pack-16-Integridade-Online-2026-11-04|Pack 16 — Integridade online e ações idempotentes]] — a revisar
 - [[docs/conhecimento/Pets-Atividades-Boss-Diario|Pets, atividades e Boss Diário]] — em desenvolvimento
 - [[docs/conhecimento/Pets-Ovos-Migracao-2026-11-03|Migração de Bestas Divinas para Pets e Ovos]] — a revisar
 - [[docs/conhecimento/Registro de problemas|Registro de problemas]] — Problemas de documentação, sincronização e continuidade com suas evidências.

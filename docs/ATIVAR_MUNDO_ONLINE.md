@@ -50,6 +50,8 @@ No projeto existente Mythreon, abra Settings → Environment Variables. Cadastre
 |---|---|---|
 | VITE_SUPABASE_URL | URL do projeto | Sim |
 | VITE_SUPABASE_ANON_KEY | Chave pública publishable/anon | Sim |
+| VITE_WINDOWS_DOWNLOAD_URL | URL pública do instalador/portátil Windows | Recomendado |
+| VITE_ANDROID_DOWNLOAD_URL | URL pública do APK/AAB Android | Recomendado |
 | VITE_WORLD_API_URL | /api/world para a versão web | Sim |
 | SUPABASE_URL | Mesma URL do projeto, para a API | Servidor |
 | SUPABASE_ANON_KEY | Mesma chave pública, para a API | Servidor |
@@ -107,6 +109,10 @@ O navegador do PC já usa o mesmo servidor que o celular. Para o executável, co
     VITE_WORLD_API_URL=https://mythreon-online.vercel.app/api/world
 
 Use as mesmas variáveis públicas do Supabase e execute npm run desktop:package. Mantenha a pasta win-unpacked inteira. A build grava somente origens públicas em dist/online-origins.json para permitir HTTPS/WebSocket no aplicativo sem liberar scripts externos.
+
+### Launcher atualizador
+
+O executável consulta o manifesto HTTPS `https://mythreon-online.vercel.app/downloads/latest.json`. Depois de gerar um portátil com `npm run desktop:portable`, publique o `.exe` em um endereço HTTPS e copie `docs/launcher-manifest.example.json` para `public/downloads/latest.json`, preenchendo `version`, `url`, `sha256` e `notes`. O botão aparece apenas quando a versão do manifesto é maior que a versão instalada. O download é validado por SHA-256 e aberto somente após o clique do jogador; a troca silenciosa com rollback será adicionada no próximo pack.
 
 Os executáveis já gerados anteriormente não contêm esta integração nova. Não foram recompilados nesta etapa sem o projeto real configurado. O portátil único anterior também continua anterior. A tentativa antiga de compactação falhou por falta de espaço; confira o espaço disponível antes de gerar um novo portátil.
 

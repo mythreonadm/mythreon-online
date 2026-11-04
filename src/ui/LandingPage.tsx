@@ -7,6 +7,8 @@ import { createLocalAccount, LocalAccount, signInLocalAccount } from "../utils/l
 type AccessMode = "register" | "login";
 
 const brandBannerUrl = new URL("../../imagens/image_5f23237d.jpg", import.meta.url).href;
+const windowsDownloadUrl = import.meta.env.VITE_WINDOWS_DOWNLOAD_URL || "/downloads/Mythreon-Online-Windows-x64.exe";
+const androidDownloadUrl = import.meta.env.VITE_ANDROID_DOWNLOAD_URL || "/downloads/Mythreon-Online-Android.apk";
 
 interface LandingPageProps {
   onAuthenticated: (account: LocalAccount) => void;
@@ -32,6 +34,7 @@ export function LandingPage({ onAuthenticated }: LandingPageProps) {
           <a href="#historia">História</a>
         </nav>
         <div className="landing-actions">
+          <a className="landing-download-link" href="#downloads">Baixar</a>
           <button className="landing-login" onClick={() => openAccess("login")}>Entrar</button>
           <button className="landing-button landing-button-small" onClick={() => openAccess("register")}>Jogar agora <span aria-hidden="true">↗</span></button>
         </div>
@@ -48,6 +51,7 @@ export function LandingPage({ onAuthenticated }: LandingPageProps) {
               <button className="landing-button" onClick={() => openAccess("register")}>✦ &nbsp;Jogar agora — é grátis</button>
               <a className="landing-button landing-button-quiet" href="#historia">Conhecer a história <span aria-hidden="true">↓</span></a>
             </div>
+            <div className="landing-download-mini"><a href="#downloads">▣ Baixar para PC ou celular</a><span>Mesma conta · mesmo progresso</span></div>
             <div className="landing-proof"><span>✦</span> Progresso salvo no seu navegador <i /> Uma aventura para jogar no seu ritmo</div>
           </div>
           <div className="landing-world-card">
@@ -56,6 +60,16 @@ export function LandingPage({ onAuthenticated }: LandingPageProps) {
             <div className="landing-world-stamp"><AssetImage src="/assets/branding/mythreon-logo-mark.png" alt="" /><span>MYTHREON<br /><small>ONLINE</small></span></div>
           </div>
           <a className="landing-scroll-cue" href="#universo">DESCUBRA O MUNDO <span>⌄</span></a>
+        </section>
+
+        <section className="landing-downloads landing-section" id="downloads">
+          <div className="landing-section-heading"><span className="landing-eyebrow">JOGUE ONDE QUISER</span><h2>Mythreon acompanha <em>seu caminho.</em></h2><p>O navegador continua disponível. O cliente para PC e a versão mobile usam a mesma conta e o mesmo mundo online.</p></div>
+          <div className="landing-download-grid">
+            <a className="landing-download-card" href={windowsDownloadUrl} download={!windowsDownloadUrl.startsWith("http")}><span className="landing-download-icon">▣</span><span><strong>Windows</strong><small>Cliente para PC · Electron</small></span><b>Baixar →</b></a>
+            <a className="landing-download-card" href={androidDownloadUrl} download={!androidDownloadUrl.startsWith("http")}><span className="landing-download-icon">▱</span><span><strong>Android</strong><small>Aplicativo mobile · mesma conta</small></span><b>Baixar →</b></a>
+            <a className="landing-download-card landing-download-card-muted" href="/#/"><span className="landing-download-icon">◉</span><span><strong>Jogar no navegador</strong><small>Sem instalar nada</small></span><b>Abrir →</b></a>
+          </div>
+          <p className="landing-download-note">Os links de PC e Android podem ser apontados para o release oficial pelas variáveis <code>VITE_WINDOWS_DOWNLOAD_URL</code> e <code>VITE_ANDROID_DOWNLOAD_URL</code>.</p>
         </section>
 
         <section className="landing-universe landing-section" id="universo">
@@ -147,9 +161,12 @@ function AccountDialog({ mode, onModeChange, onClose, onAuthenticated }: { mode:
     setError("");
     setBusy(true);
     try {
+      const redirectTo = window.location.protocol === "mythreon:"
+        ? "mythreon://game/auth/callback"
+        : `${window.location.origin}/auth/callback`;
       const { error } = await supabase().auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: window.location.origin },
+        options: { redirectTo },
       });
       if (error) throw error;
     } catch (cause) {
