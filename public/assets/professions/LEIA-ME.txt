@@ -1,0 +1,7 @@
+Salve aqui os GIFs de atividade das profissões:
+
+MINERACAO_ATIVA.gif — cena animada enquanto o personagem minera.
+PESCA_ATIVA.gif — cena animada enquanto o personagem pesca.
+
+Formato recomendado: GIF otimizado, mesma proporção da cena de profissão, sem áudio.
+Se algum GIF estiver ausente ou falhar, o jogo volta automaticamente para o fundo do bioma em PNG.

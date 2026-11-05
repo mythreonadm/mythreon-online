@@ -30,13 +30,16 @@ export function ProfessionScene({ character, kind, point, activity }: {
     window.addEventListener("mythreon-settings-change", update);window.addEventListener("storage", update);
     return () => { window.removeEventListener("mythreon-settings-change", update);window.removeEventListener("storage", update);media.removeEventListener("change", update); };
   }, []);
-  const fishing = kind === "PESCA", working = activity.phase === "holding", won = activity.phase === "success";
+  const fishing = kind === "PESCA", working = activity.phase === "holding", won = activity.phase === "success", active = activity.phase !== "idle";
   const biome = ZONES[point.zoneId], theme = biome?.theme ?? "forest";
   const tool = fishing ? character.equippedFishingRod : character.equippedMiningTool;
+  const biomeArt = `/assets/backgrounds/${theme}.png`;
+  const activityArt = fishing ? "/assets/professions/PESCA_ATIVA.gif" : "/assets/professions/MINERACAO_ATIVA.gif";
+  const sceneArt = active && video.motion ? activityArt : biomeArt;
   const labels: Record<ProfessionPhase, string> = { idle: "Escolha um ponto e encontre o pulso", preparing: "Preparando · mantenha pressionado", holding: fishing ? "Sinta a linha · solte no dourado" : "Encontre a veia · solte no dourado", confirming: "Recolhendo · aguardando confirmação", success: "Coleta confirmada" };
   return <figure data-profession-scene={kind} data-point={point.id} data-phase={activity.phase} data-motion={video.motion} data-effects={video.effects}
     className={`profession-scene ${fishing ? "profession-scene-fishing" : "profession-scene-mining"} ${working ? "is-working" : ""} ${won ? "is-won" : ""}`}>
-    <AssetImage src={`/assets/backgrounds/${theme}.png`} alt="" aria-hidden="true" preferAnimated={video.motion} className="profession-scenery" />
+    <AssetImage src={sceneArt} fallbackSrc={[biomeArt]} alt="" aria-hidden="true" preferAnimated={video.motion} className="profession-scenery" />
     <div className="profession-scene-shade" />
     <figcaption className="profession-scene-caption"><span>{fishing ? "À margem das águas" : "Sob a crosta da Essência"}</span><strong>{point.name}</strong><small>{biome?.name}</small></figcaption>
     <div className="profession-bank" aria-hidden="true" />

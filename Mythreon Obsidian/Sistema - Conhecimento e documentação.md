@@ -89,6 +89,7 @@
 - [[docs/conhecimento/Pack-66-Cards-Arte-Unica-e-Bolsa-2026-11-05|Pack 66 — Cartas com arte dos monstros e Bolsa de Cards]]
 - [[docs/conhecimento/Pack-67-Cenarios-Visuais-das-Areas-2026-11-05|Pack 67 — Cenários visuais das áreas]]
 - [[docs/conhecimento/Pack-68-Calendario-Free-e-Recompensas-2026-11-05|Pack 68 — Calendário Free e recompensas diárias]]
+- [[docs/conhecimento/Pack-69-GIFs-de-Profissoes-2026-11-05|Pack 69 — GIFs de Mineração e Pesca]]
 - [[docs/conhecimento/Pets-Atividades-Boss-Diario|Pets, atividades e Boss Diário]]
 - [[docs/conhecimento/Pets-Ovos-Migracao-2026-11-03|Migração de Bestas Divinas para Pets e Ovos]]
 - [[docs/conhecimento/Registro de problemas|Registro de problemas]]
@@ -185,6 +186,7 @@
 - [docs/conhecimento/Pack-66-Cards-Arte-Unica-e-Bolsa-2026-11-05.md](../docs/conhecimento/Pack-66-Cards-Arte-Unica-e-Bolsa-2026-11-05.md)
 - [docs/conhecimento/Pack-67-Cenarios-Visuais-das-Areas-2026-11-05.md](../docs/conhecimento/Pack-67-Cenarios-Visuais-das-Areas-2026-11-05.md)
 - [docs/conhecimento/Pack-68-Calendario-Free-e-Recompensas-2026-11-05.md](../docs/conhecimento/Pack-68-Calendario-Free-e-Recompensas-2026-11-05.md)
+- [docs/conhecimento/Pack-69-GIFs-de-Profissoes-2026-11-05.md](../docs/conhecimento/Pack-69-GIFs-de-Profissoes-2026-11-05.md)
 - [docs/conhecimento/Pets-Atividades-Boss-Diario.md](../docs/conhecimento/Pets-Atividades-Boss-Diario.md)
 - [docs/conhecimento/Pets-Ovos-Migracao-2026-11-03.md](../docs/conhecimento/Pets-Ovos-Migracao-2026-11-03.md)
 - [docs/conhecimento/Registro de problemas.md](../docs/conhecimento/Registro de problemas.md)
