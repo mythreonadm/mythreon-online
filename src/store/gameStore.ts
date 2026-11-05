@@ -3,7 +3,7 @@ import { getAvailableQuests } from '../utils/questSignals';
 import { checkQuestCompletion } from '../engine/questEngine';
 import { applyTraining } from "../engine/training";
 import { create } from "zustand";
-import { Character, Race, TickResult, CharacterSkills, OfflineReportData, BuffVialTemplate, DeathReportData, HuntZoneStats, DivineBeastId, QuestObjectiveType, CharacterAppearance, Rarity, DivineBeastNeeds } from "../types";
+import { Character, Race, TickResult, CharacterSkills, OfflineReportData, BuffVialTemplate, DeathReportData, HuntZoneStats, DivineBeastId, QuestObjectiveType, CharacterAppearance, Rarity, DivineBeastNeeds, CardInstance } from "../types";
 import { ZONES } from "../data/zones";
 import { createNewCharacter, loadGame, saveGame } from "../engine/save";
 import { processTick } from "../engine/combat";
@@ -25,11 +25,12 @@ import { generateId } from "../utils/id";
 import { MINING_NODES, FISHING_SPOTS, PROFESSION_RECIPES, PROFESSION_TOOL_SHOP, FISHING_BAIT, professionCooldown } from "../data/professions";
 
 import { calendarUnlockedSkins, CALENDAR_COUPON_PRICE } from "../data/dailyCalendar";
-import { claimCalendarReward } from "../engine/dailyCalendar";
+import { claimCalendarReward, recoverCalendarDay, recoverCalendarWeek } from "../engine/dailyCalendar";
 import { COSMETIC_DEFINITIONS, COSMETIC_SLOTS, type CosmeticSlot } from "../data/cosmetics";
 import { ownedCosmeticLoadout } from "../engine/cosmeticOwnership";
-import { evolveCard as engineEvolveCard } from "../engine/cardCollection";
+import { evolveCard as engineEvolveCard, recycleCardCopies as engineRecycleCardCopies } from "../engine/cardCollection";
 import { CARD_TEMPLATES } from "../data/cards";
+import { normalizeOnlineChest, nextOnlineChest } from "../data/onlineChest";
 
 export interface GameState {
   character: Character | null;
@@ -100,10 +101,13 @@ export interface GameState {
   openMythreonRoulette: () => { success: boolean; reward?: string; error?: string };
   buyCalendarCoupon: () => { success: boolean; error?: string };
   claimDailyCalendar: () => { success: boolean; reward?: string; error?: string };
+  recoverCalendarDay: (day: string) => { success: boolean; reward?: string; error?: string };
+  recoverCalendarWeek: () => { success: boolean; reward?: string; error?: string };
 
   claimOnlineChest: () => { success: boolean; reward?: string; error?: string };
   setCardLoadout: (uids: string[]) => { success: boolean; error?: string };
   evolveCard: (uid: string, materialUids: string[], expectedLevel: number) => { success: boolean; error?: string; level?: number; spentGold?: number; consumed?: string[] };
+  recycleCards: (sourceTemplateId: string, materialUids: string[]) => { success: boolean; error?: string; reward?: CardInstance; consumed?: string[]; sourceRarity?: Rarity; rewardRarity?: Rarity };
   plantFarmSeed: (plotId: string, seedId: string) => { success: boolean; error?: string };
   waterFarmPlot: (plotId: string) => { success: boolean; error?: string; secondsReduced?: number };
   fertilizeFarmPlot: (plotId: string) => { success: boolean; error?: string; fertility?: number };
@@ -296,6 +300,11 @@ return create<GameState>((set, get) => ({
     const { character, currentZoneId, isTickRunning, isTraining } = get();
     if (!character || (!isTickRunning && !isTraining)) return;
 
+    // O relógio do baú é diário. A normalização acontece antes de qualquer
+    // ganho para que uma sessão atravessando meia-noite não carregue o saldo
+    // do dia anterior.
+    normalizeOnlineChest(character, runtimeNow());
+
     if (isTraining) {
       const newCharacter = JSON.parse(JSON.stringify(character));
       const skill = newCharacter.trainingSkill;
@@ -313,7 +322,11 @@ return create<GameState>((set, get) => ({
       return;
     }
 
-    const zone = ZONES[currentZoneId];
+    // A zona persistida no personagem é a fonte de verdade no modo online.
+    // Durante a reconciliação pode existir um frame em que currentZoneId ainda
+    // aponta para o refúgio; usar o valor do personagem evita parar a caça.
+    const activeZoneId = character.currentZoneId || currentZoneId;
+    const zone = ZONES[activeZoneId];
     if (!zone || character.level < zone.minLevel) { get().stopHunting(); return; }
 
     if (isGuided(character)) character.lastTick = runtimeNow() - 3000;
@@ -330,7 +343,7 @@ return create<GameState>((set, get) => ({
     updateQuestProgress(character, result);
     character.onlineChestSeconds = (character.onlineChestSeconds ?? 0) + 3;
     recalcStats(character);
-    set({ character: { ...character }, lastTickResult: result });
+    set({ character: { ...character }, currentZoneId: activeZoneId, lastTickResult: result });
     get().save();
     // Concluir uma etapa do tutorial não encerra a caça. O jogador precisa
     // poder continuar no mapa e abrir a missão quando quiser; só a stamina
@@ -1078,18 +1091,39 @@ return create<GameState>((set, get) => ({
     return { success: true, reward: result.reward };
   },
 
+  recoverCalendarDay: (day) => {
+    const { character } = get();
+    if (!character) return { success: false, error: "Sem personagem." };
+    const result = recoverCalendarDay(character, day);
+    if (!result.success) return result;
+    set({ character: result.character }); get().save();
+    return { success: true, reward: result.reward };
+  },
+
+  recoverCalendarWeek: () => {
+    const { character } = get();
+    if (!character) return { success: false, error: "Sem personagem." };
+    const result = recoverCalendarWeek(character);
+    if (!result.success) return result;
+    set({ character: result.character }); get().save();
+    return { success: true, reward: result.reward };
+  },
+
   claimOnlineChest: () => {
     const { character } = get();
     if (!character) return { success: false, error: "Sem personagem." };
-    const required = 300;
-    if ((character.onlineChestSeconds ?? 0) < required) return { success: false, error: `Fique online por mais ${Math.ceil((required - (character.onlineChestSeconds ?? 0)) / 60)} min para abrir o baú.` };
+    normalizeOnlineChest(character, runtimeNow());
+    const milestone = nextOnlineChest(character);
+    if (!milestone) return { success: false, error: "Você já abriu todos os baús de hoje. A trilha reinicia amanhã." };
+    if ((character.onlineChestSeconds ?? 0) < milestone.seconds) return { success: false, error: `Fique online por mais ${Math.ceil((milestone.seconds - (character.onlineChestSeconds ?? 0)) / 60)} min para abrir o baú de ${milestone.label}.` };
     const next = structuredClone(character);
-    next.onlineChestSeconds = Math.max(0, (next.onlineChestSeconds ?? 0) - required);
+    normalizeOnlineChest(next, runtimeNow());
+    next.onlineChestClaims = [...new Set([...(next.onlineChestClaims ?? []), milestone.id])];
     next.onlineChestsOpened = (next.onlineChestsOpened ?? 0) + 1;
-    const gold = 400 + next.level * 120;
-    const shards = 1 + Math.floor(next.level / 20);
+    const gold = milestone.gold + next.level * Math.max(20, Math.floor(milestone.gold / 100));
+    const shards = milestone.shards + Math.floor(next.level / 40);
     next.gold += gold; next.mythreonShards = (next.mythreonShards ?? 0) + shards;
-    const reward = `${gold.toLocaleString("pt-BR")} gold + ${shards} Mythreon Shard${shards === 1 ? "" : "s"}`;
+    const reward = `${milestone.label}: ${gold.toLocaleString("pt-BR")} gold + ${shards} Mythreon Shard${shards === 1 ? "" : "s"}`;
     set({ character: next }); get().save(); notify(`Baú do Refúgio: ${reward}`); return { success: true, reward };
   },
 
@@ -1113,6 +1147,21 @@ return create<GameState>((set, get) => ({
     const next = structuredClone(character), result = engineEvolveCard(next, uid, materialUids, expectedLevel);
     if (!result.success) return result;
     recalcStats(next);set({ character: next });get().save();return result;
+  },
+
+  recycleCards: (sourceTemplateId, materialUids) => {
+    const { character } = get();
+    if (!character) return { success: false, error: "Sem personagem." };
+    if (typeof sourceTemplateId !== "string" || !Array.isArray(materialUids) || materialUids.some(id => typeof id !== "string")) {
+      return { success: false, error: "Dados da roleta inválidos." };
+    }
+    const next = structuredClone(character);
+    const result = engineRecycleCardCopies(next, sourceTemplateId, materialUids);
+    if (!result.success) return result;
+    recalcStats(next);
+    set({ character: next }); get().save();
+    notify(`🎰 Bolsa de Cards: ${CARD_TEMPLATES[result.reward?.templateId ?? ""]?.name ?? "nova memória"} recebida.`);
+    return result;
   },
 
   depositItem: (uid) => {

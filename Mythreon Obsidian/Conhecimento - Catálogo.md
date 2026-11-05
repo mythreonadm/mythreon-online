@@ -81,6 +81,12 @@
 - [[docs/conhecimento/Pack-60-Cards-Veyra-Kaelor-e-Temporada-2026-11-04|Pack 60 — Cards de Veyra/Kaelor e catálogo sazonal]] — Catálogo de Cards dos dez monstros de Pântano de Veyra e Deserto de Kaelor, com compatibilidade sazonal retroativa.
 - [[docs/conhecimento/Pack-61-Porta-de-Lancamento-2026-11-04|Pack 61 — Porta de lançamento, Jornal e artes finais]] — a revisar
 - [[docs/conhecimento/Pack-62-Caca-Coleta-e-Pets-2026-11-05|Pack 62 — continuidade da caça, pulso de coleta e coleção de pets]] — Caça contínua durante o tutorial, pulso de coleta resiliente à latência e contador de pets por linhagem.
+- [[docs/conhecimento/Pack-63-Profissoes-Bau-e-Caca-2026-11-05|Pack 63 — pulso online, caça estável e Baú do Refúgio]] — Pulso online tolerante à latência, continuidade de caça após reconciliação e trilha diária do Baú do Refúgio.
+- [[docs/conhecimento/Pack-64-Incubadora-Botao-de-Eclosao-2026-11-05|Pack 64 — botão Abrir o Ovo]] — Botão visível e destacado para abrir o ovo pronto na incubadora de Pets.
+- [[docs/conhecimento/Pack-65-Resolvedor-de-Artes-dos-Drops-2026-11-05|Pack 65 — Resolvedor de artes dos drops (2026-11-05)]] — a revisar
+- [[docs/conhecimento/Pack-66-Cards-Arte-Unica-e-Bolsa-2026-11-05|Pack 66 — Cartas com arte dos monstros e Bolsa de Cards]] — a revisar
+- [[docs/conhecimento/Pack-67-Cenarios-Visuais-das-Areas-2026-11-05|Pack 67 — Cenários visuais das áreas]] — a revisar
+- [[docs/conhecimento/Pack-68-Calendario-Free-e-Recompensas-2026-11-05|Pack 68 — Calendário Free e recompensas diárias]] — a revisar
 - [[docs/conhecimento/Pets-Atividades-Boss-Diario|Pets, atividades e Boss Diário]] — em desenvolvimento
 - [[docs/conhecimento/Pets-Ovos-Migracao-2026-11-03|Migração de Bestas Divinas para Pets e Ovos]] — a revisar
 - [[docs/conhecimento/Registro de problemas|Registro de problemas]] — Problemas de documentação, sincronização e continuidade com suas evidências.

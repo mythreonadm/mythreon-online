@@ -14,7 +14,10 @@ export interface PreparedProfessionChallenge {
   success: boolean; error?: string; challenge?: ProfessionChallenge; serverNow?: number;
 }
 export const PROFESSION_LEAD_MS = 1200;
-export const PROFESSION_DELIVERY_GRACE_MS = 750;
+// A confirmação passa por Supabase e pode levar alguns segundos em celular.
+// A janela continua curta o bastante para exigir atenção, mas não transforma
+// latência normal em uma falha inevitável.
+export const PROFESSION_DELIVERY_GRACE_MS = 5000;
 
 /** Checks entry without producing a temporary drop or consuming any resource. */
 export function gatheringAccessError(c: Character, kind: GatheringKind, targetId: string, now: number, baitId?: string): string | undefined {

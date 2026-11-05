@@ -2,7 +2,9 @@ import React, { useEffect, useRef, useState } from "react";
 import { useGameStore } from "../store/gameStore";
 import { AssetImage } from "./AssetImage";
 import { confirmedAction } from "../online/confirmation";
-import { calendarProgress, CALENDAR_COUPON_PRICE, CALENDAR_WEEK_DAYS, CALENDAR_WEEK_FRAGMENTS } from "../data/dailyCalendar";
+import { calendarProgress, calendarWeekStart, CALENDAR_COUPON_PRICE, CALENDAR_DAILY_REWARDS, CALENDAR_WEEK_DAYS, CALENDAR_WEEK_FRAGMENTS } from "../data/dailyCalendar";
+import { ALL_ITEM_TEMPLATES } from "../data/items";
+import { ItemIcon } from "./ItemIcon";
 
 function resetCountdown(ms: number) {
   const minutes = Math.max(0, Math.ceil(ms / 60_000));
@@ -24,6 +26,8 @@ export function DailyCalendar() {
   const claimed = new Set(progress.days);
   const monthLabel = new Date(progress.today + "T00:00:00Z").toLocaleDateString("pt-BR", { month: "long", year: "numeric", timeZone: "UTC" });
   const coins = character.mythreonCoins ?? 0, coupons = character.calendarCoupons ?? 0;
+  const weekStart = calendarWeekStart(progress.today);
+  const weekMissing = Array.from({ length: 7 }, (_, index) => new Date(Date.parse(weekStart + "T00:00:00Z") + index * 86_400_000).toISOString().slice(0, 10)).filter(day => day < progress.today && !claimed.has(day) && day.startsWith(progress.month.key));
   const run = async (action: () => { success: boolean; error?: string; reward?: string }, success: string) => {
     if (actionLock.current) return;
     actionLock.current = true;
@@ -39,8 +43,8 @@ export function DailyCalendar() {
   return <section aria-label="Calendário da Essência" className="relative isolate overflow-hidden rounded-2xl border border-arcane-gold/35 bg-[#0b1117]/95 p-4 shadow-[0_0_28px_rgba(54,199,192,.08)] sm:p-6">
     <AssetImage src="/assets/ui/CALENDARIO_ESSENCIA.png" alt="" aria-hidden="true" className="pointer-events-none absolute -right-16 -top-16 -z-10 h-72 w-72 object-contain opacity-[.07]" />
     <header className="grid grid-cols-1 items-start gap-4 sm:grid-cols-[minmax(0,1fr)_auto]">
-      <div className="min-w-0 flex-1"><p className="text-[10px] font-black uppercase tracking-[.24em] text-arcane-gold">Calendário da Essência</p><h2 className="mt-1 text-2xl font-black text-white">{monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1)}</h2><p className="mt-2 max-w-xl text-xs leading-relaxed text-slate-300">Registre uma presença por dia com um Cupom de Resgate. Faltar reinicia a sequência semanal; suas presenças do mês ficam registradas.</p></div>
-      <div className="rounded-xl border border-fuchsia-300/20 bg-fuchsia-950/20 p-3 text-right"><p className="text-xs text-slate-300">Cupons disponíveis</p><p className="text-xl font-black text-fuchsia-200">🎟️ {coupons}</p><button type="button" data-calendar-action="coupon" disabled={coins < CALENDAR_COUPON_PRICE} onClick={() => run(() => useGameStore.getState().buyCalendarCoupon(), "Cupom adquirido.")} className="mt-2 rounded-lg bg-fuchsia-700 px-3 py-2 text-xs font-bold text-white hover:bg-fuchsia-600 disabled:cursor-not-allowed disabled:opacity-40">Comprar cupom · {CALENDAR_COUPON_PRICE} Coin</button><p className="mt-1 text-[10px] text-slate-400">Saldo: {coins.toLocaleString("pt-BR")} Coins</p></div>
+      <div className="min-w-0 flex-1"><p className="text-[10px] font-black uppercase tracking-[.24em] text-arcane-gold">Calendário da Essência</p><h2 className="mt-1 text-2xl font-black text-white">{monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1)}</h2><p className="mt-2 max-w-xl text-xs leading-relaxed text-slate-300">Conta Free coleta a recompensa de cada dia gratuitamente. O Cupom de Resgate serve somente para recuperar um dia perdido ou comprar a recuperação dos dias faltantes da semana.</p></div>
+      <div className="rounded-xl border border-fuchsia-300/20 bg-fuchsia-950/20 p-3 text-right"><p className="text-xs text-slate-300">Cupons de recuperação</p><p className="text-xl font-black text-fuchsia-200">🎟️ {coupons}</p><button type="button" data-calendar-action="coupon" disabled={coins < CALENDAR_COUPON_PRICE} onClick={() => run(() => useGameStore.getState().buyCalendarCoupon(), "Cupom adquirido para recuperação.")} className="mt-2 rounded-lg bg-fuchsia-700 px-3 py-2 text-xs font-bold text-white hover:bg-fuchsia-600 disabled:cursor-not-allowed disabled:opacity-40">Comprar cupom · {CALENDAR_COUPON_PRICE} Coin</button><p className="mt-1 text-[10px] text-slate-400">Saldo: {coins.toLocaleString("pt-BR")} Coins</p></div>
     </header>
     <div className="mt-5 flex flex-wrap justify-between gap-2 text-[11px] text-slate-400"><span>Dias viram às 00:00 UTC · horário do servidor</span><span>Próximo dia em {resetCountdown(progress.nextResetAt - now)}</span></div>
     <div className="mt-3 grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-slate-400" aria-hidden="true">{["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map(day => <span key={day}>{day}</span>)}</div>
@@ -49,15 +53,15 @@ export function DailyCalendar() {
       {Array.from({ length: progress.month.days }, (_, i) => i + 1).map(day => {
         const key = `${progress.month.key}-${String(day).padStart(2, "0")}`, done = claimed.has(key), isToday = key === progress.today, missed = key < progress.today && !done;
         const label = `Dia ${day}: ${done ? "resgatado" : isToday ? "hoje" : missed ? "não resgatado" : "ainda não disponível"}`;
-        return <div key={key} data-calendar-day={day} data-claimed={done} aria-label={label} aria-current={isToday ? "date" : undefined} title={label}
-          className={`relative flex min-h-12 min-w-0 flex-col items-center justify-center rounded-lg border text-xs font-bold sm:min-h-16 ${done ? "border-emerald-400/50 bg-emerald-900/25 text-emerald-100" : isToday ? "border-arcane-gold bg-arcane-gold/15 text-arcane-gold shadow-[0_0_14px_rgba(217,164,65,.2)]" : "border-white/10 bg-black/25 text-slate-400"}`}>
-          <span>{day}</span><span className="mt-0.5 text-[10px]">{done ? "✓" : isToday ? "HOJE" : missed ? "—" : "·"}</span>
-        </div>;
+        const reward = CALENDAR_DAILY_REWARDS[day] ?? CALENDAR_DAILY_REWARDS[1];
+        const preview = reward.templateId && ALL_ITEM_TEMPLATES[reward.templateId] ? { ...ALL_ITEM_TEMPLATES[reward.templateId], uid: `calendar-preview-${day}`, quantity: reward.quantity ?? 1 } : null;
+        const content = <><span className="absolute right-1.5 top-1 text-[10px]">{day}</span><span className="mt-2 grid h-7 w-7 place-items-center rounded-md bg-black/25 text-lg">{preview ? <ItemIcon item={preview} className="h-7 w-7" /> : reward.icon}</span><span className="mt-1 max-w-full truncate px-1 text-[9px] font-semibold text-slate-200">{reward.label}</span><span className="text-[10px] text-amber-200">×{reward.quantity ?? 1}</span><span className="text-[9px]">{done ? "✓ coletado" : isToday ? "HOJE" : missed ? "recuperar" : "em breve"}</span></>;
+        return missed ? <button type="button" key={key} data-calendar-day={day} data-claimed={done} aria-label={label} title={`${label}. Use 1 cupom para recuperar.`} onClick={() => run(() => useGameStore.getState().recoverCalendarDay(key), "Dia recuperado.")} className="relative flex min-h-24 min-w-0 flex-col items-center justify-center rounded-lg border border-fuchsia-400/45 bg-fuchsia-950/25 text-xs font-bold text-fuchsia-100 transition hover:border-fuchsia-200 hover:bg-fuchsia-900/35 sm:min-h-28">{content}</button> : <div key={key} data-calendar-day={day} data-claimed={done} aria-label={label} aria-current={isToday ? "date" : undefined} title={label} className={`relative flex min-h-24 min-w-0 flex-col items-center justify-center rounded-lg border text-xs font-bold sm:min-h-28 ${done ? "border-emerald-400/50 bg-emerald-900/25 text-emerald-100" : isToday ? "border-arcane-gold bg-arcane-gold/15 text-arcane-gold shadow-[0_0_14px_rgba(217,164,65,.2)]" : "border-white/10 bg-black/25 text-slate-400"}`}>{content}</div>;
       })}
     </div>
     <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-300/20 bg-amber-950/15 p-4">
-      <div className="text-xs text-slate-300"><strong className="block text-amber-100">{progress.claimedToday ? "Presença de hoje registrada" : `Hoje: ${progress.nextGold.toLocaleString("pt-BR")} gold`}</strong><p className="mt-1 text-slate-400">1 cupom por presença · não é necessário ficar na tela do calendário.</p></div>
-      <button type="button" data-calendar-action="claim" disabled={progress.claimedToday || coupons < 1} onClick={() => run(() => useGameStore.getState().claimDailyCalendar(), "Presença registrada.")} className="rounded-lg bg-arcane-gold px-5 py-3 text-xs font-black text-black hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-50">{progress.claimedToday ? "✓ Resgatado hoje" : coupons < 1 ? "Adquira um cupom" : "Resgatar hoje"}</button>
+      <div className="text-xs text-slate-300"><strong className="block text-amber-100">{progress.claimedToday ? "Presença de hoje registrada" : `Hoje: ${progress.todayReward.icon} ${progress.todayReward.label} ×${progress.todayReward.quantity ?? 1} + ${progress.nextGold.toLocaleString("pt-BR")} gold`}</strong><p className="mt-1 text-slate-400">Coleta Free gratuita · o cupom só recupera dias perdidos.</p></div>
+      <div className="flex flex-wrap justify-end gap-2"><button type="button" data-calendar-action="claim" disabled={progress.claimedToday} onClick={() => run(() => useGameStore.getState().claimDailyCalendar(), "Presença registrada.")} className="rounded-lg bg-arcane-gold px-5 py-3 text-xs font-black text-black hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-50">{progress.claimedToday ? "✓ Resgatado hoje" : "Resgatar recompensa grátis"}</button>{weekMissing.length > 0 ? <button type="button" data-calendar-action="recover-week" disabled={coupons < weekMissing.length} onClick={() => run(() => useGameStore.getState().recoverCalendarWeek(), "Semana recuperada.")} className="rounded-lg border border-fuchsia-300/50 bg-fuchsia-950/30 px-4 py-3 text-xs font-black text-fuchsia-100 hover:bg-fuchsia-900/45 disabled:cursor-not-allowed disabled:opacity-50">Recuperar {weekMissing.length} dia(s) · {weekMissing.length} cupons</button> : null}</div>
     </div>
     <p role="status" className={`mt-2 min-h-5 text-xs ${failed ? "text-amber-200" : "text-emerald-300"}`}>{notice}</p>
     <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-2">

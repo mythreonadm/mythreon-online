@@ -47,6 +47,39 @@ var CALENDAR_COUPON_PRICE = 1;
 var CALENDAR_WEEK_DAYS = 7;
 var CALENDAR_WEEK_FRAGMENTS = 3;
 var CALENDAR_MAX_GOLD_STREAK = 30;
+var CALENDAR_DAILY_REWARDS = {
+  1: { day: 1, label: "Fragmentos Comuns", icon: "\u{1FAA8}", templateId: "FRAGMENTO_COMUM", quantity: 5 },
+  2: { day: 2, label: "Cenouras Crocantes", icon: "\u{1F955}", templateId: "CENOURA_PET", quantity: 8 },
+  3: { day: 3, label: "Po\xE7\xE3o de Vida Pequena", icon: "\u{1F9EA}", templateId: "POCAO_VIDA_1", quantity: 3 },
+  4: { day: 4, label: "Min\xE9rio de Ferro", icon: "\u26CF\uFE0F", templateId: "MINERIO_FERRO", quantity: 10 },
+  5: { day: 5, label: "Po\xE7\xE3o de Mana Pequena", icon: "\u{1F535}", templateId: "POCAO_MANA_1", quantity: 3 },
+  6: { day: 6, label: "Fruta de Mel", icon: "\u{1F36F}", templateId: "FRUTA_MEL", quantity: 5 },
+  7: { day: 7, label: "Fragmentos Raros", icon: "\u{1F48E}", templateId: "FRAGMENTO_RARO", quantity: 2 },
+  8: { day: 8, label: "Peixe do Ref\xFAgio", icon: "\u{1F41F}", templateId: "PEIXE_RIO", quantity: 8 },
+  9: { day: 9, label: "Fragmentos Comuns", icon: "\u{1FAA8}", templateId: "FRAGMENTO_COMUM", quantity: 10 },
+  10: { day: 10, label: "Ovo de Besta Divina", icon: "\u{1F95A}", templateId: "OVO_BESTA_T1", quantity: 1 },
+  11: { day: 11, label: "Lingote de Ferro", icon: "\u{1F529}", templateId: "LINGOTE_FERRO", quantity: 3 },
+  12: { day: 12, label: "Po\xE7\xE3o de Vida M\xE9dia", icon: "\u{1F377}", templateId: "POCAO_VIDA_2", quantity: 2 },
+  13: { day: 13, label: "Melancia Lunar", icon: "\u{1F349}", templateId: "MELANCIA_LUNAR", quantity: 2 },
+  14: { day: 14, label: "Fragmentos Raros", icon: "\u{1F48E}", templateId: "FRAGMENTO_RARO", quantity: 4 },
+  15: { day: 15, label: "Cristal de Ess\xEAncia", icon: "\u{1F48E}", templateId: "CRISTAL_ESSENCIA", quantity: 2 },
+  16: { day: 16, label: "Po\xE7\xE3o de Mana M\xE9dia", icon: "\u{1F499}", templateId: "POCAO_MANA_2", quantity: 2 },
+  17: { day: 17, label: "Min\xE9rio Obsidiano", icon: "\u{1FAA8}", templateId: "MINERIO_OBSIDIANO", quantity: 2 },
+  18: { day: 18, label: "Fragmentos Comuns", icon: "\u{1FAA8}", templateId: "FRAGMENTO_COMUM", quantity: 20 },
+  19: { day: 19, label: "Ra\xE7\xE3o Especial", icon: "\u{1F356}", templateId: "RACAO_DOMADOR", quantity: 1 },
+  20: { day: 20, label: "Ovo de Besta Divina", icon: "\u{1F95A}", templateId: "OVO_BESTA_T2", quantity: 1 },
+  21: { day: 21, label: "Fragmentos \xC9picos", icon: "\u{1F52E}", templateId: "FRAGMENTO_EPICO", quantity: 1 },
+  22: { day: 22, label: "Cristal Refinado", icon: "\u{1F4A0}", templateId: "CRISTAL_REFINADO", quantity: 1 },
+  23: { day: 23, label: "Peixe-Cicatriz", icon: "\u{1F420}", templateId: "PEIXE_CICATRIZ", quantity: 1 },
+  24: { day: 24, label: "Po\xE7\xE3o de Vida Grande", icon: "\u2697\uFE0F", templateId: "POCAO_VIDA_3", quantity: 2 },
+  25: { day: 25, label: "Fragmentos Raros", icon: "\u{1F48E}", templateId: "FRAGMENTO_RARO", quantity: 8 },
+  26: { day: 26, label: "Ovo de Besta Divina", icon: "\u{1F95A}", templateId: "OVO_BESTA_T3", quantity: 1 },
+  27: { day: 27, label: "Chave da Roleta Arcana", icon: "\u{1F5DD}\uFE0F", templateId: "CHAVE_ROLETA_ARCANA", quantity: 1 },
+  28: { day: 28, label: "Ba\xFA de Suprimentos", icon: "\u{1F381}", templateId: "BAU_SUPRIMENTOS_MYTHREON", quantity: 1 },
+  29: { day: 29, label: "Fragmentos \xC9picos", icon: "\u{1F52E}", templateId: "FRAGMENTO_EPICO", quantity: 2 },
+  30: { day: 30, label: "Ovo de Besta Divina Raro", icon: "\u{1F95A}", templateId: "OVO_BESTA_T3", quantity: 1 },
+  31: { day: 31, label: "Fragmentos Raros", icon: "\u{1F48E}", templateId: "FRAGMENTO_RARO", quantity: 12 }
+};
 var CALENDAR_MONTHLY_REWARDS = {
   "2026-11": { templateId: "SKIN_CAPA_PRIMEIRO_CANTO", name: "Capa do Primeiro Canto", image: "/assets/items/SKIN_PREMIUM_MES_01.png" }
 };
@@ -86,7 +119,17 @@ function calendarProgress(character, now = Date.now()) {
   const nextResetAt = Date.parse(today + "T00:00:00Z") + DAY_MS;
   const monthlyUnlocked = !!month.reward && calendarUnlockedSkins(character).includes(month.reward.templateId);
   const weekProgress = streak > 0 && streak % CALENDAR_WEEK_DAYS === 0 ? CALENDAR_WEEK_DAYS : streak % CALENDAR_WEEK_DAYS;
-  return { today, month, days, claimedToday, streak, nextStreak, nextGold, nextResetAt, monthlyUnlocked, weekProgress };
+  const todayNumber = Number(today.slice(-2));
+  return { today, month, days, claimedToday, streak, nextStreak, nextGold, nextResetAt, monthlyUnlocked, weekProgress, todayReward: CALENDAR_DAILY_REWARDS[todayNumber] ?? CALENDAR_DAILY_REWARDS[1] };
+}
+function calendarRewardForDay(day) {
+  const number = Number(day.slice(-2));
+  return CALENDAR_DAILY_REWARDS[number] ?? CALENDAR_DAILY_REWARDS[1];
+}
+function calendarWeekStart(day) {
+  const date = /* @__PURE__ */ new Date(day + "T00:00:00Z");
+  date.setUTCDate(date.getUTCDate() - date.getUTCDay());
+  return calendarDayKey(date.getTime());
 }
 function calendarWeeklyMilestoneKey(today, streak) {
   const started = calendarDayKey(Date.parse(today + "T00:00:00Z") - (streak - 1) * DAY_MS);
@@ -1374,6 +1417,53 @@ var CARD_LOADOUT_LIMIT = 5;
 var CARD_MAX_LEVEL = 5;
 var CARD_HERO_WEIGHTS = { hp: 0.15, atk: 0.2, def: 0.15, spd: 2e-3 };
 var CARD_EVOLUTION_GOLD = { COMUM: 150, INCOMUM: 300, RARO: 600, EPICO: 1200, LENDARIO: 2400 };
+var CARD_RARITY_ORDER = ["COMUM", "INCOMUM", "RARO", "EPICO", "LENDARIO"];
+function cardDuplicateBag(c) {
+  if (!c) return [];
+  const equipped = new Set(c.cardLoadout ?? []);
+  const groups = /* @__PURE__ */ new Map();
+  for (const card of c.cards ?? []) {
+    if (!CARD_TEMPLATES[card.templateId]) continue;
+    const group = groups.get(card.templateId) ?? [];
+    group.push(card);
+    groups.set(card.templateId, group);
+  }
+  const duplicateIds = /* @__PURE__ */ new Set();
+  for (const group of groups.values()) {
+    const ordered = [...group].sort((a, b) => {
+      const aEquipped = equipped.has(a.uid) ? 1 : 0;
+      const bEquipped = equipped.has(b.uid) ? 1 : 0;
+      return bEquipped - aEquipped || b.level - a.level || a.obtainedAt - b.obtainedAt || a.uid.localeCompare(b.uid);
+    });
+    ordered.slice(1).forEach((card) => duplicateIds.add(card.uid));
+  }
+  return (c.cards ?? []).filter((card) => duplicateIds.has(card.uid));
+}
+function cardRarityRank(rarity) {
+  return CARD_RARITY_ORDER.indexOf(rarity);
+}
+function recycleCardCopies(c, sourceTemplateId, materialUids) {
+  const source = CARD_TEMPLATES[sourceTemplateId];
+  if (!source) return { success: false, error: "Esta criatura n\xE3o existe no \xE1lbum de mem\xF3rias." };
+  const ids = [...new Set(materialUids)];
+  if (ids.length !== 4 || materialUids.length !== 4) return { success: false, error: "A roleta exige exatamente 4 c\xF3pias repetidas." };
+  const bag = new Set(cardDuplicateBag(c).map((card) => card.uid));
+  const selected = ids.map((uid) => c.cards.find((card) => card.uid === uid));
+  if (selected.some((card) => !card) || selected.some((card) => card.templateId !== sourceTemplateId || card.level !== 1 || !bag.has(card.uid))) {
+    return { success: false, error: "Use quatro c\xF3pias livres de n\xEDvel 1 da mesma criatura." };
+  }
+  const sourceRank = cardRarityRank(source.rarity);
+  const candidates = Object.entries(CARD_TEMPLATES).filter(([, template]) => cardRarityRank(template.rarity) >= sourceRank);
+  if (!candidates.length) return { success: false, error: "Nenhuma mem\xF3ria compat\xEDvel foi encontrada na roleta." };
+  const equal = candidates.filter(([, template]) => cardRarityRank(template.rarity) === sourceRank);
+  const higher = candidates.filter(([, template]) => cardRarityRank(template.rarity) > sourceRank);
+  const pool2 = higher.length && Math.random() < 0.15 ? higher : equal.length ? equal : higher;
+  const [rewardTemplateId, rewardTemplate] = pool2[Math.floor(Math.random() * pool2.length)];
+  const reward = createCardInstance(rewardTemplateId);
+  c.cards = (c.cards ?? []).filter((card) => !ids.includes(card.uid));
+  c.cards.push(reward);
+  return { success: true, reward, consumed: ids, sourceRarity: source.rarity, rewardRarity: rewardTemplate.rarity };
+}
 function equippedCards(c) {
   if (!c) return [];
   const byId = new Map((c.cards ?? []).map((card) => [card.uid, card]));
@@ -1685,7 +1775,8 @@ function canEnterZone(c, id) {
 function canTutorialHunt(c) {
   if (!isGuided(c)) return true;
   if (!c.introSeen) return false;
-  return ["TUT_1", "TUT_POTIONS", "TUT_3"].some((id) => !!c.quests.active[id]);
+  const activeTutorial = ["TUT_1", "TUT_POTIONS", "TUT_3"].some((id) => !!c.quests.active[id]);
+  return activeTutorial || c.quests.completed.includes("TUT_BACKPACK") || Object.keys(c.quests.active).length === 0;
 }
 function unlockJourneyZone(c, id) {
   const chapter = JOURNEY_CHAPTERS.find((x) => x.id === id), pass = chapter?.pass;
@@ -2596,6 +2687,8 @@ function createNewCharacter(name, appearance) {
     calendarUnlockedSkins: [],
     onlineChestSeconds: 0,
     onlineChestsOpened: 0,
+    onlineChestDay: (/* @__PURE__ */ new Date()).toISOString().slice(0, 10),
+    onlineChestClaims: [],
     cards: [],
     cardLoadout: [],
     divineBeasts: [],
@@ -3916,6 +4009,11 @@ var PROFESSION_RECIPES = [
 ];
 
 // src/engine/dailyCalendar.ts
+function calendarItem(templateId, quantity) {
+  const template = ALL_ITEM_TEMPLATES[templateId];
+  if (!template) return null;
+  return { ...createItem({ ...template, templateId: template.templateId, name: template.name, quantity }), uid: generateId(), quantity, stats: { ...template.stats }, upgradeLevel: 0 };
+}
 function deliverCalendarItem(character, item) {
   const inventory = structuredClone(character.inventory);
   if (addItem(inventory, structuredClone(item))) {
@@ -3930,7 +4028,6 @@ function claimCalendarReward(character, now = Date.now()) {
   const progress = calendarProgress(character, now);
   if (progress.claimedToday) return { success: false, error: "A recompensa de hoje j\xE1 foi resgatada." };
   if (character.calendarLastClaimDay && character.calendarLastClaimDay > progress.today) return { success: false, error: "O rel\xF3gio est\xE1 anterior ao \xFAltimo resgate. Aguarde o dia correto do servidor." };
-  if (!Number.isSafeInteger(character.calendarCoupons) || Number(character.calendarCoupons) < 1) return { success: false, error: "Adquira um Cupom de Resgate com Mythreon Coin." };
   const next = structuredClone(character);
   const milestone = calendarWeeklyMilestoneKey(progress.today, progress.nextStreak);
   let lastMilestone = next.calendarWeeklyRewardKey;
@@ -3939,27 +4036,92 @@ function claimCalendarReward(character, now = Date.now()) {
   }
   const weekly = progress.nextStreak >= CALENDAR_WEEK_DAYS && lastMilestone !== milestone;
   let delivery;
+  const daily = progress.todayReward;
+  if (daily.templateId) {
+    const item = calendarItem(daily.templateId, daily.quantity ?? 1);
+    if (!item) return { success: false, error: "A recompensa di\xE1ria est\xE1 indispon\xEDvel. Tente novamente mais tarde." };
+    const dailyDelivery = deliverCalendarItem(next, item);
+    if (!dailyDelivery) return { success: false, error: "Libere um espa\xE7o na mochila ou no dep\xF3sito para receber a recompensa de hoje." };
+    delivery = dailyDelivery;
+  }
   if (weekly) {
     const location2 = deliverCalendarItem(next, createItem({ ...FRAGMENT_TEMPLATES.FRAGMENTO_RARO, quantity: CALENDAR_WEEK_FRAGMENTS }));
     if (!location2) return { success: false, error: "Libere um espa\xE7o na mochila ou no dep\xF3sito para receber o b\xF4nus semanal. Seu cupom foi preservado." };
     delivery = location2;
     next.calendarWeeklyRewardKey = milestone;
   }
-  next.calendarCoupons = Number(next.calendarCoupons) - 1;
   next.calendarClaimedDays = [...progress.days, progress.today];
   next.calendarLastClaimDay = progress.today;
   next.calendarStreak = progress.nextStreak;
   next.calendarUnlockedSkins = calendarUnlockedSkins(character);
-  next.gold += progress.nextGold;
+  next.gold += progress.nextGold + (daily.gold ?? 0);
   const monthly = !!progress.month.reward && next.calendarClaimedDays.length >= progress.month.requiredPresence && !progress.monthlyUnlocked;
   if (monthly && progress.month.reward) {
     next.calendarUnlockedSkins = [.../* @__PURE__ */ new Set([...next.calendarUnlockedSkins, progress.month.reward.templateId])];
     next.calendarMonthlySkinKey = progress.month.key;
   }
-  let reward = progress.nextGold.toLocaleString("pt-BR") + " gold";
+  let reward = `${daily.icon} ${daily.label} \xD7${daily.quantity ?? 1} + ${progress.nextGold.toLocaleString("pt-BR")} gold`;
   if (weekly) reward += ` + ${CALENDAR_WEEK_FRAGMENTS} Fragmentos Raros (${delivery})`;
   if (monthly) reward += " + " + progress.month.reward.name + " (liberada no guarda-roupa)";
   return { success: true, character: next, reward, weekly, monthly, delivery };
+}
+function recoverCalendarDay(character, day, now = Date.now()) {
+  const today = calendarDayKey(now), progress = calendarProgress(character, now);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || day >= today || day.slice(0, 7) !== progress.month.key) return { success: false, error: "Escolha um dia perdido deste m\xEAs." };
+  if (progress.days.includes(day)) return { success: false, error: "Esse dia j\xE1 foi resgatado." };
+  if (!Number.isSafeInteger(character.calendarCoupons) || Number(character.calendarCoupons) < 1) return { success: false, error: "Voc\xEA precisa de um Cupom de Resgate para recuperar um dia." };
+  const reward = calendarRewardForDay(day), item = reward.templateId ? calendarItem(reward.templateId, reward.quantity ?? 1) : null;
+  if (!item) return { success: false, error: "A recompensa deste dia est\xE1 indispon\xEDvel." };
+  const next = structuredClone(character), delivery = deliverCalendarItem(next, item);
+  if (!delivery) return { success: false, error: "Libere espa\xE7o na mochila ou no dep\xF3sito antes de recuperar o dia." };
+  next.calendarCoupons = Number(next.calendarCoupons) - 1;
+  next.calendarClaimedDays = [.../* @__PURE__ */ new Set([...progress.days, day])].sort();
+  next.calendarLastClaimDay = day;
+  next.calendarStreak = 1;
+  next.gold += reward.gold ?? 0;
+  return { success: true, character: next, reward: `${reward.icon} ${reward.label} \xD7${reward.quantity ?? 1} recuperado`, weekly: false, monthly: false, delivery };
+}
+function recoverCalendarWeek(character, now = Date.now()) {
+  const today = calendarDayKey(now), progress = calendarProgress(character, now), start = calendarWeekStart(today);
+  const missing = Array.from({ length: 7 }, (_, index) => calendarDayKey(Date.parse(start + "T00:00:00Z") + index * 864e5)).filter((day) => day < today && !progress.days.includes(day) && day.startsWith(progress.month.key));
+  if (!missing.length) return { success: false, error: "N\xE3o h\xE1 dias perdidos nesta semana para recuperar." };
+  if (Number(character.calendarCoupons ?? 0) < missing.length) return { success: false, error: `Voc\xEA precisa de ${missing.length} Cupons de Resgate para recuperar os dias restantes desta semana.` };
+  let next = structuredClone(character), labels = [];
+  for (const day of missing) {
+    const result = recoverCalendarDay(next, day, now);
+    if (!result.success) return result;
+    next = result.character;
+    labels.push(result.reward);
+  }
+  return { success: true, character: next, reward: `${missing.length} dias recuperados \xB7 ${labels.join(", ")}`, weekly: false, monthly: false };
+}
+
+// src/data/onlineChest.ts
+var ONLINE_CHEST_MILESTONES = [
+  { id: "CHEST_5M", label: "5 minutos", seconds: 5 * 60, gold: 300, shards: 1 },
+  { id: "CHEST_30M", label: "30 minutos", seconds: 30 * 60, gold: 1e3, shards: 2 },
+  { id: "CHEST_2H", label: "2 horas", seconds: 2 * 60 * 60, gold: 3500, shards: 5 },
+  { id: "CHEST_6H", label: "6 horas", seconds: 6 * 60 * 60, gold: 1e4, shards: 10 },
+  { id: "CHEST_12H", label: "12 horas", seconds: 12 * 60 * 60, gold: 25e3, shards: 25 }
+];
+function onlineChestDayKey(now = Date.now()) {
+  return new Date(now).toISOString().slice(0, 10);
+}
+function normalizeOnlineChest(character, now = Date.now()) {
+  const day = onlineChestDayKey(now);
+  if (character.onlineChestDay !== day) {
+    character.onlineChestDay = day;
+    character.onlineChestClaims = [];
+    character.onlineChestSeconds = 0;
+  } else {
+    character.onlineChestClaims = [...new Set((character.onlineChestClaims ?? []).filter((id) => ONLINE_CHEST_MILESTONES.some((milestone) => milestone.id === id)))];
+    character.onlineChestSeconds = Math.max(0, Number(character.onlineChestSeconds ?? 0) || 0);
+  }
+  return character;
+}
+function nextOnlineChest(character) {
+  const claimed = new Set(character.onlineChestClaims ?? []);
+  return ONLINE_CHEST_MILESTONES.find((milestone) => !claimed.has(milestone.id)) ?? null;
 }
 
 // src/store/gameStore.ts
@@ -4162,6 +4324,7 @@ function createGameStore(runtime = {}) {
     tick: () => {
       const { character, currentZoneId, isTickRunning, isTraining } = get();
       if (!character || !isTickRunning && !isTraining) return;
+      normalizeOnlineChest(character, runtimeNow());
       if (isTraining) {
         const newCharacter = JSON.parse(JSON.stringify(character));
         const skill = newCharacter.trainingSkill;
@@ -4178,7 +4341,8 @@ function createGameStore(runtime = {}) {
         }
         return;
       }
-      const zone = ZONES[currentZoneId];
+      const activeZoneId = character.currentZoneId || currentZoneId;
+      const zone = ZONES[activeZoneId];
       if (!zone || character.level < zone.minLevel) {
         get().stopHunting();
         return;
@@ -4195,7 +4359,7 @@ function createGameStore(runtime = {}) {
       updateQuestProgress(character, result);
       character.onlineChestSeconds = (character.onlineChestSeconds ?? 0) + 3;
       recalcStats(character);
-      set({ character: { ...character }, lastTickResult: result });
+      set({ character: { ...character }, currentZoneId: activeZoneId, lastTickResult: result });
       get().save();
       if (result.staminaDepleted) get().stopHunting();
     },
@@ -5102,19 +5266,40 @@ function createGameStore(runtime = {}) {
       get().save();
       return { success: true, reward: result.reward };
     },
+    recoverCalendarDay: (day) => {
+      const { character } = get();
+      if (!character) return { success: false, error: "Sem personagem." };
+      const result = recoverCalendarDay(character, day);
+      if (!result.success) return result;
+      set({ character: result.character });
+      get().save();
+      return { success: true, reward: result.reward };
+    },
+    recoverCalendarWeek: () => {
+      const { character } = get();
+      if (!character) return { success: false, error: "Sem personagem." };
+      const result = recoverCalendarWeek(character);
+      if (!result.success) return result;
+      set({ character: result.character });
+      get().save();
+      return { success: true, reward: result.reward };
+    },
     claimOnlineChest: () => {
       const { character } = get();
       if (!character) return { success: false, error: "Sem personagem." };
-      const required = 300;
-      if ((character.onlineChestSeconds ?? 0) < required) return { success: false, error: `Fique online por mais ${Math.ceil((required - (character.onlineChestSeconds ?? 0)) / 60)} min para abrir o ba\xFA.` };
+      normalizeOnlineChest(character, runtimeNow());
+      const milestone = nextOnlineChest(character);
+      if (!milestone) return { success: false, error: "Voc\xEA j\xE1 abriu todos os ba\xFAs de hoje. A trilha reinicia amanh\xE3." };
+      if ((character.onlineChestSeconds ?? 0) < milestone.seconds) return { success: false, error: `Fique online por mais ${Math.ceil((milestone.seconds - (character.onlineChestSeconds ?? 0)) / 60)} min para abrir o ba\xFA de ${milestone.label}.` };
       const next = structuredClone(character);
-      next.onlineChestSeconds = Math.max(0, (next.onlineChestSeconds ?? 0) - required);
+      normalizeOnlineChest(next, runtimeNow());
+      next.onlineChestClaims = [.../* @__PURE__ */ new Set([...next.onlineChestClaims ?? [], milestone.id])];
       next.onlineChestsOpened = (next.onlineChestsOpened ?? 0) + 1;
-      const gold = 400 + next.level * 120;
-      const shards = 1 + Math.floor(next.level / 20);
+      const gold = milestone.gold + next.level * Math.max(20, Math.floor(milestone.gold / 100));
+      const shards = milestone.shards + Math.floor(next.level / 40);
       next.gold += gold;
       next.mythreonShards = (next.mythreonShards ?? 0) + shards;
-      const reward = `${gold.toLocaleString("pt-BR")} gold + ${shards} Mythreon Shard${shards === 1 ? "" : "s"}`;
+      const reward = `${milestone.label}: ${gold.toLocaleString("pt-BR")} gold + ${shards} Mythreon Shard${shards === 1 ? "" : "s"}`;
       set({ character: next });
       get().save();
       notify(`Ba\xFA do Ref\xFAgio: ${reward}`);
@@ -5143,6 +5328,21 @@ function createGameStore(runtime = {}) {
       recalcStats(next);
       set({ character: next });
       get().save();
+      return result;
+    },
+    recycleCards: (sourceTemplateId, materialUids) => {
+      const { character } = get();
+      if (!character) return { success: false, error: "Sem personagem." };
+      if (typeof sourceTemplateId !== "string" || !Array.isArray(materialUids) || materialUids.some((id) => typeof id !== "string")) {
+        return { success: false, error: "Dados da roleta inv\xE1lidos." };
+      }
+      const next = structuredClone(character);
+      const result = recycleCardCopies(next, sourceTemplateId, materialUids);
+      if (!result.success) return result;
+      recalcStats(next);
+      set({ character: next });
+      get().save();
+      notify(`\u{1F3B0} Bolsa de Cards: ${CARD_TEMPLATES[result.reward?.templateId ?? ""]?.name ?? "nova mem\xF3ria"} recebida.`);
       return result;
     },
     depositItem: (uid) => {
@@ -5233,7 +5433,7 @@ function professionPrecisionAt(elapsed, target) {
 
 // src/engine/professionChallenge.ts
 var PROFESSION_LEAD_MS = 1200;
-var PROFESSION_DELIVERY_GRACE_MS = 750;
+var PROFESSION_DELIVERY_GRACE_MS = 5e3;
 function gatheringAccessError(c, kind, targetId, now, baitId) {
   const mining = kind === "MINERACAO";
   const point = mining ? MINING_NODES.find((node) => node.id === targetId) : FISHING_SPOTS.find((spot) => spot.id === targetId);
@@ -5425,10 +5625,10 @@ function executeGame(world, action, args = []) {
       const zone = uid(args[0]);
       if (!ZONES[zone]) throw Error("Mapa inv\xE1lido.");
       s.startHunting(zone);
-      if (store.getState().isTickRunning) {
-        store.getState().character.lastTick = now;
-        world.lastAdvanceAt = now;
-      }
+      if (!store.getState().isTickRunning) throw Error("A ca\xE7a n\xE3o p\xF4de ser iniciada. Verifique sua vida, stamina, n\xEDvel e os requisitos da miss\xE3o.");
+      store.getState().character.lastTick = now;
+      world.lastAdvanceAt = now;
+      result = { success: true, zoneId: zone };
     } else if (action === "startTraining" || action === "spendStatPoint") {
       const skill = uid(args[0]);
       if (!["melee", "magic", "distance", "defense", "soul"].includes(skill)) throw Error("Atributo inv\xE1lido.");
@@ -5500,6 +5700,14 @@ function executeGame(world, action, args = []) {
       if (args.length) throw Error("Par\xE2metros inesperados.");
       result = s.claimDailyCalendar();
       if (!result?.success) throw Error(result?.error ?? "N\xE3o foi poss\xEDvel resgatar a recompensa.");
+    } else if (action === "recoverCalendarDay") {
+      if (args.length !== 1 || typeof args[0] !== "string") throw Error("Dia inv\xE1lido.");
+      result = s.recoverCalendarDay(args[0]);
+      if (!result?.success) throw Error(result?.error ?? "N\xE3o foi poss\xEDvel recuperar o dia.");
+    } else if (action === "recoverCalendarWeek") {
+      if (args.length) throw Error("Par\xE2metros inesperados.");
+      result = s.recoverCalendarWeek();
+      if (!result?.success) throw Error(result?.error ?? "N\xE3o foi poss\xEDvel recuperar a semana.");
     } else if (action === "claimOnlineChest") {
       if (args.length) throw Error("Par\xE2metros inesperados.");
       result = s.claimOnlineChest();
@@ -5511,6 +5719,10 @@ function executeGame(world, action, args = []) {
     } else if (action === "evolveCard") {
       if (args.length !== 3 || !Array.isArray(args[1]) || args[1].length > 16 || args[1].some((id) => typeof id !== "string" || id.length < 1 || id.length > 128) || !Number.isInteger(args[2]) || Number(args[2]) < 1 || Number(args[2]) > 4) throw Error("Dados de evolu\xE7\xE3o inv\xE1lidos.");
       result = s.evolveCard(uid(args[0]), args[1], Number(args[2]));
+    } else if (action === "recycleCards") {
+      if (args.length !== 2 || typeof args[0] !== "string" || String(args[0]).length > 128 || !Array.isArray(args[1]) || args[1].length !== 4 || args[1].some((id) => typeof id !== "string" || id.length < 1 || id.length > 128)) throw Error("A roleta exige quatro c\xF3pias v\xE1lidas.");
+      result = s.recycleCards(uid(args[0]), args[1].map(uid));
+      if (!result?.success) throw Error(result?.error ?? "N\xE3o foi poss\xEDvel rodar a Bolsa de Cards.");
     } else if (action === "synthesize") {
       result = s.synthesize(uid(args[0]), uid(args[1]), uid(args[2]));
       if (result?.success) world.counters.syntheses++;

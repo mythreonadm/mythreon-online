@@ -8,10 +8,10 @@
 
 ## Código e recursos
 
-- [src/engine/cardCollection.ts](../src/engine/cardCollection.ts) — CARD_LOADOUT_LIMIT, CARD_MAX_LEVEL, CARD_HERO_WEIGHTS, CARD_EVOLUTION_GOLD, equippedCards, cardHeroBonus, formationBonus, cardFormationScore, cardEvolutionQuote, evolveCard
+- [src/engine/cardCollection.ts](../src/engine/cardCollection.ts) — CARD_LOADOUT_LIMIT, CARD_MAX_LEVEL, CARD_HERO_WEIGHTS, CARD_EVOLUTION_GOLD, CARD_RARITY_ORDER, cardDuplicateBag, uniqueCardCollection, recycleCardCopies, equippedCards, cardHeroBonus, formationBonus, cardFormationScore
 - [src/engine/cosmeticOwnership.ts](../src/engine/cosmeticOwnership.ts) — ownedCosmeticLoadout, normalizeCosmeticOwnership
 - [src/engine/dailyBossBattle.ts](../src/engine/dailyBossBattle.ts) — BOSS_KNOCKOUT_RECOVERY_MS, bossBattleFor, bossRetaliation
-- [src/engine/dailyCalendar.ts](../src/engine/dailyCalendar.ts) — CalendarClaimResult, claimCalendarReward
+- [src/engine/dailyCalendar.ts](../src/engine/dailyCalendar.ts) — CalendarClaimResult, claimCalendarReward, recoverCalendarDay, recoverCalendarWeek
 - [src/engine/drops.ts](../src/engine/drops.ts) — RARITY_ORDER, RARITY_MULT, rollRarity, generateRandomAffixes, makeEquipment, makeComponent, makeMaterial, makeBackpack, rollAmbient, DropMods, rollDrops
 - [src/engine/gearScore.ts](../src/engine/gearScore.ts) — getGearScore, scoreCards
 - [src/engine/journey.ts](../src/engine/journey.ts) — isGuided, canUseTab, canEnterZone, canTutorialHunt, unlockJourneyZone

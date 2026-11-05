@@ -13,7 +13,10 @@ let poll: ReturnType<typeof setInterval> | undefined, socialPoll: ReturnType<typ
 let channel: any = null, polling: OnlineSession | null = null, socialRunning: OnlineSession | null = null;
 let characterId = "";
 const NO_ARGUMENTS = new Set(["stopHunting", "stopTraining", "finishIntro", "clearOfflineReport", "clearDeathReport", "startHealing", "cancelHealing", "unequipRace", "unequipDivineBeast", "activateBuff", "buyTrainingBoost", "buyBless", "refreshCompendium"]);
-const DEDUPLICATE = new Set(["hatchEgg", "harvestFarmPlot", "claimDailyCalendar", "claimOnlineChest", "claimQuest"]);
+const DEDUPLICATE = new Set(["hatchEgg", "harvestFarmPlot", "claimDailyCalendar", "recoverCalendarDay", "recoverCalendarWeek", "claimOnlineChest", "claimQuest", "recycleCards"]);
+// These commands are intentionally server-only: their nonce and timing live
+// in WorldState and they are not methods of the local Zustand store.
+const SERVER_ONLY = new Set(["beginProfessionChallenge", "finishProfessionChallenge", "cancelProfessionChallenge", "recycleCards"]);
 
 export async function refreshSocial() {
   const session = current, id = characterId;
@@ -78,9 +81,11 @@ export async function connectCharacter(id: string) {
       let copied: unknown[];
       try { copied = JSON.parse(JSON.stringify(safeArgs)); }
       catch { return { success: false, error: "Os parâmetros desta ação são inválidos." }; }
-      const at = Date.now(), preview = previewGameAction(session.view, name, copied, at);
+      const at = Date.now();
+      const preview = SERVER_ONLY.has(name) ? { result: undefined as any } : previewGameAction(session.view, name, copied, at);
       if (preview.result === false || preview.result?.success === false) return preview.result;
       const receipt = session.submit("world.command", { action: name, args: copied }, { at, deduplicate: DEDUPLICATE.has(name) });
+      if (SERVER_ONLY.has(name)) return receipt;
       if (preview.result && typeof preview.result === "object") {
         const confirmation = receipt.then(result => result.result ?? preview.result);
         void confirmation.catch(() => {});

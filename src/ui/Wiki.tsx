@@ -19,6 +19,7 @@ import { getPotionUsePrice } from "../data/potionEconomy";
 import { ELEMENTS, elementMultiplier } from "../data/elementalChart";
 import { PERCENT_AFFIX_RANGES, STAT_NAMES } from "../data/affixes";
 import { MYTHREON_JOURNAL, journalKindClass } from "../data/mythreonJournal";
+import { itemAssetCandidates } from "../data/itemAssets";
 
 const PERCENT_STATS = new Set(["crit", "hit", "dge", "spd", "blk", "resFisico", "resMagico", "critDmg", "lifesteal"]);
 function formatWikiStat(stat: string, value: number) {
@@ -138,17 +139,19 @@ export function Wiki() {
 function WikiItemIcon({ item, size = "h-10 w-10" }: { item: Pick<Item, "templateId" | "name" | "icon">; size?: string }) {
   const [failed, setFailed] = useState(false);
   useEffect(() => setFailed(false), [item.templateId]);
+  const [src, ...fallbackSrc] = itemAssetCandidates(item.templateId);
   return failed
     ? <span className={`${size} grid shrink-0 place-items-center text-2xl`}>{item.icon}</span>
-    : <AssetImage src={`/assets/items/${item.templateId}.png`} alt={item.name} className={`${size} shrink-0 object-contain [image-rendering:pixelated]`} onError={() => setFailed(true)} />;
+    : <AssetImage src={src} fallbackSrc={fallbackSrc} alt={item.name} className={`${size} shrink-0 object-contain [image-rendering:pixelated]`} onAllSourcesFail={() => setFailed(true)} />;
 }
 
 function WikiAssetIcon({ templateId, name, emoji = "🎒", size = "h-12 w-12" }: { templateId: string; name: string; emoji?: string; size?: string }) {
   const [failed, setFailed] = useState(false);
   useEffect(() => setFailed(false), [templateId]);
+  const [src, ...fallbackSrc] = itemAssetCandidates(templateId);
   return failed
     ? <span className={`${size} grid shrink-0 place-items-center text-3xl`}>{emoji}</span>
-    : <AssetImage src={`/assets/items/${templateId}.png`} alt={name} className={`${size} shrink-0 object-contain [image-rendering:pixelated]`} onError={() => setFailed(true)} />;
+    : <AssetImage src={src} fallbackSrc={fallbackSrc} alt={name} className={`${size} shrink-0 object-contain [image-rendering:pixelated]`} onAllSourcesFail={() => setFailed(true)} />;
 }
 
 function DivineBeastsWikiSection({ search }: { search: string }) {

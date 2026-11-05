@@ -2,6 +2,7 @@ import { rarityArtClass } from './itemRarity';
 import React, { useState, useEffect } from "react";
 import { Item } from "../types";
 import { AssetImage } from "./AssetImage";
+import { itemAssetCandidates } from "../data/itemAssets";
 
 interface Props {
   item: Item;
@@ -17,7 +18,7 @@ export function ItemIcon({ item, className = "text-3xl mb-1", style }: Props) {
     setHasError(false);
   }, [item.templateId]);
 
-  const imagePath = `/assets/items/${item.templateId === "SKIN_CAPA_PRIMEIRO_CANTO" ? "SKIN_PREMIUM_MES_01" : item.templateId === "ISCA_CICATRIZ" ? "ISCA_RARA" : item.templateId}.png`;
+  const [imagePath, ...fallbackPaths] = itemAssetCandidates(item);
 
   const aura = rarityArtClass(item.rarity);
   if (hasError) {
@@ -30,6 +31,7 @@ export function ItemIcon({ item, className = "text-3xl mb-1", style }: Props) {
       src={imagePath}
       alt={item.name}
       className="rarity-image h-full w-full object-contain"
+      fallbackSrc={fallbackPaths}
       onAllSourcesFail={() => setHasError(true)}
     /></span>
   );

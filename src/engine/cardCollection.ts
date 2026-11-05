@@ -1,10 +1,76 @@
 import type { CardInstance, CardRarity, CardStats, Character } from "../types";
-import { CARD_TEMPLATES, getCardStats } from "../data/cards";
+import { CARD_TEMPLATES, createCardInstance, getCardStats } from "../data/cards";
 
 export const CARD_LOADOUT_LIMIT = 5;
 export const CARD_MAX_LEVEL = 5;
 export const CARD_HERO_WEIGHTS: CardStats = { hp: .15, atk: .20, def: .15, spd: .002 };
 export const CARD_EVOLUTION_GOLD: Record<CardRarity, number> = { COMUM: 150, INCOMUM: 300, RARO: 600, EPICO: 1200, LENDARIO: 2400 };
+export const CARD_RARITY_ORDER: CardRarity[] = ["COMUM", "INCOMUM", "RARO", "EPICO", "LENDARIO"];
+
+/**
+ * Retorna a cópia principal de cada criatura e separa as repetições livres.
+ * A carta equipada, evoluída ou mais antiga permanece como memória principal;
+ * as demais ficam disponíveis para a Bolsa de Cards.
+ */
+export function cardDuplicateBag(c?: Pick<Character, "cards" | "cardLoadout"> | null): CardInstance[] {
+  if (!c) return [];
+  const equipped = new Set(c.cardLoadout ?? []);
+  const groups = new Map<string, CardInstance[]>();
+  for (const card of c.cards ?? []) {
+    if (!CARD_TEMPLATES[card.templateId]) continue;
+    const group = groups.get(card.templateId) ?? [];
+    group.push(card);
+    groups.set(card.templateId, group);
+  }
+  const duplicateIds = new Set<string>();
+  for (const group of groups.values()) {
+    const ordered = [...group].sort((a, b) => {
+      const aEquipped = equipped.has(a.uid) ? 1 : 0;
+      const bEquipped = equipped.has(b.uid) ? 1 : 0;
+      return bEquipped - aEquipped || b.level - a.level || a.obtainedAt - b.obtainedAt || a.uid.localeCompare(b.uid);
+    });
+    ordered.slice(1).forEach(card => duplicateIds.add(card.uid));
+  }
+  return (c.cards ?? []).filter(card => duplicateIds.has(card.uid));
+}
+
+export function uniqueCardCollection(c?: Pick<Character, "cards" | "cardLoadout"> | null): CardInstance[] {
+  if (!c) return [];
+  const duplicateIds = new Set(cardDuplicateBag(c).map(card => card.uid));
+  return (c.cards ?? []).filter(card => CARD_TEMPLATES[card.templateId] && !duplicateIds.has(card.uid));
+}
+
+function cardRarityRank(rarity: CardRarity): number { return CARD_RARITY_ORDER.indexOf(rarity); }
+
+/**
+ * Consome quatro cópias livres de uma carta e sorteia uma nova memória de
+ * raridade igual ou superior. A chance base de subir é 15%; cartas lendárias
+ * sempre retornam na própria raridade.
+ */
+export function recycleCardCopies(c: Character, sourceTemplateId: string, materialUids: string[]): {
+  success: boolean; error?: string; reward?: CardInstance; consumed?: string[]; sourceRarity?: CardRarity; rewardRarity?: CardRarity;
+} {
+  const source = CARD_TEMPLATES[sourceTemplateId];
+  if (!source) return { success: false, error: "Esta criatura não existe no álbum de memórias." };
+  const ids = [...new Set(materialUids)];
+  if (ids.length !== 4 || materialUids.length !== 4) return { success: false, error: "A roleta exige exatamente 4 cópias repetidas." };
+  const bag = new Set(cardDuplicateBag(c).map(card => card.uid));
+  const selected = ids.map(uid => c.cards.find(card => card.uid === uid));
+  if (selected.some(card => !card) || selected.some(card => card!.templateId !== sourceTemplateId || card!.level !== 1 || !bag.has(card!.uid))) {
+    return { success: false, error: "Use quatro cópias livres de nível 1 da mesma criatura." };
+  }
+  const sourceRank = cardRarityRank(source.rarity);
+  const candidates = Object.entries(CARD_TEMPLATES).filter(([, template]) => cardRarityRank(template.rarity) >= sourceRank);
+  if (!candidates.length) return { success: false, error: "Nenhuma memória compatível foi encontrada na roleta." };
+  const equal = candidates.filter(([, template]) => cardRarityRank(template.rarity) === sourceRank);
+  const higher = candidates.filter(([, template]) => cardRarityRank(template.rarity) > sourceRank);
+  const pool = higher.length && Math.random() < 0.15 ? higher : equal.length ? equal : higher;
+  const [rewardTemplateId, rewardTemplate] = pool[Math.floor(Math.random() * pool.length)];
+  const reward = createCardInstance(rewardTemplateId);
+  c.cards = (c.cards ?? []).filter(card => !ids.includes(card.uid));
+  c.cards.push(reward);
+  return { success: true, reward, consumed: ids, sourceRarity: source.rarity, rewardRarity: rewardTemplate.rarity };
+}
 export function equippedCards(c?: Pick<Character, "cards" | "cardLoadout"> | null): CardInstance[] {
   if (!c) return [];
   const byId = new Map((c.cards ?? []).map(card => [card.uid, card]));

@@ -313,6 +313,9 @@ export interface Character {
   /** Tempo acumulado em atividade online para abrir o Baú do Refúgio. */
   onlineChestSeconds?: number;
   onlineChestsOpened?: number;
+  /** Trilha diária de marcos do Baú do Refúgio, reiniciada em UTC. */
+  onlineChestDay?: string;
+  onlineChestClaims?: string[];
   divineBeasts?: DivineBeastInstance[];
   activeDivineBeastId?: DivineBeastId;
   divineBeastNeeds?: Partial<Record<DivineBeastId, DivineBeastNeeds>>;

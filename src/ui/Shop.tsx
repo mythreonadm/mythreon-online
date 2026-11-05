@@ -13,6 +13,7 @@ import { ALL_EQUIPMENT_TEMPLATES } from "../data/items";
 import { countByTemplate } from "../engine/inventory";
 import { MYTHREON_ECONOMY, MYTHREON_OFFERS, MYTHREON_DONATION_PACKS, MYTHREON_PREMIUM_PLANS, PREMIUM_BENEFITS } from "../data/mythreonEconomy";
 import { OnlineMarket } from "./OnlineMarket";
+import { AreaBackdrop } from "./AreaBackdrop";
 
 export function Shop({ storefront = false }: { storefront?: boolean }) {
   const { character, sellItem, salvageAll, salvageSelected, updateSettings, useVial, upgradeItem, rerollItem, elevateItemTier, rerollSpecificAffix, forgeFragments, refineMythreonCoins, buyMythreonOffer, buyMythreonBoost, openMythreonRoulette } = useGameStore();
@@ -104,11 +105,9 @@ export function Shop({ storefront = false }: { storefront?: boolean }) {
       )}
 
       {/* HEADER */}
-      <div className="flex justify-between items-center mb-6 border-b border-arcane-border pb-4">
-        <div><h2 className="text-xl font-bold text-arcane-gold">{storefront ? "Loja Mythreon" : "Ferreiro de Mythreon"}</h2><p className="text-xs text-gray-500">{storefront ? "Apoie o mundo, escolha seus cosméticos e acelere sua jornada com equilíbrio." : "Aprimore, negocie e recupere a Essência dos seus drops."}</p></div>
-        {storefront && <div className="flex flex-wrap gap-2 text-xs font-bold"><span className="rounded border border-cyan-600/50 bg-cyan-950/30 px-2 py-1 text-cyan-200">🔷 {character.mythreonShards ?? 0} Shards</span><span className="rounded border border-fuchsia-600/50 bg-fuchsia-950/30 px-2 py-1 text-fuchsia-200">🪙 {character.mythreonCoins ?? 0} Coins</span></div>}
-        <div className="rounded-lg border border-arcane-gold/25 bg-black/20 px-3 py-2 text-sm font-bold text-arcane-gold">💰 {character.gold.toLocaleString("pt-BR")} gold</div>
-        <div className="flex bg-arcane-bg rounded-lg p-1 border border-arcane-border flex-wrap gap-1">
+      <AreaBackdrop src="/assets/backgrounds/forge.png" kicker={storefront ? "Câmara de comércio da Essência" : "Oficina de aprimoramento"} title={storefront ? "✨ Loja Mythreon" : "🔥 Ferreiro de Mythreon"} description={storefront ? "Apoie o mundo, escolha seus cosméticos e acelere sua jornada com equilíbrio." : "Aprimore, negocie e recupere a Essência dos seus drops."}>
+        <div className="flex flex-wrap items-center justify-end gap-2 text-xs font-bold">{storefront && <><span className="rounded border border-cyan-600/50 bg-cyan-950/45 px-2 py-1 text-cyan-100">🔷 {character.mythreonShards ?? 0} Shards</span><span className="rounded border border-fuchsia-600/50 bg-fuchsia-950/45 px-2 py-1 text-fuchsia-100">🪙 {character.mythreonCoins ?? 0} Coins</span></>}<div className="rounded-lg border border-arcane-gold/35 bg-black/35 px-3 py-2 text-arcane-gold">💰 {character.gold.toLocaleString("pt-BR")} gold</div></div>
+        <div className="flex flex-wrap gap-1 rounded-lg border border-white/15 bg-black/35 p-1">
           {!storefront && <button onClick={() => setTab("FORJA")} className={`px-3 py-1 text-sm font-bold rounded transition-colors ${tab === "FORJA" ? "bg-orange-600 text-white" : "text-gray-400 hover:text-white"}`}>Forja</button>}
           {storefront && <button onClick={() => setTab("VIALS")} className={`px-3 py-1 text-sm font-bold rounded transition-colors ${tab === "VIALS" ? "bg-arcane-cyan text-black" : "text-gray-400 hover:text-white"}`}>Elixires</button>}
           {storefront && <button onClick={() => setTab("ESSENCIA")} className={`px-3 py-1 text-sm font-bold rounded transition-colors ${tab === "ESSENCIA" ? "bg-fuchsia-600 text-white" : "text-gray-400 hover:text-white"}`}>Loja Mythreon</button>}
@@ -116,7 +115,7 @@ export function Shop({ storefront = false }: { storefront?: boolean }) {
           {!storefront && <button onClick={() => setTab("VENDER")} className={`px-3 py-1 text-sm font-bold rounded transition-colors ${tab === "VENDER" ? "bg-arcane-purple text-white" : "text-gray-400 hover:text-white"}`}>Vender</button>}
           {!storefront && <button onClick={() => setTab("DESMANCHAR")} className={`px-3 py-1 text-sm font-bold rounded transition-colors ${tab === "DESMANCHAR" ? "bg-red-800 text-white" : "text-gray-400 hover:text-white"}`}>Desmanchar</button>}
         </div>
-      </div>
+      </AreaBackdrop>
 
       {/* ─── ABA VIALS ─── */}
       {tab === "VIALS" && (

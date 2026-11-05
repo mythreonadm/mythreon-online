@@ -8,6 +8,7 @@ import { worldRequest } from "../online/client";
 import { onlineAction, useOnlineState } from "../online/controller";
 import { confirmedAction } from "../online/confirmation";
 import { CardArt } from "./CardArt";
+import { AreaBackdrop } from "./AreaBackdrop";
 
 const RARITIES: Array<"TODAS" | CardRarity> = ["TODAS", "COMUM", "INCOMUM", "RARO", "EPICO", "LENDARIO"];
 const rarityLabel: Record<string, string> = { TODAS: "Todas", COMUM: "Comum", INCOMUM: "Incomum", RARO: "Raro", EPICO: "Épico", LENDARIO: "Lendário" };
@@ -89,9 +90,9 @@ export function CardAlbum() {
   const canEvolve = quote && !quote.maxed && validMaterials && character.gold >= quote.gold;
   const selectedTemplate = selected && CARD_TEMPLATES[selected.templateId];
   return <section className="space-y-5">
-    <header className="rounded-2xl border border-violet-500/40 bg-gradient-to-r from-arcane-panel via-violet-950/20 to-arcane-panel p-5">
-      <p className="text-[10px] uppercase tracking-[.2em] text-violet-300">Arquivo de memórias vivas</p><div className="mt-1 flex flex-wrap justify-between gap-3"><div><h1 className="text-2xl font-black text-white">🎴 Álbum de Cards</h1><p className="mt-2 max-w-2xl text-sm text-slate-400">Colecione criaturas, forme sua build e transforme cópias repetidas em evolução. Os bônus da formação afetam a hunt, o Gear Score e o duelo online.</p></div><div><strong className="block text-3xl text-arcane-gold">{completion}%</strong><span className="text-xs text-cyan-200">{unique}/{Object.keys(CARD_TEMPLATES).length} memórias · {cards.length} cópias</span></div></div>
-    </header>
+    <AreaBackdrop src="/assets/backgrounds/cards.png" kicker="Arquivo de memórias vivas" title="🎴 Álbum de Cards" description="Colecione criaturas, forme sua build e transforme cópias repetidas em evolução. Os bônus da formação afetam a hunt, o Gear Score e o duelo online.">
+      <div className="text-right"><strong className="block text-3xl text-arcane-gold">{completion}%</strong><span className="text-xs text-cyan-100">{unique}/{Object.keys(CARD_TEMPLATES).length} memórias · {cards.length} cópias</span></div>
+    </AreaBackdrop>
     {active ? <section className="rounded-xl border border-amber-400/30 bg-amber-950/10 p-4"><h2 className="font-bold text-amber-100">Temporada de coleção · {season?.seasonKey ?? "carregando"}</h2><p className="mt-1 text-xs text-slate-400">50%, 80% e 100% da coleção melhoram a recompensa. O resgate fica disponível após o encerramento do mês.</p>{season?.previousSeason?.reward ? <p className="mt-2 text-sm text-emerald-300">Temporada {season.previousSeason.key}: recompensa resgatada.</p> : season?.previousSeason?.preview ? <div className="mt-3 flex flex-wrap items-center gap-3"><span className="text-xs text-cyan-100">{season.previousSeason.key} · {season.previousSeason.preview.tier} · {season.previousSeason.preview.gold.toLocaleString("pt-BR")} gold · {season.previousSeason.preview.shards} Shards · {season.previousSeason.preview.coins} Coins</span><button disabled={busy || pending} className="online-button" onClick={() => void run(async () => { await onlineAction("cards.season.claim", { seasonKey: season.previousSeason.key });await refreshSeason();return {success:true}; }, "Recompensa sazonal resgatada.")}>Resgatar temporada</button></div> : <p className="mt-2 text-xs text-slate-500">Sem recompensa anterior disponível.</p>}{seasonError ? <p role="alert" className="mt-2 text-xs text-red-300">{seasonError}</p> : null}</section> : null}
     <section data-card-formation className="rounded-xl border border-cyan-400/30 bg-cyan-950/10 p-4">
       <div className="flex flex-wrap items-center justify-between gap-2"><h2 className="font-black text-cyan-200">Formação equipada · {formation.length}/5</h2><span className="text-xs text-amber-200">Índice da formação: {Math.round(cardFormationScore(character))}</span></div>

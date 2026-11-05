@@ -509,3 +509,18 @@ As artes que tinham referência direta mas não arquivo foram produzidas em pixe
 Teste de jogabilidade revelou três regressões. A caça online/local encerrava após o primeiro abate quando um objetivo tutorial era concluído; `src/store/gameStore.ts` e o runtime gerado agora só pausam por stamina esgotada, morte ou saída explícita. O pulso de Pesca/Mineração podia ser cancelado ou rejeitado visualmente em conexões lentas; `ProfessionPrecisionAction.tsx` mostra uma faixa de preparação, mantém o desafio até a barra autoritativa chegar e aceita atraso de relógio sem confiar na nota do cliente. A tela de Pets contava exemplares em vez de espécies; `DivineBeasts.tsx` passou a usar linhagens únicas (`Set(instance.id)`) e exibe o total de exemplares separadamente.
 
 Regressões aprovadas: `typecheck`, `professions:check`, `professions:pulse-check`, `online:check`, `journey:check`, `npx electron scripts/professions-ui-check.cjs`, `npx electron scripts/online-flow-ui-check.cjs` e `online:bundle`. Fonte detalhada: `docs/conhecimento/Pack-62-Caca-Coleta-e-Pets-2026-11-05.md`. Sem commit, push, deploy ou schema novo. Após publicar, testar a permanência no mapa, um pulso em rede móvel e a coleção com cópias reais.
+## Continuidade — Pack 63 — 05/11/2026
+
+O pulso online agora trata `beginProfessionChallenge`, `finishProfessionChallenge` e `cancelProfessionChallenge` como ações server-only no controlador, sem tentar validá-las como métodos locais. A janela de entrega recebeu 5 s de tolerância para latência de celular; o servidor continua sendo a autoridade sobre UUID, início, alvo, recarga, ferramenta, skill, isca e bolsa.
+
+`tick()` prioriza `character.currentZoneId` durante a reconciliação, evitando que um snapshot antigo retorne a UI ao Refúgio. `server/game.ts` passou a rejeitar explicitamente um início de caça que não conseguiu ativar o ciclo. Saves antigos sem missão tutorial ativa podem continuar caçando após a introdução, reduzindo o risco de bloqueio entre etapas.
+
+O Baú do Refúgio foi convertido em uma trilha cumulativa diária UTC: 5 min, 30 min, 2 h, 6 h e 12 h. Cada marco é resgatável uma vez por dia; o contador não é consumido, o dia seguinte limpa tempo e reivindicações, e as recompensas combinam gold com Mythreon Shards em escala controlada. `src/data/onlineChest.ts` concentra as regras e `OnlineChest.tsx` mostra os cinco estados.
+
+Fonte detalhada: `docs/conhecimento/Pack-63-Profissoes-Bau-e-Caca-2026-11-05.md`. Validações: `typecheck`, `professions:pulse-check`, `online:check`, `journey:check`, `online:bundle-check`, `build` e `git diff --check`. Sem commit, push, deploy ou schema novo. A próxima verificação deve ser feita em produção, com vários abates seguidos e uma tentativa de mineração e pesca em rede móvel.
+
+## Continuidade — Pack 64 — 05/11/2026
+
+A incubadora de Pets agora exibe uma ação explícita quando o tempo termina. `src/ui/DivineBeasts.tsx` mostra o cartão pronto com o botão **🥚 Abrir o Ovo**, em destaque dourado e pulsante, usando `hatchEgg` e `confirmedAction` para preservar o fluxo local/online. Enquanto o ovo está reservado, a área inferior explica que ele está no cartão da incubadora, evitando a impressão de que foi perdido.
+
+Fonte detalhada: `docs/conhecimento/Pack-64-Incubadora-Botao-de-Eclosao-2026-11-05.md`. Validação: `npm run typecheck` passou. Sem alteração de raridade, tempo, inventário, schema, commit, push ou deploy. Após publicar, testar um ovo pronto, confirmar o Pet criado e verificar a limpeza da incubadora.

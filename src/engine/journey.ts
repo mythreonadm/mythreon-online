@@ -18,7 +18,11 @@ export function canEnterZone(c: Character, id: string) {
 export function canTutorialHunt(c: Character) {
  if (!isGuided(c)) return true;
  if (!c.introSeen) return false;
- return ['TUT_1','TUT_POTIONS','TUT_3'].some(id => !!c.quests.active[id]);
+ const activeTutorial = ['TUT_1','TUT_POTIONS','TUT_3'].some(id => !!c.quests.active[id]);
+ // Saves antigos podem ficar entre duas etapas, sem missão ativa e sem a
+ // marca final do tutorial. A caça não pode ficar travada nesse estado: a
+ // pessoa continua jogando e pode abrir o Diário para retomar a iniciação.
+ return activeTutorial || c.quests.completed.includes('TUT_BACKPACK') || Object.keys(c.quests.active).length === 0;
 }
 /** Call only on a cloned character; every condition is checked before any resource is consumed. */
 export function unlockJourneyZone(c: Character, id: string): {success:boolean;error?:string} {

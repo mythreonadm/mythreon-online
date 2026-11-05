@@ -15,6 +15,7 @@
 - [docs/conhecimento/Comunidade-no-Registro-de-Combate-2026-11-03.md](../docs/conhecimento/Comunidade-no-Registro-de-Combate-2026-11-03.md)
 - [docs/conhecimento/Pack-40-PvP-Combate-por-Turnos-2026-11-04.md](../docs/conhecimento/Pack-40-PvP-Combate-por-Turnos-2026-11-04.md)
 - [docs/conhecimento/Pack-50-Arena-Visual-Boss-Cooperativo-2026-11-04.md](../docs/conhecimento/Pack-50-Arena-Visual-Boss-Cooperativo-2026-11-04.md)
+- [public/assets/backgrounds/duel.png](../public/assets/backgrounds/duel.png)
 - [scripts/daily-boss-arena-check.cjs](../scripts/daily-boss-arena-check.cjs)
 - [src/data/beastCombat.ts](../src/data/beastCombat.ts) — getBeastCombat, beastGrowth
 - [src/engine/cardArena.ts](../src/engine/cardArena.ts) — ArenaSize, ArenaStrategy, ArenaFighter, ArenaLogEntry, ArenaBattleResult, toFighter, makeOpponentDeck, simulateArenaDuel

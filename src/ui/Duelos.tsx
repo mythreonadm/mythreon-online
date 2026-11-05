@@ -3,6 +3,9 @@ import { useGameStore } from "../store/gameStore";
 import { CARD_TEMPLATES, TRAITS, getCardStats } from "../data/cards";
 import { CardInstance } from "../types";
 import { ArenaDuelos } from "./ArenaDuelos";
+import { CardArt } from "./CardArt";
+import { cardDuplicateBag, uniqueCardCollection } from "../engine/cardCollection";
+import { onlineAction, useOnlineState } from "../online/controller";
 
 type RegionFilter = "TODAS" | "BOSQUE_LYSS" | "PICO_DHOR" | "MAR_AZHAR" | "RUINAS_ASTERION" | "CICATRIZ_PROFUNDA";
 
@@ -29,8 +32,12 @@ const RARITY_LABELS: Record<string, string> = {
 
 export function Duelos() {
   const { character } = useGameStore();
+  const online = useOnlineState(state => state.active);
   const [filter, setFilter] = useState<RegionFilter>("TODAS");
   const [selectedCard, setSelectedCard] = useState<CardInstance | null>(null);
+  const [recycleBusy, setRecycleBusy] = useState("");
+  const [recycleNotice, setRecycleNotice] = useState("");
+  const [recycleReward, setRecycleReward] = useState<CardInstance | null>(null);
 
   if (!character) return null;
 
@@ -38,20 +45,10 @@ export function Duelos() {
 
   // Agrupa por templateId para mostrar quantidade
   const groupedCards = useMemo(() => {
-    const map: Record<string, { instance: CardInstance; count: number; }> = {};
-    cards.forEach(card => {
-      if (!map[card.templateId]) {
-        map[card.templateId] = { instance: card, count: 1 };
-      } else {
-        map[card.templateId].count++;
-        // Mantém o de maior nível
-        if (card.level > map[card.templateId].instance.level) {
-          map[card.templateId].instance = card;
-        }
-      }
-    });
-    return Object.values(map);
-  }, [cards]);
+    const counts = new Map<string, number>();
+    cards.forEach(card => counts.set(card.templateId, (counts.get(card.templateId) ?? 0) + 1));
+    return uniqueCardCollection(character).map(instance => ({ instance, count: counts.get(instance.templateId) ?? 1 }));
+  }, [cards, character.cardLoadout?.join(",")]);
 
   const filteredCards = groupedCards.filter(({ instance }) => {
     const template = CARD_TEMPLATES[instance.templateId];
@@ -62,6 +59,33 @@ export function Duelos() {
 
   const uniqueCount = groupedCards.length;
   const totalCount = cards.length;
+  const duplicateCards = useMemo(() => cardDuplicateBag(character), [cards, character.cardLoadout?.join(",")]);
+  const bagGroups = useMemo(() => {
+    const map = new Map<string, CardInstance[]>();
+    duplicateCards.forEach(card => map.set(card.templateId, [...(map.get(card.templateId) ?? []), card]));
+    return [...map.entries()].map(([templateId, entries]) => ({ templateId, cards: entries }));
+  }, [duplicateCards]);
+
+  const recycleGroup = async (templateId: string, entries: CardInstance[]) => {
+    const materials = entries.filter(card => card.level === 1).slice(0, 4).map(card => card.uid);
+    if (materials.length < 4) {
+      setRecycleNotice("A roleta exige quatro cópias livres de nível 1.");
+      return;
+    }
+    setRecycleBusy(templateId); setRecycleNotice(""); setRecycleReward(null);
+    try {
+      const response = online
+        ? await onlineAction("world.command", { action: "recycleCards", args: [templateId, materials] })
+        : useGameStore.getState().recycleCards(templateId, materials);
+      const result = response?.result ?? response;
+      if (!result?.success) { setRecycleNotice(result?.error ?? "Não foi possível rodar a Bolsa de Cards."); return; }
+      setRecycleReward(result.reward ?? null);
+      const rewardTemplate = result.reward ? CARD_TEMPLATES[result.reward.templateId] : undefined;
+      setRecycleNotice(`Roleta concluída: 4 cópias foram transformadas em ${rewardTemplate?.name ?? "uma nova carta"} (${RARITY_LABELS[rewardTemplate?.rarity ?? result.rewardRarity ?? "COMUM"]}).`);
+    } catch (error) {
+      setRecycleNotice(error instanceof Error ? error.message : "Não foi possível rodar a Bolsa de Cards.");
+    } finally { setRecycleBusy(""); }
+  };
 
   // Se não tem cartas ainda
   if (cards.length === 0) {
@@ -147,11 +171,10 @@ export function Duelos() {
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-          {filteredCards.map(({ instance, count }) => {
+          {filteredCards.map(({ instance }) => {
             const template = CARD_TEMPLATES[instance.templateId];
             if (!template) return null;
             const trait = TRAITS[template.trait];
-            const stats = getCardStats(template, instance.level);
             
             return (
               <div
@@ -160,12 +183,7 @@ export function Duelos() {
                 className={`bg-arcane-panel border-2 rounded-lg overflow-hidden cursor-pointer transition-all hover:-translate-y-1 hover:shadow-xl ${RARITY_COLORS[template.rarity]}`}
               >
                 <div className="bg-gradient-to-br from-arcane-bg to-black/60 p-3 flex items-center justify-center relative">
-                  <div className="text-5xl">{template.emoji}</div>
-                  {count > 1 && (
-                    <div className="absolute top-1 right-1 bg-black/80 px-1.5 py-0.5 rounded text-[10px] font-bold text-arcane-gold">
-                      x{count}
-                    </div>
-                  )}
+                  <CardArt template={template} className="h-28 w-full" />
                   {instance.level > 1 && (
                     <div className="absolute bottom-1 left-1 bg-orange-600 text-white px-1.5 py-0.5 rounded text-[9px] font-bold">
                       Nv {instance.level}
@@ -186,6 +204,28 @@ export function Duelos() {
           })}
         </div>
       )}
+
+      <section className="rounded-xl border border-amber-400/30 bg-gradient-to-br from-amber-950/20 via-arcane-panel to-black/20 p-4 sm:p-5">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[.22em] text-amber-300">Reciclagem de memórias</p>
+            <h2 className="mt-1 text-xl font-black text-white">Bolsa de Cards</h2>
+            <p className="mt-1 max-w-2xl text-xs text-slate-400">A coleção principal mostra apenas uma memória por criatura. Cópias repetidas ficam aqui; use 4 iguais na roleta para receber 1 carta aleatória da mesma raridade ou, com chance menor, de uma raridade superior.</p>
+          </div>
+          <div className="rounded-lg border border-amber-300/20 bg-black/20 px-3 py-2 text-right"><div className="text-[10px] uppercase tracking-wider text-slate-500">Cópias na bolsa</div><div className="font-mono text-xl font-black text-amber-200">{duplicateCards.length}</div></div>
+        </div>
+        {bagGroups.length === 0 ? <div className="mt-4 rounded-lg border border-dashed border-white/10 px-4 py-6 text-center text-xs text-slate-500">Nenhuma cópia repetida. Continue caçando para encontrar memórias extras.</div> : <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{bagGroups.map(group => {
+          const template = CARD_TEMPLATES[group.templateId];
+          if (!template) return null;
+          const ready = group.cards.filter(card => card.level === 1).length >= 4;
+          return <article key={group.templateId} className={`rounded-xl border p-3 ${RARITY_COLORS[template.rarity]} bg-black/20`}>
+            <div className="flex items-center gap-3"><CardArt template={template} className="h-16 w-16 shrink-0" /><div className="min-w-0"><div className="truncate text-sm font-black text-white">{template.name}</div><div className="text-[10px] font-bold text-amber-200">{RARITY_LABELS[template.rarity]} · {group.cards.length} duplicata{group.cards.length === 1 ? "" : "s"}</div><div className="text-[10px] text-slate-500">{group.cards.filter(card => card.level === 1).length} livres para a roleta</div></div></div>
+            <button disabled={!ready || !!recycleBusy} onClick={() => void recycleGroup(group.templateId, group.cards)} className="mt-3 w-full rounded-lg border border-amber-300/50 bg-amber-400/10 px-3 py-2 text-xs font-black text-amber-100 transition hover:bg-amber-400/20 disabled:cursor-not-allowed disabled:opacity-40">{recycleBusy === group.templateId ? "Girando a roleta…" : ready ? "🎰 Usar 4 na Roleta" : "Junte 4 cópias livres"}</button>
+          </article>;
+        })}</div>}
+        {recycleNotice && <p role="status" className="mt-4 rounded-lg border border-cyan-300/20 bg-cyan-500/[.06] px-3 py-2 text-xs text-cyan-100">{recycleNotice}</p>}
+        {recycleReward && CARD_TEMPLATES[recycleReward.templateId] && <div className="mt-4 flex items-center gap-3 rounded-xl border border-arcane-gold/40 bg-arcane-gold/[.08] p-3"><CardArt template={CARD_TEMPLATES[recycleReward.templateId]} className="h-20 w-20" /><div><div className="text-[10px] font-black uppercase tracking-widest text-arcane-gold">Memória recebida</div><div className="text-lg font-black text-white">{CARD_TEMPLATES[recycleReward.templateId].name}</div><div className="text-xs text-cyan-200">{RARITY_LABELS[CARD_TEMPLATES[recycleReward.templateId].rarity]} · Nv 1</div></div></div>}
+      </section>
 
       {/* Modal de Detalhes da Carta */}
       {selectedCard && (
@@ -218,7 +258,7 @@ function CardDetailModal({ card, onClose }: { card: CardInstance; onClose: () =>
         <button onClick={onClose} className="absolute top-3 right-3 text-gray-500 hover:text-white font-bold text-xl">✕</button>
 
         <div className="text-center mb-4 border-b border-arcane-border pb-4">
-          <div className="text-7xl mb-2">{template.emoji}</div>
+          <CardArt template={template} className="mx-auto mb-2 h-36 max-w-48" />
           <h2 className="text-2xl font-bold text-white">{template.name}</h2>
           <div className="text-xs uppercase tracking-wider mt-1">
             <span className={RARITY_LABELS[template.rarity] === "Lendário" ? "text-arcane-gold" : "text-arcane-cyan"}>

@@ -85,3 +85,11 @@ Pasta exata: `C:\Users\dreey\OneDrive\Área de Trabalho\MYTHREON ONLINE\public\a
 > Ícone individual de item para o RPG Mythreon Online: Aura da Besta Divina. Pixel art profissional com volume em perspectiva 3/4, silhueta legível em 32×32, exportação PNG quadrada 256×256, pixels nítidos sem antialiasing, contorno escuro e luz superior esquerda. Um pequeno cristal de opala turquesa no formato de pegada de animal, rodeado por um aro dourado fino e três faíscas ciano discretas. Objeto central ocupando 70% do quadro, margem vazia larga, identidade arcana azul-noite/turquesa/dourado, sem animal, pessoa, texto, número, moldura ou cenário. Fundo branco puro para recorte.
 
 A aura do Pet na caça já é desenhada por CSS; este arquivo é seu ícone na bolsa/loja/guarda-roupa. Use transparência real após o recorte. O emoji continua funcionando enquanto a arte faltar.
+
+## Pack 65 — resolvedor central dos drops
+
+As telas de mochila, equipamento, depósito, loja, ferreiro e Wiki agora compartilham o resolvedor `src/data/itemAssets.ts`. Ele tenta `.gif`, `.giff` e `.png` e também corrige aliases conhecidos, como `PEIXE_RIO` → `PEIXE_RIO_LYSS`, `ISCA_CICATRIZ` → `ISCA_RARA` e os ovos que chegaram com `.png.png`. Portanto, uma arte nova só precisa ser salva uma vez em `public/assets/items/` com o identificador do item.
+
+Os componentes de Matriz (`A1..A20`, `S1..S18`, `P1..P14`) e os materiais listados no Pack 65 ainda precisam de arquivos individuais; enquanto isso, o fallback de emoji é intencional e evita quebrar a interface.
+
+Os componentes e equipamentos do Pântano de Veyra presentes nas pranchas já foram recortados para `A16..A20`, `S14..S18`, `P13..P14`, `CAPUZ_MIASMA_T3`, `MANTO_MEMORIA_T3`, `LUVAS_LAMINA_T3`, `BOTAS_SILTE_T3`, `PULSEIRA_VEYRA_T3`, `ARCO_LIBELULA_T3`, `ESCUDO_CARAPACA_VEYRA_T3` e `COLAR_RAIZ_MEMORIA_T3`.

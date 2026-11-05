@@ -68,6 +68,8 @@ export function createNewCharacter(name: string, appearance?: CharacterAppearanc
     calendarUnlockedSkins: [],
     onlineChestSeconds: 0,
     onlineChestsOpened: 0,
+    onlineChestDay: new Date().toISOString().slice(0, 10),
+    onlineChestClaims: [],
     cards: [],
     cardLoadout: [],
     divineBeasts: [],

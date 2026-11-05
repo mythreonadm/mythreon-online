@@ -83,6 +83,12 @@
 - [[docs/conhecimento/Pack-60-Cards-Veyra-Kaelor-e-Temporada-2026-11-04|Pack 60 — Cards de Veyra/Kaelor e catálogo sazonal]]
 - [[docs/conhecimento/Pack-61-Porta-de-Lancamento-2026-11-04|Pack 61 — Porta de lançamento, Jornal e artes finais]]
 - [[docs/conhecimento/Pack-62-Caca-Coleta-e-Pets-2026-11-05|Pack 62 — continuidade da caça, pulso de coleta e coleção de pets]]
+- [[docs/conhecimento/Pack-63-Profissoes-Bau-e-Caca-2026-11-05|Pack 63 — pulso online, caça estável e Baú do Refúgio]]
+- [[docs/conhecimento/Pack-64-Incubadora-Botao-de-Eclosao-2026-11-05|Pack 64 — botão Abrir o Ovo]]
+- [[docs/conhecimento/Pack-65-Resolvedor-de-Artes-dos-Drops-2026-11-05|Pack 65 — Resolvedor de artes dos drops (2026-11-05)]]
+- [[docs/conhecimento/Pack-66-Cards-Arte-Unica-e-Bolsa-2026-11-05|Pack 66 — Cartas com arte dos monstros e Bolsa de Cards]]
+- [[docs/conhecimento/Pack-67-Cenarios-Visuais-das-Areas-2026-11-05|Pack 67 — Cenários visuais das áreas]]
+- [[docs/conhecimento/Pack-68-Calendario-Free-e-Recompensas-2026-11-05|Pack 68 — Calendário Free e recompensas diárias]]
 - [[docs/conhecimento/Pets-Atividades-Boss-Diario|Pets, atividades e Boss Diário]]
 - [[docs/conhecimento/Pets-Ovos-Migracao-2026-11-03|Migração de Bestas Divinas para Pets e Ovos]]
 - [[docs/conhecimento/Registro de problemas|Registro de problemas]]
@@ -173,6 +179,12 @@
 - [docs/conhecimento/Pack-60-Cards-Veyra-Kaelor-e-Temporada-2026-11-04.md](../docs/conhecimento/Pack-60-Cards-Veyra-Kaelor-e-Temporada-2026-11-04.md)
 - [docs/conhecimento/Pack-61-Porta-de-Lancamento-2026-11-04.md](../docs/conhecimento/Pack-61-Porta-de-Lancamento-2026-11-04.md)
 - [docs/conhecimento/Pack-62-Caca-Coleta-e-Pets-2026-11-05.md](../docs/conhecimento/Pack-62-Caca-Coleta-e-Pets-2026-11-05.md)
+- [docs/conhecimento/Pack-63-Profissoes-Bau-e-Caca-2026-11-05.md](../docs/conhecimento/Pack-63-Profissoes-Bau-e-Caca-2026-11-05.md)
+- [docs/conhecimento/Pack-64-Incubadora-Botao-de-Eclosao-2026-11-05.md](../docs/conhecimento/Pack-64-Incubadora-Botao-de-Eclosao-2026-11-05.md)
+- [docs/conhecimento/Pack-65-Resolvedor-de-Artes-dos-Drops-2026-11-05.md](../docs/conhecimento/Pack-65-Resolvedor-de-Artes-dos-Drops-2026-11-05.md)
+- [docs/conhecimento/Pack-66-Cards-Arte-Unica-e-Bolsa-2026-11-05.md](../docs/conhecimento/Pack-66-Cards-Arte-Unica-e-Bolsa-2026-11-05.md)
+- [docs/conhecimento/Pack-67-Cenarios-Visuais-das-Areas-2026-11-05.md](../docs/conhecimento/Pack-67-Cenarios-Visuais-das-Areas-2026-11-05.md)
+- [docs/conhecimento/Pack-68-Calendario-Free-e-Recompensas-2026-11-05.md](../docs/conhecimento/Pack-68-Calendario-Free-e-Recompensas-2026-11-05.md)
 - [docs/conhecimento/Pets-Atividades-Boss-Diario.md](../docs/conhecimento/Pets-Atividades-Boss-Diario.md)
 - [docs/conhecimento/Pets-Ovos-Migracao-2026-11-03.md](../docs/conhecimento/Pets-Ovos-Migracao-2026-11-03.md)
 - [docs/conhecimento/Registro de problemas.md](../docs/conhecimento/Registro de problemas.md)

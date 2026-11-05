@@ -3,6 +3,9 @@ import { useGameStore } from "../store/gameStore";
 import { CARD_TEMPLATES, TRAITS } from "../data/cards";
 import { ArenaSize, ArenaStrategy, makeOpponentDeck, simulateArenaDuel, ArenaBattleResult } from "../engine/cardArena";
 import { CardInstance } from "../types";
+import { CardArt } from "./CardArt";
+import { uniqueCardCollection } from "../engine/cardCollection";
+import { AreaBackdrop } from "./AreaBackdrop";
 
 const MODES: { size: ArenaSize; title: string; subtitle: string; reward: string }[] = [
   { size: 1, title: "Duelo", subtitle: "1 contra 1", reward: "30 gold" },
@@ -29,7 +32,7 @@ export function ArenaDuelos() {
   const rewardsUsed = character.arenaRewardDay === today ? (character.arenaRewardsToday ?? 0) : 0;
   const picked = cards.filter(card => selected.includes(card.uid));
   const mode = MODES.find(item => item.size === size)!;
-  const available = cards.filter(card => !!CARD_TEMPLATES[card.templateId]);
+  const available = uniqueCardCollection(character);
 
   const toggleCard = (card: CardInstance) => {
     setBattle(null); setRewardMessage("");
@@ -59,19 +62,9 @@ export function ArenaDuelos() {
 
   const visibleLogs = battle?.logs.slice(0, shownLogs) ?? [];
   return <section className="overflow-hidden rounded-2xl border border-arcane-gold/30 bg-[#090d11] shadow-[0_20px_60px_rgba(0,0,0,.4)]">
-    <div className="relative border-b border-arcane-gold/20 bg-[radial-gradient(ellipse_at_top,rgba(174,123,42,.16),transparent_65%),linear-gradient(120deg,#171a20,#0b1014_65%,#11151c)] p-5 sm:p-7">
-      <div className="absolute right-6 top-5 text-6xl opacity-[.08]">⚔</div>
-      <div className="relative flex flex-wrap items-end justify-between gap-4">
-        <div><div className="mb-2 text-[10px] font-black uppercase tracking-[.28em] text-arcane-gold">Campo de Provas · PvE</div>
-          <h2 className="text-2xl font-black tracking-wide text-white sm:text-3xl">Arena de Duelos</h2>
-          <p className="mt-1 max-w-xl text-sm text-slate-400">Monte sua equipe de cartas e enfrente uma formação da região. A caça automática continua em segundo plano.</p>
-        </div>
-        <div className="rounded-xl border border-white/10 bg-black/25 px-4 py-2 text-right">
-          <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Vitórias premiadas hoje</div>
-          <div className="mt-0.5 font-mono text-lg font-bold text-arcane-gold">{rewardsUsed}<span className="text-slate-600"> / 3</span></div>
-        </div>
-      </div>
-    </div>
+    <AreaBackdrop src="/assets/backgrounds/duel.png" kicker="Campo de Provas · PvE e PvP" title="Arena de Duelos" description="Monte sua equipe de cartas e enfrente uma formação da região. A caça automática continua em segundo plano.">
+      <div className="rounded-xl border border-white/15 bg-black/35 px-4 py-2 text-right"><div className="text-[10px] font-bold uppercase tracking-widest text-slate-300/75">Vitórias premiadas hoje</div><div className="mt-0.5 font-mono text-lg font-bold text-arcane-gold">{rewardsUsed}<span className="text-slate-400"> / 3</span></div></div>
+    </AreaBackdrop>
 
     <div className="grid gap-5 p-4 sm:p-6 xl:grid-cols-[minmax(0,1fr)_340px]">
       <div className="space-y-5">
@@ -97,7 +90,7 @@ export function ArenaDuelos() {
               const template = CARD_TEMPLATES[card.templateId]; const trait = TRAITS[template.trait]; const active = selected.includes(card.uid);
               return <button key={card.uid} onClick={() => toggleCard(card)} className={`relative rounded-lg border p-3 text-left transition hover:-translate-y-0.5 ${active ? "border-arcane-gold bg-arcane-gold/[.12] ring-1 ring-arcane-gold/30" : "border-white/10 bg-[#11171c] hover:border-white/25"}`}>
                 {active && <span className="absolute right-2 top-2 grid h-5 w-5 place-items-center rounded-full bg-arcane-gold text-[10px] font-black text-black">{selected.indexOf(card.uid) + 1}</span>}
-                <div className="text-3xl">{template.emoji}</div><div className="mt-2 truncate text-xs font-bold text-slate-100">{template.name}</div><div className={`mt-1 truncate text-[10px] font-semibold ${trait.color}`}>{trait.icon} {trait.name} · Nv {card.level}</div>
+                <CardArt template={template} className="h-24 w-full" /><div className="mt-2 truncate text-xs font-bold text-slate-100">{template.name}</div><div className={`mt-1 truncate text-[10px] font-semibold ${trait.color}`}>{trait.icon} {trait.name} · Nv {card.level}</div>
                 <div className="mt-2 flex gap-2 text-[9px] font-mono text-slate-500"><span>HP {Math.floor(template.baseStats.hp * (1 + (card.level - 1) * .2))}</span><span>ATK {Math.floor(template.baseStats.atk * (1 + (card.level - 1) * .2))}</span></div>
               </button>;
             })}</div>}

@@ -9,6 +9,7 @@
 ## Código e recursos
 
 - [src/ui/AccessIcon.tsx](../src/ui/AccessIcon.tsx) — AccessIconName, AccessIcon
+- [src/ui/AreaBackdrop.tsx](../src/ui/AreaBackdrop.tsx) — AreaBackdrop
 - [src/ui/Attributes.tsx](../src/ui/Attributes.tsx) — Attributes
 - [src/ui/CardAlbum.tsx](../src/ui/CardAlbum.tsx) — CardAlbum
 - [src/ui/CardArt.tsx](../src/ui/CardArt.tsx) — CardArt

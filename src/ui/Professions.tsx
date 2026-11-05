@@ -13,6 +13,7 @@ import { confirmedAction } from "../online/confirmation";
 import { onlineAction, useOnlineState } from "../online/controller";
 import type { GatheringKind, PreparedProfessionChallenge } from "../engine/professionChallenge";
 import { ProfessionScene, type ProfessionActivity } from "./ProfessionScene";
+import { AreaBackdrop } from "./AreaBackdrop";
 
 function ToolCard({ item, equipped, onEquip }: { item: Item; equipped: boolean; onEquip: () => void }) {
   return <div className={`flex items-center gap-3 rounded-xl border p-3 ${equipped ? "border-amber-300/60 bg-amber-950/20" : "border-white/10 bg-black/20"}`}>
@@ -50,7 +51,7 @@ export function Professions() {
   };
 
   return <section className="space-y-5">
-    <header className="rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-950/30 via-arcane-panel to-cyan-950/20 p-5"><p className="online-eyebrow">Novas vocações de Mythreon</p><h1 className="text-3xl font-bold text-arcane-gold">⛏️ Mineração & Pesca</h1><p className="mt-2 text-sm text-gray-400">Equipe a ferramenta certa, segure e solte no pulso dourado. Avance pelos cinco tiers, abra travessias em Jornadas e refine recursos para venda ou preparo de alimento para Pets.</p></header>
+    <AreaBackdrop src="/assets/backgrounds/professions.png" kicker="Novas vocações de Mythreon" title="⛏️ Mineração & Pesca" description="Equipe a ferramenta certa, segure e solte no pulso dourado. Avance pelos cinco tiers, abra travessias em Jornadas e refine recursos para venda ou preparo de alimento para Pets." />
     <p role="status" className="min-h-5 text-sm text-cyan-200">{notice}</p>
     <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       <article className="rounded-2xl border border-amber-500/30 bg-black/20 p-4"><h2 className="mb-3 text-lg font-bold text-amber-200">⛏️ Kit de mineração</h2><div className="space-y-2">{miningTools.map(item => <ToolCard key={item.uid} item={item} equipped={character.equippedMiningTool?.uid === item.uid} onEquip={() => act(equipProfessionTool(item.uid), "Ferramenta")} />)}{character.equippedMiningTool && !miningTools.some(item => item.uid === character.equippedMiningTool?.uid) ? <ToolCard item={character.equippedMiningTool} equipped onEquip={() => undefined} /> : null}</div><p className="mt-3 text-xs text-gray-500">A picareta fica fora dos slots de combate e libera o tier correspondente do veio.</p></article>
