@@ -13,7 +13,7 @@ Use `.gif` real, sem áudio, mantendo a mesma proporção da cena de profissão.
 
 ## Comportamento
 
-`src/ui/ProfessionScene.tsx` escolhe o GIF quando a atividade está em `preparing`, `holding`, `confirming` ou `success` e as animações estão ativadas nas configurações. No estado `idle`, o cenário usa o PNG do bioma. O `AssetImage` retorna ao PNG se o GIF faltar, falhar ou se o jogador usar o modo de movimento reduzido.
+`src/ui/ProfessionScene.tsx` escolhe o GIF somente enquanto a atividade está em `preparing`, `holding` ou `confirming` e as animações estão ativadas nas configurações. Assim que a tentativa termina, inclusive em `success`, o cenário volta ao PNG e o GIF não fica em loop no resultado. Enquanto o GIF está ativo, as camadas antigas de água, linha, rocha, personagem e ferramenta ficam ocultas para evitar duplicação. Os efeitos de mordida/faísca aparecem somente no sucesso. O `AssetImage` retorna ao PNG se o GIF faltar, falhar ou se o jogador usar o modo de movimento reduzido.
 
 ## Checklist
 
