@@ -4197,7 +4197,7 @@ function createGameStore(runtime = {}) {
       recalcStats(character);
       set({ character: { ...character }, lastTickResult: result });
       get().save();
-      if (result.staminaDepleted || isGuided(character) && QUESTS.some((q) => q.category === "TUTORIAL" && character.quests.active[q.id] && checkQuestCompletion(character, q.id))) get().stopHunting();
+      if (result.staminaDepleted) get().stopHunting();
     },
     startHunting: (zoneId) => {
       const { character, healingUntil } = get();

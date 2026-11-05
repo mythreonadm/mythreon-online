@@ -33,6 +33,9 @@ export function DivineBeasts() {
   const owned = character.divineBeasts ?? [];
   const activeId = character.activeDivineBeastId;
   const eggs = character.inventory.items.filter(item => !!DIVINE_BEAST_EGG_TEMPLATES[item.templateId]);
+  // A coleção mede linhagens descobertas. Cópias e raridades diferentes ficam
+  // no cativeiro, mas não podem fazer o contador ultrapassar o catálogo.
+  const discoveredCount = new Set(owned.map(instance => instance.id)).size;
   const petIds = Array.from(new Set([...DIVINE_BEAST_ORDER, ...owned.map(instance => instance.id)]));
 
   const handleEquip = (id: keyof typeof DIVINE_BEASTS) => {
@@ -45,7 +48,7 @@ export function DivineBeasts() {
       <div className="absolute -right-4 -top-10 text-[150px] opacity-[.06]">🐾</div>
       <div className="relative flex flex-wrap items-end justify-between gap-4">
         <div><div className="mb-2 text-[10px] font-black uppercase tracking-[.28em] text-arcane-gold">Arquivo de Mythreon · Ovos e Companheiros</div><h1 className="text-2xl font-black text-white sm:text-3xl">Pets de Mythreon</h1><p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-400">As Bestas Divinas agora vivem como pets: companheiros despertados em ovos, treinados com cuidado e capazes de lutar ao lado do herói.</p></div>
-        <div className="rounded-xl border border-white/10 bg-black/25 px-4 py-2 text-right"><div className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Pets obtidos</div><div className="font-mono text-lg font-bold text-arcane-gold">{owned.length}<span className="text-slate-600"> / {DIVINE_BEAST_ORDER.length}</span></div></div>
+        <div className="rounded-xl border border-white/10 bg-black/25 px-4 py-2 text-right"><div className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Linhagens descobertas</div><div className="font-mono text-lg font-bold text-arcane-gold">{discoveredCount}<span className="text-slate-600"> / {DIVINE_BEAST_ORDER.length}</span></div><div className="text-[10px] text-slate-500">{owned.length} exemplar(es) no total</div></div>
       </div>
     </header>
 

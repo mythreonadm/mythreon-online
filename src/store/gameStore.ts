@@ -332,7 +332,10 @@ return create<GameState>((set, get) => ({
     recalcStats(character);
     set({ character: { ...character }, lastTickResult: result });
     get().save();
-    if (result.staminaDepleted || (isGuided(character) && QUESTS.some(q=>q.category==='TUTORIAL' && character.quests.active[q.id] && checkQuestCompletion(character,q.id)))) get().stopHunting();
+    // Concluir uma etapa do tutorial não encerra a caça. O jogador precisa
+    // poder continuar no mapa e abrir a missão quando quiser; só a stamina
+    // esgotada (ou morte, tratada acima) deve interromper o ciclo automático.
+    if (result.staminaDepleted) get().stopHunting();
   },
 
   startHunting: (zoneId) => {

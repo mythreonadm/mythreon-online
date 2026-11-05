@@ -69,10 +69,11 @@ export function ProfessionPrecisionAction({ label, run, prepare, cancelRemote, o
       }
       const remote = prepared?.challenge, receivedAt = performance.now();
       // Estimate one-way latency only to align presentation. Grading is server-side.
-      const delay = remote ? remote.startsAt - (prepared!.serverNow! + (receivedAt - requestedAt) / 2) : 0;
-      if (remote && delay <= 0) {
-        cancelRef.current?.(remote.id);setSuccess(false);setMessage("A preparação demorou demais. Inicie novamente quando a conexão estabilizar.");return;
-      }
+      // A preparação é autoritativa, mas a barra não pode desaparecer em
+      // conexões lentas. Se a resposta chegar depois do instante estimado,
+      // começamos visualmente agora; o servidor continua validando o nonce,
+      // o alvo e a janela real no recebimento da soltura.
+      const delay = remote ? Math.max(0, remote.startsAt - (prepared!.serverNow! + (receivedAt - requestedAt) / 2)) : 0;
       const next = { target: remote?.target ?? 0.4 + Math.random() * 0.35, startedAt: remote ? receivedAt + delay : requestedAt, id: remote?.id };
       active.current = next;setChallenge(next);setProgress(0);setLead(Math.max(0, delay));
       activityRef.current?.({ phase: "holding" });
@@ -90,7 +91,10 @@ export function ProfessionPrecisionAction({ label, run, prepare, cancelRemote, o
     activityRef.current?.({ phase: "idle" });
   };
   const finish = async () => {
-    if (preparingRef.current) { cancel();return; }
+    // Um toque/liberação rápida enquanto a preparação ainda está em trânsito
+    // não deve cancelar o pulso. Aguarde a barra aparecer e solte nela; isso
+    // também torna o gesto previsível em telas sensíveis ao toque.
+    if (preparingRef.current) { setMessage("Preparando o pulso… aguarde a barra aparecer.");return; }
     const current = active.current;if (!current) return;
     if (performance.now() < current.startedAt) { cancel();return; }
     active.current = null;setChallenge(null);
@@ -111,17 +115,22 @@ export function ProfessionPrecisionAction({ label, run, prepare, cancelRemote, o
     <button type="button" disabled={processing || (!!blockedReason && !preparing && !challenge) || (gatheringPending && !preparing && !challenge) || remaining > 0} aria-pressed={!!challenge || preparing} aria-busy={preparing || processing}
       className="online-button w-full select-none touch-none disabled:cursor-wait disabled:opacity-50"
       onPointerDown={event => { if (event.button !== 0) return;event.currentTarget.setPointerCapture(event.pointerId);void start(); }}
-      onPointerUp={() => { void finish(); }} onPointerCancel={cancel} onLostPointerCapture={() => { if (active.current || preparingRef.current) cancel(); }}
+      onPointerUp={() => { void finish(); }} onPointerCancel={cancel} onLostPointerCapture={() => { if (active.current) cancel(); }}
       onKeyDown={event => {
         if (event.key === "Escape") { cancel();return; }
         if (event.key !== " " && event.key !== "Enter") return;
         event.preventDefault();if (!event.repeat) void start();
       }}
       onKeyUp={event => { if (event.key === " " || event.key === "Enter") { event.preventDefault();void finish(); } }}
-      onBlur={() => { if (active.current || preparingRef.current) cancel(); }} onContextMenu={event => event.preventDefault()}>
-      {preparing ? "Preparando… mantenha pressionado" : processing || (gatheringPending && !challenge) ? "Confirmando coleta…" : remaining > 0 ? `⏱ Aguarde ${Math.ceil(remaining / 1000)}s` : challenge ? lead > 0 ? `Começa em ${(lead / 1000).toFixed(1)}s · segure` : "Solte no dourado!" : blockedReason ?? `Segure: ${label}`}
+      onBlur={() => { if (active.current) cancel(); }} onContextMenu={event => event.preventDefault()}>
+      {preparing ? "Preparando… aguarde a barra" : processing || (gatheringPending && !challenge) ? "Confirmando coleta…" : remaining > 0 ? `⏱ Aguarde ${Math.ceil(remaining / 1000)}s` : challenge ? lead > 0 ? `Começa em ${(lead / 1000).toFixed(1)}s · segure` : "Solte no dourado!" : blockedReason ?? `Segure: ${label}`}
     </button>
-    {challenge ? <div className="mt-2">
+    {preparing ? <div className="mt-2" aria-live="polite">
+      <div role="img" aria-label="Preparando pulso de precisão" className="relative h-6 overflow-hidden rounded-lg border border-cyan-400/50 bg-slate-900">
+        <span className="profession-pulse-loading absolute inset-y-0 w-1/3 rounded-lg bg-cyan-300/70 shadow-[0_0_14px_rgba(103,232,249,.8)]" />
+      </div>
+      <p className="mt-1 text-[11px] text-cyan-200">Aguardando o servidor… mantenha a coleta pronta; a barra dourada aparecerá em seguida.</p>
+    </div> : challenge ? <div className="mt-2">
       <div role="img" aria-label="Pulso de precisão: solte quando o marcador branco atingir a faixa dourada" className="relative h-6 overflow-hidden rounded-lg border border-slate-500 bg-slate-900">
         <span className="absolute inset-y-0 bg-slate-400/50" style={{ left: `${(challenge.target - GOOD_PULSE_RADIUS) * 100}%`, width: `${GOOD_PULSE_RADIUS * 200}%` }} />
         <span className="absolute inset-y-0 bg-amber-400" style={{ left: `${(challenge.target - PERFECT_PULSE_RADIUS) * 100}%`, width: `${PERFECT_PULSE_RADIUS * 200}%` }} />

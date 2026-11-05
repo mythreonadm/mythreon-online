@@ -7,6 +7,7 @@
 - [[docs/conhecimento/Pack-01-Fundacao-Matriz-Pets-Online-2026-11-03|Pack 01 — Fundação de Evolução e Conteúdo]]
 - [[docs/conhecimento/Pack-03-Feedback-Ataque-Pet-2026-11-03|Objetivo]]
 - [[docs/conhecimento/Pack-08-Pet-Feedback-na-Caca-2026-11-03|Pack 08 — Pet visível e feedback de combate]]
+- [[docs/conhecimento/Pack-62-Caca-Coleta-e-Pets-2026-11-05|Pack 62 — continuidade da caça, pulso de coleta e coleção de pets]]
 - [[docs/conhecimento/Pets-Atividades-Boss-Diario|Pets, atividades e Boss Diário]]
 - [[docs/conhecimento/Pets-Ovos-Migracao-2026-11-03|Migração de Bestas Divinas para Pets e Ovos]]
 - [[docs/conhecimento/Shop-Premium-Beasts|Shop, premium e Divine Beasts]]
@@ -16,6 +17,7 @@
 - [docs/conhecimento/Pack-01-Fundacao-Matriz-Pets-Online-2026-11-03.md](../docs/conhecimento/Pack-01-Fundacao-Matriz-Pets-Online-2026-11-03.md)
 - [docs/conhecimento/Pack-03-Feedback-Ataque-Pet-2026-11-03.md](../docs/conhecimento/Pack-03-Feedback-Ataque-Pet-2026-11-03.md)
 - [docs/conhecimento/Pack-08-Pet-Feedback-na-Caca-2026-11-03.md](../docs/conhecimento/Pack-08-Pet-Feedback-na-Caca-2026-11-03.md)
+- [docs/conhecimento/Pack-62-Caca-Coleta-e-Pets-2026-11-05.md](../docs/conhecimento/Pack-62-Caca-Coleta-e-Pets-2026-11-05.md)
 - [docs/conhecimento/Pets-Atividades-Boss-Diario.md](../docs/conhecimento/Pets-Atividades-Boss-Diario.md)
 - [docs/conhecimento/Pets-Ovos-Migracao-2026-11-03.md](../docs/conhecimento/Pets-Ovos-Migracao-2026-11-03.md)
 - [docs/conhecimento/Shop-Premium-Beasts.md](../docs/conhecimento/Shop-Premium-Beasts.md)

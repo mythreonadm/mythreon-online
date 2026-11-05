@@ -82,6 +82,7 @@
 - [[docs/conhecimento/Pack-59-Cards-Evolucao-e-Bonus-Reais-2026-11-04|Pack 59 — Cards: evolução e bônus reais]]
 - [[docs/conhecimento/Pack-60-Cards-Veyra-Kaelor-e-Temporada-2026-11-04|Pack 60 — Cards de Veyra/Kaelor e catálogo sazonal]]
 - [[docs/conhecimento/Pack-61-Porta-de-Lancamento-2026-11-04|Pack 61 — Porta de lançamento, Jornal e artes finais]]
+- [[docs/conhecimento/Pack-62-Caca-Coleta-e-Pets-2026-11-05|Pack 62 — continuidade da caça, pulso de coleta e coleção de pets]]
 - [[docs/conhecimento/Pets-Atividades-Boss-Diario|Pets, atividades e Boss Diário]]
 - [[docs/conhecimento/Pets-Ovos-Migracao-2026-11-03|Migração de Bestas Divinas para Pets e Ovos]]
 - [[docs/conhecimento/Registro de problemas|Registro de problemas]]
@@ -171,6 +172,7 @@
 - [docs/conhecimento/Pack-59-Cards-Evolucao-e-Bonus-Reais-2026-11-04.md](../docs/conhecimento/Pack-59-Cards-Evolucao-e-Bonus-Reais-2026-11-04.md)
 - [docs/conhecimento/Pack-60-Cards-Veyra-Kaelor-e-Temporada-2026-11-04.md](../docs/conhecimento/Pack-60-Cards-Veyra-Kaelor-e-Temporada-2026-11-04.md)
 - [docs/conhecimento/Pack-61-Porta-de-Lancamento-2026-11-04.md](../docs/conhecimento/Pack-61-Porta-de-Lancamento-2026-11-04.md)
+- [docs/conhecimento/Pack-62-Caca-Coleta-e-Pets-2026-11-05.md](../docs/conhecimento/Pack-62-Caca-Coleta-e-Pets-2026-11-05.md)
 - [docs/conhecimento/Pets-Atividades-Boss-Diario.md](../docs/conhecimento/Pets-Atividades-Boss-Diario.md)
 - [docs/conhecimento/Pets-Ovos-Migracao-2026-11-03.md](../docs/conhecimento/Pets-Ovos-Migracao-2026-11-03.md)
 - [docs/conhecimento/Registro de problemas.md](../docs/conhecimento/Registro de problemas.md)
