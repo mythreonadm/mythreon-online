@@ -264,3 +264,5 @@
 {"at":"2026-11-05T20:49:06.820Z","files":[{"path":"imagens/gifs flow/MINERACAO_ATIVA.gif.gif","status":"added"},{"path":"imagens/gifs flow/mineração.gif","status":"removed"}]}
 {"at":"2026-11-05T20:49:17.168Z","files":[{"path":"imagens/gifs flow/PESCA_ATIVA.gif.gif","status":"added"},{"path":"imagens/gifs flow/pescaria.gif","status":"removed"}]}
 {"at":"2026-11-05T20:49:38.465Z","files":[{"path":"public/assets/professions/MINERACAO_ATIVA.gif.gif","status":"added"},{"path":"public/assets/professions/PESCA_ATIVA.gif.gif","status":"added"}]}
+{"at":"2026-11-05T20:52:29.829Z","files":[{"path":"public/assets/professions/MINERACAO_ATIVA.gif","status":"added"},{"path":"public/assets/professions/MINERACAO_ATIVA.gif.gif","status":"removed"}]}
+{"at":"2026-11-05T20:54:53.426Z","files":[{"path":"public/assets/professions/PESCA_ATIVA.gif","status":"added"},{"path":"public/assets/professions/PESCA_ATIVA.gif.gif","status":"removed"}]}
