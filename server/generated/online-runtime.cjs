@@ -3111,7 +3111,8 @@ function processTick(char, zone, isOffline) {
   const offlineLimitSeconds = OFFLINE_MAX_HOURS * 3600 + Math.max(0, char.skills?.soul ?? 0) * 15 * 60;
   const requestedTicks = isOffline ? Math.min(Math.floor((Date.now() - char.lastTick) / TICK_MS), offlineLimitSeconds / (TICK_MS / 1e3)) : 1;
   const staminaPool = isOffline ? char.staminaOffline ?? 480 : char.staminaOnline ?? 120;
-  const ticksAllowedByStamina = Math.floor(staminaPool * 6e4 / TICK_MS);
+  const rawTicksAllowedByStamina = Math.floor(staminaPool * 6e4 / TICK_MS);
+  const ticksAllowedByStamina = !isOffline && staminaPool > 0 && rawTicksAllowedByStamina === 0 ? 1 : rawTicksAllowedByStamina;
   const ticks = Math.max(0, Math.min(requestedTicks, ticksAllowedByStamina));
   if (ticks < requestedTicks) {
     result.staminaDepleted = true;
@@ -4368,6 +4369,7 @@ function createGameStore(runtime = {}) {
       if (!character) return;
       if (healingUntil) return warn("Voc\xEA est\xE1 meditando! Termine antes de ca\xE7ar.");
       if (character.hp <= 0) return warn("Voc\xEA precisa se curar na Casa antes de ca\xE7ar!");
+      if (!Number.isFinite(character.staminaOnline)) character.staminaOnline = 120;
       if ((character.staminaOnline ?? 120) <= 0) return warn("Sua stamina online acabou. Continue sua jornada offline para recuperar essa reserva.");
       const zone = ZONES[zoneId];
       if (!zone || !canEnterZone(character, zoneId)) return warn("Abra a travessia com a miss\xE3o e o NPC em Jornadas.");
@@ -5547,7 +5549,9 @@ function executeGame(world, action, args = []) {
   const store = createGameStore({ server: true, persist: () => {
   }, notify: (m) => messages.push(m) });
   store.setState({ ...world, currentZoneId: world.character.currentZoneId });
-  const now = Date.now(), elapsed = now - world.lastAdvanceAt;
+  const now = Date.now();
+  if (!Number.isFinite(world.lastAdvanceAt)) world.lastAdvanceAt = now;
+  const elapsed = now - world.lastAdvanceAt;
   if (world.healingUntil && now >= world.healingUntil) {
     store.getState().healFull();
   }
@@ -5996,8 +6000,9 @@ async function commitCharacter(db, c) {
   await db.query("update public.world_characters set state=$2,revision=revision+1,updated_at=now() where id=$1", [c.id, JSON.stringify(c.state)]);
   await db.query("insert into public.world_rankings(character_id,name,metrics,current_map) values($1,$2,$3,$4) on conflict(character_id) do update set metrics=excluded.metrics,name=excluded.name,current_map=excluded.current_map,updated_at=now()", [c.id, c.name, JSON.stringify(rankingMetrics(c.state)), c.state.character.currentZoneId]);
 }
-async function own(db, owner, id) {
-  const r = await db.query("select * from public.world_characters where id=$1 and owner_id=$2 for update", [uuid(id), owner]);
+async function own(db, owner, id, lock = true) {
+  const lockClause = lock ? " for update" : "";
+  const r = await db.query(`select * from public.world_characters where id=$1 and owner_id=$2${lockClause}`, [uuid(id), owner]);
   if (!r.rows[0]) throw Error("Personagem n\xE3o pertence a esta conta.");
   return r.rows[0];
 }
@@ -6156,9 +6161,9 @@ async function handleWorld(db, owner, request) {
   uuid(owner);
   const op = request.operation, p = request.payload ?? {};
   if (typeof op !== "string") throw Error("Opera\xE7\xE3o inv\xE1lida.");
-  await db.query("insert into public.world_accounts(id) values($1) on conflict do nothing", [owner]);
-  await db.query("select id from public.world_accounts where id=$1 for update", [owner]);
   const readonly = ["characters", "world.read", "social.read", "ranking", "dailyBoss.read", "pvp.read", "market.read", "premium.read", "cards.season.read"];
+  await db.query("insert into public.world_accounts(id) values($1) on conflict do nothing", [owner]);
+  if (!readonly.includes(op)) await db.query("select id from public.world_accounts where id=$1 for update", [owner]);
   let cached = null;
   if (!readonly.includes(op)) {
     const requestId = uuid(request.requestId);
@@ -6582,7 +6587,7 @@ async function handleWorld(db, owner, request) {
         } else throw Error("A\xE7\xE3o de troca inv\xE1lida.");
       }
     } else {
-      actor = await own(db, owner, request.characterId);
+      actor = await own(db, owner, request.characterId, op !== "social.read");
       if (op === "world.read" || op === "world.command") {
         if (op === "world.command" && (typeof p.action !== "string" || !Array.isArray(p.args) || p.args.length > 3)) throw Error("Comando inv\xE1lido.");
         const premium = await syncPremium(db, owner, actor.state.character);

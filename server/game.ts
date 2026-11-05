@@ -32,7 +32,12 @@ export function executeGame(world:WorldState,action?:string,args:unknown[]=[]):{
  world.counters??={forges:0,syntheses:0,trades:0,bosses:0};world.counters.bosses??=0;
  const messages:string[]=[]; const store=createGameStore({server:true,persist:()=>{},notify:m=>messages.push(m)});
  store.setState({...world,currentZoneId:world.character.currentZoneId});
- const now=Date.now(), elapsed=now-world.lastAdvanceAt;
+ const now=Date.now();
+ // Migra estados antigos que ainda não possuíam o relógio de avanço. Sem
+ // esse fallback, elapsed vira NaN e a primeira leitura online nunca processa
+ // o primeiro ciclo de combate.
+ if(!Number.isFinite(world.lastAdvanceAt)) world.lastAdvanceAt=now;
+ const elapsed=now-world.lastAdvanceAt;
  if(world.healingUntil && now>=world.healingUntil){store.getState().healFull();}
  if(elapsed>=3000 && (world.isTickRunning||world.isTraining)) {
   const steps=elapsed>15000?1:Math.min(5,Math.floor(elapsed/3000));

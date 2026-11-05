@@ -18,7 +18,7 @@ export interface CharacterRow {id:string;owner_id:string;name:string;state:World
 const uuid=(id:unknown)=>{if(typeof id!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))throw Error('Identificador inválido.');return id;};
 const text=(v:unknown,max:number)=>{if(typeof v!=='string'||v.includes('\u0000')||!v.trim()||v.trim().length>max)throw Error('Texto inválido ou muito longo.');return v.trim();};
 async function commitCharacter(db:Database,c:CharacterRow){normalizeCosmeticOwnership(c.state.character);if(!Number.isSafeInteger(c.state.character.gold)||c.state.character.gold<0||!Number.isSafeInteger(c.state.character.mythreonCoins??0)||(c.state.character.mythreonCoins??0)<0)throw Error("Saldo fora dos limites.");await db.query('update public.world_characters set state=$2,revision=revision+1,updated_at=now() where id=$1',[c.id,JSON.stringify(c.state)]);await db.query('insert into public.world_rankings(character_id,name,metrics,current_map) values($1,$2,$3,$4) on conflict(character_id) do update set metrics=excluded.metrics,name=excluded.name,current_map=excluded.current_map,updated_at=now()',[c.id,c.name,JSON.stringify(rankingMetrics(c.state)),c.state.character.currentZoneId]);}
-async function own(db:Database,owner:string,id:unknown){const r=await db.query('select * from public.world_characters where id=$1 and owner_id=$2 for update',[uuid(id),owner]);if(!r.rows[0])throw Error('Personagem não pertence a esta conta.');return r.rows[0] as CharacterRow;}
+async function own(db:Database,owner:string,id:unknown,lock=true){const lockClause=lock?' for update':'';const r=await db.query(`select * from public.world_characters where id=$1 and owner_id=$2${lockClause}`,[uuid(id),owner]);if(!r.rows[0])throw Error('Personagem não pertence a esta conta.');return r.rows[0] as CharacterRow;}
 async function byName(db:Database,name:unknown){const r=await db.query('select id,name,owner_id,online_at from public.world_characters where lower(name)=lower($1)',[text(name,24)]);if(!r.rows[0])throw Error('Personagem não encontrado.');return r.rows[0];}
 function dailyWindow(now = new Date()){
  const utc = new Date(now);
@@ -75,8 +75,13 @@ async function syncPremium(db:Database,owner:string,character:WorldState['charac
 /** The caller must wrap this command in one database transaction (BEGIN/COMMIT/ROLLBACK). */
 export async function handleWorld(db:Database,owner:string,request:WorldRequest){
  uuid(owner);const op=request.operation,p=request.payload??{};if(typeof op!=='string')throw Error('Operação inválida.');
- await db.query('insert into public.world_accounts(id) values($1) on conflict do nothing',[owner]);await db.query('select id from public.world_accounts where id=$1 for update',[owner]);
- const readonly=['characters','world.read','social.read','ranking','dailyBoss.read','pvp.read','market.read','premium.read','cards.season.read'];let cached:any=null;
+ const readonly=['characters','world.read','social.read','ranking','dailyBoss.read','pvp.read','market.read','premium.read','cards.season.read'];
+ await db.query('insert into public.world_accounts(id) values($1) on conflict do nothing',[owner]);
+ // Leituras frequentes não alteram saldo nem inventário. Evitar o lock da
+ // conta nelas impede que o polling de combate e o chat disputem a mesma
+ // transação e devolvam um estado antigo para a tela.
+ if(!readonly.includes(op)) await db.query('select id from public.world_accounts where id=$1 for update',[owner]);
+ let cached:any=null;
  if(!readonly.includes(op)){
   const requestId=uuid(request.requestId);
   // Reserva o request antes de executar o efeito. Isso fecha a janela em que
@@ -282,7 +287,9 @@ export async function handleWorld(db:Database,owner:string,request:WorldRequest)
   }
  }
  else {
-  actor=await own(db,owner,request.characterId);
+  // O polling do chat só lê dados públicos/da caixa de entrada; não precisa
+  // bloquear a linha do personagem. Comandos de jogo continuam usando lock.
+  actor=await own(db,owner,request.characterId,op!=='social.read');
   if(op==='world.read'||op==='world.command'){
    if(op==='world.command'&&(typeof p.action!=='string'||!Array.isArray(p.args)||p.args.length>3))throw Error('Comando inválido.');
    const premium=await syncPremium(db,owner,actor.state.character);const executed=executeGame(actor.state,op==='world.command'?p.action:undefined,p.args??[]);actor.state=executed.world;receipt={result:executed.result,messages:executed.messages,premium};await commitCharacter(db,actor);await db.query('update public.world_characters set online_at=now() where id=$1',[actor.id]);

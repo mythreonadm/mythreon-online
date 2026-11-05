@@ -91,7 +91,13 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
   const offlineLimitSeconds = OFFLINE_MAX_HOURS * 3600 + Math.max(0, char.skills?.soul ?? 0) * 15 * 60;
   const requestedTicks = isOffline ? Math.min(Math.floor((Date.now() - char.lastTick) / TICK_MS), offlineLimitSeconds / (TICK_MS / 1000)) : 1;
   const staminaPool = isOffline ? (char.staminaOffline ?? 480) : (char.staminaOnline ?? 120);
-  const ticksAllowedByStamina = Math.floor(staminaPool * 60_000 / TICK_MS);
+  const rawTicksAllowedByStamina = Math.floor(staminaPool * 60_000 / TICK_MS);
+  // A caça online consome uma pequena fração por ciclo. Estados antigos ou
+  // arredondamentos podem deixar uma sobra positiva menor que um ciclo; ela
+  // ainda deve permitir o último golpe, em vez de encerrar a caça sem atacar.
+  const ticksAllowedByStamina = !isOffline && staminaPool > 0 && rawTicksAllowedByStamina === 0
+    ? 1
+    : rawTicksAllowedByStamina;
   const ticks = Math.max(0, Math.min(requestedTicks, ticksAllowedByStamina));
   if (ticks < requestedTicks) {
     result.staminaDepleted = true;

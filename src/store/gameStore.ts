@@ -356,6 +356,7 @@ return create<GameState>((set, get) => ({
     if (!character) return;
     if (healingUntil) return warn("Você está meditando! Termine antes de caçar.");
     if (character.hp <= 0) return warn("Você precisa se curar na Casa antes de caçar!");
+    if (!Number.isFinite(character.staminaOnline)) character.staminaOnline = 120;
     if ((character.staminaOnline ?? 120) <= 0) return warn("Sua stamina online acabou. Continue sua jornada offline para recuperar essa reserva.");
 
     const zone = ZONES[zoneId];
