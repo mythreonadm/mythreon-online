@@ -36,10 +36,11 @@ function Hero({ attackId, appearance, cosmetics, name }: { attackId?: string | n
   return <HeroArt name={name} attackId={attackId} appearance={appearance} cosmetics={cosmetics} context="boss" className="boss-arena-hero-art" imageClassName="boss-arena-sprite" />;
 }
 
-export function DailyBossArena({ run, sprite, character, roster, participants, hit, now, joined, combat, selectedTargetId, onSelectTarget }: {
+export function DailyBossArena({ run, sprite, character, roster, participants, hit, now, joined, combat, selectedTargetId, onSelectTarget, onMove }: {
   run: BossArenaRun; sprite: string; character: Character | null; combat?: DailyBossBattle | null;
   roster: BossArenaParticipant[]; participants: number; hit: BossArenaHit | null; now: number; joined: boolean;
   selectedTargetId?: string | null; onSelectTarget?: (participant: BossArenaParticipant) => void;
+  onMove?: (direction: "up" | "down" | "left" | "right") => void;
 }) {
   const [motion, setMotion] = useState(true);
   const [effects, setEffects] = useState(true);
@@ -71,6 +72,9 @@ export function DailyBossArena({ run, sprite, character, roster, participants, h
   const position = combat?.position ?? { x: 180, y: 280 };
   const bossPosition = { x: 860, y: 280 };
   const toStyle = (point: { x: number; y: number }) => ({ left: `${Math.max(4, Math.min(96, point.x / 10))}%`, top: `${Math.max(12, Math.min(88, point.y / 5.6))}%` });
+  const move = (direction: "up" | "down" | "left" | "right") => (event: React.MouseEvent<HTMLButtonElement>) => { event.preventDefault(); onMove?.(direction); };
+  const pvpEvent = combat?.lastPvpEvent;
+  const pvpLog = (combat?.pvpLog ?? []).slice(-6).reverse();
   return <section aria-label="Arena cooperativa do Boss Diário" className={`boss-arena ${motion ? "" : "boss-arena-still"} ${run.status === "defeated" ? "boss-arena-victory" : ""}`}>
     <AssetImage src={`/assets/backgrounds/${backgrounds[run.boss_template_id] ?? "ruins"}.png`} alt="" className="boss-arena-backdrop" preferAnimated={motion} />
     <div className="boss-arena-shade" />
@@ -85,6 +89,9 @@ export function DailyBossArena({ run, sprite, character, roster, participants, h
       {allies.map(entry => { const point = entry.position ?? { x: 220 + ((entry.character_id.charCodeAt(0) * 37) % 500), y: 130 + ((entry.character_id.charCodeAt(1) * 19) % 300) }; return <button type="button" key={entry.character_id} title={`${entry.name} · selecionar alvo`} aria-label={`Selecionar ${entry.name}`} className={`boss-arena-actor boss-arena-ally ${selectedTargetId === entry.character_id ? "is-selected" : ""}`} style={toStyle(point)} onClick={() => onSelectTarget?.(entry)}><Hero name={entry.name} attackId={entry.attack_id} appearance={entry.appearance} cosmetics={entry.cosmetics} /><strong>{entry.name}</strong><small>{Number(entry.damage).toLocaleString("pt-BR")} dano</small></button>; })}
       {confirmedHit && <React.Fragment key={confirmedHit.id}>{(confirmedHit.damageTaken ?? 0) > 0 && <output className="boss-arena-retaliation" aria-label={`Retaliação: ${confirmedHit.damageTaken} de dano recebido`}>−{confirmedHit.damageTaken}<small>RETALIAÇÃO</small></output>}{effects && <span className="boss-arena-projectile" aria-hidden="true">✦</span>}<output className="boss-arena-damage" aria-label={`Golpe confirmado: ${confirmedHit.damage} de dano`}>−{confirmedHit.damage.toLocaleString("pt-BR")}<small>GOLPE CONFIRMADO</small></output></React.Fragment>}
     </div>
+    {joined && run.status === "open" && <div className="boss-arena-mobile-controls" aria-label="Controle de movimento para celular"><button type="button" aria-label="Mover para cima" onClick={move("up")}>▲</button><div><button type="button" aria-label="Mover para esquerda" onClick={move("left")}>◀</button><button type="button" aria-label="Mover para baixo" onClick={move("down")}>▼</button><button type="button" aria-label="Mover para direita" onClick={move("right")}>▶</button></div><small>Toque para se mover</small></div>}
+    {pvpEvent && <div className="boss-arena-pvp-event" role="status"><strong>⚔️ Registro PvP</strong><span>{pvpEvent.attackerName} → {pvpEvent.targetName}: {pvpEvent.damage > 0 ? `${pvpEvent.damage.toLocaleString("pt-BR")} de dano` : `+${Number(pvpEvent.healed ?? 0).toLocaleString("pt-BR")} de suporte`}</span><small>{new Date(pvpEvent.at).toLocaleTimeString("pt-BR")} · Vida do alvo: {pvpEvent.targetHp.toLocaleString("pt-BR")}/{pvpEvent.targetHpMax.toLocaleString("pt-BR")}{pvpEvent.knockedOut ? " · Nocaute" : ""}</small></div>}
+    {!!pvpLog.length && <div className="boss-arena-pvp-log" aria-label="Registro de combate PvP"><strong>📜 Registro de combate</strong>{pvpLog.map(event => <span key={event.id}>{new Date(event.at).toLocaleTimeString("pt-BR")} · {event.attackerName} → {event.targetName} · {event.damage > 0 ? `-${event.damage.toLocaleString("pt-BR")} PV` : `+${Number(event.healed ?? 0).toLocaleString("pt-BR")} suporte`}{event.knockedOut ? " · Nocaute" : ""}</span>)}</div>}
     <div className="boss-arena-selection-hint">{allies.length ? "Passe o mouse para iluminar e clique em um aventureiro para selecioná-lo." : "Outros aventureiros aparecerão aqui ao entrar na batalha."} · {participants} participantes</div>
     {!!recent.length && <div className="boss-arena-activity" aria-label="Contribuição sincronizada">{recent.map(entry => <span key={entry.id}>{entry.name}: +{entry.damage.toLocaleString("pt-BR")} dano sincronizado</span>)}</div>}
   </section>;

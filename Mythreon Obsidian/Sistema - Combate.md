@@ -8,6 +8,7 @@
 - [[docs/conhecimento/Comunidade-no-Registro-de-Combate-2026-11-03|Comunidade no Registro de Combate — 2026-11-03]]
 - [[docs/conhecimento/Pack-40-PvP-Combate-por-Turnos-2026-11-04|Pack 40 — PvP por turnos e combate autoritativo]]
 - [[docs/conhecimento/Pack-50-Arena-Visual-Boss-Cooperativo-2026-11-04|Pack 50 — Arena visual do Boss Diário]]
+- [[docs/conhecimento/PvP-Arena-Movel-e-Caca-2026-11-05|Arena móvel, registro PvP e recuperação de caça — 2026-11-05]]
 
 ## Código e recursos
 
@@ -15,6 +16,7 @@
 - [docs/conhecimento/Comunidade-no-Registro-de-Combate-2026-11-03.md](../docs/conhecimento/Comunidade-no-Registro-de-Combate-2026-11-03.md)
 - [docs/conhecimento/Pack-40-PvP-Combate-por-Turnos-2026-11-04.md](../docs/conhecimento/Pack-40-PvP-Combate-por-Turnos-2026-11-04.md)
 - [docs/conhecimento/Pack-50-Arena-Visual-Boss-Cooperativo-2026-11-04.md](../docs/conhecimento/Pack-50-Arena-Visual-Boss-Cooperativo-2026-11-04.md)
+- [docs/conhecimento/PvP-Arena-Movel-e-Caca-2026-11-05.md](../docs/conhecimento/PvP-Arena-Movel-e-Caca-2026-11-05.md)
 - [public/assets/backgrounds/duel.png](../public/assets/backgrounds/duel.png)
 - [scripts/daily-boss-arena-check.cjs](../scripts/daily-boss-arena-check.cjs)
 - [src/data/beastCombat.ts](../src/data/beastCombat.ts) — getBeastCombat, beastGrowth

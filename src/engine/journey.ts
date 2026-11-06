@@ -17,12 +17,33 @@ export function canEnterZone(c: Character, id: string) {
 }
 export function canTutorialHunt(c: Character) {
  if (!isGuided(c)) return true;
- if (!c.introSeen) return false;
- const activeTutorial = ['TUT_1','TUT_POTIONS','TUT_3'].some(id => !!c.quests.active[id]);
+ // Contas antigas podem ter chegado ao jogo antes da introdução obrigatória
+ // existir. Nelas, o campo introSeen ficou falso mesmo depois de dezenas de
+ // níveis; não podemos transformar esse marcador histórico em um bloqueio de
+ // caça permanente.
+ if (!c.introSeen) return c.level > 1 || c.quests.completed.length > 0;
  // Saves antigos podem ficar entre duas etapas, sem missão ativa e sem a
- // marca final do tutorial. A caça não pode ficar travada nesse estado: a
- // pessoa continua jogando e pode abrir o Diário para retomar a iniciação.
- return activeTutorial || c.quests.completed.includes('TUT_BACKPACK') || Object.keys(c.quests.active).length === 0;
+ // marca final do tutorial. A caça não pode ficar travada nesse estado. Com a
+ // introdução já vista, a missão continua sendo uma orientação, nunca um
+ // bloqueio do loop principal de combate.
+ return true;
+}
+
+/**
+ * Repara o marcador de introdução de uma conta antiga sem remover missões,
+ * itens ou progresso. Chamado ao iniciar uma caça; contas novas (nível 1)
+ * continuam vendo o tutorial normalmente.
+ */
+export function repairLegacyJourney(c: Character): boolean {
+ if (!isGuided(c) || c.level <= 1) return false;
+ const activeTutorial = ['TUT_1','TUT_POTIONS','TUT_3','TUT_TRAIN','TUT_SELL'].some(id => !!c.quests.active[id]);
+ if (activeTutorial) return false;
+ const changed = !c.introSeen || !c.tutorialCompleted;
+ if (changed) {
+  c.introSeen = true;
+  c.tutorialCompleted = true;
+ }
+ return changed;
 }
 /** Call only on a cloned character; every condition is checked before any resource is consumed. */
 export function unlockJourneyZone(c: Character, id: string): {success:boolean;error?:string} {

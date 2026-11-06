@@ -83,7 +83,13 @@ function ensureArenaBattle(character:WorldState['character'],runId:string){
  const existing=character.dailyBossBattle?.runId===runId?character.dailyBossBattle:bossBattleFor(character,runId);
  existing.position??=arenaPositionFor(character.id);
  existing.targetId??=null; existing.pvpEnabled??=true; existing.cooldowns??={};
+ existing.pvpLog??=[];
  return existing;
+}
+function recordArenaPvpEvent(battle:WorldState['character']['dailyBossBattle'],event:any){
+ if(!battle)return;
+ battle.lastPvpEvent=event;
+ battle.pvpLog=[...(battle.pvpLog??[]),event].slice(-30);
 }
 function arenaDistance(a:{x:number;y:number},b:{x:number;y:number}){return Math.hypot(a.x-b.x,a.y-b.y);}
 function arenaAttackRange(kind:'basic'|'attack'|'support',attackId?:string){
@@ -186,13 +192,18 @@ export async function handleWorld(db:Database,owner:string,request:WorldRequest)
    const cooldown=arenaCooldown(kind,attacker.state.character.baseStats,kind==='support'?attacker.state.character.activeRace?.suporteId:attacker.state.character.activeRace?.passivaId);const readyAt=Number(attackerBattle.cooldowns?.[kind]??0);if(readyAt>Date.now())throw Error(`Aguarde ${Math.ceil((readyAt-Date.now())/1000)}s para usar esta ação.`);
    attackerBattle.targetId=target.id;attackerBattle.lastAttackKind=kind;attackerBattle.cooldowns![kind]=Date.now()+cooldown;
    let damage=0;
+   const eventAt=Date.now();
    if(kind==='support'){
     const heal=Math.max(1,Math.floor((attacker.state.character.hpMax??100)*0.12));attacker.state.character.hp=Math.min(attacker.state.character.hpMax,attacker.state.character.hp+heal);attacker.state.character.mp=Math.min(attacker.state.character.mpMax,attacker.state.character.mp+Math.max(1,Math.floor((attacker.state.character.mpMax??50)*0.06)));
-    receipt.pvp={kind,distance,range,healed:heal,cooldownUntil:attackerBattle.cooldowns![kind],targetId:target.id};
+    const event={id:randomUUID(),at:eventAt,kind,attackerId:attacker.id,attackerName:attacker.name,targetId:target.id,targetName:target.name,damage:0,healed:heal,targetHp:targetBattle.hp,targetHpMax:targetBattle.hpMax};
+    recordArenaPvpEvent(attackerBattle,event);recordArenaPvpEvent(targetBattle,event);
+    receipt.pvp={kind,distance,range,healed:heal,cooldownUntil:attackerBattle.cooldowns![kind],targetId:target.id,event};
    }else{
     damage=arenaDamage(attacker.state.character,target.state.character,kind,attackId);targetBattle.hp=Math.max(0,targetBattle.hp-damage);targetBattle.damageTaken+=damage;targetBattle.lastDamage=damage;targetBattle.targetId=attacker.id;
     if(targetBattle.hp===0){targetBattle.knockouts+=1;targetBattle.recoveryUntil=Date.now()+30000;}
-    receipt.pvp={kind,distance,range,damage,knockedOut:targetBattle.hp===0,targetId:target.id,targetName:target.name,cooldownUntil:attackerBattle.cooldowns![kind],targetHp:targetBattle.hp};
+    const event={id:randomUUID(),at:eventAt,kind,attackerId:attacker.id,attackerName:attacker.name,targetId:target.id,targetName:target.name,damage, targetHp:targetBattle.hp,targetHpMax:targetBattle.hpMax,knockedOut:targetBattle.hp===0};
+    recordArenaPvpEvent(attackerBattle,event);recordArenaPvpEvent(targetBattle,event);
+    receipt.pvp={kind,distance,range,damage,knockedOut:targetBattle.hp===0,targetId:target.id,targetName:target.name,cooldownUntil:attackerBattle.cooldowns![kind],targetHp:targetBattle.hp,event};
    }
    attacker.state.character.dailyBossBattle=attackerBattle;target.state.character.dailyBossBattle=targetBattle;await commitCharacter(db,attacker);await commitCharacter(db,target);
   }else{

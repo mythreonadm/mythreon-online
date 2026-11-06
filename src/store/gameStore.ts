@@ -1,4 +1,4 @@
-import { canEnterZone, canTutorialHunt, isGuided, unlockJourneyZone } from '../engine/journey';
+import { canEnterZone, canTutorialHunt, isGuided, repairLegacyJourney, unlockJourneyZone } from '../engine/journey';
 import { getAvailableQuests } from '../utils/questSignals';
 import { checkQuestCompletion } from '../engine/questEngine';
 import { applyTraining } from "../engine/training";
@@ -31,6 +31,7 @@ import { ownedCosmeticLoadout } from "../engine/cosmeticOwnership";
 import { evolveCard as engineEvolveCard, recycleCardCopies as engineRecycleCardCopies } from "../engine/cardCollection";
 import { CARD_TEMPLATES } from "../data/cards";
 import { normalizeOnlineChest, nextOnlineChest } from "../data/onlineChest";
+import { STAMINA_COIN_REFILL_MINUTES, STAMINA_GOLD_REFILL_MINUTES, STAMINA_ONLINE_MAX, STAMINA_PRETEST_UNLIMITED, staminaDayKey, staminaGoldCost } from "../data/stamina";
 
 export interface GameState {
   character: Character | null;
@@ -89,6 +90,8 @@ export interface GameState {
   buyTrainingBoost: () => { success: boolean; error?: string };
   useVial: (vial: BuffVialTemplate) => void;
   buyBless: () => void;
+  buyStaminaGold: () => { success: boolean; minutesAdded?: number; error?: string };
+  buyStaminaCoins: () => { success: boolean; minutesAdded?: number; error?: string };
   refreshCompendium: () => void;
   upgradeItem: (uid: string) => { success: boolean; error?: string };
   rerollItem: (uid: string) => { success: boolean; error?: string };
@@ -355,6 +358,10 @@ return create<GameState>((set, get) => ({
   startHunting: (zoneId) => {
     const { character, healingUntil } = get();
     if (!character) return;
+    // Migra contas antigas que ficaram com a introdução marcada como pendente
+    // embora já tenham progresso real. Isso não altera quests nem recompensas;
+    // apenas remove um portão de tutorial impossível de concluir.
+    const repairedJourney = repairLegacyJourney(character);
     if (healingUntil) return warn("Você está meditando! Termine antes de caçar.");
     if (character.hp <= 0) return warn("Você precisa se curar na Casa antes de caçar!");
     if (!Number.isFinite(character.staminaOnline)) character.staminaOnline = 120;
@@ -374,6 +381,7 @@ return create<GameState>((set, get) => ({
       character.enemyHp = zone.enemies[0].hp * zone.enemies[0].difficulty;
     }
     set({ isTickRunning: true, isTraining: false, currentZoneId: zoneId, character: { ...character } });
+    if (repairedJourney) get().save();
     if (!runtime.server) { get().tick();
     if (get().isTickRunning || get().isTraining) tickInterval = setInterval(() => get().tick(), 3000); }
   },
@@ -968,6 +976,45 @@ return create<GameState>((set, get) => ({
     newChar.blesses = Math.min(5, (newChar.blesses || 0) + 1);
     set({ character: newChar }); get().save();
     notify(`Você comprou uma Bless! (${newChar.blesses}/5)`);
+  },
+
+  buyStaminaGold: () => {
+    const { character } = get();
+    if (!character) return { success: false, error: "Sem personagem." };
+    const now = runtimeNow();
+    const day = staminaDayKey(now);
+    const cost = staminaGoldCost(character.level);
+    const current = Math.max(0, Number(character.staminaOnline ?? STAMINA_ONLINE_MAX));
+    if (current >= STAMINA_ONLINE_MAX) return { success: false, error: "Sua stamina online já está cheia." };
+    if (!STAMINA_PRETEST_UNLIMITED && character.staminaGoldPurchaseDay === day) return { success: false, error: "A compra com Gold já foi usada hoje." };
+    if (character.gold < cost) return { success: false, error: `Gold insuficiente. Você precisa de ${cost.toLocaleString("pt-BR")} Gold.` };
+    const next = JSON.parse(JSON.stringify(character));
+    next.gold -= cost;
+    next.staminaOnline = Math.min(STAMINA_ONLINE_MAX, current + STAMINA_GOLD_REFILL_MINUTES);
+    if (!STAMINA_PRETEST_UNLIMITED) next.staminaGoldPurchaseDay = day;
+    next.staminaUpdatedAt = now;
+    set({ character: next }); get().save();
+    notify(`⚡ Stamina recuperada: +${STAMINA_GOLD_REFILL_MINUTES} min.`);
+    return { success: true, minutesAdded: STAMINA_GOLD_REFILL_MINUTES };
+  },
+
+  buyStaminaCoins: () => {
+    const { character } = get();
+    if (!character) return { success: false, error: "Sem personagem." };
+    const now = runtimeNow();
+    const day = staminaDayKey(now);
+    const current = Math.max(0, Number(character.staminaOnline ?? STAMINA_ONLINE_MAX));
+    if (current >= STAMINA_ONLINE_MAX) return { success: false, error: "Sua stamina online já está cheia." };
+    if (!STAMINA_PRETEST_UNLIMITED && character.staminaCoinPurchaseDay === day) return { success: false, error: "A compra com Mythreon Coin já foi usada hoje." };
+    if ((character.mythreonCoins ?? 0) < 1) return { success: false, error: "Você precisa de 1 Mythreon Coin." };
+    const next = JSON.parse(JSON.stringify(character));
+    next.mythreonCoins = Math.max(0, Number(next.mythreonCoins ?? 0) - 1);
+    next.staminaOnline = Math.min(STAMINA_ONLINE_MAX, current + STAMINA_COIN_REFILL_MINUTES);
+    if (!STAMINA_PRETEST_UNLIMITED) next.staminaCoinPurchaseDay = day;
+    next.staminaUpdatedAt = now;
+    set({ character: next }); get().save();
+    notify(`⚡ Stamina recuperada: +${STAMINA_COIN_REFILL_MINUTES} min.`);
+    return { success: true, minutesAdded: STAMINA_COIN_REFILL_MINUTES };
   },
 
   upgradeItem: (uid) => {

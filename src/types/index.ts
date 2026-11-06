@@ -226,6 +226,21 @@ export interface DeathReportData {
   lostItems?: string[];
 }
 
+export interface DailyBossPvpEvent {
+  id: string;
+  at: number;
+  kind: "basic" | "attack" | "support";
+  attackerId: string;
+  attackerName: string;
+  targetId: string;
+  targetName: string;
+  damage: number;
+  healed?: number;
+  targetHp: number;
+  targetHpMax: number;
+  knockedOut?: boolean;
+}
+
 export interface DailyBossBattle {
   runId: string;
   hp: number;
@@ -240,6 +255,10 @@ export interface DailyBossBattle {
   pvpEnabled?: boolean;
   cooldowns?: Record<string, number>;
   lastAttackKind?: "basic" | "attack" | "support";
+  /** Último evento PvP confirmado pelo servidor, visível para os dois lados. */
+  lastPvpEvent?: DailyBossPvpEvent;
+  /** Histórico curto para o registro de combate dos dois jogadores. */
+  pvpLog?: DailyBossPvpEvent[];
 }
 
 export interface Character {
@@ -257,6 +276,8 @@ export interface Character {
   staminaOnline?: number;
   staminaOffline?: number;
   staminaUpdatedAt?: number;
+  staminaGoldPurchaseDay?: string;
+  staminaCoinPurchaseDay?: string;
   premium: boolean; /** Entitlement comercial sincronizado do servidor; nunca é ativado pelo cliente. */
   premiumPlanId?: string; premiumUntil?: number;
   lastTick: number; trainingBoostUntil?: number; trainingBoostDay?: string;

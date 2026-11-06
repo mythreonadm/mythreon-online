@@ -59,7 +59,9 @@ export function DailyBoss() {
   useEffect(() => { void refresh(); }, [refresh]);
   useEffect(() => {
     if (!active) return;
-    const poll = window.setInterval(() => { void refresh(); }, 10_000);
+    // A arena precisa refletir o dano recebido por outro jogador rapidamente;
+    // o polling continua leve, mas não deixa o alvo esperando dez segundos.
+    const poll = window.setInterval(() => { void refresh(); }, 2_500);
     const clock = window.setInterval(() => setNow(Date.now()), 250);
     return () => { window.clearInterval(poll); window.clearInterval(clock); };
   }, [active, refresh]);
@@ -116,7 +118,7 @@ export function DailyBoss() {
       <div><p className="online-eyebrow">Uma ameaça para todo o mundo</p><h1 className="text-3xl font-bold text-arcane-gold">Boss Diário</h1><p className="mt-1 text-gray-300">{run.boss_title}</p></div>
       <div className="text-right"><strong className={statusColor[run.status]}>{statusLabel[run.status]}</strong><p className="text-xs text-gray-500">Ciclo encerra em {formatTime(run.closes_at, now)}</p></div>
     </header>
-    <DailyBossArena key={run.id} run={run} sprite={sprite} character={character} roster={boss.roster ?? []} participants={boss.participants} joined={joined} hit={confirmedHit} now={now} combat={boss.combat} selectedTargetId={selectedTargetId} onSelectTarget={entry => { setSelectedTargetId(entry.character_id); setArenaNotice(`${entry.name} selecionado. Agora escolha uma ação PvP.`); }} />
+    <DailyBossArena key={run.id} run={run} sprite={sprite} character={character} roster={boss.roster ?? []} participants={boss.participants} joined={joined} hit={confirmedHit} now={now} combat={boss.combat} selectedTargetId={selectedTargetId} onSelectTarget={entry => { setSelectedTargetId(entry.character_id); setArenaNotice(`${entry.name} selecionado. Agora escolha uma ação PvP.`); }} onMove={direction => void arenaAction("dailyBoss.move", { direction })} />
     {joined && run.status === "open" && <section className="rounded-2xl border border-cyan-400/30 bg-black/30 p-4"><div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-bold text-cyan-100">🎮 Controle de combate</h2><p className="text-xs text-gray-400">Movimente-se com WASD ou setas. Passe o mouse sobre um jogador para iluminar e clique para selecionar.</p></div><button type="button" className="online-button-secondary" onClick={() => void arenaAction("dailyBoss.togglePvp", { enabled: true })}>PvP aberto</button></div><div className="mt-3 grid gap-2 sm:grid-cols-4"><button type="button" className="online-button" disabled={!selectedTargetId || arenaActionInFlight.current} onClick={() => void arenaAction("dailyBoss.attackPlayer", { targetCharacterId: selectedTargetId, kind: "basic" })}>⚔️ Ataque básico</button><button type="button" className="online-button" disabled={!selectedTargetId || arenaActionInFlight.current} onClick={() => void arenaAction("dailyBoss.attackPlayer", { targetCharacterId: selectedTargetId, kind: "attack" })}>🔥 {character?.activeRace?.skills.ataque ?? "Ataque"}</button><button type="button" className="online-button-secondary" disabled={arenaActionInFlight.current} onClick={() => void arenaAction("dailyBoss.attackPlayer", { targetCharacterId: selectedTargetId, kind: "support" })}>✦ {character?.activeRace?.skills.suporte ?? "Suporte"}</button><div className="rounded-lg border border-white/10 p-2 text-xs text-gray-400"><strong className="text-arcane-gold">Passiva</strong><br />{character?.activeRace?.skills.passiva ?? "Sempre ativa"}</div></div>{arenaNotice && <p role="status" className="mt-3 text-sm text-cyan-200">{arenaNotice}</p>}</section>}
     <div className="grid gap-5 lg:grid-cols-[1fr_280px]">
       <article className="rounded-2xl border border-arcane-gold/30 bg-black/25 p-5">

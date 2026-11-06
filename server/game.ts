@@ -49,7 +49,7 @@ export function executeGame(world:WorldState,action?:string,args:unknown[]=[]):{
   const s=store.getState();
   if(s.isTickRunning&&['sellItem','sellSelected','salvageAll','salvageSelected','upgradeItem','rerollItem','elevateItemTier','rerollSpecificAffix','enchantItem'].includes(action))throw Error('Saia da caça para acessar o Ferreiro.');
   if(action==='activateBuff'&&(!s.isTickRunning||!s.character?.onlineBalloonUntil||s.character.onlineBalloonUntil<now))throw Error('Este eco de bônus expirou. Aguarde outro durante a caça.');
-  const zero=['finishIntro','clearOfflineReport','clearDeathReport','startHealing','cancelHealing','stopHunting','stopTraining','unequipRace','unequipDivineBeast','activateBuff','buyTrainingBoost','buyBless','refreshCompendium'];
+  const zero=['finishIntro','clearOfflineReport','clearDeathReport','startHealing','cancelHealing','stopHunting','stopTraining','unequipRace','unequipDivineBeast','activateBuff','buyTrainingBoost','buyBless','buyStaminaGold','buyStaminaCoins','refreshCompendium'];
   const strings=['unlockZone','setActiveEnemy','setCurrentZone','acceptQuest','claimQuest','upgradeItem','rerollItem','depositItem','withdrawItem','discardItem','plantFarmSeed','waterFarmPlot','fertilizeFarmPlot','harvestFarmPlot','cookFarmRecipe','buyProfessionTool'];
   const uid=(v:unknown)=>{if(typeof v!=='string'||v.length<1||v.length>128)throw Error('Identificador inválido.');return v;};
   if(action==='beginProfessionChallenge'){

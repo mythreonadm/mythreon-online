@@ -12,7 +12,7 @@ let original: Partial<GameState> = {};
 let poll: ReturnType<typeof setInterval> | undefined, socialPoll: ReturnType<typeof setInterval> | undefined, fullSync: ReturnType<typeof setInterval> | undefined;
 let channel: any = null, polling: OnlineSession | null = null, socialRunning: OnlineSession | null = null;
 let characterId = "";
-const NO_ARGUMENTS = new Set(["stopHunting", "stopTraining", "finishIntro", "clearOfflineReport", "clearDeathReport", "startHealing", "cancelHealing", "unequipRace", "unequipDivineBeast", "activateBuff", "buyTrainingBoost", "buyBless", "refreshCompendium"]);
+const NO_ARGUMENTS = new Set(["stopHunting", "stopTraining", "finishIntro", "clearOfflineReport", "clearDeathReport", "startHealing", "cancelHealing", "unequipRace", "unequipDivineBeast", "activateBuff", "buyTrainingBoost", "buyBless", "buyStaminaGold", "buyStaminaCoins", "refreshCompendium"]);
 const DEDUPLICATE = new Set(["hatchEgg", "harvestFarmPlot", "claimDailyCalendar", "recoverCalendarDay", "recoverCalendarWeek", "claimOnlineChest", "claimQuest", "recycleCards"]);
 // These commands are intentionally server-only: their nonce and timing live
 // in WorldState and they are not methods of the local Zustand store.

@@ -91,9 +91,11 @@
 - [[docs/conhecimento/Pack-69-GIFs-de-Profissoes-2026-11-05|Pack 69 — GIFs de Mineração e Pesca]] — a revisar
 - [[docs/conhecimento/Pets-Atividades-Boss-Diario|Pets, atividades e Boss Diário]] — em desenvolvimento
 - [[docs/conhecimento/Pets-Ovos-Migracao-2026-11-03|Migração de Bestas Divinas para Pets e Ovos]] — a revisar
+- [[docs/conhecimento/PvP-Arena-Movel-e-Caca-2026-11-05|Arena móvel, registro PvP e recuperação de caça — 2026-11-05]] — a revisar
 - [[docs/conhecimento/Registro de problemas|Registro de problemas]] — Problemas de documentação, sincronização e continuidade com suas evidências.
 - [[docs/conhecimento/Sem título|Sem título]] — a revisar
 - [[docs/conhecimento/Shop-Premium-Beasts|Shop, premium e Divine Beasts]] — a revisar
+- [[docs/conhecimento/Stamina-Compras-e-Barra-2026-11-05|Stamina online — barra e recuperação no pré-teste]] — a revisar
 - [[docs/conhecimento/Trade-Online-Link-e-Mythreon-Coins-2026-11-03|Trade online, links de item e Mythreon Coins]] — a revisar
 - [[docs/conhecimento/Treino-e-Diferenciais-Mythreon|Disciplina e um mundo que se lembra]] — Treino implementado e propostas de identidade própria fundamentadas em pesquisa de idle games.
 - [[docs/conhecimento/Tutorial-Storytelling-Videos-2026-11-03|Tutorial cinematográfico — Storytelling de Mythreon]] — a revisar

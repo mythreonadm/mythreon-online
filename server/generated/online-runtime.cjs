@@ -1782,9 +1782,19 @@ function canEnterZone(c, id) {
 }
 function canTutorialHunt(c) {
   if (!isGuided(c)) return true;
-  if (!c.introSeen) return false;
-  const activeTutorial = ["TUT_1", "TUT_POTIONS", "TUT_3"].some((id) => !!c.quests.active[id]);
-  return activeTutorial || c.quests.completed.includes("TUT_BACKPACK") || Object.keys(c.quests.active).length === 0;
+  if (!c.introSeen) return c.level > 1 || c.quests.completed.length > 0;
+  return true;
+}
+function repairLegacyJourney(c) {
+  if (!isGuided(c) || c.level <= 1) return false;
+  const activeTutorial = ["TUT_1", "TUT_POTIONS", "TUT_3", "TUT_TRAIN", "TUT_SELL"].some((id) => !!c.quests.active[id]);
+  if (activeTutorial) return false;
+  const changed = !c.introSeen || !c.tutorialCompleted;
+  if (changed) {
+    c.introSeen = true;
+    c.tutorialCompleted = true;
+  }
+  return changed;
 }
 function unlockJourneyZone(c, id) {
   const chapter = JOURNEY_CHAPTERS.find((x) => x.id === id), pass = chapter?.pass;
@@ -4231,6 +4241,18 @@ function nextOnlineChest(character) {
   return ONLINE_CHEST_MILESTONES.find((milestone) => !claimed.has(milestone.id)) ?? null;
 }
 
+// src/data/stamina.ts
+var STAMINA_ONLINE_MAX = 120;
+var STAMINA_PRETEST_UNLIMITED = true;
+var STAMINA_GOLD_REFILL_MINUTES = 60;
+var STAMINA_COIN_REFILL_MINUTES = 120;
+function staminaGoldCost(level) {
+  return Math.max(500, Math.floor(Math.max(1, level) * 250));
+}
+function staminaDayKey(now = Date.now()) {
+  return new Date(now).toISOString().slice(0, 10);
+}
+
 // src/store/gameStore.ts
 function recordHuntMetrics(character, zoneId, result) {
   const previous = character.huntStatsByZone?.[zoneId] ?? {
@@ -4473,6 +4495,7 @@ function createGameStore(runtime = {}) {
     startHunting: (zoneId) => {
       const { character, healingUntil } = get();
       if (!character) return;
+      const repairedJourney = repairLegacyJourney(character);
       if (healingUntil) return warn("Voc\xEA est\xE1 meditando! Termine antes de ca\xE7ar.");
       if (character.hp <= 0) return warn("Voc\xEA precisa se curar na Casa antes de ca\xE7ar!");
       if (!Number.isFinite(character.staminaOnline)) character.staminaOnline = 120;
@@ -4489,6 +4512,7 @@ function createGameStore(runtime = {}) {
         character.enemyHp = zone.enemies[0].hp * zone.enemies[0].difficulty;
       }
       set({ isTickRunning: true, isTraining: false, currentZoneId: zoneId, character: { ...character } });
+      if (repairedJourney) get().save();
       if (!runtime.server) {
         get().tick();
         if (get().isTickRunning || get().isTraining) tickInterval = setInterval(() => get().tick(), 3e3);
@@ -5223,6 +5247,45 @@ function createGameStore(runtime = {}) {
       get().save();
       notify(`Voc\xEA comprou uma Bless! (${newChar.blesses}/5)`);
     },
+    buyStaminaGold: () => {
+      const { character } = get();
+      if (!character) return { success: false, error: "Sem personagem." };
+      const now = runtimeNow();
+      const day = staminaDayKey(now);
+      const cost = staminaGoldCost(character.level);
+      const current = Math.max(0, Number(character.staminaOnline ?? STAMINA_ONLINE_MAX));
+      if (current >= STAMINA_ONLINE_MAX) return { success: false, error: "Sua stamina online j\xE1 est\xE1 cheia." };
+      if (!STAMINA_PRETEST_UNLIMITED && character.staminaGoldPurchaseDay === day) return { success: false, error: "A compra com Gold j\xE1 foi usada hoje." };
+      if (character.gold < cost) return { success: false, error: `Gold insuficiente. Voc\xEA precisa de ${cost.toLocaleString("pt-BR")} Gold.` };
+      const next = JSON.parse(JSON.stringify(character));
+      next.gold -= cost;
+      next.staminaOnline = Math.min(STAMINA_ONLINE_MAX, current + STAMINA_GOLD_REFILL_MINUTES);
+      if (!STAMINA_PRETEST_UNLIMITED) next.staminaGoldPurchaseDay = day;
+      next.staminaUpdatedAt = now;
+      set({ character: next });
+      get().save();
+      notify(`\u26A1 Stamina recuperada: +${STAMINA_GOLD_REFILL_MINUTES} min.`);
+      return { success: true, minutesAdded: STAMINA_GOLD_REFILL_MINUTES };
+    },
+    buyStaminaCoins: () => {
+      const { character } = get();
+      if (!character) return { success: false, error: "Sem personagem." };
+      const now = runtimeNow();
+      const day = staminaDayKey(now);
+      const current = Math.max(0, Number(character.staminaOnline ?? STAMINA_ONLINE_MAX));
+      if (current >= STAMINA_ONLINE_MAX) return { success: false, error: "Sua stamina online j\xE1 est\xE1 cheia." };
+      if (!STAMINA_PRETEST_UNLIMITED && character.staminaCoinPurchaseDay === day) return { success: false, error: "A compra com Mythreon Coin j\xE1 foi usada hoje." };
+      if ((character.mythreonCoins ?? 0) < 1) return { success: false, error: "Voc\xEA precisa de 1 Mythreon Coin." };
+      const next = JSON.parse(JSON.stringify(character));
+      next.mythreonCoins = Math.max(0, Number(next.mythreonCoins ?? 0) - 1);
+      next.staminaOnline = Math.min(STAMINA_ONLINE_MAX, current + STAMINA_COIN_REFILL_MINUTES);
+      if (!STAMINA_PRETEST_UNLIMITED) next.staminaCoinPurchaseDay = day;
+      next.staminaUpdatedAt = now;
+      set({ character: next });
+      get().save();
+      notify(`\u26A1 Stamina recuperada: +${STAMINA_COIN_REFILL_MINUTES} min.`);
+      return { success: true, minutesAdded: STAMINA_COIN_REFILL_MINUTES };
+    },
     upgradeItem: (uid) => {
       const { character } = get();
       if (!character) return { success: false, error: "Sem personagem" };
@@ -5689,7 +5752,7 @@ function executeGame(world, action, args = []) {
     const s = store.getState();
     if (s.isTickRunning && ["sellItem", "sellSelected", "salvageAll", "salvageSelected", "upgradeItem", "rerollItem", "elevateItemTier", "rerollSpecificAffix", "enchantItem"].includes(action)) throw Error("Saia da ca\xE7a para acessar o Ferreiro.");
     if (action === "activateBuff" && (!s.isTickRunning || !s.character?.onlineBalloonUntil || s.character.onlineBalloonUntil < now)) throw Error("Este eco de b\xF4nus expirou. Aguarde outro durante a ca\xE7a.");
-    const zero = ["finishIntro", "clearOfflineReport", "clearDeathReport", "startHealing", "cancelHealing", "stopHunting", "stopTraining", "unequipRace", "unequipDivineBeast", "activateBuff", "buyTrainingBoost", "buyBless", "refreshCompendium"];
+    const zero = ["finishIntro", "clearOfflineReport", "clearDeathReport", "startHealing", "cancelHealing", "stopHunting", "stopTraining", "unequipRace", "unequipDivineBeast", "activateBuff", "buyTrainingBoost", "buyBless", "buyStaminaGold", "buyStaminaCoins", "refreshCompendium"];
     const strings = ["unlockZone", "setActiveEnemy", "setCurrentZone", "acceptQuest", "claimQuest", "upgradeItem", "rerollItem", "depositItem", "withdrawItem", "discardItem", "plantFarmSeed", "waterFarmPlot", "fertilizeFarmPlot", "harvestFarmPlot", "cookFarmRecipe", "buyProfessionTool"];
     const uid = (v) => {
       if (typeof v !== "string" || v.length < 1 || v.length > 128) throw Error("Identificador inv\xE1lido.");
@@ -6270,7 +6333,13 @@ function ensureArenaBattle(character, runId) {
   existing.targetId ??= null;
   existing.pvpEnabled ??= true;
   existing.cooldowns ??= {};
+  existing.pvpLog ??= [];
   return existing;
+}
+function recordArenaPvpEvent(battle, event) {
+  if (!battle) return;
+  battle.lastPvpEvent = event;
+  battle.pvpLog = [...battle.pvpLog ?? [], event].slice(-30);
 }
 function arenaDistance(a, b) {
   return Math.hypot(a.x - b.x, a.y - b.y);
@@ -6419,11 +6488,15 @@ async function handleWorld(db, owner, request) {
         attackerBattle.lastAttackKind = kind;
         attackerBattle.cooldowns[kind] = Date.now() + cooldown;
         let damage = 0;
+        const eventAt = Date.now();
         if (kind === "support") {
           const heal = Math.max(1, Math.floor((attacker.state.character.hpMax ?? 100) * 0.12));
           attacker.state.character.hp = Math.min(attacker.state.character.hpMax, attacker.state.character.hp + heal);
           attacker.state.character.mp = Math.min(attacker.state.character.mpMax, attacker.state.character.mp + Math.max(1, Math.floor((attacker.state.character.mpMax ?? 50) * 0.06)));
-          receipt.pvp = { kind, distance, range, healed: heal, cooldownUntil: attackerBattle.cooldowns[kind], targetId: target.id };
+          const event = { id: (0, import_node_crypto2.randomUUID)(), at: eventAt, kind, attackerId: attacker.id, attackerName: attacker.name, targetId: target.id, targetName: target.name, damage: 0, healed: heal, targetHp: targetBattle.hp, targetHpMax: targetBattle.hpMax };
+          recordArenaPvpEvent(attackerBattle, event);
+          recordArenaPvpEvent(targetBattle, event);
+          receipt.pvp = { kind, distance, range, healed: heal, cooldownUntil: attackerBattle.cooldowns[kind], targetId: target.id, event };
         } else {
           damage = arenaDamage(attacker.state.character, target.state.character, kind, attackId);
           targetBattle.hp = Math.max(0, targetBattle.hp - damage);
@@ -6434,7 +6507,10 @@ async function handleWorld(db, owner, request) {
             targetBattle.knockouts += 1;
             targetBattle.recoveryUntil = Date.now() + 3e4;
           }
-          receipt.pvp = { kind, distance, range, damage, knockedOut: targetBattle.hp === 0, targetId: target.id, targetName: target.name, cooldownUntil: attackerBattle.cooldowns[kind], targetHp: targetBattle.hp };
+          const event = { id: (0, import_node_crypto2.randomUUID)(), at: eventAt, kind, attackerId: attacker.id, attackerName: attacker.name, targetId: target.id, targetName: target.name, damage, targetHp: targetBattle.hp, targetHpMax: targetBattle.hpMax, knockedOut: targetBattle.hp === 0 };
+          recordArenaPvpEvent(attackerBattle, event);
+          recordArenaPvpEvent(targetBattle, event);
+          receipt.pvp = { kind, distance, range, damage, knockedOut: targetBattle.hp === 0, targetId: target.id, targetName: target.name, cooldownUntil: attackerBattle.cooldowns[kind], targetHp: targetBattle.hp, event };
         }
         attacker.state.character.dailyBossBattle = attackerBattle;
         target.state.character.dailyBossBattle = targetBattle;

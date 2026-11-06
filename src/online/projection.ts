@@ -8,7 +8,7 @@ const PROJECTABLE = new Set([
   "equipProfessionTool", "setCardLoadout", "updateAppearance", "updateSettings", "spendStatPoint",
   "startHunting", "stopHunting", "setCurrentZone", "setActiveEnemy", "startTraining", "stopTraining",
   "startHealing", "cancelHealing", "clearDeathReport", "clearOfflineReport", "finishIntro", "acceptQuest",
-  "plantFarmSeed", "waterFarmPlot", "fertilizeFarmPlot", "unlockFarmPlot", "unlockZone", "buyCalendarCoupon", "claimDailyCalendar", "recoverCalendarDay", "recoverCalendarWeek", "buyBless",
+  "plantFarmSeed", "waterFarmPlot", "fertilizeFarmPlot", "unlockFarmPlot", "unlockZone", "buyCalendarCoupon", "claimDailyCalendar", "recoverCalendarDay", "recoverCalendarWeek", "buyBless", "buyStaminaGold", "buyStaminaCoins",
 ]);
 export const canProject = (action: string) => PROJECTABLE.has(action);
 export function gameSnapshot(state: GameState): GameSnapshot {
