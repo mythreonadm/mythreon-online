@@ -266,6 +266,8 @@ export interface Character {
   hp: number; hpMax: number; mp: number; mpMax: number; baseStats: ItemStats;
   appearance?: CharacterAppearance;
   cosmeticLoadout?: CosmeticLoadout;
+  /** Cosméticos já convertidos em propriedade permanente; não ocupam a mochila. */
+  unlockedCosmetics?: string[];
   mythreonShards?: number; mythreonCoins?: number;
   /** Buffs da Loja Mythreon: chave -> timestamp de expiração; 0 significa eterno. */
   mythreonBoosts?: Record<string, number>;

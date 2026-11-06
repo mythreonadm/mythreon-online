@@ -29,6 +29,7 @@ export function createNewCharacter(name: string, appearance?: CharacterAppearanc
     hp: base.hp!, hpMax: base.hp!, mp: base.mp!, mpMax: base.mp!, baseStats: base,
     appearance: appearance ?? { body: "MASCULINO", skin: "MORENA", hair: "CURTO", hairColor: "NEGRO", outfit: "VIAJANTE", outfitColor: "OCRE" },
     cosmeticLoadout: {},
+    unlockedCosmetics: [],
     mythreonShards: 0, mythreonCoins: 0,
     equipped: {}, inventory: { backpack: { ...DEFAULT_BACKPACK }, items: [
       createItem({ ...PROFESSION_TOOL_TEMPLATES.PICARETA_T1, uid: generateId() }),
@@ -170,6 +171,8 @@ export function loadGame(): SaveFile | null {
       // Migração para cartas
       if (!data.character.cards) data.character.cards = [];
       if (!data.character.cosmeticLoadout || typeof data.character.cosmeticLoadout !== "object") data.character.cosmeticLoadout = {};
+      if (!Array.isArray(data.character.unlockedCosmetics)) data.character.unlockedCosmetics = [];
+      data.character.unlockedCosmetics = [...new Set(data.character.unlockedCosmetics.filter((id: unknown) => typeof id === "string" && Boolean(ALL_ITEM_TEMPLATES[id])))];
       if (!Array.isArray(data.character.cardLoadout)) data.character.cardLoadout = [];
       data.character.cardLoadout = data.character.cardLoadout.filter((uid: unknown) => typeof uid === "string").slice(0, 5);
       if (!Array.isArray(data.character.divineBeasts)) data.character.divineBeasts = [];

@@ -10,18 +10,32 @@ type Props = Omit<React.ImgHTMLAttributes<HTMLImageElement>, "src" | "onError"> 
   onError?: React.ReactEventHandler<HTMLImageElement>;
 };
 
-/** Prefer animated .gif assets, then fall back to the supplied file and its .png counterpart. */
-export function AssetImage({ src, fallbackSrc, pixelated = true, preferAnimated = !src.startsWith("/assets/players/"), removeWhite = false, style, onAllSourcesFail, onError, ...props }: Props) {
+/**
+ * Prefer animated .gif assets, then fall back to the supplied file and its
+ * static counterparts. This is intentionally shared by every visual asset:
+ * maps, monsters, players, pets, items, UI art and profession scenes.
+ */
+export function AssetImage({ src, fallbackSrc, pixelated = true, preferAnimated = true, removeWhite = false, style, onAllSourcesFail, onError, ...props }: Props) {
   const candidates = React.useMemo(() => {
-    const isLocalAsset = src.startsWith("/assets/");
-    const stem = src.replace(/\.(png|giff?|jpe?g|webp|avif)$/i, "");
-    const extension = src.match(/\.(png|giff?|jpe?g|webp|avif)$/i)?.[1]?.toLowerCase();
+    const isRemote = /^(?:data:|blob:|https?:|mailto:)/i.test(src);
+    const isSameOriginUrl = (() => {
+      if (!isRemote || typeof window === "undefined") return false;
+      try { return new URL(src, window.location.href).origin === window.location.origin; } catch { return false; }
+    })();
+    const isLocalAsset = !isRemote || isSameOriginUrl;
+    const queryIndex = src.search(/[?#]/);
+    const path = queryIndex >= 0 ? src.slice(0, queryIndex) : src;
+    const suffix = queryIndex >= 0 ? src.slice(queryIndex) : "";
+    const stem = path.replace(/\.(png|giff?|jpe?g|webp|avif)$/i, "");
     const slash = stem.lastIndexOf("/");
     const base = stem.slice(slash + 1);
     const titleStem = stem.slice(0, slash + 1) + base.charAt(0).toUpperCase() + base.slice(1);
+    const withSuffix = (candidate: string) => `${candidate}${suffix}`;
     const fallbacks = Array.isArray(fallbackSrc) ? fallbackSrc : fallbackSrc ? [fallbackSrc] : [];
-    const list = isLocalAsset && extension
-      ? [...(!preferAnimated ? [stem + ".png", titleStem + ".png", src] : []), stem + ".gif", titleStem + ".gif", stem + ".giff", titleStem + ".giff", src, stem + ".png", titleStem + ".png", ...fallbacks]
+    const animated = [withSuffix(`${stem}.gif`), withSuffix(`${titleStem}.gif`), withSuffix(`${stem}.giff`), withSuffix(`${titleStem}.giff`)];
+    const staticImages = [withSuffix(`${stem}.png`), withSuffix(`${titleStem}.png`)];
+    const list = isLocalAsset
+      ? (preferAnimated ? [...animated, src, ...staticImages, ...fallbacks] : [...staticImages, src, ...animated, ...fallbacks])
       : [src, ...fallbacks];
     return [...new Set(list)];
   }, [src, fallbackSrc, preferAnimated]);

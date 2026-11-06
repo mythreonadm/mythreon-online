@@ -5,6 +5,7 @@ import { calendarUnlockedSkins } from "../data/dailyCalendar";
 export function ownedCosmeticLoadout(character: Character): CosmeticLoadout {
   if (!character.cosmeticLoadout || !Object.values(character.cosmeticLoadout).some(Boolean)) return {};
   const owned = new Set([
+    ...(character.unlockedCosmetics ?? []),
     ...calendarUnlockedSkins(character),
     ...[...character.inventory.items, ...(character.depot ?? []), ...Object.values(character.equipped ?? {})]
       .filter(item => item && COSMETIC_DEFINITIONS[item.templateId]).map(item => item.templateId),

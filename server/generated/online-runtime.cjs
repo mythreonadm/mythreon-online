@@ -140,6 +140,7 @@ function calendarWeeklyMilestoneKey(today, streak) {
 function ownedCosmeticLoadout(character) {
   if (!character.cosmeticLoadout || !Object.values(character.cosmeticLoadout).some(Boolean)) return {};
   const owned = /* @__PURE__ */ new Set([
+    ...character.unlockedCosmetics ?? [],
     ...calendarUnlockedSkins(character),
     ...[...character.inventory.items, ...character.depot ?? [], ...Object.values(character.equipped ?? {})].filter((item) => item && COSMETIC_DEFINITIONS[item.templateId]).map((item) => item.templateId)
   ]);
@@ -2659,6 +2660,7 @@ function createNewCharacter(name, appearance) {
     baseStats: base,
     appearance: appearance ?? { body: "MASCULINO", skin: "MORENA", hair: "CURTO", hairColor: "NEGRO", outfit: "VIAJANTE", outfitColor: "OCRE" },
     cosmeticLoadout: {},
+    unlockedCosmetics: [],
     mythreonShards: 0,
     mythreonCoins: 0,
     equipped: {},
@@ -2812,6 +2814,8 @@ function loadGame() {
       if (!Number.isFinite(data.character.staminaUpdatedAt)) data.character.staminaUpdatedAt = Date.now();
       if (!data.character.cards) data.character.cards = [];
       if (!data.character.cosmeticLoadout || typeof data.character.cosmeticLoadout !== "object") data.character.cosmeticLoadout = {};
+      if (!Array.isArray(data.character.unlockedCosmetics)) data.character.unlockedCosmetics = [];
+      data.character.unlockedCosmetics = [...new Set(data.character.unlockedCosmetics.filter((id) => typeof id === "string" && Boolean(ALL_ITEM_TEMPLATES[id])))];
       if (!Array.isArray(data.character.cardLoadout)) data.character.cardLoadout = [];
       data.character.cardLoadout = data.character.cardLoadout.filter((uid) => typeof uid === "string").slice(0, 5);
       if (!Array.isArray(data.character.divineBeasts)) data.character.divineBeasts = [];
@@ -4373,13 +4377,45 @@ function createGameStore(runtime = {}) {
       const template = ALL_ITEM_TEMPLATES[templateId];
       const definition = COSMETIC_DEFINITIONS[templateId];
       if (!template || !definition) return { success: false, error: "Cosm\xE9tico inv\xE1lido." };
-      const owned = [...character.inventory.items ?? [], ...character.depot ?? [], ...Object.values(character.equipped ?? {})].some((item) => item.templateId === templateId);
+      const owned = (character.unlockedCosmetics ?? []).includes(templateId) || [...character.inventory.items ?? [], ...character.depot ?? [], ...Object.values(character.equipped ?? {})].some((item) => item.templateId === templateId);
       if (!owned && !calendarUnlockedSkins(character).includes(templateId)) return { success: false, error: "Voc\xEA ainda n\xE3o possui este cosm\xE9tico." };
       const next = structuredClone(character);
       next.cosmeticLoadout ??= {};
       next.cosmeticLoadout[definition.slot] = templateId;
       set({ character: next });
       get().save();
+      return { success: true };
+    },
+    activateCosmetic: (templateId) => {
+      const { character } = get();
+      if (!character) return { success: false, error: "Personagem indispon\xEDvel." };
+      const template = ALL_ITEM_TEMPLATES[templateId];
+      const definition = COSMETIC_DEFINITIONS[templateId];
+      if (!template || !definition) return { success: false, error: "Este item n\xE3o \xE9 um cosm\xE9tico ativ\xE1vel." };
+      const next = structuredClone(character);
+      next.unlockedCosmetics = [...new Set(next.unlockedCosmetics ?? [])];
+      const alreadyUnlocked = next.unlockedCosmetics.includes(templateId) || calendarUnlockedSkins(next).includes(templateId);
+      if (!alreadyUnlocked) {
+        const inventoryItem = next.inventory.items.find((item) => item.templateId === templateId);
+        const depotItem = (next.depot ?? []).find((item) => item.templateId === templateId);
+        if (inventoryItem) {
+          removeItem(next.inventory, inventoryItem.uid, 1);
+        } else if (depotItem) {
+          const index = next.depot.findIndex((item) => item.uid === depotItem.uid);
+          if (index >= 0) {
+            if ((depotItem.quantity ?? 1) > 1) depotItem.quantity -= 1;
+            else next.depot.splice(index, 1);
+          }
+        } else {
+          return { success: false, error: "Este cosm\xE9tico ainda n\xE3o est\xE1 na mochila ou no dep\xF3sito." };
+        }
+        next.unlockedCosmetics.push(templateId);
+      }
+      next.cosmeticLoadout ??= {};
+      next.cosmeticLoadout[definition.slot] = templateId;
+      set({ character: next });
+      get().save();
+      notify(`${template.name} foi ativado como skin permanente. Ele n\xE3o ocupa mais espa\xE7o na mochila.`);
       return { success: true };
     },
     unequipCosmetic: (slot) => {
@@ -5393,6 +5429,17 @@ function createGameStore(runtime = {}) {
       if ((character.mythreonCoins ?? 0) < offer.priceCoins) return { success: false, error: `Voc\xEA precisa de ${offer.priceCoins} Mythreon Coins.` };
       const next = JSON.parse(JSON.stringify(character));
       const template = offer.templateId ? ALL_ITEM_TEMPLATES[offer.templateId] : void 0;
+      const cosmetic = offer.templateId ? COSMETIC_DEFINITIONS[offer.templateId] : void 0;
+      if (template && cosmetic) {
+        next.unlockedCosmetics = [.../* @__PURE__ */ new Set([...next.unlockedCosmetics ?? [], template.templateId])];
+        next.cosmeticLoadout ??= {};
+        next.cosmeticLoadout[cosmetic.slot] = template.templateId;
+        next.mythreonCoins = (next.mythreonCoins ?? 0) - offer.priceCoins;
+        set({ character: next });
+        get().save();
+        notify(`${offer.name} ativada como skin permanente e equipada na aba Skins.`);
+        return { success: true };
+      }
       const item = template?.category === "MATERIAL" ? makeMaterial(template.templateId) : template ? makeEquipment(template.templateId, template.rarity) : null;
       if (!item || !addItem(next.inventory, item)) return { success: false, error: "Bolsa cheia. Libere um espa\xE7o antes de comprar." };
       next.mythreonCoins = (next.mythreonCoins ?? 0) - offer.priceCoins;
@@ -5867,6 +5914,11 @@ function executeGame(world, action, args = []) {
       if (!/^(SKIN_|LUMINESCENCIA_|ADDON_)/.test(id)) throw Error("Cosm\xE9tico inv\xE1lido.");
       result = s.equipCosmetic(id);
       if (!result?.success) throw Error(result?.error ?? "N\xE3o foi poss\xEDvel equipar o cosm\xE9tico.");
+    } else if (action === "activateCosmetic") {
+      const id = uid(args[0]);
+      if (!/^(SKIN_|LUMINESCENCIA_|ADDON_)/.test(id)) throw Error("Cosm\xE9tico inv\xE1lido.");
+      result = s.activateCosmetic(id);
+      if (!result?.success) throw Error(result?.error ?? "N\xE3o foi poss\xEDvel ativar a skin.");
     } else if (action === "unequipCosmetic") {
       if (args.length !== 1 || !COSMETIC_SLOTS.some((slot) => slot.key === args[0])) throw Error("Espa\xE7o cosm\xE9tico inv\xE1lido.");
       result = s.unequipCosmetic(args[0]);

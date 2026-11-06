@@ -49,6 +49,7 @@ export interface GameState {
   newGame: (name: string, appearance?: CharacterAppearance) => void;
   updateAppearance: (appearance: CharacterAppearance) => { success: boolean; error?: string };
   equipCosmetic: (templateId: string) => { success: boolean; error?: string };
+  activateCosmetic: (templateId: string) => { success: boolean; error?: string };
   unequipCosmetic: (slot: CosmeticSlot) => { success: boolean; error?: string };
   loadFromSave: () => boolean;
   save: () => void;
@@ -202,12 +203,44 @@ return create<GameState>((set, get) => ({
     const template = ALL_ITEM_TEMPLATES[templateId];
     const definition = COSMETIC_DEFINITIONS[templateId];
     if (!template || !definition) return { success: false, error: "Cosmético inválido." };
-    const owned = [...(character.inventory.items ?? []), ...(character.depot ?? []), ...Object.values(character.equipped ?? {})].some(item => item.templateId === templateId);
+    const owned = (character.unlockedCosmetics ?? []).includes(templateId) || [...(character.inventory.items ?? []), ...(character.depot ?? []), ...Object.values(character.equipped ?? {})].some(item => item.templateId === templateId);
     if (!owned && !calendarUnlockedSkins(character).includes(templateId)) return { success: false, error: "Você ainda não possui este cosmético." };
     const next = structuredClone(character);
     next.cosmeticLoadout ??= {};
     next.cosmeticLoadout[definition.slot] = templateId;
     set({ character: next }); get().save();
+    return { success: true };
+  },
+
+  activateCosmetic: (templateId) => {
+    const { character } = get();
+    if (!character) return { success: false, error: "Personagem indisponível." };
+    const template = ALL_ITEM_TEMPLATES[templateId];
+    const definition = COSMETIC_DEFINITIONS[templateId];
+    if (!template || !definition) return { success: false, error: "Este item não é um cosmético ativável." };
+    const next = structuredClone(character);
+    next.unlockedCosmetics = [...new Set(next.unlockedCosmetics ?? [])];
+    const alreadyUnlocked = next.unlockedCosmetics.includes(templateId) || calendarUnlockedSkins(next).includes(templateId);
+    if (!alreadyUnlocked) {
+      const inventoryItem = next.inventory.items.find(item => item.templateId === templateId);
+      const depotItem = (next.depot ?? []).find(item => item.templateId === templateId);
+      if (inventoryItem) {
+        removeItem(next.inventory, inventoryItem.uid, 1);
+      } else if (depotItem) {
+        const index = next.depot.findIndex(item => item.uid === depotItem.uid);
+        if (index >= 0) {
+          if ((depotItem.quantity ?? 1) > 1) depotItem.quantity -= 1;
+          else next.depot.splice(index, 1);
+        }
+      } else {
+        return { success: false, error: "Este cosmético ainda não está na mochila ou no depósito." };
+      }
+      next.unlockedCosmetics.push(templateId);
+    }
+    next.cosmeticLoadout ??= {};
+    next.cosmeticLoadout[definition.slot] = templateId;
+    set({ character: next }); get().save();
+    notify(`${template.name} foi ativado como skin permanente. Ele não ocupa mais espaço na mochila.`);
     return { success: true };
   },
 
@@ -1096,6 +1129,14 @@ return create<GameState>((set, get) => ({
     if ((character.mythreonCoins ?? 0) < offer.priceCoins) return { success: false, error: `Você precisa de ${offer.priceCoins} Mythreon Coins.` };
     const next = JSON.parse(JSON.stringify(character));
     const template = offer.templateId ? ALL_ITEM_TEMPLATES[offer.templateId] : undefined;
+    const cosmetic = offer.templateId ? COSMETIC_DEFINITIONS[offer.templateId] : undefined;
+    if (template && cosmetic) {
+      next.unlockedCosmetics = [...new Set([...(next.unlockedCosmetics ?? []), template.templateId])];
+      next.cosmeticLoadout ??= {};
+      next.cosmeticLoadout[cosmetic.slot] = template.templateId;
+      next.mythreonCoins = (next.mythreonCoins ?? 0) - offer.priceCoins;
+      set({ character: next }); get().save(); notify(`${offer.name} ativada como skin permanente e equipada na aba Skins.`); return { success: true };
+    }
     const item = template?.category === "MATERIAL" ? makeMaterial(template.templateId) : template ? makeEquipment(template.templateId, template.rarity) : null;
     if (!item || !addItem(next.inventory, item)) return { success: false, error: "Bolsa cheia. Libere um espaço antes de comprar." };
     next.mythreonCoins = (next.mythreonCoins ?? 0) - offer.priceCoins;

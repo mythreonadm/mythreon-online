@@ -5,7 +5,7 @@ import { ItemModal } from "./ItemModal";
 import { Item } from "../types";
 
 export function Inventory() {
-  const { character, equip, discardItem } = useGameStore();
+  const { character, equip, discardItem, activateCosmetic } = useGameStore();
   const [filter, setFilter] = useState<string>("all");
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   
@@ -53,6 +53,7 @@ export function Inventory() {
           item={selectedItem} 
           equipped={equippedItem} 
           onEquip={handleConfirmEquip} 
+          onActivateCosmetic={() => { const result = activateCosmetic(selectedItem.templateId); if (result.success) setSelectedItem(null); else alert(result.error); }}
           onClose={() => setSelectedItem(null)} 
         />
       )}

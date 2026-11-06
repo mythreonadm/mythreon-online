@@ -4,7 +4,7 @@ export type GameSnapshot = Pick<GameState, "character" | "races" | "currentZoneI
 /** These actions preserve item identities and have no random reward to guess. */
 const PROJECTABLE = new Set([
   "equip", "unequip", "depositItem", "withdrawItem", "depositMany", "withdrawMany",
-  "equipRace", "unequipRace", "equipDivineBeast", "unequipDivineBeast", "equipCosmetic", "unequipCosmetic",
+  "equipRace", "unequipRace", "equipDivineBeast", "unequipDivineBeast", "equipCosmetic", "activateCosmetic", "unequipCosmetic",
   "equipProfessionTool", "setCardLoadout", "updateAppearance", "updateSettings", "spendStatPoint",
   "startHunting", "stopHunting", "setCurrentZone", "setActiveEnemy", "startTraining", "stopTraining",
   "startHealing", "cancelHealing", "clearDeathReport", "clearOfflineReport", "finishIntro", "acceptQuest",

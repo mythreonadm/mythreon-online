@@ -5,6 +5,7 @@ import { getItemScore } from "../engine/itemCompare";
 import { ItemIcon } from "./ItemIcon"; // NOVO
 import { ELEMENTS } from "../data/elementalChart";
 import { emitItemChatLink, emitItemTradeAnnouncement } from "./itemChat";
+import { COSMETIC_DEFINITIONS } from "../data/cosmetics";
 
 interface Props {
   item: Item;
@@ -12,10 +13,11 @@ interface Props {
   onEquip: () => void;
   onClose: () => void;
   onDeposit?: () => void;
+  onActivateCosmetic?: () => void;
   readOnly?: boolean;
 }
 
-export function ItemModal({ item, equipped, onEquip, onClose, onDeposit, readOnly = false }: Props) {
+export function ItemModal({ item, equipped, onEquip, onClose, onDeposit, onActivateCosmetic, readOnly = false }: Props) {
   const getTotalStat = (i: Item | undefined, statKey: keyof ItemStats) => {
     if (!i) return 0;
     let total = i.stats[statKey] || 0;
@@ -160,6 +162,16 @@ export function ItemModal({ item, equipped, onEquip, onClose, onDeposit, readOnl
               className="w-full bg-blue-700 hover:bg-blue-600 text-white font-bold py-2 rounded-lg shadow-lg"
             >
               📥 Enviar ao Depot
+            </button>
+          )}
+
+          {COSMETIC_DEFINITIONS[item.templateId] && onActivateCosmetic && (
+            <button
+              type="button"
+              onClick={onActivateCosmetic}
+              className="w-full animate-pulse rounded-lg border border-violet-300/60 bg-gradient-to-r from-violet-700/80 via-cyan-700/80 to-violet-700/80 py-2 font-black text-white shadow-[0_0_18px_rgba(103,232,249,.28)] transition hover:shadow-[0_0_28px_rgba(196,181,253,.55)]"
+            >
+              ✨ Ativar como Skin / Aura
             </button>
           )}
 

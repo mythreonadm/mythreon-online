@@ -112,7 +112,10 @@ export function Personagem() {
       <StatAllocation />
       <CharacterCustomization />
 
-      {inspectItem && <ItemModal item={inspectItem} equipped={slotPicker ? character.equipped[slotPicker] : undefined} onEquip={() => {
+      {inspectItem && <ItemModal item={inspectItem} equipped={slotPicker ? character.equipped[slotPicker] : undefined} onActivateCosmetic={() => {
+        const result = useGameStore.getState().activateCosmetic(inspectItem.templateId);
+        if (result.success) setInspectItem(null); else alert(result.error);
+      }} onEquip={() => {
         const res = useGameStore.getState().equip(inspectItem.uid);
         if (res.success) { setInspectItem(null); setSlotPicker(null); } else alert(res.error);
       }} onClose={() => setInspectItem(null)} readOnly={!character.inventory.items.some(item => item.uid === inspectItem.uid)} />}

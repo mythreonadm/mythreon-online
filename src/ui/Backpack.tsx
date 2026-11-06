@@ -17,7 +17,7 @@ const RARITY_ORDER: Record<Rarity, number> = {
 type SortBy = "rarity" | "score" | "name";
 
 export function Backpack() {
-  const { character, equip, discardItem, depositItem, depositMany, sellSelected } = useGameStore();
+  const { character, equip, discardItem, depositItem, depositMany, sellSelected, activateCosmetic } = useGameStore();
   const online = useOnlineState(state => state.active);
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
@@ -149,6 +149,7 @@ export function Backpack() {
           equipped={equippedItem}
           onEquip={handleConfirmEquip}
           onDeposit={handleDeposit}
+          onActivateCosmetic={() => { const result = activateCosmetic(selectedItem.templateId); if (result.success) setSelectedItem(null); else alert(result.error); }}
           onClose={() => setSelectedItem(null)}
         />
       )}

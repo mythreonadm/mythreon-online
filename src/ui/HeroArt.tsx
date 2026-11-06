@@ -22,7 +22,7 @@ export function HeroArt({ attackId, appearance, cosmetics, name, context = "hunt
   const signature = primary + "|" + source;
   const showAddon = context === "boss" || context === "preview";
   const label = human && source !== HUMAN_SPRITE ? `${name} · ${visual.labels[0] ?? "skin humana"}` : name;
-  return <div data-hero-art={lineage.id} data-hero-source={source} data-hero-context={context} className={`hero-art ${visual.skinClassName} ${human ? "" : visual.matrixClassName} ${showAddon ? visual.addonClassName : ""} ${className}`}>
+  return <div data-hero-art={lineage.id} data-hero-source={source} data-hero-context={context} className={`hero-art ${visual.skinClassName} ${visual.matrixClassName} ${showAddon ? visual.addonClassName : ""} ${className}`}>
     {showAddon && visual.addonSprite ? <AssetImage src={visual.addonSprite} alt="" aria-hidden="true" className="hero-art-addon" /> : null}
     {failedBase === signature ? <span role="img" aria-label={name} className="hero-art-fallback">{lineage.emoji}</span> : <AssetImage key={source} src={source} alt={label}
       className={`hero-art-image ${imageClassName}`}
