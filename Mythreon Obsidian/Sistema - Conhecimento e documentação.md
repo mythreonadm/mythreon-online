@@ -91,6 +91,7 @@
 - [[docs/conhecimento/Pack-67-Cenarios-Visuais-das-Areas-2026-11-05|Pack 67 — Cenários visuais das áreas]]
 - [[docs/conhecimento/Pack-68-Calendario-Free-e-Recompensas-2026-11-05|Pack 68 — Calendário Free e recompensas diárias]]
 - [[docs/conhecimento/Pack-69-GIFs-de-Profissoes-2026-11-05|Pack 69 — GIFs de Mineração e Pesca]]
+- [[docs/conhecimento/Pet-Dano-Visual-2026-11-05|Pet não é alvo — correção do indicador de dano]]
 - [[docs/conhecimento/Pets-Atividades-Boss-Diario|Pets, atividades e Boss Diário]]
 - [[docs/conhecimento/Pets-Ovos-Migracao-2026-11-03|Migração de Bestas Divinas para Pets e Ovos]]
 - [[docs/conhecimento/PvP-Arena-Movel-e-Caca-2026-11-05|Arena móvel, registro PvP e recuperação de caça — 2026-11-05]]
@@ -191,6 +192,7 @@
 - [docs/conhecimento/Pack-67-Cenarios-Visuais-das-Areas-2026-11-05.md](../docs/conhecimento/Pack-67-Cenarios-Visuais-das-Areas-2026-11-05.md)
 - [docs/conhecimento/Pack-68-Calendario-Free-e-Recompensas-2026-11-05.md](../docs/conhecimento/Pack-68-Calendario-Free-e-Recompensas-2026-11-05.md)
 - [docs/conhecimento/Pack-69-GIFs-de-Profissoes-2026-11-05.md](../docs/conhecimento/Pack-69-GIFs-de-Profissoes-2026-11-05.md)
+- [docs/conhecimento/Pet-Dano-Visual-2026-11-05.md](../docs/conhecimento/Pet-Dano-Visual-2026-11-05.md)
 - [docs/conhecimento/Pets-Atividades-Boss-Diario.md](../docs/conhecimento/Pets-Atividades-Boss-Diario.md)
 - [docs/conhecimento/Pets-Ovos-Migracao-2026-11-03.md](../docs/conhecimento/Pets-Ovos-Migracao-2026-11-03.md)
 - [docs/conhecimento/PvP-Arena-Movel-e-Caca-2026-11-05.md](../docs/conhecimento/PvP-Arena-Movel-e-Caca-2026-11-05.md)
