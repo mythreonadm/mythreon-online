@@ -9,6 +9,7 @@ import { ELEMENTS } from "../data/elementalChart";
 
 export const RARITY_ORDER: Rarity[] = ["COMUM", "INCOMUM", "RARO", "EPICO", "LENDARIO"];
 export const RARITY_MULT: Record<Rarity, number> = { COMUM: 1.0, INCOMUM: 1.3, RARO: 1.7, EPICO: 2.2, LENDARIO: 3.0 };
+const ZONE_BACKPACK_DROPS: Record<number, string> = { 1: "OLD", 2: "COURO", 3: "REFORCADA", 4: "EXPLORADOR", 5: "ARCANA" };
 const AFFIX_COUNT: Record<Rarity, number> = { COMUM: 1, INCOMUM: 1, RARO: 2, EPICO: 3, LENDARIO: 4 };
 const FLAT_AFFIX_MULT: Record<Rarity, number> = { COMUM: 0.8, INCOMUM: 1, RARO: 1.35, EPICO: 1.75, LENDARIO: 2.2 };
 
@@ -141,8 +142,13 @@ export function rollDrops(enemy: Enemy, zone: Zone, _char: Character, mods: Drop
     }
   }
 
-  if (enemy.backpackDrop && chance(enemy.backpackChance ?? 0)) {
-    const bp = makeBackpack(enemy.backpackDrop, zone.tier);
+  // Bolsas são drops de progressão: chefes mantêm as chances configuradas;
+  // encontros Elite e criaturas de 3+ estrelas também podem revelar a bolsa
+  // regional, para que ela não fique presa a um único boss.
+  const regionalBackpack = enemy.backpackDrop ?? ((enemy.isBoss || enemy.isElite || enemy.difficulty >= 3) ? ZONE_BACKPACK_DROPS[zone.tier] : undefined);
+  const regionalBackpackChance = enemy.backpackChance ?? (enemy.isBoss ? 0.08 : enemy.isElite ? 0.04 : enemy.difficulty >= 3 ? 0.012 : 0);
+  if (regionalBackpack && chance(regionalBackpackChance)) {
+    const bp = makeBackpack(regionalBackpack, zone.tier);
     if (bp) drops.push(bp);
   }
 

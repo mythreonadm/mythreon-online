@@ -1668,7 +1668,9 @@ function getItemScore(item) {
 
 // src/data/backpacks.ts
 var BACKPACKS = {
-  NORMAL: { templateId: "BACKPACK_NORMAL", name: "Normal Backpack", slots: 50, dropBonus: 0, rareDropBonus: 0, xpBonus: 0 },
+  // A mochila inicial precisa permitir uma sessão de caça confortável.
+  // As bolsas encontradas continuam sendo upgrades por bônus e capacidade.
+  NORMAL: { templateId: "BACKPACK_NORMAL", name: "Normal Backpack", slots: 100, dropBonus: 0, rareDropBonus: 0, xpBonus: 0 },
   OLD: { templateId: "BACKPACK_OLD", name: "Old Backpack", slots: 60, dropBonus: 0, rareDropBonus: 0, xpBonus: 0 },
   COURO: { templateId: "BACKPACK_COURO", name: "Mochila de Couro", slots: 70, dropBonus: 0, rareDropBonus: 0, xpBonus: 0.02 },
   REFORCADA: { templateId: "BACKPACK_REFORCADA", name: "Mochila Refor\xE7ada", slots: 80, dropBonus: 0.03, rareDropBonus: 0, xpBonus: 0.03 },
@@ -2240,6 +2242,7 @@ function getPoolForCategory(category) {
 // src/engine/drops.ts
 var RARITY_ORDER = ["COMUM", "INCOMUM", "RARO", "EPICO", "LENDARIO"];
 var RARITY_MULT = { COMUM: 1, INCOMUM: 1.3, RARO: 1.7, EPICO: 2.2, LENDARIO: 3 };
+var ZONE_BACKPACK_DROPS = { 1: "OLD", 2: "COURO", 3: "REFORCADA", 4: "EXPLORADOR", 5: "ARCANA" };
 var AFFIX_COUNT = { COMUM: 1, INCOMUM: 1, RARO: 2, EPICO: 3, LENDARIO: 4 };
 var FLAT_AFFIX_MULT = { COMUM: 0.8, INCOMUM: 1, RARO: 1.35, EPICO: 1.75, LENDARIO: 2.2 };
 function rollRarity(bonus = 0) {
@@ -2341,8 +2344,10 @@ function rollDrops(enemy, zone, _char, mods = { dropBonus: 0, rareBonus: 0 }) {
       if (eq) drops.push(eq);
     }
   }
-  if (enemy.backpackDrop && chance(enemy.backpackChance ?? 0)) {
-    const bp = makeBackpack(enemy.backpackDrop, zone.tier);
+  const regionalBackpack = enemy.backpackDrop ?? (enemy.isBoss || enemy.isElite || enemy.difficulty >= 3 ? ZONE_BACKPACK_DROPS[zone.tier] : void 0);
+  const regionalBackpackChance = enemy.backpackChance ?? (enemy.isBoss ? 0.08 : enemy.isElite ? 0.04 : enemy.difficulty >= 3 ? 0.012 : 0);
+  if (regionalBackpack && chance(regionalBackpackChance)) {
+    const bp = makeBackpack(regionalBackpack, zone.tier);
     if (bp) drops.push(bp);
   }
   if (enemy.uniqueDropId && chance(enemy.uniqueDropChance ?? 0)) {
@@ -2815,6 +2820,13 @@ function loadGame() {
       if (!Number.isFinite(data.character.divineBeastAttackTimerMs)) data.character.divineBeastAttackTimerMs = 0;
       if (data.character.divineBeastIncubator && (!data.character.divineBeastIncubator.eggUid || !Number.isFinite(data.character.divineBeastIncubator.completesAt))) data.character.divineBeastIncubator = void 0;
       if (!data.character.depot) data.character.depot = [];
+      if (!data.character.inventory?.backpack) data.character.inventory = { backpack: { ...DEFAULT_BACKPACK }, items: data.character.inventory?.items ?? [] };
+      const savedBackpack = data.character.inventory.backpack;
+      if (savedBackpack.templateId === DEFAULT_BACKPACK.templateId) {
+        data.character.inventory.backpack = { ...DEFAULT_BACKPACK, ...savedBackpack, slots: Math.max(DEFAULT_BACKPACK.slots, Number(savedBackpack.slots) || 0) };
+        const equippedBackpack = data.character.equipped?.BACKPACK;
+        if (equippedBackpack?.templateId === DEFAULT_BACKPACK.templateId) equippedBackpack.slots = data.character.inventory.backpack.slots;
+      }
       if (!data.character.farm || !Array.isArray(data.character.farm.plots)) data.character.farm = { plots: [{ id: "plot-1", fertility: 100 }], unlockedPlots: 1, skills: { planting: 0, harvesting: 0, irrigation: 0, fertility: 0 }, lastActionAt: Date.now() };
       data.character.professions ??= { mining: 0, fishing: 0, lastMiningAt: 0, lastFishingAt: 0 };
       data.character.professions.mining ??= 0;
@@ -4691,7 +4703,14 @@ function createGameStore(runtime = {}) {
       const egg = character.inventory.items.find((item) => item.uid === uid);
       if (!egg || !DIVINE_BEAST_EGG_TEMPLATES[egg.templateId]) return { success: false, error: "Escolha um Ovo de Besta Divina." };
       const now = runtimeNow();
-      const incubator = character.divineBeastIncubator;
+      const savedIncubator = character.divineBeastIncubator;
+      const incubator = savedIncubator && character.inventory.items.some((item) => item.uid === savedIncubator.eggUid) ? savedIncubator : void 0;
+      if (savedIncubator && !incubator) {
+        const repaired = structuredClone(character);
+        repaired.divineBeastIncubator = void 0;
+        set({ character: repaired });
+        get().save();
+      }
       if (!incubator) {
         const next2 = structuredClone(character);
         next2.divineBeastIncubator = { eggUid: uid, tier: egg.tier, startedAt: now, completesAt: now + eggIncubationMs(egg.tier) };

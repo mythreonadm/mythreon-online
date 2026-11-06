@@ -88,6 +88,7 @@
 - [supabase/migrations/017_card_season_rewards.sql](../supabase/migrations/017_card_season_rewards.sql)
 - [supabase/migrations/018_online_fk_indexes.sql](../supabase/migrations/018_online_fk_indexes.sql)
 - [supabase/migrations/019_rls_initplan_hardening.sql](../supabase/migrations/019_rls_initplan_hardening.sql)
+- [supabase/migrations/020_beta_coin_grant.sql](../supabase/migrations/020_beta_coin_grant.sql)
 - [tsconfig.json](../tsconfig.json)
 - [tsconfig.node.json](../tsconfig.node.json)
 - [tsconfig.server.json](../tsconfig.server.json)

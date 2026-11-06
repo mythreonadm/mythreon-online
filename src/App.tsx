@@ -201,8 +201,8 @@ useEffect(() => {
       <OfflineModal />
       <DeathScreen />
 
-      <header className="game-header bg-arcane-panel border-b border-arcane-border px-4 py-3 sticky top-0 z-50 shadow-lg">
-        <div className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4">
+      <header className="game-header bg-arcane-panel border-b border-arcane-border px-3 py-2 sticky top-0 z-50 shadow-lg">
+        <div className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-2">
           <div className="brand-lockup game-brand-lockup">
             <a href="/?site=1" className="game-brand-link" aria-label="Voltar para o site Mythreon Online" title="Página inicial do Mythreon Online">
               <AssetImage
@@ -233,8 +233,8 @@ useEffect(() => {
         </div>
       </header>
 
-      <nav className="game-nav bg-arcane-panel/80 backdrop-blur border-b border-arcane-border sticky top-[73px] z-40" aria-label="Navegação principal de Mythreon">
-        <div className="max-w-7xl mx-auto flex flex-nowrap justify-start gap-1 overflow-x-auto px-2 py-1.5 md:flex-wrap md:justify-center md:overflow-visible">
+      <nav className="game-nav bg-arcane-panel/80 backdrop-blur border-b border-arcane-border relative z-30" aria-label="Navegação principal de Mythreon">
+        <div className="max-w-7xl mx-auto flex flex-nowrap justify-start gap-1 overflow-x-auto px-1 py-1 md:flex-wrap md:justify-center md:overflow-visible">
           {(["zona", "personagem", "backpack", "depot", "matriz", "pets", "fazenda", "profissoes", "laboratorio", "shop", "loja", "missoes", "duelos", "boss", "cards", "calendario", "wiki", "online", "ranking"] as Tab[]).map((t) => (
             <button
               key={t}

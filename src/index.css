@@ -156,13 +156,14 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
   border-color: rgba(104, 200, 189, .17) !important;
   box-shadow: 0 12px 34px rgba(0, 0, 0, .3) !important;
 }
+.game-header { min-height: 0; }
 .brand-lockup { display: flex; align-items: center; gap: 12px; min-width: 230px; }
 .brand-lockup-centered { justify-content: center; margin-bottom: 22px; }
 .game-brand-lockup { min-width: 0; gap: 14px; }
 .game-brand-link { display: inline-flex; align-items: center; border-radius: 10px; transition: filter .2s ease, transform .2s ease; }
 .game-brand-link:hover { filter: drop-shadow(0 0 12px rgba(230,181,79,.55)); transform: translateY(-1px); }
 .brand-logo { display: block; height: 56px; width: auto; max-width: min(38vw, 224px); object-fit: contain; image-rendering: pixelated; }
-.game-brand-banner { height: 84px; max-width: min(34vw, 330px); }
+.game-brand-banner { height: 64px; max-width: min(30vw, 280px); }
 .brand-logo-entry { height: 92px; max-width: 100%; }
 .brand-player-info { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
 .brand-player-info .brand-subtitle { margin-top: 0; }
@@ -200,8 +201,10 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 .rounded-lg { border-radius: 10px; }
 
 .character-vitals { align-items: center; }
-.character-vitals > div:not(.character-gold) { width: 145px; padding: 9px 10px; border: 1px solid rgba(111,148,137,.19); border-radius: 11px; background: rgba(7,13,15,.42); }
+.character-vitals { gap: 7px !important; }
+.character-vitals > div:not(.character-gold):not(.stamina-header-panel) { width: 126px; padding: 7px 8px; border: 1px solid rgba(111,148,137,.19); border-radius: 11px; background: rgba(7,13,15,.42); }
 .character-vitals > div > .h-2\.5 { height: 7px; background: #273336; }
+.stamina-header-panel { min-width: 205px !important; }
 .character-gold { align-self: stretch; padding: 0 14px; border: 1px solid rgba(214,180,106,.3); background: rgba(214,180,106,.08) !important; color: #e2c77f !important; }
 
 .quest-hunt-alert { position: relative; min-height: 34px; display: inline-flex; align-items: center; gap: 7px; padding: 5px 11px; border: 1px solid rgba(214,180,106,.42); border-radius: 10px; background: linear-gradient(145deg, rgba(214,180,106,.15), rgba(18,28,32,.94)); color: #e8d19a; font-size: 12px; font-weight: 800; transition: transform .18s ease, border-color .18s ease, background .18s ease; }
@@ -242,11 +245,12 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
   .game-brand-lockup { gap: 8px; }
   .brand-logo { height: 44px; max-width: 45vw; }
   .combat-pet-companion { left: calc(100% - 20px); bottom: 66px; margin-left: 0; transform: scale(.88); transform-origin: bottom left; }
-  .game-brand-banner { height: 62px; max-width: 62vw; }
+  .game-brand-banner { height: 54px; max-width: 58vw; }
   .brand-logo-entry { height: 80px; max-width: 100%; }
   .brand-sigil { width: 36px; height: 36px; flex-basis: 36px; }
   .character-vitals { width: 100%; gap: 7px; }
-  .character-vitals > div:not(.character-gold) { flex: 1 1 120px; width: auto; }
+  .character-vitals > div:not(.character-gold):not(.stamina-header-panel) { flex: 1 1 120px; width: auto; }
+  .stamina-header-panel { min-width: 100% !important; max-width: none !important; }
   .character-gold { min-height: 36px; }
   .game-nav { position: relative; top: auto; }
 }

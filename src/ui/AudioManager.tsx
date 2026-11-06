@@ -71,9 +71,11 @@ export function AudioManager() {
 
   return (
     <div className="fixed bottom-6 right-6 z-50">
-      <label className="mb-2 flex items-center gap-2 rounded-full border border-arcane-border bg-arcane-panel/95 px-3 py-2 shadow-xl" title={`Volume: ${Math.round(volume * 100)}%`}>
+      <label className="mb-2 flex items-center gap-1.5 rounded-full border border-arcane-border bg-arcane-panel/95 px-2.5 py-1.5 shadow-xl" title={`Volume: ${Math.round(volume * 100)}%`}>
         <span className="text-xs text-gray-300">🔉</span>
-        <input aria-label="Volume da música" type="range" min="0" max="1" step="0.05" value={volume} onChange={event => setVolume(Number(event.target.value))} className="w-24 accent-arcane-gold" />
+        <button type="button" onClick={() => setVolume(value => Math.max(0, Math.round((value - 0.05) * 20) / 20))} className="grid h-6 w-6 place-items-center rounded border border-white/10 text-sm font-black text-gray-200 hover:border-arcane-gold hover:text-arcane-gold" aria-label="Diminuir volume">−</button>
+        <input aria-label="Volume da música" type="range" min="0" max="1" step="0.05" value={volume} onChange={event => setVolume(Number(event.target.value))} className="w-20 accent-arcane-gold" />
+        <button type="button" onClick={() => setVolume(value => Math.min(1, Math.round((value + 0.05) * 20) / 20))} className="grid h-6 w-6 place-items-center rounded border border-white/10 text-sm font-black text-gray-200 hover:border-arcane-gold hover:text-arcane-gold" aria-label="Aumentar volume">+</button>
         <span className="w-8 text-right text-[10px] text-gray-400">{Math.round(volume * 100)}%</span>
       </label>
       <button 

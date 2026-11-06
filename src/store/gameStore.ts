@@ -550,7 +550,20 @@ return create<GameState>((set, get) => ({
     const egg = character.inventory.items.find(item => item.uid === uid);
     if (!egg || !DIVINE_BEAST_EGG_TEMPLATES[egg.templateId]) return { success: false, error: "Escolha um Ovo de Besta Divina." };
     const now = runtimeNow();
-    const incubator = character.divineBeastIncubator;
+    // Saves antigos podem manter a referência da incubadora depois de o ovo
+    // ter sido vendido, descartado ou recebido no depósito. Nesse caso o
+    // cartão ficava ocupado para sempre e nenhum novo ovo podia ser aberto.
+    // A referência órfã é limpa de forma idempotente antes de continuar.
+    const savedIncubator = character.divineBeastIncubator;
+    const incubator = savedIncubator && character.inventory.items.some(item => item.uid === savedIncubator.eggUid)
+      ? savedIncubator
+      : undefined;
+    if (savedIncubator && !incubator) {
+      const repaired = structuredClone(character);
+      repaired.divineBeastIncubator = undefined;
+      set({ character: repaired });
+      get().save();
+    }
     if (!incubator) {
       const next = structuredClone(character);
       next.divineBeastIncubator = { eggUid: uid, tier: egg.tier, startedAt: now, completesAt: now + eggIncubationMs(egg.tier) };

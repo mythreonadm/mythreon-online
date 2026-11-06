@@ -180,6 +180,15 @@ export function loadGame(): SaveFile | null {
       
       // Migração para o Depot
       if (!data.character.depot) data.character.depot = [];
+      // A mochila inicial foi ampliada para 100 espaços. Saves antigos com a
+      // mochila normal recebem a capacidade nova sem alterar upgrades equipados.
+      if (!data.character.inventory?.backpack) data.character.inventory = { backpack: { ...DEFAULT_BACKPACK }, items: data.character.inventory?.items ?? [] };
+      const savedBackpack = data.character.inventory.backpack;
+      if (savedBackpack.templateId === DEFAULT_BACKPACK.templateId) {
+        data.character.inventory.backpack = { ...DEFAULT_BACKPACK, ...savedBackpack, slots: Math.max(DEFAULT_BACKPACK.slots, Number(savedBackpack.slots) || 0) };
+        const equippedBackpack = data.character.equipped?.BACKPACK;
+        if (equippedBackpack?.templateId === DEFAULT_BACKPACK.templateId) equippedBackpack.slots = data.character.inventory.backpack.slots;
+      }
       if (!data.character.farm || !Array.isArray(data.character.farm.plots)) data.character.farm = { plots: [{ id: "plot-1", fertility: 100 }], unlockedPlots: 1, skills: { planting: 0, harvesting: 0, irrigation: 0, fertility: 0 }, lastActionAt: Date.now() };
       data.character.professions ??= { mining: 0, fishing: 0, lastMiningAt: 0, lastFishingAt: 0 };
       data.character.professions.mining ??= 0; data.character.professions.fishing ??= 0;

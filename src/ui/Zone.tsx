@@ -73,7 +73,8 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
   const [buffTimeLeft, setBuffTimeLeft] = useState(0);
   const [houseTab, setHouseTab] = useState<"maps" | "train" | "calendar">("maps");
   const [healTimer, setHealTimer] = useState(0);
-  const [magicCooldown, setMagicCooldown] = useState(0);
+  const [petCooldownStartedAt, setPetCooldownStartedAt] = useState<number | null>(null);
+  const [petCooldownClock, setPetCooldownClock] = useState(() => Date.now());
   const [mobilePanelOpen, setMobilePanelOpen] = useState(false);
   const [enemyImageError, setEnemyImageError] = useState(false);
   const [comboKeys, setComboKeys] = useState(() => ["S", "D", "A"].sort(() => Math.random() - .5));
@@ -98,6 +99,16 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
     const timer = window.setInterval(() => setComboClock(Date.now()), 250);
     return () => window.clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    if (petCooldownStartedAt === null) return;
+    const timer = window.setInterval(() => setPetCooldownClock(Date.now()), 100);
+    return () => window.clearInterval(timer);
+  }, [petCooldownStartedAt]);
+
+  useEffect(() => {
+    if (!isTickRunning) setPetCooldownStartedAt(null);
+  }, [isTickRunning]);
 
   useEffect(() => {
     if (!comboStartedAt || comboProgress === 0) return;
@@ -185,14 +196,6 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
   }, [character.doubleAtkUntil]);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      const tick = character.tickCount || 0;
-      setMagicCooldown(tick % magicCooldownTicks);
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [character.tickCount, magicCooldownTicks]);
-
-  useEffect(() => {
     if (healingUntil) {
       const interval = setInterval(() => {
         const remaining = Math.ceil((healingUntil - Date.now()) / 1000);
@@ -238,6 +241,7 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
       if (lastTickResult.beastDamage) {
         setPetDamage(lastTickResult.beastDamage);
         setPetAttackPulse(canAnimate);
+        setPetCooldownStartedAt(Date.now());
       }
       const timer1 = setTimeout(() => { setIsAttacking(false); setShowProjectile(false); }, canAnimate ? 600 : 150);
       const timer2 = setTimeout(() => { setIsHurt(false); setFloatingDamage(null); }, 1000);
@@ -414,10 +418,20 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
   const spellEmoji = getSpellEffect(character.activeRace?.ataqueId || "A1");
   
   const raceSkill = character.activeRace ? ATTACK_SKILLS[character.activeRace.ataqueId] : null;
+  // O motor dispara a magia nos múltiplos do cooldown. No tick 0 ela está
+  // pronta; depois de cada múltiplo o ciclo reinicia visualmente cheio para
+  // que a UI nunca mostre "PRONTA" antes do próximo disparo permitido.
+  const currentTick = Math.max(0, Number(character.tickCount ?? 0));
+  const tickPhase = currentTick % magicCooldownTicks;
+  const magicCooldown = currentTick === 0 ? 0 : (tickPhase === 0 ? magicCooldownTicks : tickPhase);
   const magicReady = magicCooldown === 0;
-  const magicPct = (magicCooldown / magicCooldownTicks) * 100;
+  const magicPct = magicReady ? 100 : (magicCooldown / magicCooldownTicks) * 100;
   const magicManaCost = raceSkill ? (raceSkill.manaCost + character.level * 2) : 0;
   const hasEnoughMana = character.mp >= magicManaCost;
+  const petCooldownDurationMs = Math.max(1, (activeBond?.cooldownSeconds ?? 5) * 1000);
+  const petElapsedMs = petCooldownStartedAt === null ? petCooldownDurationMs : Math.max(0, petCooldownClock - petCooldownStartedAt);
+  const petRemainingMs = Math.max(0, petCooldownDurationMs - petElapsedMs);
+  const petProgress = Math.max(0, Math.min(100, petElapsedMs / petCooldownDurationMs * 100));
 
   const activeVialCount = Object.keys(character.activeVials).filter(id => character.activeVials[id] > Date.now()).length;
   const validCosmetics = ownedCosmeticLoadout(character);
@@ -503,7 +517,7 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
           <div className="relative z-20 flex justify-between items-end px-4 md:px-20 pb-8 md:pb-12 h-[300px] md:h-[500px]">
             <div className="flex flex-col items-center relative translate-y-2 md:translate-y-4">
               
-              {activeBond && <div className={`combat-pet-companion ${cosmeticVisual.petClassName} absolute bottom-16 left-full ml-1 flex w-24 md:ml-4 md:w-32 flex-col items-center ${petAttackPulse ? "animate-pulse drop-shadow-[0_0_22px_rgba(45,212,191,.95)]" : ""}`} title={`${activeBond.beast.name} · ${activeBond.element} · ataque a cada ${activeBond.cooldownSeconds}s`}><div className="relative grid h-24 w-24 place-items-center md:h-36 md:w-36">{!petImageError ? <AssetImage removeWhite src={activeBond.beast.sprite} alt={activeBond.beast.name} className="h-full w-full object-contain [image-rendering:pixelated]" onAllSourcesFail={() => setPetImageError(true)} /> : <span className="text-6xl leading-none drop-shadow-lg md:text-8xl" role="img" aria-label={activeBond.beast.name}>{activeBond.beast.emoji}</span>}</div><span className="rounded bg-black/75 px-2 text-center text-[10px] font-bold text-arcane-gold">{activeBond.beast.name}</span><span className="mt-0.5 rounded-full border border-cyan-300/30 bg-black/60 px-1.5 py-0.5 text-[8px] text-cyan-100">✦ Pet ativo · {activeBond.cooldownSeconds}s</span></div>}
+              {activeBond && <div className={`combat-pet-companion ${cosmeticVisual.petClassName} absolute bottom-16 left-full ml-1 flex w-24 md:ml-4 md:w-32 flex-col items-center ${petAttackPulse ? "animate-pulse drop-shadow-[0_0_22px_rgba(45,212,191,.95)]" : ""}`} title={`${activeBond.beast.name} · ${activeBond.element} · ataque a cada ${activeBond.cooldownSeconds}s`}><div className="relative grid h-24 w-24 place-items-center md:h-36 md:w-36">{!petImageError ? <AssetImage removeWhite src={activeBond.beast.sprite} alt={activeBond.beast.name} className="h-full w-full object-contain [image-rendering:pixelated]" onAllSourcesFail={() => setPetImageError(true)} /> : <span className="text-6xl leading-none drop-shadow-lg md:text-8xl" role="img" aria-label={activeBond.beast.name}>{activeBond.beast.emoji}</span>}</div><span className="rounded bg-black/75 px-2 text-center text-[10px] font-bold text-arcane-gold">{activeBond.beast.name}</span><div className="mt-1 w-full rounded border border-cyan-300/30 bg-black/70 px-1.5 py-1" aria-label={`Próximo ataque do pet em ${Math.ceil(petRemainingMs / 1000)} segundos`}><div className="flex items-center justify-between text-[8px] font-bold text-cyan-100"><span>✦ Ataque do pet</span><span>{petRemainingMs > 0 ? `${Math.ceil(petRemainingMs / 1000)}s` : "PRONTO"}</span></div><div className="mt-1 h-1 overflow-hidden rounded-full bg-black/80"><div className="h-full rounded-full bg-gradient-to-r from-cyan-400 via-emerald-300 to-arcane-gold transition-[width] duration-100" style={{ width: `${petProgress}%` }} /></div></div></div>}
               {/* SPRITE DO JOGADOR (Agora baseado na Linhagem) */}
               <HeroArt name={character.name} attackId={character.activeRace?.ataqueId} appearance={character.appearance} cosmetics={validCosmetics} context="hunt" className={`combat-sprite combat-sprite-player w-24 h-24 md:w-40 md:h-40 transition-transform ${weaponAnimClass}`} imageClassName="drop-shadow-[0_10px_10px_rgba(0,0,0,0.8)]" />
 

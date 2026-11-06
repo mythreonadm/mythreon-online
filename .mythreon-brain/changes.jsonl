@@ -365,3 +365,7 @@
 {"at":"2026-11-06T02:03:26.267Z","files":[{"path":"public/assets/pets/divine-beast-nyr.png","status":"changed"}]}
 {"at":"2026-11-06T02:03:41.323Z","files":[{"path":"public/assets/pets/divine-beast-veyra.png","status":"changed"}]}
 {"at":"2026-11-06T02:03:59.885Z","files":[{"path":"public/assets/pets/divine-beast-void.png","status":"changed"}]}
+{"at":"2026-11-06T02:20:35.231Z","files":[{"path":"src/App.tsx","status":"changed"},{"path":"src/index.css","status":"changed"},{"path":"src/ui/AudioManager.tsx","status":"changed"},{"path":"src/ui/CharacterPanel.tsx","status":"changed"},{"path":"src/ui/Zone.tsx","status":"changed"}]}
+{"at":"2026-11-06T02:23:27.697Z","files":[{"path":"src/ui/Zone.tsx","status":"changed"}]}
+{"at":"2026-11-06T02:28:25.612Z","files":[{"path":"src/data/backpacks.ts","status":"changed"},{"path":"src/engine/drops.ts","status":"changed"},{"path":"src/engine/save.ts","status":"changed"}]}
+{"at":"2026-11-06T02:40:25.676Z","files":[{"path":"server/generated/online-runtime.cjs","status":"changed"},{"path":"src/store/gameStore.ts","status":"changed"},{"path":"src/ui/DivineBeasts.tsx","status":"changed"},{"path":"supabase/migrations/020_beta_coin_grant.sql","status":"added"}]}
