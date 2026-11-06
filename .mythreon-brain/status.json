@@ -1,10 +1,10 @@
 {
-  "at": "2026-11-06T07:42:27.880Z",
+  "at": "2026-11-06T07:58:16.508Z",
   "status": "ok",
-  "pid": 21024,
-  "files": 804,
+  "pid": 2748,
+  "files": 814,
   "notes": 98,
-  "changed": 48,
+  "changed": 6,
   "warnings": [],
   "message": "98 notas originais catalogadas. Decisões e explicações são mantidas em docs/conhecimento."
 }

@@ -12,10 +12,7 @@
 - [docs/conhecimento/Stamina-Compras-e-Barra-2026-11-05.md](../docs/conhecimento/Stamina-Compras-e-Barra-2026-11-05.md)
 - [docs/conhecimento/Treino-e-Diferenciais-Mythreon.md](../docs/conhecimento/Treino-e-Diferenciais-Mythreon.md)
 - [experimental/12 - Prompt Universal de Documentação.md](../experimental/12 - Prompt Universal de Documentação.md)
-- [experimental/20261106-wave-backup/Zone.tsx](../experimental/20261106-wave-backup/Zone.tsx) — ZoneView
-- [experimental/20261106-wave-backup/combat.ts](../experimental/20261106-wave-backup/combat.ts) — buildProfile, processTick
-- [experimental/20261106-wave-backup/gameStore.ts](../experimental/20261106-wave-backup/gameStore.ts) — GameState, createGameStore, useGameStore
-- [experimental/20261106-wave-backup/index.ts](../experimental/20261106-wave-backup/index.ts) — Rarity, SlotType, ItemCategory, ComponentType, Law, Element, CardTrait, CardRarity, Precision, CardStats, CardTemplate, CardInstance
+- [experimental/WIKI_COMPLETION_MYTHREON.md](../experimental/WIKI_COMPLETION_MYTHREON.md)
 - [experimental/wave-hunt/WAVE_HUNT_ART_PROMPTS.md](../experimental/wave-hunt/WAVE_HUNT_ART_PROMPTS.md)
 - [experimental/wave-hunt/WAVE_HUNT_PACK.md](../experimental/wave-hunt/WAVE_HUNT_PACK.md)
 - [public/assets/items/BACKPACK_EXPLORADOR.png](../public/assets/items/BACKPACK_EXPLORADOR.png)

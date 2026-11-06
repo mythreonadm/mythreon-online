@@ -20,13 +20,22 @@ import { ELEMENTS, elementMultiplier } from "../data/elementalChart";
 import { PERCENT_AFFIX_RANGES, STAT_NAMES } from "../data/affixes";
 import { MYTHREON_JOURNAL, journalKindClass } from "../data/mythreonJournal";
 import { itemAssetCandidates } from "../data/itemAssets";
+import { FARM_SEEDS, FARM_RECIPES, farmExpansionCost, FARM_MAX_PLOTS } from "../data/farm";
+import { MYTHREON_ECONOMY, MYTHREON_OFFERS, MYTHREON_DONATION_PACKS, MYTHREON_PREMIUM_PLANS, PREMIUM_BENEFITS } from "../data/mythreonEconomy";
+import { UNIQUE_ENCHANTMENTS } from "../data/enchantments";
+import { DAILY_BOSS_TEMPLATES } from "../data/dailyBoss";
+import { ONLINE_CHEST_MILESTONES } from "../data/onlineChest";
+import { MINING_NODES, FISHING_SPOTS, PROFESSION_TOOL_SHOP, PROFESSION_RECIPES } from "../data/professions";
+import { CALENDAR_DAILY_REWARDS, CALENDAR_MONTHLY_REWARDS, CALENDAR_COUPON_PRICE } from "../data/dailyCalendar";
+import { CARD_TEMPLATES } from "../data/cards";
+import { STAMINA_ONLINE_MAX, STAMINA_OFFLINE_MAX, STAMINA_PRETEST_UNLIMITED, staminaGoldCost } from "../data/stamina";
 
 const PERCENT_STATS = new Set(["crit", "hit", "dge", "spd", "blk", "resFisico", "resMagico", "critDmg", "lifesteal"]);
 function formatWikiStat(stat: string, value: number) {
   return PERCENT_STATS.has(stat) && Math.abs(value) <= 1 ? `${(value * 100).toFixed(0)}%` : value.toLocaleString("pt-BR");
 }
 
-type Section = "journey" | "history" | "journal" | "beasts" | "monsters" | "zones" | "equipment" | "elements" | "consumables" | "components" | "races" | "bosses" | "backpacks" | "fragments" | "balance" | "professions" | "calendar" | "cosmetics" | "cards";
+type Section = "journey" | "history" | "journal" | "beasts" | "monsters" | "zones" | "equipment" | "elements" | "consumables" | "components" | "races" | "bosses" | "backpacks" | "fragments" | "balance" | "professions" | "calendar" | "cosmetics" | "cards" | "waves" | "online" | "economy" | "farm" | "bossPvp" | "enchantments" | "progression";
 
 const SECTION_META: { id: Section; label: string; icon: string; color: string }[] = [
   { id: "cards", label: "Cards & Evolução", icon: "🎴", color: "text-violet-300" },
@@ -48,6 +57,13 @@ const SECTION_META: { id: Section; label: string; icon: string; color: string }[
   { id: "backpacks", label: "Mochilas", icon: "🎒", color: "text-green-400" },
   { id: "fragments", label: "Fragmentos", icon: "💎", color: "text-cyan-400" },
   { id: "balance", label: "Balanceamento", icon: "📊", color: "text-amber-300" },
+  { id: "waves", label: "Ondas de Caça", icon: "🌊", color: "text-cyan-300" },
+  { id: "progression", label: "Progressão & Stamina", icon: "⚡", color: "text-emerald-300" },
+  { id: "farm", label: "Fazenda & Receitas", icon: "🌾", color: "text-lime-300" },
+  { id: "online", label: "Mundo Online", icon: "🌐", color: "text-sky-300" },
+  { id: "economy", label: "Economia & Loja", icon: "💰", color: "text-amber-300" },
+  { id: "bossPvp", label: "Boss Diário & PvP", icon: "🏟️", color: "text-red-300" },
+  { id: "enchantments", label: "Encantamentos", icon: "🔮", color: "text-violet-300" },
 ];
 
 function getComponentSources(componentId: string) {
@@ -79,7 +95,7 @@ export function Wiki() {
           </div>
           <div className="text-right text-xs text-gray-500">
             <div>Arquivo da Cúpula Sinax</div>
-            <div className="text-arcane-cyan font-bold">Tomo I · v1.3 · dados do servidor</div>
+            <div className="text-arcane-cyan font-bold">Tomo I · v1.4 · dados do servidor</div>
           </div>
         </div>
         {section !== "history" && (
@@ -131,6 +147,13 @@ export function Wiki() {
         {section === "backpacks" && <BackpacksSection search={search} />}
         {section === "fragments" && <FragmentsSection search={search} />}
         {section === "balance" && <BalanceSection />}
+        {section === "waves" && <WaveHuntWikiSection search={search} />}
+        {section === "progression" && <ProgressionWikiSection />}
+        {section === "farm" && <FarmWikiSection search={search} />}
+        {section === "online" && <OnlineSystemsWikiSection />}
+        {section === "economy" && <EconomyWikiSection />}
+        {section === "bossPvp" && <BossPvpWikiSection />}
+        {section === "enchantments" && <EnchantmentsWikiSection search={search} />}
       </div>
     </div>
   );
@@ -1132,6 +1155,82 @@ function JournalSection() {
     </section>
     <div className="space-y-3">{MYTHREON_JOURNAL.map(entry => <article key={entry.id} className="rounded-xl border border-white/10 bg-arcane-panel p-4 transition-colors hover:border-cyan-300/30"><div className="flex flex-wrap items-start justify-between gap-3"><div><span className={`inline-flex rounded-full border px-2 py-1 text-[10px] font-black uppercase tracking-wider ${journalKindClass(entry.kind)}`}>{entry.kind}</span><h3 className="mt-2 text-lg font-bold text-white">{entry.title}</h3></div><time className="text-xs font-bold text-gray-500">{entry.date}</time></div><p className="mt-2 text-sm font-semibold text-cyan-100">{entry.summary}</p><p className="mt-2 text-sm leading-relaxed text-gray-400">{entry.body}</p><div className="mt-3 flex flex-wrap gap-2">{entry.tags.map(tag => <span key={tag} className="rounded-full border border-white/10 bg-black/20 px-2 py-1 text-[10px] text-gray-400">#{tag}</span>)}</div></article>)}</div>
   </div>;
+}
+
+function WikiStatus({ kind, children }: { kind: "ATIVO" | "EM TESTE" | "PLANEJADO"; children: React.ReactNode }) {
+  const tone = kind === "ATIVO" ? "border-emerald-400/30 bg-emerald-950/20 text-emerald-200" : kind === "EM TESTE" ? "border-amber-400/30 bg-amber-950/20 text-amber-200" : "border-slate-400/20 bg-slate-900/40 text-slate-300";
+  return <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[9px] font-black uppercase tracking-wider ${tone}`}><span>●</span>{kind}<span className="ml-1 font-normal normal-case tracking-normal">{children}</span></span>;
+}
+
+function WikiCard({ title, status, children, className = "" }: { title: string; status?: React.ReactNode; children: React.ReactNode; className?: string }) {
+  return <article className={`rounded-xl border border-white/10 bg-arcane-panel p-4 ${className}`}><div className="mb-2 flex flex-wrap items-start justify-between gap-2"><h3 className="text-base font-black text-white">{title}</h3>{status}</div>{children}</article>;
+}
+
+function WaveHuntWikiSection({ search }: { search: string }) {
+  const filtered = Object.values(ZONES).filter(zone => `${zone.name} ${zone.id}`.toLowerCase().includes(search.toLowerCase()));
+  const stages = [
+    ["Onda 1/4 · Capanga fácil", "Um alvo reduzido para iniciar o ciclo", "62% HP · 62% ATK · 55% XP/gold"],
+    ["Onda 2/4 · Capanga reforçado", "O segundo encontro acelera a pressão", "82% HP/ATK · 72% XP/gold"],
+    ["Onda 3/4 · Dupla", "Dois capangas em sequência, com variação visual A/B", "98–104% HP/ATK · 86–92% XP/gold"],
+    ["Onda 4/4 · Chefe da linhagem", "O encontro final fecha o ciclo e reinicia no capanga fácil", "175% HP · 148% ATK · 145% XP · 135% gold"],
+  ];
+  return <div className="space-y-5">
+    <section className="rounded-xl border border-cyan-300/30 bg-[radial-gradient(ellipse_at_top_right,rgba(6,182,212,.14),transparent_55%),#10151a] p-5"><div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-[10px] font-black uppercase tracking-[.22em] text-cyan-300">Loop de caça</p><h2 className="mt-1 text-2xl font-black text-white">🌊 Ondas de Caça</h2></div><WikiStatus kind="ATIVO">5 encontros internos por ciclo</WikiStatus></div><p className="mt-3 max-w-4xl text-sm leading-relaxed text-gray-300">Escolher um monstro fixa a sua linhagem de encontros. A caça não salta diretamente para o chefe: ela percorre uma progressão de capangas, entrega XP e gold em cada vitória e conserva o progresso no servidor. Os capangas têm apenas 1% de chance de soltar o componente do mapa; o chefe mantém as recompensas completas.</p></section>
+    <div className="grid gap-3 md:grid-cols-2">{stages.map(([title, desc, scale]) => <WikiCard key={title} title={title}><p className="text-xs text-gray-300">{desc}</p><p className="mt-2 text-[11px] font-bold text-cyan-200">Escala: {scale}</p><p className="mt-2 text-[10px] text-gray-500">Assets suportados: <code>{"MONSTRO_W1.png"}</code>, <code>{"_W2.png"}</code>, <code>{"_W3A.png"}</code>, <code>{"_W3B.png"}</code>, <code>{"_BOSS.png"}</code>.</p></WikiCard>)}</div>
+    <WikiCard title="Leitura por bioma" status={<WikiStatus kind="ATIVO">dados das zonas</WikiStatus>}><div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{filtered.map(zone => <div key={zone.id} className="rounded-lg border border-white/10 bg-black/20 p-3"><strong className="text-sm text-arcane-gold">{zone.name}</strong><p className="mt-1 text-[10px] text-gray-400">{zone.enemies.length} criaturas catalogadas · nível {zone.minLevel}–{zone.maxLevel}</p><p className="mt-1 text-[10px] text-cyan-200">Cada criatura não-chefe pode iniciar a sequência de ondas.</p></div>)}</div></WikiCard>
+    <WikiCard title="Bestiário e autoloot"><p className="text-xs leading-relaxed text-gray-300">O contador de mortes acompanha a criatura. Ao chegar a <strong className="text-amber-200">1.000 abates</strong>, os drops são revelados no autoloot e podem ser marcados para coletar, ignorar ou vender automaticamente (venda automática exige Premium).</p></WikiCard>
+  </div>;
+}
+
+function ProgressionWikiSection() {
+  return <div className="space-y-5">
+    <WikiCard title="⚡ Stamina online e offline" status={<WikiStatus kind="ATIVO">beta</WikiStatus>}><p className="text-xs leading-relaxed text-gray-300">A stamina online limita a caça durante a sessão e a offline guarda progresso para quando você retornar. Os limites atuais são <strong className="text-emerald-200">{STAMINA_ONLINE_MAX} minutos online</strong> e <strong className="text-violet-200">{STAMINA_OFFLINE_MAX} minutos offline</strong>. A recuperação, o aviso de bolsa cheia e a pausa por stamina esgotada aparecem no registro de combate.</p><div className="mt-3 grid gap-2 sm:grid-cols-3"><div className="rounded border border-white/10 p-2 text-xs">Compra em gold: a partir de <strong className="text-amber-200">{staminaGoldCost(1).toLocaleString("pt-BR")}</strong></div><div className="rounded border border-white/10 p-2 text-xs">Compra em Mythreon Coins: recarga maior</div><div className="rounded border border-white/10 p-2 text-xs">Pré-teste: {STAMINA_PRETEST_UNLIMITED ? "compras ilimitadas" : "limites diários"}</div></div></WikiCard>
+    <WikiCard title="Combate manual e Ritmo da Essência"><p className="text-xs leading-relaxed text-gray-300">O ataque básico continua automático. O jogador pode acertar um combo aleatório de três teclas A/S/D dentro da janela de precisão. Ouro, prata e bronze representam a qualidade do tempo; o acerto gera um segundo hit separado e soma o dano bônus ao golpe principal. A magia de classe respeita o cooldown e o pet possui cadência própria de 5 segundos.</p><div className="mt-3 grid gap-2 md:grid-cols-3"><div className="rounded border border-amber-300/30 bg-amber-950/15 p-2 text-xs"><strong className="text-amber-200">Ouro</strong><p className="mt-1 text-gray-400">janela perfeita · bônus máximo</p></div><div className="rounded border border-slate-300/20 bg-slate-900/30 p-2 text-xs"><strong className="text-slate-200">Prata</strong><p className="mt-1 text-gray-400">janela intermediária · dano normal</p></div><div className="rounded border border-orange-700/30 bg-orange-950/15 p-2 text-xs"><strong className="text-orange-200">Bronze</strong><p className="mt-1 text-gray-400">janela final · bônus reduzido</p></div></div></WikiCard>
+    <WikiCard title="Treino, atributos e Gear Score"><p className="text-xs leading-relaxed text-gray-300">Treino automático evolui lentamente e treino manual acelera a habilidade por meio de tarefas e combos. Cada nível concede pontos de atributo; o jogador decide entre força física, magia, defesa, resistências, regeneração e velocidade. O Gear Score é a soma ponderada de itens, upgrades, matriz, treino, pets, cartas, resistências e bônus ativos — mede poder de batalha, não apenas raridade.</p></WikiCard>
+    <WikiCard title="Morte, Bless e bolsa"><p className="text-xs leading-relaxed text-gray-300">Sem Bless, a morte pode derrubar a bolsa e ter chance de remover item do set. O Anel da Guarda Eterna evita a perda. Bless é comprado por nível e a bolsa inicial tem 100 espaços; quando cheia, o próximo loot é avisado antes de ser perdido.</p></WikiCard>
+  </div>;
+}
+
+function FarmWikiSection({ search }: { search: string }) {
+  const seeds = FARM_SEEDS.filter(seed => `${seed.name} ${seed.yieldName}`.toLowerCase().includes(search.toLowerCase()));
+  const recipes = FARM_RECIPES.filter(recipe => `${recipe.name} ${recipe.outputName}`.toLowerCase().includes(search.toLowerCase()));
+  return <div className="space-y-5">
+    <section className="rounded-xl border border-lime-300/30 bg-lime-950/10 p-5"><div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-[10px] font-black uppercase tracking-[.22em] text-lime-300">Vocação de Mythreon</p><h2 className="mt-1 text-2xl font-black text-white">🌾 Fazenda de Lyss</h2></div><WikiStatus kind="ATIVO">{FARM_MAX_PLOTS} canteiros máximos</WikiStatus></div><p className="mt-3 text-sm leading-relaxed text-gray-300">Plante, regue, colha e transforme alimentos para pets e poções. Plantio e Colheita são skills próprias: cada ação concluída aumenta o nível e reduz o tempo de coleta, além de poder melhorar a quantidade produzida.</p></section>
+    <WikiCard title="Expansão dos terrenos"><div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4"><div className="rounded border border-emerald-400/30 bg-emerald-950/10 p-3 text-xs"><strong className="text-emerald-200">1º terreno</strong><p className="mt-1 text-gray-400">Grátis</p></div><div className="rounded border border-amber-300/20 p-3 text-xs"><strong className="text-amber-200">2º terreno</strong><p className="mt-1 text-gray-400">1.000 gold</p></div><div className="rounded border border-amber-300/20 p-3 text-xs"><strong className="text-amber-200">3º e 4º</strong><p className="mt-1 text-gray-400">25.000 / 100.000 gold</p></div><div className="rounded border border-violet-300/20 p-3 text-xs"><strong className="text-violet-200">5º em diante</strong><p className="mt-1 text-gray-400">500 Mythreon Coins cada</p></div></div><p className="mt-2 text-[10px] text-gray-500">A regra de custo no servidor: {farmExpansionCost(1)?.label}, {farmExpansionCost(2)?.label}, {farmExpansionCost(3)?.label}, depois {farmExpansionCost(4)?.label}.</p></WikiCard>
+    <WikiCard title="Sementes e tempo de crescimento"><div className="grid gap-2 md:grid-cols-2">{seeds.map(seed => <div key={seed.id} className="rounded-lg border border-white/10 bg-black/20 p-3"><div className="flex justify-between gap-2"><strong className="text-white">{seed.icon} {seed.name}</strong><span className="text-[10px] text-lime-200">{Math.round(seed.growMs / 60_000)} min</span></div><p className="mt-1 text-xs text-gray-400">Colheita: {seed.yieldIcon} {seed.yieldName} ×{seed.yieldQty} · compra {seed.cost} gold</p></div>)}</div></WikiCard>
+    <WikiCard title="Receitas de refinamento"><div className="grid gap-2 md:grid-cols-2">{recipes.map(recipe => <div key={recipe.id} className="rounded-lg border border-white/10 bg-black/20 p-3"><strong className="text-arcane-gold">{recipe.icon} {recipe.name}</strong><p className="mt-1 text-[11px] text-gray-400">{recipe.ingredients.map(item => `${item.quantity}× ${item.name}`).join(" + ")} → {recipe.outputQuantity}× {recipe.outputName}</p><p className="mt-1 text-[10px] text-emerald-200">Valor de venda base: {recipe.sellValue ? `${recipe.sellValue.toLocaleString("pt-BR")} gold` : "fertilidade (composto)"}</p></div>)}</div></WikiCard>
+  </div>;
+}
+
+function OnlineSystemsWikiSection() {
+  return <div className="space-y-5">
+    <WikiCard title="🌐 Conta e sincronização" status={<WikiStatus kind="ATIVO">Supabase</WikiStatus>}><p className="text-xs leading-relaxed text-gray-300">Cadastro por e-mail e Google cria uma conta online com até três personagens vinculados. O progresso é salvo no servidor para PC, celular e cliente instalado. O jogo usa ações idempotentes e confirmação por operação, enquanto a interface mantém o estado local responsivo.</p></WikiCard>
+    <WikiCard title="Comunidade e comunicação"><p className="text-xs leading-relaxed text-gray-300">A aba Comunidade reúne Chat Mundial, Chat de Trade e Chat de Help, além de mensagens privadas, VIP/amigos, correio e trocas. Qualquer item pode ser <strong className="text-cyan-200">linkado no chat</strong> ou anunciado no Trade por gold e Mythreon Coins. A troca usa bag de envio, reserva de itens/gold, revisão que invalida OKs e confirmação dos dois lados.</p></WikiCard>
+    <WikiCard title="Mercado Online e histórico"><p className="text-xs leading-relaxed text-gray-300">O Mercado Negro/Market Online registra anúncios, vendas concluídas, preço médio, unidades negociadas e identificação de vendedor/comprador. O cliente nunca credita moedas sozinho: pagamentos e entregas de valor real dependem de checkout e webhook no servidor.</p><div className="mt-3 grid gap-2 sm:grid-cols-3"><div className="rounded border border-white/10 p-2 text-xs">Venda por gold</div><div className="rounded border border-white/10 p-2 text-xs">Venda por Mythreon Coins</div><div className="rounded border border-white/10 p-2 text-xs">Taxa e auditoria de troca</div></div></WikiCard>
+    <WikiCard title="Cards colecionáveis"><p className="text-xs leading-relaxed text-gray-300">Cada monstro pode revelar um Card próprio com traço e atributos. A coleção mostra apenas um exemplar por criatura; repetidos ficam na Bolsa de Cards e quatro repetidos podem ser consumidos na roleta para receber um card aleatório de raridade igual ou superior conforme a tabela de chance.</p><p className="mt-2 text-[10px] text-gray-500">Catálogo atual: {Object.keys(CARD_TEMPLATES).length} templates.</p></WikiCard>
+  </div>;
+}
+
+function EconomyWikiSection() {
+  return <div className="space-y-5">
+    <section className="rounded-xl border border-amber-300/30 bg-amber-950/10 p-5"><div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-[10px] font-black uppercase tracking-[.22em] text-amber-300">Moeda rara</p><h2 className="mt-1 text-2xl font-black text-white">💰 Mythreon Shards e Coins</h2></div><WikiStatus kind="ATIVO">economia centralizada</WikiStatus></div><p className="mt-3 text-sm text-gray-300">Shards caem de seres vivos em baixa taxa e melhoram com dificuldade/nível. A refinaria converte <strong className="text-cyan-200">{MYTHREON_ECONOMY.shardsPerCoin} Shards em 1 Coin</strong>; também existe custo em gold de <strong className="text-amber-200">{MYTHREON_ECONOMY.goldPerCoin.toLocaleString("pt-BR")} gold por Coin</strong>. A taxa base de drop é {(MYTHREON_ECONOMY.shardBaseChance * 100).toFixed(2)}%.</p></section>
+    <WikiCard title="Loja Mythreon"><div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">{MYTHREON_OFFERS.map(offer => <div key={offer.id} className="rounded-lg border border-white/10 bg-black/20 p-3"><div className="flex justify-between gap-2"><strong className="text-sm text-white">{offer.icon} {offer.name}</strong><span className="text-[10px] font-bold text-amber-200">{offer.priceCoins} MC</span></div><p className="mt-1 text-[10px] text-gray-400">{offer.description}</p></div>)}</div></WikiCard>
+    <WikiCard title="Apoio e Premium"><p className="text-xs leading-relaxed text-gray-300">As doações são pacotes comerciais; o navegador não credita moedas. A entrega deve ocorrer após confirmação do checkout. Premium oferece conveniência, não vitória automática:</p><div className="mt-2 grid gap-2 sm:grid-cols-2">{PREMIUM_BENEFITS.map(benefit => <div key={benefit} className="rounded border border-white/10 bg-black/20 p-2 text-xs text-gray-300">✓ {benefit}</div>)}</div><div className="mt-3 flex flex-wrap gap-2">{MYTHREON_DONATION_PACKS.map(pack => <span key={pack.id} className="rounded-full border border-amber-300/20 px-2 py-1 text-[10px] text-amber-100">R$ {pack.priceBRL.toFixed(2)} · {pack.coins.toLocaleString("pt-BR")} MC</span>)}{MYTHREON_PREMIUM_PLANS.map(plan => <span key={plan.id} className="rounded-full border border-violet-300/20 px-2 py-1 text-[10px] text-violet-100">{plan.name} · R$ {plan.priceBRL.toFixed(2)}</span>)}</div></WikiCard>
+    <WikiCard title="Baú por tempo online"><div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">{ONLINE_CHEST_MILESTONES.map(milestone => <div key={milestone.id} className="rounded border border-white/10 bg-black/20 p-2 text-center text-xs"><strong className="text-arcane-gold">🎁 {milestone.label}</strong><p className="mt-1 text-gray-400">{milestone.gold.toLocaleString("pt-BR")} gold + {milestone.shards} Shard(s)</p></div>)}</div><p className="mt-2 text-[10px] text-gray-500">Os marcos reiniciam em UTC uma vez por dia e cada marco só pode ser coletado uma vez.</p></WikiCard>
+  </div>;
+}
+
+function BossPvpWikiSection() {
+  return <div className="space-y-5">
+    <WikiCard title="🏟️ Boss Diário cooperativo" status={<WikiStatus kind="EM TESTE">arena online</WikiStatus>}><p className="text-xs leading-relaxed text-gray-300">Três ciclos UTC (manhã, tarde e noite) escolhem uma fera da tabela. O HP é escalado para a quantidade de participantes; o dano individual, o tempo de participação e o hit final determinam o pacote de loot. Mesmo quando o tempo expira, quem participou recebe uma recompensa reduzida. Ao derrotar o boss, todos os participantes ganham o bônus de XP até o próximo ciclo.</p><div className="mt-3 grid gap-2 md:grid-cols-3">{DAILY_BOSS_TEMPLATES.map(template => <div key={template.id} className="rounded border border-red-300/20 bg-red-950/10 p-2"><strong className="text-red-200">{template.name}</strong><p className="mt-1 text-[10px] text-gray-400">Nv {template.level} · {template.element ?? "base"} · {template.title}</p></div>)}</div></WikiCard>
+    <WikiCard title="PvP ranqueado"><p className="text-xs leading-relaxed text-gray-300">O PvP usa o mesmo motor de dano do combate, incluindo distância, cooldowns, resistências, elementos, matriz, pet e ataque básico por velocidade. Poções ficam bloqueadas. A temporada começa com rating 1.000; vitória adiciona troféus e derrota remove troféus. O registro mostra dano causado, recebido e alvo selecionado.</p></WikiCard>
+    <WikiCard title="Guildas" status={<WikiStatus kind="PLANEJADO">próxima camada online</WikiStatus>}><p className="text-xs leading-relaxed text-gray-300">A especificação prevê níveis 0–5, doações de 10k/100k/500k gold ou Shards, atributos passivos, Guild Tokens e uma loja exclusiva. A tela só deve ser anunciada como disponível quando o backend de guilda, convites, permissões e auditoria estiverem ativos.</p></WikiCard>
+  </div>;
+}
+
+function EnchantmentsWikiSection({ search }: { search: string }) {
+  const list = Object.values(UNIQUE_ENCHANTMENTS).filter(entry => `${entry.name} ${entry.zoneId} ${entry.description}`.toLowerCase().includes(search.toLowerCase()));
+  return <div className="space-y-5"><section className="rounded-xl border border-violet-300/30 bg-violet-950/10 p-5"><div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-[10px] font-black uppercase tracking-[.22em] text-violet-300">Forja avançada</p><h2 className="mt-1 text-2xl font-black text-white">🔮 Encantamentos Únicos</h2></div><WikiStatus kind="ATIVO">um aspecto por item</WikiStatus></div><p className="mt-3 text-sm leading-relaxed text-gray-300">Cada mapa possui um aspecto próprio. Derrote criaturas para reunir a <strong className="text-violet-200">Runa Encantada</strong> da região, entregue 100 runas, gold compatível com o tier e um equipamento Incomum ou superior. Armas recebem dano elemental/status; armaduras recebem resistência. O efeito visual acompanha o item equipado.</p></section><div className="grid gap-3 md:grid-cols-2">{list.map(entry => <WikiCard key={entry.id} title={entry.name}><p className="text-[10px] uppercase tracking-wider text-gray-500">{entry.zoneId} · elemento {entry.element ?? "base"}</p><p className="mt-2 text-xs text-gray-300">{entry.description}</p><div className="mt-2 grid gap-1 text-[11px]"><div className="rounded bg-black/20 p-2 text-amber-100">Arma: {entry.weaponLabel}</div><div className="rounded bg-black/20 p-2 text-cyan-100">Armadura: {entry.armorLabel}</div>{entry.luckBonus && <div className="rounded bg-black/20 p-2 text-emerald-100">Sorte: +{(entry.luckBonus * 100).toFixed(1)}%</div>}</div><p className="mt-2 text-[10px] text-gray-500">Status: {entry.statusEffect} · visual: {entry.visualKey}</p></WikiCard>)}</div></div>;
 }
 
 // ═══════════════════════════════════════════════════════════════

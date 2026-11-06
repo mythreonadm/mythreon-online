@@ -17,7 +17,6 @@
 - [docs/conhecimento/Pack-40-PvP-Combate-por-Turnos-2026-11-04.md](../docs/conhecimento/Pack-40-PvP-Combate-por-Turnos-2026-11-04.md)
 - [docs/conhecimento/Pack-50-Arena-Visual-Boss-Cooperativo-2026-11-04.md](../docs/conhecimento/Pack-50-Arena-Visual-Boss-Cooperativo-2026-11-04.md)
 - [docs/conhecimento/PvP-Arena-Movel-e-Caca-2026-11-05.md](../docs/conhecimento/PvP-Arena-Movel-e-Caca-2026-11-05.md)
-- [experimental/20261106-wave-backup/combat.ts](../experimental/20261106-wave-backup/combat.ts) — buildProfile, processTick
 - [public/assets/backgrounds/duel.png](../public/assets/backgrounds/duel.png)
 - [scripts/daily-boss-arena-check.cjs](../scripts/daily-boss-arena-check.cjs)
 - [src/data/beastCombat.ts](../src/data/beastCombat.ts) — getBeastCombat, beastGrowth
