@@ -5,6 +5,7 @@ import { useGameStore } from "../store/gameStore";
 import { AssetImage } from "./AssetImage";
 import type { DailyBossBattle } from "../types";
 import { DailyBossArena, type BossArenaHit, type BossArenaParticipant } from "./DailyBossArena";
+import { generateId } from "../utils/id";
 
 type BossPayload = {
   run: { id: string; boss_template_id: string; boss_name: string; boss_title: string; level: number; hp_total: number; hp_remaining: number; status: "open" | "defeated" | "expired"; closes_at: string };
@@ -72,7 +73,7 @@ export function DailyBoss() {
     try {
       const response = await onlineAction(operation, { runId: boss.run.id, ...payload });
       if (response.dailyBoss) setBoss(previous => previous?.run.id === response.dailyBoss.run.id ? { ...previous, ...response.dailyBoss } : previous);
-      if (response.pvp?.damage) setConfirmedHit({ id: crypto.randomUUID(), runId: boss.run.id, damage: Number(response.pvp.damage), at: Date.now() });
+      if (response.pvp?.damage) setConfirmedHit({ id: generateId(), runId: boss.run.id, damage: Number(response.pvp.damage), at: Date.now() });
       setArenaNotice(response.pvp?.kind === "support" ? `Suporte ativado: +${Number(response.pvp.healed ?? 0).toLocaleString("pt-BR")} vida.` : response.pvp?.damage ? `${response.pvp.targetName}: −${Number(response.pvp.damage).toLocaleString("pt-BR")} PV.` : operation === "dailyBoss.togglePvp" ? (response.arena?.pvpEnabled ? "PvP aberto na arena." : "PvP protegido: ninguém poderá selecionar você.") : "Posição atualizada.");
       if (operation !== "dailyBoss.move") await refresh();
     } catch (reason) { setError(reason instanceof Error ? reason.message : "A ação da arena não pôde ser concluída."); }
@@ -95,7 +96,7 @@ export function DailyBoss() {
     setError(""); setNotice("");
     try {
       const response = await onlineAction(operation, { runId });
-      if (operation === "dailyBoss.attack" && Number(response.damage) > 0) setConfirmedHit({ id: crypto.randomUUID(), runId: response.dailyBoss.run.id, damage: Number(response.damage), damageTaken: Number(response.damageTaken ?? 0), at: Date.now() });
+      if (operation === "dailyBoss.attack" && Number(response.damage) > 0) setConfirmedHit({ id: generateId(), runId: response.dailyBoss.run.id, damage: Number(response.damage), damageTaken: Number(response.damageTaken ?? 0), at: Date.now() });
       if (response.dailyBoss) setBoss(previous => previous?.run.id === response.dailyBoss.run.id ? { ...previous, ...response.dailyBoss } : previous);
       setNotice(operation === "dailyBoss.join" ? "Você entrou na batalha. O dano de todos soma no mesmo Boss." : operation === "dailyBoss.attack" ? `Você causou ${Number(response.damage ?? 0).toLocaleString("pt-BR")} e recebeu ${Number(response.damageTaken ?? 0).toLocaleString("pt-BR")} de dano nesta batalha.${response.finalHit ? " ✦ Você deu o golpe final!" : ""}` : `Recompensa recebida: ${Number(response.reward?.gold ?? 0).toLocaleString("pt-BR")} gold e ${Number(response.reward?.xp ?? 0).toLocaleString("pt-BR")} XP.${response.reward?.finalHit ? " Bônus de golpe final aplicado." : ""}`);
       await refresh();

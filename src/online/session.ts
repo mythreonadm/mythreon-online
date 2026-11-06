@@ -1,4 +1,5 @@
 import type { GameSnapshot } from "./projection";
+import { generateId } from "../utils/id";
 
 export interface OnlineResponse {
   current?: { revision: number; state: GameSnapshot };
@@ -132,7 +133,7 @@ export class OnlineSession {
       if (existing) return existing.promise;
     }
     if (this.jobs.length >= MAX_QUEUE) return reject(Error("Há muitas ações aguardando confirmação. Aguarde algumas concluírem."));
-    const job = this.makeJob({ requestId: crypto.randomUUID(), operation, payload: copy, createdAt: options.at ?? this.now(), sent: false });
+    const job = this.makeJob({ requestId: generateId(), operation, payload: copy, createdAt: options.at ?? this.now(), sent: false });
     this.jobs.push(job);
     try { this.persist(true); }
     catch (error) { this.jobs.pop(); job.reject(error as Error); this.error = (error as Error).message; this.emit(); return job.promise; }

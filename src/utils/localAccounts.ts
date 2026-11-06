@@ -1,3 +1,5 @@
+import { generateId } from "./id";
+
 export interface LocalAccount {
   id: string;
   email: string;
@@ -61,7 +63,7 @@ export async function createLocalAccount(emailInput: string, password: string): 
   if (readAccounts().some(account => account.email === email)) throw new Error("Já existe uma conta com este e-mail neste navegador.");
   const salt = window.crypto.getRandomValues(new Uint8Array(16));
   const account: StoredAccount = {
-    id: window.crypto.randomUUID(),
+    id: generateId(),
     email,
     salt: toHex(salt),
     passwordHash: await hashPassword(password, salt),

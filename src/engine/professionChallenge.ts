@@ -3,6 +3,7 @@ import { MINING_NODES, FISHING_SPOTS, FISHING_BAIT, professionCooldown } from ".
 import { countByTemplate } from "./inventory";
 import { canEnterZone } from "./journey";
 import { PROFESSION_PULSE_MS, professionPrecisionAt } from "./professionPrecision";
+import { generateId } from "../utils/id";
 
 export type GatheringKind = "MINERACAO" | "PESCA";
 export interface ProfessionChallenge {
@@ -42,7 +43,7 @@ export function prepareGathering(c: Character, previous: ProfessionChallenge | u
   if (error) return { success: false, error };
   const startsAt = now + PROFESSION_LEAD_MS;
   return { success: true, serverNow: now, challenge: {
-    id: crypto.randomUUID(), kind, targetId, target: 0.4 + Math.random() * 0.35,
+    id: generateId(), kind, targetId, target: 0.4 + Math.random() * 0.35,
     createdAt: now, startsAt, expiresAt: startsAt + PROFESSION_PULSE_MS + PROFESSION_DELIVERY_GRACE_MS, ...(baitId ? { baitId } : {}),
   } };
 }

@@ -5840,7 +5840,7 @@ function prepareGathering(c, previous, kind, targetId, now, baitId) {
   if (error) return { success: false, error };
   const startsAt = now + PROFESSION_LEAD_MS;
   return { success: true, serverNow: now, challenge: {
-    id: crypto.randomUUID(),
+    id: generateId(),
     kind,
     targetId,
     target: 0.4 + Math.random() * 0.35,
