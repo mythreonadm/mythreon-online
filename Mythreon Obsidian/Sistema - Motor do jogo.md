@@ -14,6 +14,7 @@
 - [src/engine/dailyCalendar.ts](../src/engine/dailyCalendar.ts) — CalendarClaimResult, claimCalendarReward, recoverCalendarDay, recoverCalendarWeek
 - [src/engine/drops.ts](../src/engine/drops.ts) — RARITY_ORDER, RARITY_MULT, rollRarity, generateRandomAffixes, makeEquipment, makeComponent, makeMaterial, makeBackpack, rollAmbient, DropMods, rollDrops
 - [src/engine/gearScore.ts](../src/engine/gearScore.ts) — getGearScore, scoreCards
+- [src/engine/huntWaves.ts](../src/engine/huntWaves.ts) — HUNT_WAVE_COUNT, getWaveKey, getWaveStage, getWaveEncounter, waveLabel, waveAssetNames
 - [src/engine/journey.ts](../src/engine/journey.ts) — isGuided, canUseTab, canEnterZone, canTutorialHunt, repairLegacyJourney, unlockJourneyZone
 - [src/engine/professionChallenge.ts](../src/engine/professionChallenge.ts) — GatheringKind, ProfessionChallenge, PreparedProfessionChallenge, PROFESSION_LEAD_MS, PROFESSION_DELIVERY_GRACE_MS, gatheringAccessError, prepareGathering, resolveGathering
 - [src/engine/professionPrecision.ts](../src/engine/professionPrecision.ts) — PROFESSION_PULSE_MS, PERFECT_PULSE_RADIUS, GOOD_PULSE_RADIUS, professionPrecisionAt

@@ -8,6 +8,7 @@
 
 ## Código e recursos
 
+- [imagens/monstros/elemental de gelo.jfif](../imagens/monstros/elemental de gelo.jfif)
 - [public/assets/monsters/ELEMENTAL_GELO.png](../public/assets/monsters/ELEMENTAL_GELO.png)
 - [src/data/elementalChart.ts](../src/data/elementalChart.ts) — ELEMENTS, elementMultiplier, elementName, attackElement
 

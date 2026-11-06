@@ -12,6 +12,12 @@
 - [docs/conhecimento/Stamina-Compras-e-Barra-2026-11-05.md](../docs/conhecimento/Stamina-Compras-e-Barra-2026-11-05.md)
 - [docs/conhecimento/Treino-e-Diferenciais-Mythreon.md](../docs/conhecimento/Treino-e-Diferenciais-Mythreon.md)
 - [experimental/12 - Prompt Universal de Documentação.md](../experimental/12 - Prompt Universal de Documentação.md)
+- [experimental/20261106-wave-backup/Zone.tsx](../experimental/20261106-wave-backup/Zone.tsx) — ZoneView
+- [experimental/20261106-wave-backup/combat.ts](../experimental/20261106-wave-backup/combat.ts) — buildProfile, processTick
+- [experimental/20261106-wave-backup/gameStore.ts](../experimental/20261106-wave-backup/gameStore.ts) — GameState, createGameStore, useGameStore
+- [experimental/20261106-wave-backup/index.ts](../experimental/20261106-wave-backup/index.ts) — Rarity, SlotType, ItemCategory, ComponentType, Law, Element, CardTrait, CardRarity, Precision, CardStats, CardTemplate, CardInstance
+- [experimental/wave-hunt/WAVE_HUNT_ART_PROMPTS.md](../experimental/wave-hunt/WAVE_HUNT_ART_PROMPTS.md)
+- [experimental/wave-hunt/WAVE_HUNT_PACK.md](../experimental/wave-hunt/WAVE_HUNT_PACK.md)
 - [public/assets/items/BACKPACK_EXPLORADOR.png](../public/assets/items/BACKPACK_EXPLORADOR.png)
 - [src/data/skills.ts](../src/data/skills.ts) — AttackSkill, ATTACK_SKILLS, ATTACK_SKILL_COOLDOWN, SupportEffect, SUPPORT_EFFECTS, PassiveEffect, PASSIVE_EFFECTS
 - [src/data/stamina.ts](../src/data/stamina.ts) — STAMINA_ONLINE_MAX, STAMINA_OFFLINE_MAX, STAMINA_PRETEST_UNLIMITED, STAMINA_GOLD_REFILL_MINUTES, STAMINA_COIN_REFILL_MINUTES, staminaGoldCost, staminaDayKey
@@ -33,5 +39,6 @@
 - [[Mythreon Obsidian/Sistema - Estado|Estado]]
 - [[Mythreon Obsidian/Sistema - Tipos|Tipos]]
 - [[Mythreon Obsidian/Sistema - Artes e recursos|Artes e recursos]]
+- [[Mythreon Obsidian/Sistema - Mundo e História|Mundo e História]]
 
 [[Mythreon Obsidian/Mapa de Sistemas|Mapa técnico]]

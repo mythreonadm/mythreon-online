@@ -28,6 +28,7 @@ import { OnlineChest } from "./OnlineChest";
 import { HeroArt } from "./HeroArt";
 import { ownedCosmeticLoadout } from "../engine/cosmeticOwnership";
 import { getCosmeticVisual } from "../utils/cosmetics";
+import { getWaveEncounter, getWaveStage, waveLabel } from "../engine/huntWaves";
 
 interface ZoneViewProps { onOpenQuest: (questId: string) => void; trackedQuestId?: string | null; }
 
@@ -165,9 +166,12 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
   if (!character) return null;
   const currentZone = ZONES[currentZoneId];
   const selectedMob = currentZone.enemies.find(e => e.id === character.activeEnemyId);
-  const currentMob = selectedMob && character.level >= (selectedMob.minLevel ?? 1)
+  const selectedBaseMob = selectedMob && character.level >= (selectedMob.minLevel ?? 1)
     ? selectedMob
     : currentZone.enemies.find(e => character.level >= (e.minLevel ?? 1)) || currentZone.enemies[0];
+  const selectedWaveStage = selectedBaseMob?.isBoss ? 4 : getWaveStage(character.huntWaveProgress, currentZone.id, selectedBaseMob?.id ?? "");
+  const currentMob = selectedBaseMob?.isBoss ? selectedBaseMob : getWaveEncounter(currentZone, selectedBaseMob ?? currentZone.enemies[0], selectedWaveStage);
+  const currentWaveLabel = selectedBaseMob?.isBoss ? "Chefe da região" : waveLabel(selectedWaveStage);
   const questSignal = getHuntQuestSignal(character, currentZoneId || currentZone.id);
   const activeBond = getBeastCombat(character);
   const selectedHpPotion = POTION_TEMPLATES[character.autoHpPotionId || ""];
@@ -592,6 +596,7 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
           <div className="absolute top-0 w-full p-2 md:p-4 flex justify-between items-start z-30 pointer-events-none">
             <div className="bg-black/60 px-2 md:px-4 py-1 md:py-2 rounded-lg border border-white/10 backdrop-blur-sm">
               <h2 className="text-sm md:text-xl font-bold text-arcane-gold drop-shadow-md">{currentZone.name}</h2>
+              <div className="text-[9px] md:text-xs text-cyan-200 font-semibold tracking-wide">{currentWaveLabel}</div>
             </div>
             <div className="bg-green-900/80 px-2 md:px-4 py-1 md:py-2 rounded-full font-bold text-[10px] md:text-sm text-green-400 animate-pulse border border-green-500/30 backdrop-blur-sm">⚔️ Caçando</div>
           </div>
@@ -759,8 +764,9 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
              const quest = QUESTS.find(q => q.id === trackedQuestId && q.zoneId === currentZone.id);
              const isQuestTarget = !!quest?.objectives.some(obj => obj.target === e.id || obj.target === e.componentId || obj.target === e.essenceId);
              return (
-               <button key={e.id} disabled={locked} onClick={() => setActiveEnemy(e.id)} title={isQuestTarget ? "Alvo da missão rastreada" : e.name} className={`p-1.5 md:p-2 rounded-lg border flex flex-col items-center transition-all ${isQuestTarget && !locked ? "border-2 border-arcane-gold ring-2 ring-arcane-gold/40 shadow-[0_0_20px_rgba(201,160,77,.45)] opacity-100" : locked ? "opacity-30 border-gray-800 bg-gray-900 cursor-not-allowed" : currentMob?.id === e.id ? "border-arcane-gold bg-arcane-gold/10 scale-105 shadow-lg" : "border-arcane-border opacity-50 hover:opacity-100"}`}>
+               <button key={e.id} disabled={locked} onClick={() => setActiveEnemy(e.id)} title={isQuestTarget ? "Alvo da missão rastreada" : e.name} className={`p-1.5 md:p-2 rounded-lg border flex flex-col items-center transition-all ${isQuestTarget && !locked ? "border-2 border-arcane-gold ring-2 ring-arcane-gold/40 shadow-[0_0_20px_rgba(201,160,77,.45)] opacity-100" : locked ? "opacity-30 border-gray-800 bg-gray-900 cursor-not-allowed" : selectedBaseMob?.id === e.id ? "border-arcane-gold bg-arcane-gold/10 scale-105 shadow-lg" : "border-arcane-border opacity-50 hover:opacity-100"}`}>
                   <span className="text-xl md:text-2xl">{e.emoji}</span>
+                  {!e.isBoss && <span className="text-[8px] text-cyan-200">{waveLabel(getWaveStage(character.huntWaveProgress, currentZone.id, e.id))}</span>}
                   {isQuestTarget && <span className="text-[8px] font-black text-arcane-gold">QUEST</span>}
                   <span className="text-[8px] md:text-[10px] text-yellow-400">{'⭐'.repeat(e.difficulty)}</span>
                   <span className={`text-[8px] font-bold ${locked ? "text-red-500" : "text-cyan-300"}`}>Nv {e.minLevel ?? 1}</span>

@@ -3124,6 +3124,105 @@ function enchantmentRuneTemplateId(zoneId) {
   return `RUNA_ENCANTADA_${zoneId}`;
 }
 
+// src/engine/huntWaves.ts
+var HUNT_WAVE_COUNT = 5;
+var STAGE_STATS = [
+  { hp: 0.62, atk: 0.62, arm: 0.72, xp: 0.55, gold: 0.55 },
+  { hp: 0.82, atk: 0.82, arm: 0.88, xp: 0.75, gold: 0.72 },
+  { hp: 0.98, atk: 0.98, arm: 1, xp: 0.88, gold: 0.86 },
+  { hp: 1.04, atk: 1.04, arm: 1.04, xp: 0.94, gold: 0.92 },
+  { hp: 1.75, atk: 1.48, arm: 1.28, xp: 1.45, gold: 1.35 }
+];
+var FAMILY_IDS = {
+  LOBO: "animal",
+  URSO: "animal",
+  JAVALI: "animal",
+  HIENA: "animal",
+  ESCORPIAO: "animal",
+  SERPENTE: "animal",
+  CARANGUEJO: "animal",
+  POLVO: "animal",
+  CROCODILO_SILTE: "animal",
+  VERME: "animal",
+  ARANHA_GIGANTE: "animal",
+  VESPA: "insect",
+  LIBELULA_LAMINA: "insect",
+  FALCAO: "insect",
+  MORCEGO_MAGMA: "insect",
+  ENGUIA_ELETRICA: "insect",
+  ESPINHEIRO: "plant",
+  CIPO_MEMORIA: "plant",
+  SAPO_MIASMA: "animal",
+  GOLEM: "construct",
+  ELEMENTAL_GELO: "construct",
+  CENTURIAO: "construct",
+  SENTINELA: "construct",
+  GOLEM_OBSIDIANA: "construct",
+  BANDIDO: "humanoid",
+  CULTISTA: "humanoid",
+  SEREIA: "humanoid",
+  TRITAO: "humanoid",
+  MUMIA: "undead",
+  SOMBRA: "undead",
+  CEIFADOR_ALMAS: "undead",
+  FADA_CORROMPIDA: "arcane",
+  ESPECTRO_SOLAR: "arcane",
+  CRIA_VAZIO: "arcane",
+  ABERRACAO: "arcane",
+  OLHO_VAZIO: "arcane",
+  MEDUSA: "arcane",
+  YETI: "animal"
+};
+var SPECIAL_NAMES = {
+  LOBO: ["Lobo adolescente azul", "Lobo adolescente vermelho", "Lobo adolescente azul", "Lobo adolescente vermelho", "Lobo Alfa"],
+  VESPA: ["Vespa batedora", "Vespa Soldado", "Vespa Soldado azul", "Vespa Soldado rubra", "Vespa Cinza"],
+  ESPINHEIRO: ["Roseira Brava", "Girassol Metralhadora", "Roseira Brava", "Girassol Metralhadora", "Espinheiro Vivo"]
+};
+function generatedNames(base) {
+  const family = FAMILY_IDS[base.id] ?? "arcane";
+  const root = base.name;
+  if (family === "insect") return [`${root} Batedor`, `${root} Soldado`, `${root} da Colmeia`, `${root} da Colmeia`, `${root} Rainha`];
+  if (family === "plant") return [`Broto de ${root}`, `Guardi\xE3 de ${root}`, `Col\xF4nia de ${root}`, `Col\xF4nia de ${root}`, `Anci\xE3o de ${root}`];
+  if (family === "construct") return [`Fragmento de ${root}`, `Guardi\xE3o de ${root}`, `Dupla de ${root}`, `Dupla de ${root}`, `N\xFAcleo de ${root}`];
+  if (family === "humanoid") return [`Recruta ${root}`, `Arauto ${root}`, `Irm\xE3os ${root}`, `Irm\xE3os ${root}`, `Mestre ${root}`];
+  if (family === "undead") return [`Eco ${root}`, `Arauto ${root}`, `C\xEDrculo ${root}`, `C\xEDrculo ${root}`, `Soberano ${root}`];
+  if (family === "animal") return [`${root} Jovem`, `${root} Ca\xE7ador`, `${root} Matilha`, `${root} Matilha`, `${root} Alfa`];
+  return [`Fragmento ${root}`, `Arauto ${root}`, `Ecos de ${root}`, `Ecos de ${root}`, `Avatar ${root}`];
+}
+function getWaveKey(zoneId, baseEnemyId) {
+  return `${zoneId}:${baseEnemyId}`;
+}
+function getWaveStage(progress, zoneId, baseEnemyId) {
+  const raw = progress?.[getWaveKey(zoneId, baseEnemyId)];
+  return Math.max(0, Math.min(HUNT_WAVE_COUNT - 1, Number.isFinite(raw) ? Number(raw) : 0));
+}
+function getWaveEncounter(_zone, baseEnemy, stage) {
+  if (baseEnemy.isBoss) return baseEnemy;
+  const safeStage = Math.max(0, Math.min(HUNT_WAVE_COUNT - 1, Math.floor(stage)));
+  const stats = STAGE_STATS[safeStage];
+  const names = SPECIAL_NAMES[baseEnemy.id] ?? generatedNames(baseEnemy);
+  const suffix = safeStage === 0 ? "W1" : safeStage === 1 ? "W2" : safeStage === 2 ? "W3A" : safeStage === 3 ? "W3B" : "BOSS";
+  const isFinal = safeStage === HUNT_WAVE_COUNT - 1;
+  return {
+    ...baseEnemy,
+    id: `${baseEnemy.id}_${suffix}`,
+    name: names[safeStage],
+    hp: Math.max(1, Math.round(baseEnemy.hp * stats.hp)),
+    atk: Math.max(1, Math.round(baseEnemy.atk * stats.atk)),
+    arm: Math.max(0, Math.round(baseEnemy.arm * stats.arm)),
+    xp: Math.max(1, Math.round(baseEnemy.xp * stats.xp)),
+    goldMin: Math.max(1, Math.round(baseEnemy.goldMin * stats.gold)),
+    goldMax: Math.max(1, Math.round(baseEnemy.goldMax * stats.gold)),
+    isBoss: isFinal,
+    isElite: false,
+    waveRole: isFinal ? "BOSS" : "CAPANGA",
+    waveStage: safeStage,
+    waveBaseId: baseEnemy.id,
+    sprite: `/assets/monsters/${baseEnemy.id}_${suffix}.png`,
+    difficulty: baseEnemy.difficulty
+  };
+}
+
 // src/engine/combat.ts
 function buildProfile(char) {
   const bp = char.inventory.backpack;
@@ -3209,11 +3308,18 @@ function processTick(char, zone, isOffline) {
   const savedTarget = zone.enemies.find((e) => e.id === char.activeEnemyId);
   const baseEnemy = savedTarget && char.level >= (savedTarget.minLevel ?? 1) ? savedTarget : zone.enemies.find((e) => char.level >= (e.minLevel ?? 1)) || zone.enemies[0];
   if (!baseEnemy) return result;
-  const sameTarget = char.fightEnemyId === `${zone.id}:${baseEnemy.id}` || char.fightEnemyId === `${zone.id}:${baseEnemy.id}:ELITE`;
-  const isEliteEncounter = char.fightEnemyId === `${zone.id}:${baseEnemy.id}:ELITE` || !sameTarget && !baseEnemy.isBoss && Math.random() < 0.03;
-  const fightId = `${zone.id}:${baseEnemy.id}${isEliteEncounter ? ":ELITE" : ""}`;
+  const waveEnabled = !baseEnemy.isBoss;
+  char.huntWaveProgress ??= {};
+  const waveKey = getWaveKey(zone.id, baseEnemy.id);
+  const waveStage = waveEnabled ? getWaveStage(char.huntWaveProgress, zone.id, baseEnemy.id) : 4;
+  const waveEnemy = waveEnabled ? getWaveEncounter(zone, baseEnemy, waveStage) : baseEnemy;
+  const sameTarget = char.fightEnemyId === `${zone.id}:${baseEnemy.id}` || char.fightEnemyId === `${zone.id}:${baseEnemy.id}:ELITE` || char.fightWaveKey === waveKey;
+  const isEliteEncounter = !waveEnabled && (char.fightEnemyId === `${zone.id}:${baseEnemy.id}:ELITE` || !sameTarget && Math.random() < 0.03);
+  const fightId = `${zone.id}:${baseEnemy.id}${isEliteEncounter ? ":ELITE" : ""}${waveEnabled ? `:W${waveStage}` : ""}`;
   if (char.fightEnemyId !== fightId) {
     char.fightEnemyId = fightId;
+    char.fightWaveKey = waveEnabled ? waveKey : void 0;
+    char.fightWaveStage = waveEnabled ? waveStage : void 0;
     char.fightDamageDealt = 0;
     char.fightDamageTaken = 0;
     char.fightPotionGoldSpent = 0;
@@ -3232,8 +3338,8 @@ function processTick(char, zone, isOffline) {
       id: `${Date.now()}-${result.encounters.length}-${baseEnemy.id}`,
       timestamp: Date.now(),
       zoneId: zone.id,
-      enemyId: isEliteEncounter ? `${baseEnemy.id}_ELITE` : baseEnemy.id,
-      enemyName: isEliteEncounter ? `${baseEnemy.name} Elite` : baseEnemy.name,
+      enemyId: char.fightWaveKey ? `${baseEnemy.id}_W${char.fightWaveStage ?? 0}` : isEliteEncounter ? `${baseEnemy.id}_ELITE` : baseEnemy.id,
+      enemyName: char.fightWaveKey ? `${baseEnemy.name} \xB7 onda ${(char.fightWaveStage ?? 0) + 1}` : isEliteEncounter ? `${baseEnemy.name} Elite` : baseEnemy.name,
       damageDealt: encounterDamageDealt,
       damageTaken: encounterDamageTaken,
       xp: 0,
@@ -3258,7 +3364,7 @@ function processTick(char, zone, isOffline) {
   const diff = baseEnemy.difficulty || 1;
   const rewardScale = 1 + (diff - 1) * 0.2;
   const eliteMultiplier = isEliteEncounter ? 1.35 : 1;
-  const enemy = { ...baseEnemy, id: isEliteEncounter ? `${baseEnemy.id}_ELITE` : baseEnemy.id, name: isEliteEncounter ? `${baseEnemy.name} Elite` : baseEnemy.name, isElite: isEliteEncounter, hp: baseEnemy.hp * diff * eliteMultiplier, atk: baseEnemy.atk * diff * eliteMultiplier, arm: baseEnemy.arm * diff * eliteMultiplier, xp: Math.round(baseEnemy.xp * rewardScale * (isEliteEncounter ? 1.8 : 1)), goldMin: Math.round(baseEnemy.goldMin * rewardScale * (isEliteEncounter ? 1.8 : 1)), goldMax: Math.round(baseEnemy.goldMax * rewardScale * (isEliteEncounter ? 1.8 : 1)) };
+  const enemy = { ...waveEnemy, id: isEliteEncounter ? `${baseEnemy.id}_ELITE` : waveEnemy.id, name: isEliteEncounter ? `${baseEnemy.name} Elite` : waveEnemy.name, isElite: isEliteEncounter, hp: waveEnemy.hp * diff * eliteMultiplier, atk: waveEnemy.atk * diff * eliteMultiplier, arm: waveEnemy.arm * diff * eliteMultiplier, xp: Math.round(waveEnemy.xp * rewardScale * (isEliteEncounter ? 1.8 : 1)), goldMin: Math.round(waveEnemy.goldMin * rewardScale * (isEliteEncounter ? 1.8 : 1)), goldMax: Math.round(waveEnemy.goldMax * rewardScale * (isEliteEncounter ? 1.8 : 1)) };
   if (isEliteEncounter && char.enemyHpId !== enemy.id) result.log.push(`\u2728 Encontro especial: ${enemy.name}! Recompensas e drops aprimorados.`);
   if (char.enemyHpId !== enemy.id || char.enemyHp === void 0 || char.enemyHp <= 0) {
     char.enemyHp = enemy.hp;
@@ -3483,9 +3589,10 @@ function processTick(char, zone, isOffline) {
       char.killsInZone++;
       char.totalKills = (char.totalKills ?? 0) + 1;
       char.bestiaryKills ??= {};
-      char.bestiaryKills[enemy.id] = (char.bestiaryKills[enemy.id] ?? 0) + 1;
-      result.killed[enemy.id] = (result.killed[enemy.id] ?? 0) + 1;
-      if (enemy.isBoss) result.bossKills[enemy.id] = (result.bossKills[enemy.id] ?? 0) + 1;
+      const bestiaryId = enemy.waveBaseId ?? baseEnemy.id;
+      char.bestiaryKills[bestiaryId] = (char.bestiaryKills[bestiaryId] ?? 0) + 1;
+      result.killed[bestiaryId] = (result.killed[bestiaryId] ?? 0) + 1;
+      if (enemy.isBoss) result.bossKills[bestiaryId] = (result.bossKills[bestiaryId] ?? 0) + 1;
       const goldDifficulty = enemy.isBoss ? 1 : 0.78;
       const g = Math.floor((enemy.goldMin + Math.floor(Math.random() * (enemy.goldMax - enemy.goldMin + 1))) * goldDifficulty * (1 + prof.goldPct));
       const xpGained = Math.floor(enemy.xp * (1 + prof.xpPct)) * (debug2 ? 10 : 1);
@@ -3502,7 +3609,7 @@ function processTick(char, zone, isOffline) {
       const loot = [];
       const soldGoldBefore = result.soldGold ?? 0;
       heal(hpMax * BALANCE.killRecovery);
-      const cardDrop = rollCardDrop(enemy.id, zone.tier, enemy.isBoss);
+      const cardDrop = enemy.waveRole === "CAPANGA" ? null : rollCardDrop(enemy.waveBaseId ?? enemy.id, zone.tier, enemy.isBoss);
       if (cardDrop) {
         if (!char.cards) char.cards = [];
         char.cards.push(cardDrop);
@@ -3520,7 +3627,7 @@ function processTick(char, zone, isOffline) {
         result.divineBeastsDropped.push(beast.id);
         bondedBeastName = beast.name;
       }
-      const drops = rollDrops(enemy, zone, char, { dropBonus: prof.dropPct, rareBonus: prof.rarePct + (char.baseStats.luck ?? 0), force: debug2 });
+      const drops = enemy.waveRole === "CAPANGA" ? debug2 || Math.random() < 0.01 ? [makeComponent(baseEnemy.componentId)] : [] : rollDrops(enemy, zone, char, { dropBonus: prof.dropPct, rareBonus: prof.rarePct + (char.baseStats.luck ?? 0), force: debug2 });
       const runeChance = enemy.isBoss ? 0.28 : enemy.isElite ? 0.06 : 6e-3 + zone.tier * 1e-3;
       if (debug2 || Math.random() < runeChance) {
         const rune = ENCHANTMENT_RUNE_TEMPLATE(zone.id);
@@ -3544,7 +3651,7 @@ function processTick(char, zone, isOffline) {
       const ignoredLoot = new Set(char.ignoredLootTemplateIds ?? []);
       for (const d of drops) {
         loot.push({ name: d.name, icon: d.icon, quantity: d.quantity, sellValue: sellValue(d), kind: "item" });
-        if (ignoredLoot.has(d.templateId) && (char.bestiaryKills?.[enemy.id] ?? 0) >= 1e3) {
+        if (ignoredLoot.has(d.templateId) && (char.bestiaryKills?.[enemy.waveBaseId ?? enemy.id] ?? 0) >= 1e3) {
           result.log.push(`\u{1F9FA} Autoloot ignorou ${d.name}.`);
           continue;
         }
@@ -3613,8 +3720,19 @@ function processTick(char, zone, isOffline) {
       }
       result.log.push(`Voc\xEA derrotou o ${enemy.name} (${diff}\u2B50)! (+${g} ouro, +${xpGained} XP)`);
       if (bondedBeastName) result.log.push(`\u{1F43E} Resson\xE2ncia Divina! ${bondedBeastName} criou um v\xEDnculo com voc\xEA.`);
-      enemyHp = enemy.hp;
-      char.fightEnemyId = void 0;
+      if (waveEnabled) {
+        const nextStage = waveStage >= 4 ? 0 : waveStage + 1;
+        char.huntWaveProgress[waveKey] = nextStage;
+        char.fightWaveKey = waveKey;
+        char.fightWaveStage = nextStage;
+        char.fightEnemyId = void 0;
+        enemyHp = 0;
+        result.log.push(nextStage === 0 ? `\u{1F3C6} Sequ\xEAncia conclu\xEDda! O pr\xF3ximo ciclo come\xE7a no capanga f\xE1cil.` : `\u{1F30A} Pr\xF3ximo encontro: onda ${nextStage >= 4 ? "4/4 \xB7 chefe" : nextStage >= 2 ? "3/4 \xB7 dupla" : `${nextStage + 1}/4`}.`);
+        break;
+      } else {
+        enemyHp = enemy.hp;
+        char.fightEnemyId = void 0;
+      }
     } else {
       const e = support;
       const dodgedBySkill = !!e?.dodgeEvery && t % e.dodgeEvery === 0;
@@ -4557,8 +4675,16 @@ function createGameStore(runtime = {}) {
       character.trainingSkill = null;
       if (!character.activeEnemyId || !zone.enemies.find((e) => e.id === character.activeEnemyId)) {
         character.activeEnemyId = zone.enemies[0].id;
-        character.enemyHp = zone.enemies[0].hp * zone.enemies[0].difficulty;
       }
+      const selected = zone.enemies.find((e) => e.id === character.activeEnemyId) ?? zone.enemies[0];
+      character.huntWaveProgress ??= {};
+      const stage = selected.isBoss ? 4 : getWaveStage(character.huntWaveProgress, zone.id, selected.id);
+      const encounter = selected.isBoss ? selected : getWaveEncounter(zone, selected, stage);
+      character.fightWaveKey = selected.isBoss ? void 0 : getWaveKey(zone.id, selected.id);
+      character.fightWaveStage = selected.isBoss ? void 0 : stage;
+      character.fightEnemyId = void 0;
+      character.enemyHp = encounter.hp * encounter.difficulty;
+      character.enemyHpId = encounter.id;
       set({ isTickRunning: true, isTraining: false, currentZoneId: zoneId, character: { ...character } });
       if (repairedJourney) get().save();
       if (!runtime.server) {
@@ -4620,8 +4746,14 @@ function createGameStore(runtime = {}) {
       const enemy = zone.enemies.find((e) => e.id === enemyId);
       if (!enemy || character.level < (enemy.minLevel ?? 1)) return;
       character.activeEnemyId = enemyId;
-      character.enemyHp = (enemy?.hp || 0) * (enemy?.difficulty || 1);
-      character.enemyHpId = enemyId;
+      character.huntWaveProgress ??= {};
+      const stage = enemy.isBoss ? 4 : getWaveStage(character.huntWaveProgress, zone.id, enemy.id);
+      const encounter = enemy.isBoss ? enemy : getWaveEncounter(zone, enemy, stage);
+      character.fightWaveKey = enemy.isBoss ? void 0 : getWaveKey(zone.id, enemy.id);
+      character.fightWaveStage = enemy.isBoss ? void 0 : stage;
+      character.fightEnemyId = void 0;
+      character.enemyHp = encounter.hp * encounter.difficulty;
+      character.enemyHpId = encounter.id;
       set({ character: { ...character } });
       get().save();
     },
@@ -4634,6 +4766,9 @@ function createGameStore(runtime = {}) {
         character.activeEnemyId = ZONES[zoneId].enemies[0]?.id;
         character.enemyHp = void 0;
         character.enemyHpId = void 0;
+        character.fightEnemyId = void 0;
+        character.fightWaveKey = void 0;
+        character.fightWaveStage = void 0;
         set({ character: { ...character } });
         get().save();
       }

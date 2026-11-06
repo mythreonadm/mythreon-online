@@ -1,7 +1,7 @@
 import { BALANCE, clamp, mitigatedDamage } from "../data/balance";
 import { Character, Enemy, Element, TickResult, Zone, CardInstance, HuntEncounterRecord, HuntLootEntry, DamageBreakdown } from "../types";
 import { addItem } from "./inventory";
-import { rollDrops, rollAmbient, RARITY_ORDER } from "./drops";
+import { rollDrops, rollAmbient, RARITY_ORDER, makeComponent } from "./drops";
 import { recalcStats, xpToNextLevel } from "./stats";
 import { sellValue } from "./shop";
 import { salvageItem } from "./salvage";
@@ -19,6 +19,7 @@ import { attackElement, elementMultiplier } from "../data/elementalChart";
 import { applyTrainingDeathPenalty } from "./training";
 import { shardChance } from "../data/mythreonEconomy";
 import { ENCHANTMENT_RUNE_TEMPLATE } from "../data/enchantments";
+import { getWaveEncounter, getWaveKey, getWaveStage } from "./huntWaves";
 
 interface Profile { xpPct: number; goldPct: number; dropPct: number; rarePct: number; healPct: number; skillDmgPct: number; cdReduce: number; lifesteal: number; }
 
@@ -111,11 +112,18 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
     : zone.enemies.find(e => char.level >= (e.minLevel ?? 1)) || zone.enemies[0];
   if (!baseEnemy) return result;
 
-  const sameTarget = char.fightEnemyId === `${zone.id}:${baseEnemy.id}` || char.fightEnemyId === `${zone.id}:${baseEnemy.id}:ELITE`;
-  const isEliteEncounter = char.fightEnemyId === `${zone.id}:${baseEnemy.id}:ELITE` || (!sameTarget && !baseEnemy.isBoss && Math.random() < 0.03);
-  const fightId = `${zone.id}:${baseEnemy.id}${isEliteEncounter ? ":ELITE" : ""}`;
+  const waveEnabled = !baseEnemy.isBoss;
+  char.huntWaveProgress ??= {};
+  const waveKey = getWaveKey(zone.id, baseEnemy.id);
+  const waveStage = waveEnabled ? getWaveStage(char.huntWaveProgress, zone.id, baseEnemy.id) : 4;
+  const waveEnemy = waveEnabled ? getWaveEncounter(zone, baseEnemy, waveStage) : baseEnemy;
+  const sameTarget = char.fightEnemyId === `${zone.id}:${baseEnemy.id}` || char.fightEnemyId === `${zone.id}:${baseEnemy.id}:ELITE` || char.fightWaveKey === waveKey;
+  const isEliteEncounter = !waveEnabled && (char.fightEnemyId === `${zone.id}:${baseEnemy.id}:ELITE` || (!sameTarget && Math.random() < 0.03));
+  const fightId = `${zone.id}:${baseEnemy.id}${isEliteEncounter ? ":ELITE" : ""}${waveEnabled ? `:W${waveStage}` : ""}`;
   if (char.fightEnemyId !== fightId) {
     char.fightEnemyId = fightId;
+    char.fightWaveKey = waveEnabled ? waveKey : undefined;
+    char.fightWaveStage = waveEnabled ? waveStage : undefined;
     char.fightDamageDealt = 0;
     char.fightDamageTaken = 0;
     char.fightPotionGoldSpent = 0;
@@ -132,7 +140,7 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
     if (encounterDamageDealt <= 0 && encounterDamageTaken <= 0) return;
     result.encounters!.push({
       id: `${Date.now()}-${result.encounters!.length}-${baseEnemy.id}`,
-      timestamp: Date.now(), zoneId: zone.id, enemyId: isEliteEncounter ? `${baseEnemy.id}_ELITE` : baseEnemy.id, enemyName: isEliteEncounter ? `${baseEnemy.name} Elite` : baseEnemy.name,
+      timestamp: Date.now(), zoneId: zone.id, enemyId: char.fightWaveKey ? `${baseEnemy.id}_W${char.fightWaveStage ?? 0}` : (isEliteEncounter ? `${baseEnemy.id}_ELITE` : baseEnemy.id), enemyName: char.fightWaveKey ? `${baseEnemy.name} · onda ${(char.fightWaveStage ?? 0) + 1}` : (isEliteEncounter ? `${baseEnemy.name} Elite` : baseEnemy.name),
       damageDealt: encounterDamageDealt, damageTaken: encounterDamageTaken, xp: 0, gold: 0, soldGold: 0,
       goldSpentPotions: encounterPotionGoldSpent, lootValue: 0, loot: [], outcome: "death",
       damageBreakdown: structuredClone(encounterDamageBreakdown), damageTakenBreakdown: structuredClone(encounterDamageTakenBreakdown),
@@ -152,7 +160,7 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
   // Isso reduz o avanço acelerado causado por criaturas com muitas estrelas sem tirar a recompensa do desafio.
   const rewardScale = 1 + (diff - 1) * 0.20;
   const eliteMultiplier = isEliteEncounter ? 1.35 : 1;
-  const enemy = { ...baseEnemy, id: isEliteEncounter ? `${baseEnemy.id}_ELITE` : baseEnemy.id, name: isEliteEncounter ? `${baseEnemy.name} Elite` : baseEnemy.name, isElite: isEliteEncounter, hp: baseEnemy.hp * diff * eliteMultiplier, atk: baseEnemy.atk * diff * eliteMultiplier, arm: baseEnemy.arm * diff * eliteMultiplier, xp: Math.round(baseEnemy.xp * rewardScale * (isEliteEncounter ? 1.8 : 1)), goldMin: Math.round(baseEnemy.goldMin * rewardScale * (isEliteEncounter ? 1.8 : 1)), goldMax: Math.round(baseEnemy.goldMax * rewardScale * (isEliteEncounter ? 1.8 : 1)) };
+  const enemy = { ...waveEnemy, id: isEliteEncounter ? `${baseEnemy.id}_ELITE` : waveEnemy.id, name: isEliteEncounter ? `${baseEnemy.name} Elite` : waveEnemy.name, isElite: isEliteEncounter, hp: waveEnemy.hp * diff * eliteMultiplier, atk: waveEnemy.atk * diff * eliteMultiplier, arm: waveEnemy.arm * diff * eliteMultiplier, xp: Math.round(waveEnemy.xp * rewardScale * (isEliteEncounter ? 1.8 : 1)), goldMin: Math.round(waveEnemy.goldMin * rewardScale * (isEliteEncounter ? 1.8 : 1)), goldMax: Math.round(waveEnemy.goldMax * rewardScale * (isEliteEncounter ? 1.8 : 1)) };
   if (isEliteEncounter && char.enemyHpId !== enemy.id) result.log.push(`✨ Encontro especial: ${enemy.name}! Recompensas e drops aprimorados.`);
 
   if (char.enemyHpId !== enemy.id || char.enemyHp === undefined || char.enemyHp <= 0) {
@@ -363,9 +371,10 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
     if (enemyHp <= 0) {
       result.kills++; char.killsInZone++; char.totalKills = (char.totalKills ?? 0) + 1;
       char.bestiaryKills ??= {};
-      char.bestiaryKills[enemy.id] = (char.bestiaryKills[enemy.id] ?? 0) + 1;
-      result.killed![enemy.id] = (result.killed![enemy.id] ?? 0) + 1;
-      if (enemy.isBoss) result.bossKills![enemy.id] = (result.bossKills![enemy.id] ?? 0) + 1;
+      const bestiaryId = enemy.waveBaseId ?? baseEnemy.id;
+      char.bestiaryKills[bestiaryId] = (char.bestiaryKills[bestiaryId] ?? 0) + 1;
+      result.killed![bestiaryId] = (result.killed![bestiaryId] ?? 0) + 1;
+      if (enemy.isBoss) result.bossKills![bestiaryId] = (result.bossKills![bestiaryId] ?? 0) + 1;
       const goldDifficulty = enemy.isBoss ? 1 : 0.78;
       const g = Math.floor((enemy.goldMin + Math.floor(Math.random() * (enemy.goldMax - enemy.goldMin + 1))) * goldDifficulty * (1 + prof.goldPct));
       const xpGained = Math.floor(enemy.xp * (1 + prof.xpPct)) * (debug ? 10 : 1);
@@ -381,7 +390,7 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
       heal(hpMax * BALANCE.killRecovery);
 
       // ─── DROP DE CARTA (NOVO) ───
-      const cardDrop = rollCardDrop(enemy.id, zone.tier, enemy.isBoss);
+      const cardDrop = enemy.waveRole === "CAPANGA" ? null : rollCardDrop(enemy.waveBaseId ?? enemy.id, zone.tier, enemy.isBoss);
       if (cardDrop) {
         if (!char.cards) char.cards = [];
         char.cards.push(cardDrop);
@@ -404,7 +413,9 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
       }
       // ─── FIM DO DROP DE CARTA ───
       
-      const drops = rollDrops(enemy, zone, char, { dropBonus: prof.dropPct, rareBonus: prof.rarePct + (char.baseStats.luck ?? 0), force: debug });
+      const drops = enemy.waveRole === "CAPANGA"
+        ? ((debug || Math.random() < 0.01) ? [makeComponent(baseEnemy.componentId)] : [])
+        : rollDrops(enemy, zone, char, { dropBonus: prof.dropPct, rareBonus: prof.rarePct + (char.baseStats.luck ?? 0), force: debug });
       // Runas são deliberadamente raras: o jogador precisa conhecer e repetir
       // o mapa para reunir 100 unidades antes de encantar uma peça.
       const runeChance = enemy.isBoss ? 0.28 : enemy.isElite ? 0.06 : 0.006 + zone.tier * 0.001;
@@ -434,7 +445,7 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
 
       for (const d of drops) {
         loot.push({ name: d.name, icon: d.icon, quantity: d.quantity, sellValue: sellValue(d), kind: "item" });
-      if (ignoredLoot.has(d.templateId) && (char.bestiaryKills?.[enemy.id] ?? 0) >= 1000) {
+      if (ignoredLoot.has(d.templateId) && (char.bestiaryKills?.[enemy.waveBaseId ?? enemy.id] ?? 0) >= 1000) {
           result.log.push(`🧺 Autoloot ignorou ${d.name}.`);
           continue;
         }
@@ -478,9 +489,19 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
       }
       result.log.push(`Você derrotou o ${enemy.name} (${diff}⭐)! (+${g} ouro, +${xpGained} XP)`);
       if (bondedBeastName) result.log.push(`🐾 Ressonância Divina! ${bondedBeastName} criou um vínculo com você.`);
-      enemyHp = enemy.hp;
-      // O próximo encontro rola novamente a chance de variante Elite.
-      char.fightEnemyId = undefined;
+      if (waveEnabled) {
+        const nextStage = waveStage >= 4 ? 0 : waveStage + 1;
+        char.huntWaveProgress[waveKey] = nextStage;
+        char.fightWaveKey = waveKey;
+        char.fightWaveStage = nextStage;
+        char.fightEnemyId = undefined;
+        enemyHp = 0;
+        result.log.push(nextStage === 0 ? `🏆 Sequência concluída! O próximo ciclo começa no capanga fácil.` : `🌊 Próximo encontro: onda ${nextStage >= 4 ? "4/4 · chefe" : nextStage >= 2 ? "3/4 · dupla" : `${nextStage + 1}/4`}.`);
+        break;
+      } else {
+        enemyHp = enemy.hp;
+        char.fightEnemyId = undefined;
+      }
     } else {
       const e = support;
       const dodgedBySkill = !!e?.dodgeEvery && t % e.dodgeEvery === 0;

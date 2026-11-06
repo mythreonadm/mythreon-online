@@ -154,6 +154,9 @@ export interface Enemy {
   difficulty: 1 | 2 | 3 | 4 | 5;
   /** Variante especial rara, com melhor recompensa e bestiário separado. */
   isElite?: boolean;
+  waveRole?: "CAPANGA" | "BOSS";
+  waveStage?: number;
+  waveBaseId?: string;
 }
 
 export interface Zone {
@@ -274,6 +277,9 @@ export interface Character {
   equipped: Partial<Record<SlotType, Item>>; inventory: Inventory;
   raceId?: string; activeRace?: Race; killsInZone: number; currentZoneId?: string;
   activeEnemyId?: string;
+  huntWaveProgress?: Record<string, number>;
+  fightWaveKey?: string;
+  fightWaveStage?: number;
   elementalResistances?: Partial<Record<Element, number>>;
   staminaOnline?: number;
   staminaOffline?: number;

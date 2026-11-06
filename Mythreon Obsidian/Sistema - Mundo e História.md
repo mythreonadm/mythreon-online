@@ -9,6 +9,7 @@
 ## Código e recursos
 
 - [docs/conhecimento/Jornada-Lore-Biomas.md](../docs/conhecimento/Jornada-Lore-Biomas.md)
+- [experimental/20261106-wave-backup/Zone.tsx](../experimental/20261106-wave-backup/Zone.tsx) — ZoneView
 - [src/data/zones.ts](../src/data/zones.ts) — ZONES
 - [src/ui/MarketPriceHistory.tsx](../src/ui/MarketPriceHistory.tsx) — MarketPriceHistory
 - [src/ui/Wiki.tsx](../src/ui/Wiki.tsx) — Wiki, HistorySection

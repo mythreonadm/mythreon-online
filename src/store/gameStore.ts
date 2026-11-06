@@ -7,6 +7,7 @@ import { Character, Race, TickResult, CharacterSkills, OfflineReportData, BuffVi
 import { ZONES } from "../data/zones";
 import { createNewCharacter, loadGame, saveGame } from "../engine/save";
 import { processTick } from "../engine/combat";
+import { getWaveEncounter, getWaveKey, getWaveStage } from "../engine/huntWaves";
 import { equipItem, unequipItem, addItem, removeItem, countByTemplate } from "../engine/inventory";
 import { makeEquipment, makeMaterial } from "../engine/drops";
 import { recalcStats, skillXpToNextLevel } from "../engine/stats";
@@ -411,8 +412,16 @@ return create<GameState>((set, get) => ({
 
     if (!character.activeEnemyId || !zone.enemies.find(e => e.id === character.activeEnemyId)) {
       character.activeEnemyId = zone.enemies[0].id;
-      character.enemyHp = zone.enemies[0].hp * zone.enemies[0].difficulty;
     }
+    const selected = zone.enemies.find(e => e.id === character.activeEnemyId) ?? zone.enemies[0];
+    character.huntWaveProgress ??= {};
+    const stage = selected.isBoss ? 4 : getWaveStage(character.huntWaveProgress, zone.id, selected.id);
+    const encounter = selected.isBoss ? selected : getWaveEncounter(zone, selected, stage);
+    character.fightWaveKey = selected.isBoss ? undefined : getWaveKey(zone.id, selected.id);
+    character.fightWaveStage = selected.isBoss ? undefined : stage;
+    character.fightEnemyId = undefined;
+    character.enemyHp = encounter.hp * encounter.difficulty;
+    character.enemyHpId = encounter.id;
     set({ isTickRunning: true, isTraining: false, currentZoneId: zoneId, character: { ...character } });
     if (repairedJourney) get().save();
     if (!runtime.server) { get().tick();
@@ -471,8 +480,14 @@ return create<GameState>((set, get) => ({
     const enemy = zone.enemies.find(e => e.id === enemyId);
     if (!enemy || character.level < (enemy.minLevel ?? 1)) return;
     character.activeEnemyId = enemyId;
-    character.enemyHp = (enemy?.hp || 0) * (enemy?.difficulty || 1);
-    character.enemyHpId = enemyId;
+    character.huntWaveProgress ??= {};
+    const stage = enemy.isBoss ? 4 : getWaveStage(character.huntWaveProgress, zone.id, enemy.id);
+    const encounter = enemy.isBoss ? enemy : getWaveEncounter(zone, enemy, stage);
+    character.fightWaveKey = enemy.isBoss ? undefined : getWaveKey(zone.id, enemy.id);
+    character.fightWaveStage = enemy.isBoss ? undefined : stage;
+    character.fightEnemyId = undefined;
+    character.enemyHp = encounter.hp * encounter.difficulty;
+    character.enemyHpId = encounter.id;
     set({ character: { ...character } }); get().save();
   },
 
@@ -480,7 +495,7 @@ return create<GameState>((set, get) => ({
     if (!ZONES[zoneId] || (get().character && !canEnterZone(get().character!,zoneId))) return;
     set({ currentZoneId: zoneId });
     const { character } = get();
-    if (character) { character.currentZoneId = zoneId; character.activeEnemyId = ZONES[zoneId].enemies[0]?.id; character.enemyHp = undefined; character.enemyHpId = undefined; set({ character: { ...character } }); get().save(); }
+    if (character) { character.currentZoneId = zoneId; character.activeEnemyId = ZONES[zoneId].enemies[0]?.id; character.enemyHp = undefined; character.enemyHpId = undefined; character.fightEnemyId = undefined; character.fightWaveKey = undefined; character.fightWaveStage = undefined; set({ character: { ...character } }); get().save(); }
   },
 
   equip: (uid, force = false) => {
