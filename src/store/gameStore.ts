@@ -14,7 +14,7 @@ import { findNamedRace, generateRaceName, generateRaceId, generateRaceBonus } fr
 import { sellItem, sellSelectedItems } from "../engine/shop";
 import { salvageAllEquipment, salvageSelectedEquipment } from "../engine/salvage";
 import { updateQuestProgress, claimQuestReward, trackRaceDiscovery, trackQuestAction } from "../engine/questEngine";
-import { upgradeItemLevel, rerollItemAffixes, forgeFragments, elevateItemTier, rerollSpecificAffix } from "../engine/forge";
+import { upgradeItemLevel, rerollItemAffixes, forgeFragments, elevateItemTier, rerollSpecificAffix, enchantItem } from "../engine/forge";
 import { depositItem as engineDeposit, withdrawItem as engineWithdraw, depositMany as engineDepositMany, withdrawMany as engineWithdrawMany } from "../engine/depot";
 import { FRAGMENT_TEMPLATES, DIVINE_BEAST_EGG_TEMPLATES, UNIQUE_TEMPLATES, ALL_ITEM_TEMPLATES, PROFESSION_TOOL_TEMPLATES, createItem } from "../data/items";
 import { divineBeastSellValue, DIVINE_BEASTS } from "../data/divineBeasts";
@@ -94,6 +94,7 @@ export interface GameState {
   rerollItem: (uid: string) => { success: boolean; error?: string };
   elevateItemTier: (uid: string) => { success: boolean; error?: string };
   rerollSpecificAffix: (uid: string, stat: keyof Character["baseStats"]) => { success: boolean; error?: string };
+  enchantItem: (uid: string, zoneId: string) => { success: boolean; error?: string; enchantment?: string };
   forgeFragments: (fromTemplateId: string) => { success: boolean; error?: string; crafted?: number };
   refineMythreonCoins: (amount?: number) => { success: boolean; coins?: number; error?: string };
   buyMythreonOffer: (offerId: string) => { success: boolean; error?: string };
@@ -995,6 +996,17 @@ return create<GameState>((set, get) => ({
     const { character } = get(); if (!character) return { success: false, error: "Sem personagem" };
     const next = structuredClone(character); const result = rerollSpecificAffix(next, uid, stat); if (!result.success) return result;
     set({ character: next }); get().save(); return result;
+  },
+
+  enchantItem: (uid, zoneId) => {
+    const { character } = get(); if (!character) return { success: false, error: "Sem personagem." };
+    const next = structuredClone(character);
+    const result = enchantItem(next, uid, zoneId);
+    if (!result.success) return result;
+    trackQuestAction(next, "FORGE");
+    set({ character: next }); get().save();
+    notify(`✨ ${result.enchantment} gravado no equipamento.`);
+    return result;
   },
 
   forgeFragments: (fromTemplateId) => {

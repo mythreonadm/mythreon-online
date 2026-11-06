@@ -39,7 +39,11 @@ export function DailyBoss() {
   const [now, setNow] = useState(Date.now());
   const [submitting, setSubmitting] = useState(false);
   const actionInFlight = useRef(false);
+  const arenaActionInFlight = useRef(false);
   const [confirmedHit, setConfirmedHit] = useState<BossArenaHit | null>(null);
+  const [selectedTargetId, setSelectedTargetId] = useState<string | null>(null);
+  const [arenaNotice, setArenaNotice] = useState("");
+  const joined = !!boss?.participant;
 
   const refresh = useCallback(async () => {
     if (!active || !character) return;
@@ -60,6 +64,29 @@ export function DailyBoss() {
     return () => { window.clearInterval(poll); window.clearInterval(clock); };
   }, [active, refresh]);
 
+  const arenaAction = async (operation: "dailyBoss.move" | "dailyBoss.togglePvp" | "dailyBoss.attackPlayer", payload: Record<string, unknown>) => {
+    if (arenaActionInFlight.current || !boss?.run.id) return;
+    arenaActionInFlight.current = true; setError(""); setArenaNotice("");
+    try {
+      const response = await onlineAction(operation, { runId: boss.run.id, ...payload });
+      if (response.dailyBoss) setBoss(previous => previous?.run.id === response.dailyBoss.run.id ? { ...previous, ...response.dailyBoss } : previous);
+      if (response.pvp?.damage) setConfirmedHit({ id: crypto.randomUUID(), runId: boss.run.id, damage: Number(response.pvp.damage), at: Date.now() });
+      setArenaNotice(response.pvp?.kind === "support" ? `Suporte ativado: +${Number(response.pvp.healed ?? 0).toLocaleString("pt-BR")} vida.` : response.pvp?.damage ? `${response.pvp.targetName}: −${Number(response.pvp.damage).toLocaleString("pt-BR")} PV.` : operation === "dailyBoss.togglePvp" ? (response.arena?.pvpEnabled ? "PvP aberto na arena." : "PvP protegido: ninguém poderá selecionar você.") : "Posição atualizada.");
+      if (operation !== "dailyBoss.move") await refresh();
+    } catch (reason) { setError(reason instanceof Error ? reason.message : "A ação da arena não pôde ser concluída."); }
+    finally { arenaActionInFlight.current = false; }
+  };
+
+  useEffect(() => {
+    if (!joined || !boss || boss.run.status !== "open") return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return;
+      const key = event.key.toLowerCase(); const direction = key === "w" || key === "arrowup" ? "up" : key === "s" || key === "arrowdown" ? "down" : key === "a" || key === "arrowleft" ? "left" : key === "d" || key === "arrowright" ? "right" : null;
+      if (!direction) return; event.preventDefault(); void arenaAction("dailyBoss.move", { direction });
+    };
+    window.addEventListener("keydown", onKeyDown); return () => window.removeEventListener("keydown", onKeyDown);
+  }, [joined, boss?.run.id, boss?.run.status]);
+
   const runAction = async (operation: "dailyBoss.join" | "dailyBoss.attack" | "dailyBoss.claim", runId = boss?.run.id) => {
     if (actionInFlight.current) return;
     actionInFlight.current = true; setSubmitting(true);
@@ -68,7 +95,7 @@ export function DailyBoss() {
       const response = await onlineAction(operation, { runId });
       if (operation === "dailyBoss.attack" && Number(response.damage) > 0) setConfirmedHit({ id: crypto.randomUUID(), runId: response.dailyBoss.run.id, damage: Number(response.damage), damageTaken: Number(response.damageTaken ?? 0), at: Date.now() });
       if (response.dailyBoss) setBoss(previous => previous?.run.id === response.dailyBoss.run.id ? { ...previous, ...response.dailyBoss } : previous);
-      setNotice(operation === "dailyBoss.join" ? "Você entrou na batalha. O dano de todos soma no mesmo Boss." : operation === "dailyBoss.attack" ? `Você causou ${Number(response.damage ?? 0).toLocaleString("pt-BR")} e recebeu ${Number(response.damageTaken ?? 0).toLocaleString("pt-BR")} de dano nesta batalha.` : `Recompensa recebida: ${Number(response.reward?.gold ?? 0).toLocaleString("pt-BR")} gold e ${Number(response.reward?.xp ?? 0).toLocaleString("pt-BR")} XP.`);
+      setNotice(operation === "dailyBoss.join" ? "Você entrou na batalha. O dano de todos soma no mesmo Boss." : operation === "dailyBoss.attack" ? `Você causou ${Number(response.damage ?? 0).toLocaleString("pt-BR")} e recebeu ${Number(response.damageTaken ?? 0).toLocaleString("pt-BR")} de dano nesta batalha.${response.finalHit ? " ✦ Você deu o golpe final!" : ""}` : `Recompensa recebida: ${Number(response.reward?.gold ?? 0).toLocaleString("pt-BR")} gold e ${Number(response.reward?.xp ?? 0).toLocaleString("pt-BR")} XP.${response.reward?.finalHit ? " Bônus de golpe final aplicado." : ""}`);
       await refresh();
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Não foi possível concluir a ação.");
@@ -76,7 +103,6 @@ export function DailyBoss() {
   };
 
   const hpPercent = useMemo(() => boss ? Math.max(0, Math.min(100, Number(boss.run.hp_remaining) / Math.max(1, Number(boss.run.hp_total) || 1) * 100)) : 0, [boss]);
-  const joined = !!boss?.participant;
   const canClaim = joined && !!boss && Number(boss.participant?.damage ?? 0) > 0 && ["defeated", "expired"].includes(boss.run.status) && !boss.participant?.claimed_at;
   const attackCooldown = Math.max(0, 2500 - (now - new Date(boss?.participant?.last_action_at ?? 0).getTime()));
   const knockoutWait = boss?.combat?.hp === 0 ? Math.max(0, boss.combat.recoveryUntil - now) : 0;
@@ -90,7 +116,8 @@ export function DailyBoss() {
       <div><p className="online-eyebrow">Uma ameaça para todo o mundo</p><h1 className="text-3xl font-bold text-arcane-gold">Boss Diário</h1><p className="mt-1 text-gray-300">{run.boss_title}</p></div>
       <div className="text-right"><strong className={statusColor[run.status]}>{statusLabel[run.status]}</strong><p className="text-xs text-gray-500">Ciclo encerra em {formatTime(run.closes_at, now)}</p></div>
     </header>
-    <DailyBossArena key={run.id} run={run} sprite={sprite} character={character} roster={boss.roster ?? []} participants={boss.participants} joined={joined} hit={confirmedHit} now={now} combat={boss.combat} />
+    <DailyBossArena key={run.id} run={run} sprite={sprite} character={character} roster={boss.roster ?? []} participants={boss.participants} joined={joined} hit={confirmedHit} now={now} combat={boss.combat} selectedTargetId={selectedTargetId} onSelectTarget={entry => { setSelectedTargetId(entry.character_id); setArenaNotice(`${entry.name} selecionado. Agora escolha uma ação PvP.`); }} />
+    {joined && run.status === "open" && <section className="rounded-2xl border border-cyan-400/30 bg-black/30 p-4"><div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-bold text-cyan-100">🎮 Controle de combate</h2><p className="text-xs text-gray-400">Movimente-se com WASD ou setas. Passe o mouse sobre um jogador para iluminar e clique para selecionar.</p></div><button type="button" className="online-button-secondary" onClick={() => void arenaAction("dailyBoss.togglePvp", { enabled: true })}>PvP aberto</button></div><div className="mt-3 grid gap-2 sm:grid-cols-4"><button type="button" className="online-button" disabled={!selectedTargetId || arenaActionInFlight.current} onClick={() => void arenaAction("dailyBoss.attackPlayer", { targetCharacterId: selectedTargetId, kind: "basic" })}>⚔️ Ataque básico</button><button type="button" className="online-button" disabled={!selectedTargetId || arenaActionInFlight.current} onClick={() => void arenaAction("dailyBoss.attackPlayer", { targetCharacterId: selectedTargetId, kind: "attack" })}>🔥 {character?.activeRace?.skills.ataque ?? "Ataque"}</button><button type="button" className="online-button-secondary" disabled={arenaActionInFlight.current} onClick={() => void arenaAction("dailyBoss.attackPlayer", { targetCharacterId: selectedTargetId, kind: "support" })}>✦ {character?.activeRace?.skills.suporte ?? "Suporte"}</button><div className="rounded-lg border border-white/10 p-2 text-xs text-gray-400"><strong className="text-arcane-gold">Passiva</strong><br />{character?.activeRace?.skills.passiva ?? "Sempre ativa"}</div></div>{arenaNotice && <p role="status" className="mt-3 text-sm text-cyan-200">{arenaNotice}</p>}</section>}
     <div className="grid gap-5 lg:grid-cols-[1fr_280px]">
       <article className="rounded-2xl border border-arcane-gold/30 bg-black/25 p-5">
         <div className="flex flex-wrap items-center gap-5"><div className="grid h-28 w-28 place-items-center rounded-full border border-arcane-gold/40 bg-gradient-to-b from-arcane-purple/30 to-black text-5xl"><AssetImage src={sprite} alt="Boss Diário" className="max-h-24 max-w-24 object-contain" fallbackSrc="/assets/branding/mythreon-logo-horizontal.png" /></div><div><h2 className="text-2xl font-bold text-white">{run.boss_name}</h2><p className="text-sm text-gray-400">Nível recomendado {run.level} · Vida reforçada pela participação coletiva</p><p className="mt-2 text-sm text-gray-300">Participantes: <strong className="text-arcane-gold">{boss.participants}</strong> · Dano mundial: <strong className="text-red-300">{boss.damageTotal.toLocaleString("pt-BR")}</strong></p></div></div>

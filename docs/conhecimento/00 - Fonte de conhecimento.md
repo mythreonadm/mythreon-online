@@ -29,6 +29,7 @@ As notas abaixo são as fontes preservadas para decisões, explicações e proce
 | Caça contínua, pulso de coleta e contador de Pets | [[docs/conhecimento/Pack-62-Caca-Coleta-e-Pets-2026-11-05|Pack 62: correções de jogabilidade]] |
 | Pulso online, caça estável e Baú do Refúgio | [[docs/conhecimento/Pack-63-Profissoes-Bau-e-Caca-2026-11-05|Pack 63: coleta, caça e baú]] |
 | Incubadora de Pets e abertura do ovo | [[docs/conhecimento/Pack-64-Incubadora-Botao-de-Eclosao-2026-11-05|Pack 64: botão Abrir o Ovo]] |
+| Encantamentos Únicos, runas e aspectos por mapa | [[docs/conhecimento/Encantamentos-Unicos-2026-11-05|Encantamentos Únicos]] |
 
 ## Evidências de balanceamento
 

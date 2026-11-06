@@ -96,6 +96,7 @@
 
 ## Relações encontradas
 
+- [[Mythreon Obsidian/Sistema - Elementos|Elementos]]
 - [[Mythreon Obsidian/Sistema - Motor do jogo|Motor do jogo]]
 - [[Mythreon Obsidian/Sistema - Dados do jogo|Dados do jogo]]
 - [[Mythreon Obsidian/Sistema - Telas|Telas]]

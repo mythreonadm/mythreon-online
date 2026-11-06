@@ -14,6 +14,7 @@
 - [src/data/cosmetics.ts](../src/data/cosmetics.ts) — CosmeticSlot, COSMETIC_SLOTS, CosmeticDefinition, COSMETIC_DEFINITIONS
 - [src/data/dailyBoss.ts](../src/data/dailyBoss.ts) — DailyBossStatus, DailyBossTemplate, DAILY_BOSS_TEMPLATES, dailyCycleKey, dailyBossTemplate, findBossEnemy
 - [src/data/dailyCalendar.ts](../src/data/dailyCalendar.ts) — CALENDAR_COUPON_PRICE, CALENDAR_WEEK_DAYS, CALENDAR_WEEK_FRAGMENTS, CALENDAR_MAX_GOLD_STREAK, CalendarDailyReward, CALENDAR_DAILY_REWARDS, CALENDAR_MONTHLY_REWARDS, calendarDayKey, validCalendarDay, calendarMonthInfo, calendarClaimedDays, calendarUnlockedSkins
+- [src/data/enchantments.ts](../src/data/enchantments.ts) — UniqueEnchantmentDefinition, UNIQUE_ENCHANTMENTS, RESERVED_ENCHANTMENT_ELEMENTS, ENCHANTMENT_RUNE_TEMPLATE, enchantmentForZone, buildItemEnchantment, enchantmentRuneTemplateId
 - [src/data/farm.ts](../src/data/farm.ts) — FarmSeed, FARM_SEEDS, FARM_RECIPES, farmRecipe, FARM_MAX_PLOTS, FARM_FERTILITY_MAX, FARM_FERTILITY_MIN, FARM_FERTILITY_LOSS_PER_HARVEST, FARM_FERTILITY_COMPOST_GAIN, FarmExpansionCost, farmExpansionCost, farmSeed
 - [src/data/journal-releases.json](../src/data/journal-releases.json)
 - [src/data/mythreonEconomy.ts](../src/data/mythreonEconomy.ts) — MYTHREON_ECONOMY, MythreonOfferKind, MythreonOffer, MYTHREON_OFFERS, getMythreonOffer, MYTHREON_DONATION_PACKS, PREMIUM_BENEFITS, MYTHREON_PREMIUM_PLANS, shardChance
@@ -26,6 +27,7 @@
 
 ## Relações encontradas
 
+- [[Mythreon Obsidian/Sistema - Itens e Ferreiro|Itens e Ferreiro]]
 - [[Mythreon Obsidian/Sistema - Tipos|Tipos]]
 - [[Mythreon Obsidian/Sistema - Utilitários|Utilitários]]
 - [[Mythreon Obsidian/Sistema - Mundo e História|Mundo e História]]

@@ -13,6 +13,7 @@
 - [[docs/conhecimento/Contas-Online-e-Social|Contas online, ranking e comunidade]] — Contas Supabase, motor autoritativo, ranking e sistemas sociais; ativação hospedada ainda pendente.
 - [[docs/conhecimento/Conteudo do Pantano de Veyra|Conteúdo do Pântano de Veyra]] — implementado-parcial
 - [[docs/conhecimento/Correção-Flechas-Revisão-2026-11-03|Revisão de flechas e mapa de pendências — 2026-11-03]] — a revisar
+- [[docs/conhecimento/Encantamentos-Unicos-2026-11-05|Encantamentos Únicos]] — implementado-localmente
 - [[docs/conhecimento/Fazenda-Sistema-Completo-2026-11-03|Fazenda de Lyss — sistema completo]] — a revisar
 - [[docs/conhecimento/Jornada-Lore-Biomas|Jornada, lore e biomas]] — Introdução guiada, economia inicial gradual e travessias por NPC ligam a lore aos sete biomas.
 - [[docs/conhecimento/Laboratorio-de-Builds-e-Windows|Laboratório de Builds e Windows]] — Laboratório isolado de combate e primeira distribuição Windows de desenvolvimento.

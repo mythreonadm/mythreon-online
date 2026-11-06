@@ -187,7 +187,7 @@
 - [src/data/itemAssets.ts](../src/data/itemAssets.ts) — itemAssetCandidates
 - [src/data/items.ts](../src/data/items.ts) — createItem, SWAMP_EQUIPMENT_TEMPLATES, ALL_EQUIPMENT_TEMPLATES, SWAMP_MATERIAL_TEMPLATES, PROFESSION_TEMPLATES, PROFESSION_TOOL_TEMPLATES, ARROW_TEMPLATES, POTION_TEMPLATES, UNIQUE_TEMPLATES, FRAGMENT_TEMPLATES, DIVINE_BEAST_EGG_TEMPLATES, BEAST_TAMER_TEMPLATES
 - [src/engine/depot.ts](../src/engine/depot.ts) — getDepotUsedSlots, depositItem, withdrawItem, depositMany, withdrawMany
-- [src/engine/forge.ts](../src/engine/forge.ts) — FORGE_CATEGORIES, getUpgradeCost, forgeFragments, upgradeItemLevel, rerollItemAffixes, elevateItemTier, rerollSpecificAffix
+- [src/engine/forge.ts](../src/engine/forge.ts) — FORGE_CATEGORIES, getEnchantmentCost, enchantItem, getUpgradeCost, forgeFragments, upgradeItemLevel, rerollItemAffixes, elevateItemTier, rerollSpecificAffix
 - [src/engine/inventory.ts](../src/engine/inventory.ts) — getUsedSlots, canAddItem, addItem, removeItem, countByTemplate, equipItem, unequipItem
 - [src/engine/itemCompare.ts](../src/engine/itemCompare.ts) — STAT_WEIGHTS, getItemScore, getBestTargetSlot, getEquippedForTarget, isUpgrade
 - [src/engine/salvage.ts](../src/engine/salvage.ts) — salvageItem, salvageAllEquipment, salvageSelectedEquipment
@@ -215,5 +215,6 @@
 - [[Mythreon Obsidian/Sistema - Tipos|Tipos]]
 - [[Mythreon Obsidian/Sistema - Utilitários|Utilitários]]
 - [[Mythreon Obsidian/Sistema - Artes e recursos|Artes e recursos]]
+- [[Mythreon Obsidian/Sistema - Mundo e História|Mundo e História]]
 
 [[Mythreon Obsidian/Mapa de Sistemas|Mapa técnico]]

@@ -51,11 +51,27 @@ export interface ItemStats {
 
 export interface Affix { law: Law; stat: keyof ItemStats; value: number; }
 
+/** Encantamento único aplicado no Ferreiro. Fica persistido no próprio item. */
+export interface ItemEnchantment {
+  id: string;
+  name: string;
+  zoneId: string;
+  tier: 1 | 2 | 3 | 4 | 5;
+  element?: Element;
+  weaponDamagePct: number;
+  armorResistancePct: number;
+  luckBonus?: number;
+  statusEffect: string;
+  visualKey: string;
+}
+
 export interface Item {
   uid: string; templateId: string; name: string; category: ItemCategory; slot?: SlotType;
   tier: 1 | 2 | 3 | 4 | 5; rarity: Rarity; stats: ItemStats; affixes: Affix[];
   upgradeLevel: number;
   uniqueEffect?: string; stackable: boolean; maxStack: number; quantity: number;
+  /** No máximo um encantamento único por equipamento. */
+  enchantment?: ItemEnchantment;
   componentType?: ComponentType; law?: Law; element?: Element; icon: string;
   elementalDamagePct?: number; preventsDeathDrop?: boolean;
   elementalResistances?: Partial<Record<Element, number>>;
@@ -218,6 +234,12 @@ export interface DailyBossBattle {
   knockouts: number;
   recoveryUntil: number;
   lastDamage: number;
+  /** Estado da arena online. Coordenadas em uma grade de 1000 x 560. */
+  position?: { x: number; y: number };
+  targetId?: string | null;
+  pvpEnabled?: boolean;
+  cooldowns?: Record<string, number>;
+  lastAttackKind?: "basic" | "attack" | "support";
 }
 
 export interface Character {
@@ -242,6 +264,8 @@ export interface Character {
   dailyBossXpUntil?: number;
   /** Vida isolada do Boss cooperativo, calculada exclusivamente pelo servidor. */
   dailyBossBattle?: DailyBossBattle;
+  /** Identidade futura da guild; não bloqueia a arena durante os testes. */
+  guildId?: string;
   /** Classificação do PvP ranqueado online. */
   pvpRating?: number; pvpWins?: number; pvpLosses?: number;
   

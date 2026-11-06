@@ -63,3 +63,7 @@ A fonte mais recente para o problema de ações que voltam atrás é [[docs/conh
 Profissões receberam pulso autoritativo, cenas e isca opcional nos Packs 57–58; Cards receberam evolução real, bônus compartilhados e sprites no Pack 59. O Pack 60 adiciona dez Cards para os mobs exclusivos de Pântano de Veyra e Deserto de Kaelor, levando o álbum a 48 espécies. A temporada de novembro preserva o catálogo original de 38 no denominador; a expansão entra na temporada de dezembro e o snapshot de `total_cards` não é sobrescrito no meio do mês. Ver [[docs/conhecimento/Pack-60-Cards-Veyra-Kaelor-e-Temporada-2026-11-04|Pack 60]].
 
 Continuam sem homologação de produção: concorrência e latência reais, dispositivos móveis físicos, lançamento Windows/Android, publicação das migrations, histórico/paginação em grande escala, negociação de Cards, economia prolongada e playtests dos custos. Não declarar os oito sistemas do roadmap (Boss Diário, PvP, Mineração/Pesca, Cards, calendário, Mercado Negro, Loja Premium e cosméticos) concluídos apenas por testes locais.
+
+## Continuidade — Encantamentos Únicos — 05/11/2026
+
+Implementado localmente: catálogo de um aspecto por mapa, runas de baixa taxa, receita de 100 runas + gold por item, restrição a Incomum ou superior, dano elemental em armas/arcos, resistência em defesa, Luck, aura visual e comando online autoritativo. Ver [[docs/conhecimento/Encantamentos-Unicos-2026-11-05|nota completa]]. Ainda falta homologar a economia em sessões longas e produzir os sprites próprios das runas.

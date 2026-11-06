@@ -45,6 +45,14 @@ export function recalcStats(char: Character): void {
     for (const [k, v] of Object.entries(item.stats)) fromGear[k] = (fromGear[k] || 0) + numeric(v);
     for (const affix of item.affixes ?? []) fromGear[affix.stat] = (fromGear[affix.stat] || 0) + numeric(affix.value);
     for (const [element, value] of Object.entries(item.elementalResistances ?? {})) elementalResistances[element as keyof typeof elementalResistances] = (elementalResistances[element as keyof typeof elementalResistances] ?? 0) + numeric(value);
+    if (item.enchantment) {
+      if (item.enchantment.luckBonus) fromGear.luck = (fromGear.luck || 0) + numeric(item.enchantment.luckBonus);
+      const enchantedWeapon = item.category === "ARMA" || (item.category === "FLECHA" && isUsingBow);
+      if (!enchantedWeapon && item.enchantment.element) {
+        const element = item.enchantment.element;
+        elementalResistances[element] = (elementalResistances[element] ?? 0) + numeric(item.enchantment.armorResistancePct);
+      }
+    }
   }
 
   // 2. Soma os stats da Raça Equipada

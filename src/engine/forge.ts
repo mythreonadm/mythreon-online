@@ -3,8 +3,49 @@ import { removeItem, countByTemplate, canAddItem, addItem } from "./inventory";
 import { recalcStats } from "./stats";
 import { generateRandomAffixes } from "./drops";
 import { FRAGMENT_TEMPLATES, ALL_ITEM_TEMPLATES, createItem } from "../data/items";
+import { buildItemEnchantment, enchantmentForZone, enchantmentRuneTemplateId } from "../data/enchantments";
 
 export const FORGE_CATEGORIES = ["ARMA", "ARMADURA", "JOIA", "PULSEIRA", "ESCUDO", "FLECHA"] as const;
+
+export function getEnchantmentCost(item: Item, zoneId?: string): { runes: number; gold: number; runeTemplateId: string } {
+  // O custo cresce com o tier e com o nível de afiação/aprimoramento, sem
+  // depender de valores enviados pelo cliente.
+  const safeUpgradeLevel = Number.isFinite(Number(item.upgradeLevel)) ? Math.max(0, Number(item.upgradeLevel)) : 0;
+  return {
+    runes: 100,
+    gold: Math.floor(1000 * item.tier * Math.max(1, safeUpgradeLevel + 1)),
+    runeTemplateId: zoneId ? enchantmentRuneTemplateId(zoneId) : "",
+  };
+}
+
+export function enchantItem(char: Character, itemUid: string, zoneId: string): { success: boolean; error?: string; enchantment?: string } {
+  const item = char.inventory.items.find(i => i.uid === itemUid);
+  const definition = enchantmentForZone(zoneId);
+  if (!item) return { success: false, error: "Item não encontrado no inventário." };
+  if (!definition) return { success: false, error: "Este mapa ainda não possui um encantamento descoberto." };
+  if (!FORGE_CATEGORIES.includes(item.category as typeof FORGE_CATEGORIES[number])) return { success: false, error: "Escolha um equipamento válido para o Ferreiro." };
+  if (item.rarity === "COMUM") return { success: false, error: "Encantamentos exigem um item Incomum ou superior." };
+  if (item.enchantment) return { success: false, error: "Este item já possui um Encantamento Único." };
+
+  const cost = getEnchantmentCost(item, zoneId);
+  const ownedRunes = countByTemplate(char.inventory, cost.runeTemplateId);
+  if (ownedRunes < cost.runes) return { success: false, error: `Faltam runas. Você possui ${ownedRunes}; precisa de ${cost.runes}.` };
+  if (char.gold < cost.gold) return { success: false, error: `Ouro insuficiente. Você precisa de ${cost.gold.toLocaleString("pt-BR")} gold.` };
+
+  const enchantment = buildItemEnchantment(zoneId, item.tier);
+  if (!enchantment) return { success: false, error: "Não foi possível materializar este aspecto." };
+  char.gold -= cost.gold;
+  let remaining = cost.runes;
+  for (const entry of [...char.inventory.items]) {
+    if (entry.templateId !== cost.runeTemplateId || remaining <= 0) continue;
+    const amount = Math.min(entry.quantity, remaining);
+    removeItem(char.inventory, entry.uid, amount);
+    remaining -= amount;
+  }
+  item.enchantment = enchantment;
+  recalcStats(char);
+  return { success: true, enchantment: enchantment.name };
+}
 
 function hydrateLegacyStats(item: Item) {
   const template = ALL_ITEM_TEMPLATES[item.templateId];

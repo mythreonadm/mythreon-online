@@ -12,9 +12,18 @@ import {cardFormationScore} from '../src/engine/cardCollection';
 import {makeComponent} from '../src/engine/drops';
 import {createItem,DIVINE_BEAST_EGG_TEMPLATES} from '../src/data/items';
 import {addItem} from '../src/engine/inventory';
+import {ATTACK_SKILLS, SUPPORT_EFFECTS, PASSIVE_EFFECTS} from '../src/data/skills';
+import {attackElement, elementMultiplier} from '../src/data/elementalChart';
+import {BALANCE, clamp, mitigatedDamage} from '../src/data/balance';
 export interface Database {query:(sql:string,values?:any[])=>Promise<{rows:any[];rowCount?:number|null}>;}
 export interface WorldRequest {operation:string;characterId?:string;requestId?:string;payload?:any;}
 export interface CharacterRow {id:string;owner_id:string;name:string;state:WorldState;revision:number;}
+const BOSS_ARENA_WIDTH=1000;
+const BOSS_ARENA_HEIGHT=560;
+const BOSS_ARENA_MARGIN=60;
+// Mantido aberto para o beta. Depois dos testes, trocar para true e concluir o
+// fluxo de guild sem alterar a regra de combate da arena.
+const DAILY_BOSS_GUILD_REQUIRED=false;
 const uuid=(id:unknown)=>{if(typeof id!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))throw Error('Identificador inválido.');return id;};
 const text=(v:unknown,max:number)=>{if(typeof v!=='string'||v.includes('\u0000')||!v.trim()||v.trim().length>max)throw Error('Texto inválido ou muito longo.');return v.trim();};
 async function commitCharacter(db:Database,c:CharacterRow){normalizeCosmeticOwnership(c.state.character);if(!Number.isSafeInteger(c.state.character.gold)||c.state.character.gold<0||!Number.isSafeInteger(c.state.character.mythreonCoins??0)||(c.state.character.mythreonCoins??0)<0)throw Error("Saldo fora dos limites.");await db.query('update public.world_characters set state=$2,revision=revision+1,updated_at=now() where id=$1',[c.id,JSON.stringify(c.state)]);await db.query('insert into public.world_rankings(character_id,name,metrics,current_map) values($1,$2,$3,$4) on conflict(character_id) do update set metrics=excluded.metrics,name=excluded.name,current_map=excluded.current_map,updated_at=now()',[c.id,c.name,JSON.stringify(rankingMetrics(c.state)),c.state.character.currentZoneId]);}
@@ -69,6 +78,35 @@ function pvpTurnDamage(state:WorldState){return Math.max(8,Math.min(900,Math.flo
 function pvpSeasonReward(rating:number,wins:number){const tier=pvpTier(rating);const table:any={BRONZE:{gold:2000,shards:10,coins:0},PRATA:{gold:5000,shards:25,coins:0},OURO:{gold:10000,shards:50,coins:1},PLATINA:{gold:20000,shards:100,coins:1},MITICO:{gold:40000,shards:200,coins:2}};const base=table[tier];const winBonus=Math.min(10000,Math.max(0,wins-5)*250);return {tier,gold:base.gold+winBonus,shards:base.shards+Math.min(100,wins*2),coins:base.coins};}
 function cardSeason(now = new Date()){const key=`${now.getUTCFullYear()}-${String(now.getUTCMonth()+1).padStart(2,'0')}`;const previous=new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth()-1,1));return {key,previousKey:`${previous.getUTCFullYear()}-${String(previous.getUTCMonth()+1).padStart(2,'0')}`};}
 function cardSeasonReward(unique:number,total:number){const ratio=unique/Math.max(1,total);if(ratio>=1)return {tier:'COMPLETO',gold:15000,shards:80,coins:2};if(ratio>=0.8)return {tier:'MESTRE',gold:8000,shards:45,coins:1};if(ratio>=0.5)return {tier:'COLECIONADOR',gold:3000,shards:20,coins:0};return null;}
+function arenaPositionFor(id:string){let hash=0;for(const char of id)hash=(hash*31+char.charCodeAt(0))>>>0;return {x:BOSS_ARENA_MARGIN+(hash%(BOSS_ARENA_WIDTH-BOSS_ARENA_MARGIN*2)),y:BOSS_ARENA_MARGIN+(Math.floor(hash/97)%(BOSS_ARENA_HEIGHT-BOSS_ARENA_MARGIN*2))};}
+function ensureArenaBattle(character:WorldState['character'],runId:string){
+ const existing=character.dailyBossBattle?.runId===runId?character.dailyBossBattle:bossBattleFor(character,runId);
+ existing.position??=arenaPositionFor(character.id);
+ existing.targetId??=null; existing.pvpEnabled??=true; existing.cooldowns??={};
+ return existing;
+}
+function arenaDistance(a:{x:number;y:number},b:{x:number;y:number}){return Math.hypot(a.x-b.x,a.y-b.y);}
+function arenaAttackRange(kind:'basic'|'attack'|'support',attackId?:string){
+ if(kind==='basic')return 170;
+ if(kind==='support')return 260;
+ return ['A1','A4','A6','A8','A9','A10','A14','A19'].includes(attackId??'')?185:430;
+}
+function arenaCooldown(kind:'basic'|'attack'|'support',stats:any,passiveId?:string){
+ const speed=clamp(Number(stats?.spd??0),0,0.8);
+ if(kind==='basic')return Math.max(650,Math.round(2200/(1+speed)));
+ if(kind==='support')return Math.max(4500,Number(SUPPORT_EFFECTS[passiveId??'']?.cd??6)*1500);
+ const reduce=PASSIVE_EFFECTS[passiveId??'']?.cdReduce??0;
+ return Math.max(3500,Math.round(8500-(reduce*1500)));
+}
+function arenaDamage(attacker:WorldState['character'],target:WorldState['character'],kind:'basic'|'attack',attackId?:string){
+ const stats=attacker.baseStats??{};const targetStats=target.baseStats??{};const element=kind==='attack'?attackElement(attackId):'BASE';
+ const skill=kind==='attack'?ATTACK_SKILLS[attackId??'']:undefined;
+ const physical=Number(stats.atk??0),magical=Number(stats.matk??0);
+ const raw=Math.max(1,Math.floor((kind==='attack'?(skill?.mult??1.8)*(element==='BASE'?physical:magical):physical)*0.34+Number(attacker.level??1)*1.5));
+ const armor=Math.max(0,Number(targetStats.arm??targetStats.def??0)*(1-(skill?.pierce??0)));
+ const resistance=Math.max(0,Math.min(BALANCE.resistanceCap,Number(target.elementalResistances?.[element]??0)));
+ return Math.max(1,Math.round(mitigatedDamage(raw,armor)*elementMultiplier(element,"BASE")* (1-resistance)));
+}
 async function upsertPvpSeasonStats(db:Database,c:CharacterRow,seasonKey:string){await db.query('insert into public.world_pvp_season_stats(id,season_key,character_id,owner_id,rating,wins,losses,matches,updated_at) values($1,$2,$3,$4,$5,$6,$7,1,now()) on conflict(season_key,character_id) do update set owner_id=excluded.owner_id,rating=excluded.rating,wins=excluded.wins,losses=excluded.losses,matches=public.world_pvp_season_stats.matches+1,updated_at=now()',[randomUUID(),seasonKey,c.id,c.owner_id,Number(c.state.character.pvpRating??1000),Number(c.state.character.pvpWins??0),Number(c.state.character.pvpLosses??0)]);}
 async function premiumEntitlement(db:Database,owner:string){try{return {configured:true,row:(await db.query('select plan_id,status,starts_at,expires_at from public.world_premium_entitlements where account_id=$1',[owner])).rows[0]??null};}catch(error:any){if(String(error?.code)==='42P01')return {configured:false,row:null};throw error;}}
 async function syncPremium(db:Database,owner:string,character:WorldState['character']){const result=await premiumEntitlement(db,owner);if(!result.configured)return null;const entitlement=result.row;if(!entitlement){character.premium=false;character.premiumPlanId=undefined;character.premiumUntil=undefined;return {active:false,planId:null,expiresAt:null};}const now=Date.now(),starts=new Date(entitlement.starts_at).getTime(),expires=new Date(entitlement.expires_at).getTime();const active=entitlement.status==='active'&&Number.isFinite(starts)&&starts<=now&&Number.isFinite(expires)&&expires>now;character.premium=active;character.premiumPlanId=active?String(entitlement.plan_id):undefined;character.premiumUntil=active?expires:undefined;return {active,planId:active?String(entitlement.plan_id):null,expiresAt:active?new Date(expires).toISOString():null};}
@@ -122,9 +160,49 @@ export async function handleWorld(db:Database,owner:string,request:WorldRequest)
   const leaderboard=(await db.query('select p.character_id,c.name,p.damage from public.world_daily_boss_participants p join public.world_characters c on c.id=p.character_id where p.run_id=$1 order by p.damage desc limit 10',[run.id])).rows;
   const history=(await db.query('select r.id,r.run_id,r.damage,r.participation_ratio,r.defeated,r.gold,r.xp,r.shards,r.loot,r.created_at,b.cycle_key,b.boss_name,b.level from public.world_daily_boss_rewards r join public.world_daily_boss_runs b on b.id=r.run_id where r.owner_id=$1 order by r.created_at desc limit 10',[owner])).rows;
   const pendingRewards=request.characterId?(await db.query("select b.id as run_id,b.boss_name,b.level,b.cycle_key,b.status,b.closes_at,p.damage from public.world_daily_boss_participants p join public.world_daily_boss_runs b on b.id=p.run_id where p.owner_id=$1 and p.character_id=$2 and p.claimed_at is null and p.damage>0 and (b.status in ('defeated','expired') or b.closes_at<=now()) order by b.closes_at asc limit 50",[owner,uuid(request.characterId)])).rows:[];
-  const roster=(await db.query("select p.character_id,c.name,p.damage,p.last_action_at,c.state->'character'->'activeRace'->>'ataqueId' as attack_id,c.state->'character'->'appearance' as appearance,c.state->'character'->'cosmeticLoadout' as cosmetics from public.world_daily_boss_participants p join public.world_characters c on c.id=p.character_id where p.run_id=$1 order by coalesce(p.last_action_at,p.joined_at) desc,p.character_id limit 12",[run.id])).rows;
-  const combatOwner=participant?(await db.query('select state from public.world_characters where id=$1 and owner_id=$2',[uuid(request.characterId),owner])).rows[0]:null;const combat=combatOwner?bossBattleFor(combatOwner.state.character,run.id):null;
+  const roster=(await db.query("select p.character_id,c.name,p.damage,p.last_action_at,c.state->'character'->'activeRace'->>'ataqueId' as attack_id,c.state->'character'->'appearance' as appearance,c.state->'character'->'cosmeticLoadout' as cosmetics,c.state->'character'->'dailyBossBattle'->'position' as position,c.state->'character'->'dailyBossBattle'->>'pvpEnabled' as pvp_enabled from public.world_daily_boss_participants p join public.world_characters c on c.id=p.character_id where p.run_id=$1 order by coalesce(p.last_action_at,p.joined_at) desc,p.character_id limit 24",[run.id])).rows;
+  const combatOwner=participant?(await db.query('select state from public.world_characters where id=$1 and owner_id=$2',[uuid(request.characterId),owner])).rows[0]:null;const combat=combatOwner?ensureArenaBattle(combatOwner.state.character,run.id):null;
   receipt={dailyBoss:{run,participant,combat,participants:Number(totals.participants??0),damageTotal:Number(totals.damage_total??0),leaderboard,history,pendingRewards,roster}};
+ }
+ else if(op==='dailyBoss.move'||op==='dailyBoss.togglePvp'||op==='dailyBoss.attackPlayer'){
+  const run=await ensureDailyBoss(db);if(run.status!=='open')throw Error('O Boss Diário não está mais em combate.');
+  if(p.runId&&uuid(p.runId)!==run.id)throw Error('O ciclo do Boss mudou. Atualize a arena antes de agir.');
+  if(op==='dailyBoss.attackPlayer'){
+   const targetId=uuid(p.targetCharacterId);if(targetId===request.characterId)throw Error('Escolha outro aventureiro como alvo.');
+   const rows=(await db.query('select * from public.world_characters where id=any($1::uuid[]) order by id for update',[[uuid(request.characterId),targetId]])).rows;
+   const attacker=rows.find(row=>row.id===request.characterId&&row.owner_id===owner) as CharacterRow|undefined;const target=rows.find(row=>row.id===targetId) as CharacterRow|undefined;
+   if(!attacker||!target)throw Error('Participante inválido.');
+   const participants=(await db.query('select character_id from public.world_daily_boss_participants where run_id=$1 and character_id=any($2::uuid[])',[run.id,[attacker.id,target.id]])).rows;
+   if(participants.length!==2)throw Error('Os dois jogadores precisam estar inscritos no Boss Diário.');
+   const friendship=(await db.query("select id from public.world_friends where status='accepted' and ((inviter_id=$1 and invitee_id=$2) or (inviter_id=$2 and invitee_id=$1)) limit 1",[attacker.id,target.id])).rows[0];
+   if(friendship)throw Error('Amigos não podem causar dano entre si.');
+   const attackerBattle=ensureArenaBattle(attacker.state.character,run.id),targetBattle=ensureArenaBattle(target.state.character,run.id);
+   if(attackerBattle.pvpEnabled===false)throw Error('Ative o modo PvP para atacar outros jogadores.');
+   if(targetBattle.pvpEnabled===false)throw Error('Este jogador está protegido contra PvP.');
+   if(targetBattle.hp<=0&&Date.now()<targetBattle.recoveryUntil)throw Error('Este jogador está se recuperando do nocaute.');
+   const kind=String(p.kind??'basic') as 'basic'|'attack'|'support';if(!['basic','attack','support'].includes(kind))throw Error('Ação de combate inválida.');
+   const attackId=attacker.state.character.activeRace?.ataqueId;const distance=arenaDistance(attackerBattle.position!,targetBattle.position!);const range=arenaAttackRange(kind,attackId);
+   if(distance>range)throw Error(`Alvo fora de alcance (${Math.ceil(distance)} / ${range}px).`);
+   const cooldown=arenaCooldown(kind,attacker.state.character.baseStats,kind==='support'?attacker.state.character.activeRace?.suporteId:attacker.state.character.activeRace?.passivaId);const readyAt=Number(attackerBattle.cooldowns?.[kind]??0);if(readyAt>Date.now())throw Error(`Aguarde ${Math.ceil((readyAt-Date.now())/1000)}s para usar esta ação.`);
+   attackerBattle.targetId=target.id;attackerBattle.lastAttackKind=kind;attackerBattle.cooldowns![kind]=Date.now()+cooldown;
+   let damage=0;
+   if(kind==='support'){
+    const heal=Math.max(1,Math.floor((attacker.state.character.hpMax??100)*0.12));attacker.state.character.hp=Math.min(attacker.state.character.hpMax,attacker.state.character.hp+heal);attacker.state.character.mp=Math.min(attacker.state.character.mpMax,attacker.state.character.mp+Math.max(1,Math.floor((attacker.state.character.mpMax??50)*0.06)));
+    receipt.pvp={kind,distance,range,healed:heal,cooldownUntil:attackerBattle.cooldowns![kind],targetId:target.id};
+   }else{
+    damage=arenaDamage(attacker.state.character,target.state.character,kind,attackId);targetBattle.hp=Math.max(0,targetBattle.hp-damage);targetBattle.damageTaken+=damage;targetBattle.lastDamage=damage;targetBattle.targetId=attacker.id;
+    if(targetBattle.hp===0){targetBattle.knockouts+=1;targetBattle.recoveryUntil=Date.now()+30000;}
+    receipt.pvp={kind,distance,range,damage,knockedOut:targetBattle.hp===0,targetId:target.id,targetName:target.name,cooldownUntil:attackerBattle.cooldowns![kind],targetHp:targetBattle.hp};
+   }
+   attacker.state.character.dailyBossBattle=attackerBattle;target.state.character.dailyBossBattle=targetBattle;await commitCharacter(db,attacker);await commitCharacter(db,target);
+  }else{
+   const arenaActor=await own(db,owner,request.characterId);actor=arenaActor;const battle=ensureArenaBattle(arenaActor.state.character,run.id);
+   if(op==='dailyBoss.move'){
+    const direction=String(p.direction??'');const delta:{x:number;y:number}=direction==='up'||direction==='w'?{x:0,y:-34}:direction==='down'||direction==='s'?{x:0,y:34}:direction==='left'||direction==='a'?{x:-34,y:0}:direction==='right'||direction==='d'?{x:34,y:0}:{x:0,y:0};if(!delta.x&&!delta.y)throw Error('Direção inválida.');
+    const now=Date.now();if(Number(battle.cooldowns?.move??0)>now)throw Error('Movimento muito rápido.');battle.position={x:clamp(battle.position!.x+delta.x,BOSS_ARENA_MARGIN,BOSS_ARENA_WIDTH-BOSS_ARENA_MARGIN),y:clamp(battle.position!.y+delta.y,BOSS_ARENA_MARGIN,BOSS_ARENA_HEIGHT-BOSS_ARENA_MARGIN)};battle.cooldowns!.move=now+90;arenaActor.state.character.dailyBossBattle=battle;await commitCharacter(db,arenaActor);receipt.arena={position:battle.position};
+   }else{const enabled=Boolean(p.enabled);battle.pvpEnabled=enabled;arenaActor.state.character.dailyBossBattle=battle;await commitCharacter(db,arenaActor);receipt.arena={pvpEnabled:enabled};}
+  }
+  const latest=(await db.query('select * from public.world_daily_boss_participants where run_id=$1 and character_id=$2',[run.id,uuid(request.characterId)])).rows[0]??null;receipt.dailyBoss={run,participant:latest,combat:actor?.state.character.dailyBossBattle?.runId===run.id?(actor as CharacterRow).state.character.dailyBossBattle:null};
  }
  else if(op==='dailyBoss.join'||op==='dailyBoss.attack'||op==='dailyBoss.claim'){
   actor=await own(db,owner,request.characterId);let run:any;
@@ -132,27 +210,28 @@ export async function handleWorld(db:Database,owner:string,request:WorldRequest)
   if(op!=='dailyBoss.claim'&&p.runId&&uuid(p.runId)!==run.id)throw Error('O ciclo do Boss mudou. Atualize o painel antes de participar.');
   if(op==='dailyBoss.join'){
    if(run.status!=='open')throw Error('A janela deste Boss Diário já foi encerrada.');
+   if(DAILY_BOSS_GUILD_REQUIRED&&!actor.state.character.guildId)throw Error('Este Boss Diário exige uma guild ativa.');
    const joined=await db.query('insert into public.world_daily_boss_participants(run_id,character_id,owner_id) values($1,$2,$3) on conflict(run_id,character_id) do nothing returning character_id',[run.id,actor.id,owner]);
    if(joined.rows.length){const reinforcement=Math.max(1000,Math.floor(Number(run.base_hp)*0.10));await db.query('update public.world_daily_boss_runs set hp_total=least(base_hp*4,hp_total+$2),hp_remaining=least(base_hp*4,hp_remaining+$2) where id=$1',[run.id,reinforcement]);}
-  actor.state.character.dailyBossBattle=bossBattleFor(actor.state.character,run.id);await commitCharacter(db,actor);
+  actor.state.character.dailyBossBattle=ensureArenaBattle(actor.state.character,run.id);await commitCharacter(db,actor);
   }else if(op==='dailyBoss.attack'){
    if(run.status!=='open')throw Error('O Boss Diário não está mais em combate.');
    const participant=(await db.query('select * from public.world_daily_boss_participants where run_id=$1 and character_id=$2 for update',[run.id,actor.id])).rows[0];if(!participant)throw Error('Entre na batalha antes de atacar.');
    if(participant.last_action_at&&Date.now()-new Date(participant.last_action_at).getTime()<2500)throw Error('Aguarde 2,5s entre os ataques do Boss Diário.');
    const ch=actor.state.character,base=Number(ch.baseStats?.atk??0)+Number(ch.baseStats?.matk??0),skills=Object.values(ch.skills??{}).reduce((sum,value)=>sum+Number(value||0),0);const damage=Math.min(Number(run.hp_remaining),100000,Math.max(1,Math.floor(base*0.45+skills*1.5+Number(ch.level||1)*4)));
-   const bossTemplate=DAILY_BOSS_TEMPLATES.find(template=>template.id===run.boss_template_id),enemy=bossTemplate?findBossEnemy(bossTemplate):undefined;if(!enemy)throw Error('Boss não configurado para esta batalha.');const group=(await db.query('select count(*)::int as count from public.world_daily_boss_participants where run_id=$1',[run.id])).rows[0];
-   const battle=bossRetaliation(ch,run.id,enemy,Number(group.count),damage>=Number(run.hp_remaining),Date.now());ch.dailyBossBattle=battle;
+   const bossTemplate=DAILY_BOSS_TEMPLATES.find(template=>template.id===run.boss_template_id),enemy=bossTemplate?findBossEnemy(bossTemplate):undefined;if(!enemy)throw Error('Boss não configurado para esta batalha.');const group=(await db.query('select count(*)::int as count from public.world_daily_boss_participants where run_id=$1',[run.id])).rows[0];const finalHit=damage>=Number(run.hp_remaining);
+   const previousBattle=ensureArenaBattle(ch,run.id);const battle=bossRetaliation(ch,run.id,enemy,Number(group.count),finalHit,Date.now());battle.position=previousBattle.position;battle.targetId=previousBattle.targetId;battle.pvpEnabled=previousBattle.pvpEnabled;battle.cooldowns=previousBattle.cooldowns;battle.lastAttackKind='attack';ch.dailyBossBattle=battle;
    await db.query('update public.world_daily_boss_participants set damage=damage+$3,last_action_at=now() where run_id=$1 and character_id=$2',[run.id,actor.id,damage]);
    await db.query("update public.world_daily_boss_runs set hp_remaining=greatest(0,hp_remaining-$2),status=case when hp_remaining-$2<=0 then 'defeated' else status end,resolved_at=case when hp_remaining-$2<=0 then coalesce(resolved_at,now()) else resolved_at end where id=$1",[run.id,damage]);
-   await commitCharacter(db,actor);receipt.damage=damage;receipt.damageTaken=battle.lastDamage;
+   await commitCharacter(db,actor);receipt.damage=damage;receipt.damageTaken=battle.lastDamage;receipt.finalHit=finalHit;
   }else{
    const participant=(await db.query('select * from public.world_daily_boss_participants where run_id=$1 and character_id=$2 for update',[run.id,actor.id])).rows[0];if(!participant)throw Error('Participe do Boss Diário antes de resgatar.');
    if(participant.claimed_at)throw Error('A recompensa desta janela já foi resgatada.');if(Number(participant.damage??0)<=0)throw Error('Cause dano ao Boss para receber uma recompensa de participação.');if(!['defeated','expired'].includes(run.status))throw Error('A recompensa só fica disponível quando a janela terminar.');
-   const ratio=Math.min(1,Number(participant.damage||0)/Math.max(1,Number(run.hp_total||1))),defeated=run.status==='defeated';const rewardGold=Math.max(50,Math.floor((Number(run.level)*80+ratio*Number(run.level)*2000)*(defeated?2:1))),rewardXp=Math.max(100,Math.floor(Number(run.level)*35+ratio*Number(run.level)*500));
+   const ratio=Math.min(1,Number(participant.damage||0)/Math.max(1,Number(run.hp_total||1))),defeated=run.status==='defeated';const finalHitRow=defeated?(await db.query('select character_id from public.world_daily_boss_participants where run_id=$1 and damage>0 order by last_action_at desc nulls last,joined_at desc limit 1',[run.id])).rows[0]:null;const finalHit=Boolean(finalHitRow?.character_id===actor.id);const rewardGold=Math.max(50,Math.floor((Number(run.level)*80+ratio*Number(run.level)*2000)*(defeated?2:1)*(finalHit?1.5:1))),rewardXp=Math.max(100,Math.floor((Number(run.level)*35+ratio*Number(run.level)*500)*(finalHit?1.25:1)));
    actor.state.character.gold+=rewardGold;applyDailyBossXp(actor.state.character,rewardXp);if(defeated)actor.state.character.dailyBossXpUntil=Math.max(Number(actor.state.character.dailyBossXpUntil??0),new Date(run.closes_at).getTime());
    const bossEnemy=findBossEnemy(dailyBossTemplate(run.cycle_key));const bossLoot=grantDailyBossLoot(actor.state.character,run,bossEnemy,ratio,defeated);
    await db.query('insert into public.world_daily_boss_rewards(id,run_id,character_id,owner_id,damage,participation_ratio,defeated,gold,xp,shards,loot) values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)',[randomUUID(),run.id,actor.id,owner,Number(participant.damage||0),ratio,defeated,rewardGold,rewardXp,bossLoot.shards,JSON.stringify(bossLoot.items)]);
-   await db.query('update public.world_daily_boss_participants set claimed_at=now() where run_id=$1 and character_id=$2',[run.id,actor.id]);await commitCharacter(db,actor);receipt.reward={gold:rewardGold,xp:rewardXp,loot:bossLoot.items,shards:bossLoot.shards,bonusXpUntil:actor.state.character.dailyBossXpUntil??null};
+   await db.query('update public.world_daily_boss_participants set claimed_at=now() where run_id=$1 and character_id=$2',[run.id,actor.id]);await commitCharacter(db,actor);receipt.reward={gold:rewardGold,xp:rewardXp,loot:bossLoot.items,shards:bossLoot.shards,finalHit,bonusXpUntil:actor.state.character.dailyBossXpUntil??null};
   }
   run=(await db.query('select * from public.world_daily_boss_runs where id=$1',[run.id])).rows[0];const participant=(await db.query('select * from public.world_daily_boss_participants where run_id=$1 and character_id=$2',[run.id,actor.id])).rows[0]??null;receipt.dailyBoss={run,participant,combat:actor.state.character.dailyBossBattle?.runId===run.id?actor.state.character.dailyBossBattle:null};
  }

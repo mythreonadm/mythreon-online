@@ -1555,6 +1555,14 @@ function recalcStats(char) {
     for (const [k, v] of Object.entries(item.stats)) fromGear[k] = (fromGear[k] || 0) + numeric(v);
     for (const affix of item.affixes ?? []) fromGear[affix.stat] = (fromGear[affix.stat] || 0) + numeric(affix.value);
     for (const [element, value] of Object.entries(item.elementalResistances ?? {})) elementalResistances[element] = (elementalResistances[element] ?? 0) + numeric(value);
+    if (item.enchantment) {
+      if (item.enchantment.luckBonus) fromGear.luck = (fromGear.luck || 0) + numeric(item.enchantment.luckBonus);
+      const enchantedWeapon = item.category === "ARMA" || item.category === "FLECHA" && isUsingBow;
+      if (!enchantedWeapon && item.enchantment.element) {
+        const element = item.enchantment.element;
+        elementalResistances[element] = (elementalResistances[element] ?? 0) + numeric(item.enchantment.armorResistancePct);
+      }
+    }
   }
   if (char.activeRace && char.activeRace.bonus) {
     for (const [k, v] of Object.entries(char.activeRace.bonus)) fromRace[k] = numeric(v);
@@ -3040,6 +3048,56 @@ function shardChance(enemy) {
   return Math.min(0.05, base * (enemy.isBoss ? 1.5 : 1));
 }
 
+// src/data/enchantments.ts
+var UNIQUE_ENCHANTMENTS = {
+  BOSQUE_LYSS: { id: "ASPECTO_LYSS", name: "Aspecto da Vida", zoneId: "BOSQUE_LYSS", element: "SAGRADO", statusEffect: "radiante", visualKey: "lyss", description: "A Ess\xEAncia viva de Lyss floresce no equipamento.", weaponLabel: "+10% de dano sagrado", armorLabel: "+8% de resist\xEAncia sagrada", luckBonus: 0.01 },
+  PICO_DHOR: { id: "ASPECTO_FLAMEJANTE", name: "Aspecto Flamejante", zoneId: "PICO_DHOR", element: "FOGO", statusEffect: "incandescente", visualKey: "flamejante", description: "A fenda t\xE9rmica mant\xE9m a pe\xE7a em combust\xE3o controlada.", weaponLabel: "+10% de dano de fogo", armorLabel: "+8% de resist\xEAncia a fogo" },
+  MAR_AZHAR: { id: "ASPECTO_CONGELADO", name: "Aspecto Congelado", zoneId: "MAR_AZHAR", element: "GELO", statusEffect: "congelante", visualKey: "congelado", description: "O frio profundo de Azhar cristaliza o golpe e a defesa.", weaponLabel: "+10% de dano de gelo", armorLabel: "+8% de resist\xEAncia a gelo" },
+  RUINAS_ASTERION: { id: "ASPECTO_ELETRIZANTE", name: "Aspecto Eletrizante", zoneId: "RUINAS_ASTERION", element: "ELETRICIDADE", statusEffect: "eletrocutado", visualKey: "eletrizante", description: "Runas antigas liberam um arco el\xE9trico a cada impacto.", weaponLabel: "+10% de dano el\xE9trico", armorLabel: "+8% de resist\xEAncia el\xE9trica" },
+  CICATRIZ_PROFUNDA: { id: "ASPECTO_SOMBRIO", name: "Aspecto Sombrio", zoneId: "CICATRIZ_PROFUNDA", element: "MORTE", statusEffect: "sangrante", visualKey: "sombrio", description: "A Cicatriz do Vazio deixa a pe\xE7a marcada por energia de morte.", weaponLabel: "+10% de dano de morte", armorLabel: "+8% de resist\xEAncia \xE0 morte" },
+  PANTANO_VEYRA: { id: "ASPECTO_ENVENENADO", name: "Aspecto Envenenado", zoneId: "PANTANO_VEYRA", element: "VENENO", statusEffect: "envenenado", visualKey: "envenenado", description: "O miasma de Veyra escorre pelas runas do equipamento.", weaponLabel: "+10% de dano venenoso", armorLabel: "+8% de resist\xEAncia a veneno" },
+  DESERTO_KAELOR: { id: "ASPECTO_DA_SORTE", name: "Aspecto da Sorte", zoneId: "DESERTO_KAELOR", statusEffect: "afortunado", visualKey: "sorte", description: "A miragem de Kaelor dobra o acaso a favor do portador.", weaponLabel: "+10% de dano base", armorLabel: "+8% de resist\xEAncia f\xEDsica", luckBonus: 0.04 }
+};
+var ENCHANTMENT_RUNE_TEMPLATE = (zoneId) => {
+  const def = UNIQUE_ENCHANTMENTS[zoneId];
+  const tier = Math.max(1, Math.min(5, { BOSQUE_LYSS: 1, PICO_DHOR: 2, MAR_AZHAR: 3, PANTANO_VEYRA: 3, RUINAS_ASTERION: 4, DESERTO_KAELOR: 4, CICATRIZ_PROFUNDA: 5 }[zoneId] ?? 1));
+  const runeRegionName = { BOSQUE_LYSS: "Lyss", PICO_DHOR: "Dhor", MAR_AZHAR: "Azhar", RUINAS_ASTERION: "Asterion", CICATRIZ_PROFUNDA: "Cicatriz", PANTANO_VEYRA: "Veyra", DESERTO_KAELOR: "Kaelor" }[zoneId] ?? def?.name.replace(/^Aspecto /, "") ?? "Desconhecida";
+  return createItem({
+    templateId: `RUNA_ENCANTADA_${zoneId}`,
+    name: `Runa Encantada de ${runeRegionName}`,
+    category: "MATERIAL",
+    tier,
+    rarity: tier >= 5 ? "EPICO" : tier >= 3 ? "RARO" : "INCOMUM",
+    icon: "\u{1F52E}",
+    stackable: true,
+    maxStack: 999
+  });
+};
+function enchantmentForZone(zoneId) {
+  return UNIQUE_ENCHANTMENTS[zoneId];
+}
+function buildItemEnchantment(zoneId, itemTier) {
+  const def = enchantmentForZone(zoneId);
+  if (!def) return void 0;
+  const tier = Math.max(1, Math.min(5, itemTier));
+  const scale = 1 + (tier - 1) * 0.08;
+  return {
+    id: def.id,
+    name: def.name,
+    zoneId,
+    tier,
+    element: def.element,
+    weaponDamagePct: Number((0.1 * scale).toFixed(3)),
+    armorResistancePct: Number((0.08 * scale).toFixed(3)),
+    luckBonus: def.luckBonus ? Number((def.luckBonus * scale).toFixed(3)) : void 0,
+    statusEffect: def.statusEffect,
+    visualKey: def.visualKey
+  };
+}
+function enchantmentRuneTemplateId(zoneId) {
+  return `RUNA_ENCANTADA_${zoneId}`;
+}
+
 // src/engine/combat.ts
 function buildProfile(char) {
   const bp = char.inventory.backpack;
@@ -3344,15 +3402,22 @@ function processTick(char, zone, isOffline) {
       }
     }
     const weapon = char.equipped.ARMA_PRINCIPAL;
-    if (weapon?.element && (weapon.elementalDamagePct ?? 0) > 0 && dealt > 0) {
-      const rawElementDamage = Math.round(dealt * (weapon.elementalDamagePct ?? 0));
-      const resistance = Math.max(0, Math.min(BALANCE.resistanceCap, enemy.elementalResistances?.[weapon.element] ?? 0));
-      const elementalDamage = Math.max(0, Math.round(rawElementDamage * elementMultiplier(weapon.element, enemy.element) * (1 - resistance)));
+    const arrow = char.equipped.MUNICAO;
+    const usingBow = weapon?.templateId.includes("ARCO") ?? false;
+    const weaponEnchant = weapon?.enchantment;
+    const arrowEnchant = usingBow ? arrow?.enchantment : void 0;
+    const weaponElement = weaponEnchant?.element ?? weapon?.element ?? arrowEnchant?.element;
+    const weaponElementPct = (weapon?.elementalDamagePct ?? 0) + (weaponEnchant?.weaponDamagePct ?? 0) + (arrowEnchant?.weaponDamagePct ?? 0);
+    if (weaponElement && weaponElementPct > 0 && dealt > 0) {
+      const rawElementDamage = Math.round(dealt * weaponElementPct);
+      const resistance = Math.max(0, Math.min(BALANCE.resistanceCap, enemy.elementalResistances?.[weaponElement] ?? 0));
+      const elementalDamage = Math.max(0, Math.round(rawElementDamage * elementMultiplier(weaponElement, enemy.element) * (1 - resistance)));
       dealt += elementalDamage;
       elementalThisTick += elementalDamage;
       result.lastDamage = (result.lastDamage ?? 0) + elementalDamage;
-      result.damageBreakdown.elemental[weapon.element] = (result.damageBreakdown.elemental[weapon.element] ?? 0) + elementalDamage;
-      encounterDamageBreakdown.elemental[weapon.element] = (encounterDamageBreakdown.elemental[weapon.element] ?? 0) + elementalDamage;
+      result.damageBreakdown.elemental[weaponElement] = (result.damageBreakdown.elemental[weaponElement] ?? 0) + elementalDamage;
+      encounterDamageBreakdown.elemental[weaponElement] = (encounterDamageBreakdown.elemental[weaponElement] ?? 0) + elementalDamage;
+      if (weaponEnchant || arrowEnchant) result.log.push(`\u{1F525} Aspecto ${weaponEnchant?.statusEffect ?? arrowEnchant?.statusEffect} adicionou ${elementalDamage} de dano elemental.`);
     }
     const bond = getBeastCombat(char);
     if (bond && t % bond.cooldown === 0 && playerMp >= bond.mana && !debug2) {
@@ -3430,6 +3495,13 @@ function processTick(char, zone, isOffline) {
         bondedBeastName = beast.name;
       }
       const drops = rollDrops(enemy, zone, char, { dropBonus: prof.dropPct, rareBonus: prof.rarePct + (char.baseStats.luck ?? 0), force: debug2 });
+      const runeChance = enemy.isBoss ? 0.28 : enemy.isElite ? 0.06 : 6e-3 + zone.tier * 1e-3;
+      if (debug2 || Math.random() < runeChance) {
+        const rune = ENCHANTMENT_RUNE_TEMPLATE(zone.id);
+        rune.uid = `${Date.now()}-rune-${zone.id}-${Math.random().toString(36).slice(2, 7)}`;
+        drops.push(rune);
+        result.log.push(`\u{1F52E} Runa Encantada de ${zone.name} encontrada.`);
+      }
       if ((debug2 || enemy.isBoss || enemy.isElite) && (debug2 || Math.random() < (enemy.isElite ? 0.12 : 0.08))) {
         const egg = DIVINE_BEAST_EGG_TEMPLATES[`OVO_BESTA_T${Math.max(1, Math.min(5, zone.tier))}`];
         if (egg) drops.push({ ...egg, uid: `${Date.now()}-egg-${enemy.id}`, quantity: 1 });
@@ -3713,6 +3785,40 @@ var MATRIX_STATS = {
 
 // src/engine/forge.ts
 var FORGE_CATEGORIES = ["ARMA", "ARMADURA", "JOIA", "PULSEIRA", "ESCUDO", "FLECHA"];
+function getEnchantmentCost(item, zoneId) {
+  const safeUpgradeLevel = Number.isFinite(Number(item.upgradeLevel)) ? Math.max(0, Number(item.upgradeLevel)) : 0;
+  return {
+    runes: 100,
+    gold: Math.floor(1e3 * item.tier * Math.max(1, safeUpgradeLevel + 1)),
+    runeTemplateId: zoneId ? enchantmentRuneTemplateId(zoneId) : ""
+  };
+}
+function enchantItem(char, itemUid, zoneId) {
+  const item = char.inventory.items.find((i) => i.uid === itemUid);
+  const definition = enchantmentForZone(zoneId);
+  if (!item) return { success: false, error: "Item n\xE3o encontrado no invent\xE1rio." };
+  if (!definition) return { success: false, error: "Este mapa ainda n\xE3o possui um encantamento descoberto." };
+  if (!FORGE_CATEGORIES.includes(item.category)) return { success: false, error: "Escolha um equipamento v\xE1lido para o Ferreiro." };
+  if (item.rarity === "COMUM") return { success: false, error: "Encantamentos exigem um item Incomum ou superior." };
+  if (item.enchantment) return { success: false, error: "Este item j\xE1 possui um Encantamento \xDAnico." };
+  const cost = getEnchantmentCost(item, zoneId);
+  const ownedRunes = countByTemplate(char.inventory, cost.runeTemplateId);
+  if (ownedRunes < cost.runes) return { success: false, error: `Faltam runas. Voc\xEA possui ${ownedRunes}; precisa de ${cost.runes}.` };
+  if (char.gold < cost.gold) return { success: false, error: `Ouro insuficiente. Voc\xEA precisa de ${cost.gold.toLocaleString("pt-BR")} gold.` };
+  const enchantment = buildItemEnchantment(zoneId, item.tier);
+  if (!enchantment) return { success: false, error: "N\xE3o foi poss\xEDvel materializar este aspecto." };
+  char.gold -= cost.gold;
+  let remaining = cost.runes;
+  for (const entry of [...char.inventory.items]) {
+    if (entry.templateId !== cost.runeTemplateId || remaining <= 0) continue;
+    const amount = Math.min(entry.quantity, remaining);
+    removeItem(char.inventory, entry.uid, amount);
+    remaining -= amount;
+  }
+  item.enchantment = enchantment;
+  recalcStats(char);
+  return { success: true, enchantment: enchantment.name };
+}
 function hydrateLegacyStats(item) {
   const template = ALL_ITEM_TEMPLATES[item.templateId];
   if (!template) return;
@@ -5161,6 +5267,18 @@ function createGameStore(runtime = {}) {
       get().save();
       return result;
     },
+    enchantItem: (uid, zoneId) => {
+      const { character } = get();
+      if (!character) return { success: false, error: "Sem personagem." };
+      const next = structuredClone(character);
+      const result = enchantItem(next, uid, zoneId);
+      if (!result.success) return result;
+      trackQuestAction(next, "FORGE");
+      set({ character: next });
+      get().save();
+      notify(`\u2728 ${result.enchantment} gravado no equipamento.`);
+      return result;
+    },
     forgeFragments: (fromTemplateId) => {
       const { character } = get();
       if (!character) return { success: false, error: "Sem personagem" };
@@ -5569,7 +5687,7 @@ function executeGame(world, action, args = []) {
   let result;
   if (action) {
     const s = store.getState();
-    if (s.isTickRunning && ["sellItem", "sellSelected", "salvageAll", "salvageSelected", "upgradeItem", "rerollItem"].includes(action)) throw Error("Saia da ca\xE7a para acessar o Ferreiro.");
+    if (s.isTickRunning && ["sellItem", "sellSelected", "salvageAll", "salvageSelected", "upgradeItem", "rerollItem", "elevateItemTier", "rerollSpecificAffix", "enchantItem"].includes(action)) throw Error("Saia da ca\xE7a para acessar o Ferreiro.");
     if (action === "activateBuff" && (!s.isTickRunning || !s.character?.onlineBalloonUntil || s.character.onlineBalloonUntil < now)) throw Error("Este eco de b\xF4nus expirou. Aguarde outro durante a ca\xE7a.");
     const zero = ["finishIntro", "clearOfflineReport", "clearDeathReport", "startHealing", "cancelHealing", "stopHunting", "stopTraining", "unequipRace", "unequipDivineBeast", "activateBuff", "buyTrainingBoost", "buyBless", "refreshCompendium"];
     const strings = ["unlockZone", "setActiveEnemy", "setCurrentZone", "acceptQuest", "claimQuest", "upgradeItem", "rerollItem", "depositItem", "withdrawItem", "discardItem", "plantFarmSeed", "waterFarmPlot", "fertilizeFarmPlot", "harvestFarmPlot", "cookFarmRecipe", "buyProfessionTool"];
@@ -5696,6 +5814,14 @@ function executeGame(world, action, args = []) {
     } else if (action === "rerollSpecificAffix") {
       result = s.rerollSpecificAffix(uid(args[0]), uid(args[1]));
       if (!result?.success) throw Error(result?.error ?? "N\xE3o foi poss\xEDvel sortear o atributo.");
+    } else if (action === "enchantItem") {
+      if (args.length !== 2) throw Error("Informe o equipamento e o mapa do encantamento.");
+      const itemId = uid(args[0]), zoneId = uid(args[1]);
+      if (!ZONES[zoneId]) throw Error("Mapa de origem inv\xE1lido.");
+      const item = s.character.inventory.items.find((i) => i.uid === itemId);
+      if (!item || !["ARMA", "ARMADURA", "JOIA", "PULSEIRA", "ESCUDO", "FLECHA"].includes(item.category)) throw Error("Escolha um equipamento v\xE1lido para o Ferreiro.");
+      result = s.enchantItem(itemId, zoneId);
+      if (!result?.success) throw Error(result?.error ?? "N\xE3o foi poss\xEDvel aplicar o encantamento.");
     } else if (action === "buyCalendarCoupon") {
       if (args.length) throw Error("Par\xE2metros inesperados.");
       result = s.buyCalendarCoupon();
@@ -5986,6 +6112,10 @@ function findBossEnemy(template) {
 }
 
 // server/world.ts
+var BOSS_ARENA_WIDTH = 1e3;
+var BOSS_ARENA_HEIGHT = 560;
+var BOSS_ARENA_MARGIN = 60;
+var DAILY_BOSS_GUILD_REQUIRED = false;
 var uuid = (id) => {
   if (typeof id !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) throw Error("Identificador inv\xE1lido.");
   return id;
@@ -6129,6 +6259,45 @@ function cardSeasonReward(unique, total) {
   if (ratio >= 0.5) return { tier: "COLECIONADOR", gold: 3e3, shards: 20, coins: 0 };
   return null;
 }
+function arenaPositionFor(id) {
+  let hash = 0;
+  for (const char of id) hash = hash * 31 + char.charCodeAt(0) >>> 0;
+  return { x: BOSS_ARENA_MARGIN + hash % (BOSS_ARENA_WIDTH - BOSS_ARENA_MARGIN * 2), y: BOSS_ARENA_MARGIN + Math.floor(hash / 97) % (BOSS_ARENA_HEIGHT - BOSS_ARENA_MARGIN * 2) };
+}
+function ensureArenaBattle(character, runId) {
+  const existing = character.dailyBossBattle?.runId === runId ? character.dailyBossBattle : bossBattleFor(character, runId);
+  existing.position ??= arenaPositionFor(character.id);
+  existing.targetId ??= null;
+  existing.pvpEnabled ??= true;
+  existing.cooldowns ??= {};
+  return existing;
+}
+function arenaDistance(a, b) {
+  return Math.hypot(a.x - b.x, a.y - b.y);
+}
+function arenaAttackRange(kind, attackId) {
+  if (kind === "basic") return 170;
+  if (kind === "support") return 260;
+  return ["A1", "A4", "A6", "A8", "A9", "A10", "A14", "A19"].includes(attackId ?? "") ? 185 : 430;
+}
+function arenaCooldown(kind, stats, passiveId) {
+  const speed = clamp(Number(stats?.spd ?? 0), 0, 0.8);
+  if (kind === "basic") return Math.max(650, Math.round(2200 / (1 + speed)));
+  if (kind === "support") return Math.max(4500, Number(SUPPORT_EFFECTS[passiveId ?? ""]?.cd ?? 6) * 1500);
+  const reduce = PASSIVE_EFFECTS[passiveId ?? ""]?.cdReduce ?? 0;
+  return Math.max(3500, Math.round(8500 - reduce * 1500));
+}
+function arenaDamage(attacker, target, kind, attackId) {
+  const stats = attacker.baseStats ?? {};
+  const targetStats = target.baseStats ?? {};
+  const element = kind === "attack" ? attackElement(attackId) : "BASE";
+  const skill = kind === "attack" ? ATTACK_SKILLS[attackId ?? ""] : void 0;
+  const physical = Number(stats.atk ?? 0), magical = Number(stats.matk ?? 0);
+  const raw = Math.max(1, Math.floor((kind === "attack" ? (skill?.mult ?? 1.8) * (element === "BASE" ? physical : magical) : physical) * 0.34 + Number(attacker.level ?? 1) * 1.5));
+  const armor = Math.max(0, Number(targetStats.arm ?? targetStats.def ?? 0) * (1 - (skill?.pierce ?? 0)));
+  const resistance = Math.max(0, Math.min(BALANCE.resistanceCap, Number(target.elementalResistances?.[element] ?? 0)));
+  return Math.max(1, Math.round(mitigatedDamage(raw, armor) * elementMultiplier(element, "BASE") * (1 - resistance)));
+}
 async function upsertPvpSeasonStats(db, c, seasonKey) {
   await db.query("insert into public.world_pvp_season_stats(id,season_key,character_id,owner_id,rating,wins,losses,matches,updated_at) values($1,$2,$3,$4,$5,$6,$7,1,now()) on conflict(season_key,character_id) do update set owner_id=excluded.owner_id,rating=excluded.rating,wins=excluded.wins,losses=excluded.losses,matches=public.world_pvp_season_stats.matches+1,updated_at=now()", [(0, import_node_crypto2.randomUUID)(), seasonKey, c.id, c.owner_id, Number(c.state.character.pvpRating ?? 1e3), Number(c.state.character.pvpWins ?? 0), Number(c.state.character.pvpLosses ?? 0)]);
 }
@@ -6214,10 +6383,88 @@ async function handleWorld(db, owner, request) {
       const leaderboard = (await db.query("select p.character_id,c.name,p.damage from public.world_daily_boss_participants p join public.world_characters c on c.id=p.character_id where p.run_id=$1 order by p.damage desc limit 10", [run.id])).rows;
       const history = (await db.query("select r.id,r.run_id,r.damage,r.participation_ratio,r.defeated,r.gold,r.xp,r.shards,r.loot,r.created_at,b.cycle_key,b.boss_name,b.level from public.world_daily_boss_rewards r join public.world_daily_boss_runs b on b.id=r.run_id where r.owner_id=$1 order by r.created_at desc limit 10", [owner])).rows;
       const pendingRewards = request.characterId ? (await db.query("select b.id as run_id,b.boss_name,b.level,b.cycle_key,b.status,b.closes_at,p.damage from public.world_daily_boss_participants p join public.world_daily_boss_runs b on b.id=p.run_id where p.owner_id=$1 and p.character_id=$2 and p.claimed_at is null and p.damage>0 and (b.status in ('defeated','expired') or b.closes_at<=now()) order by b.closes_at asc limit 50", [owner, uuid(request.characterId)])).rows : [];
-      const roster = (await db.query("select p.character_id,c.name,p.damage,p.last_action_at,c.state->'character'->'activeRace'->>'ataqueId' as attack_id,c.state->'character'->'appearance' as appearance,c.state->'character'->'cosmeticLoadout' as cosmetics from public.world_daily_boss_participants p join public.world_characters c on c.id=p.character_id where p.run_id=$1 order by coalesce(p.last_action_at,p.joined_at) desc,p.character_id limit 12", [run.id])).rows;
+      const roster = (await db.query("select p.character_id,c.name,p.damage,p.last_action_at,c.state->'character'->'activeRace'->>'ataqueId' as attack_id,c.state->'character'->'appearance' as appearance,c.state->'character'->'cosmeticLoadout' as cosmetics,c.state->'character'->'dailyBossBattle'->'position' as position,c.state->'character'->'dailyBossBattle'->>'pvpEnabled' as pvp_enabled from public.world_daily_boss_participants p join public.world_characters c on c.id=p.character_id where p.run_id=$1 order by coalesce(p.last_action_at,p.joined_at) desc,p.character_id limit 24", [run.id])).rows;
       const combatOwner = participant ? (await db.query("select state from public.world_characters where id=$1 and owner_id=$2", [uuid(request.characterId), owner])).rows[0] : null;
-      const combat = combatOwner ? bossBattleFor(combatOwner.state.character, run.id) : null;
+      const combat = combatOwner ? ensureArenaBattle(combatOwner.state.character, run.id) : null;
       receipt = { dailyBoss: { run, participant, combat, participants: Number(totals.participants ?? 0), damageTotal: Number(totals.damage_total ?? 0), leaderboard, history, pendingRewards, roster } };
+    } else if (op === "dailyBoss.move" || op === "dailyBoss.togglePvp" || op === "dailyBoss.attackPlayer") {
+      const run = await ensureDailyBoss(db);
+      if (run.status !== "open") throw Error("O Boss Di\xE1rio n\xE3o est\xE1 mais em combate.");
+      if (p.runId && uuid(p.runId) !== run.id) throw Error("O ciclo do Boss mudou. Atualize a arena antes de agir.");
+      if (op === "dailyBoss.attackPlayer") {
+        const targetId = uuid(p.targetCharacterId);
+        if (targetId === request.characterId) throw Error("Escolha outro aventureiro como alvo.");
+        const rows = (await db.query("select * from public.world_characters where id=any($1::uuid[]) order by id for update", [[uuid(request.characterId), targetId]])).rows;
+        const attacker = rows.find((row) => row.id === request.characterId && row.owner_id === owner);
+        const target = rows.find((row) => row.id === targetId);
+        if (!attacker || !target) throw Error("Participante inv\xE1lido.");
+        const participants = (await db.query("select character_id from public.world_daily_boss_participants where run_id=$1 and character_id=any($2::uuid[])", [run.id, [attacker.id, target.id]])).rows;
+        if (participants.length !== 2) throw Error("Os dois jogadores precisam estar inscritos no Boss Di\xE1rio.");
+        const friendship = (await db.query("select id from public.world_friends where status='accepted' and ((inviter_id=$1 and invitee_id=$2) or (inviter_id=$2 and invitee_id=$1)) limit 1", [attacker.id, target.id])).rows[0];
+        if (friendship) throw Error("Amigos n\xE3o podem causar dano entre si.");
+        const attackerBattle = ensureArenaBattle(attacker.state.character, run.id), targetBattle = ensureArenaBattle(target.state.character, run.id);
+        if (attackerBattle.pvpEnabled === false) throw Error("Ative o modo PvP para atacar outros jogadores.");
+        if (targetBattle.pvpEnabled === false) throw Error("Este jogador est\xE1 protegido contra PvP.");
+        if (targetBattle.hp <= 0 && Date.now() < targetBattle.recoveryUntil) throw Error("Este jogador est\xE1 se recuperando do nocaute.");
+        const kind = String(p.kind ?? "basic");
+        if (!["basic", "attack", "support"].includes(kind)) throw Error("A\xE7\xE3o de combate inv\xE1lida.");
+        const attackId = attacker.state.character.activeRace?.ataqueId;
+        const distance = arenaDistance(attackerBattle.position, targetBattle.position);
+        const range = arenaAttackRange(kind, attackId);
+        if (distance > range) throw Error(`Alvo fora de alcance (${Math.ceil(distance)} / ${range}px).`);
+        const cooldown = arenaCooldown(kind, attacker.state.character.baseStats, kind === "support" ? attacker.state.character.activeRace?.suporteId : attacker.state.character.activeRace?.passivaId);
+        const readyAt = Number(attackerBattle.cooldowns?.[kind] ?? 0);
+        if (readyAt > Date.now()) throw Error(`Aguarde ${Math.ceil((readyAt - Date.now()) / 1e3)}s para usar esta a\xE7\xE3o.`);
+        attackerBattle.targetId = target.id;
+        attackerBattle.lastAttackKind = kind;
+        attackerBattle.cooldowns[kind] = Date.now() + cooldown;
+        let damage = 0;
+        if (kind === "support") {
+          const heal = Math.max(1, Math.floor((attacker.state.character.hpMax ?? 100) * 0.12));
+          attacker.state.character.hp = Math.min(attacker.state.character.hpMax, attacker.state.character.hp + heal);
+          attacker.state.character.mp = Math.min(attacker.state.character.mpMax, attacker.state.character.mp + Math.max(1, Math.floor((attacker.state.character.mpMax ?? 50) * 0.06)));
+          receipt.pvp = { kind, distance, range, healed: heal, cooldownUntil: attackerBattle.cooldowns[kind], targetId: target.id };
+        } else {
+          damage = arenaDamage(attacker.state.character, target.state.character, kind, attackId);
+          targetBattle.hp = Math.max(0, targetBattle.hp - damage);
+          targetBattle.damageTaken += damage;
+          targetBattle.lastDamage = damage;
+          targetBattle.targetId = attacker.id;
+          if (targetBattle.hp === 0) {
+            targetBattle.knockouts += 1;
+            targetBattle.recoveryUntil = Date.now() + 3e4;
+          }
+          receipt.pvp = { kind, distance, range, damage, knockedOut: targetBattle.hp === 0, targetId: target.id, targetName: target.name, cooldownUntil: attackerBattle.cooldowns[kind], targetHp: targetBattle.hp };
+        }
+        attacker.state.character.dailyBossBattle = attackerBattle;
+        target.state.character.dailyBossBattle = targetBattle;
+        await commitCharacter(db, attacker);
+        await commitCharacter(db, target);
+      } else {
+        const arenaActor = await own(db, owner, request.characterId);
+        actor = arenaActor;
+        const battle = ensureArenaBattle(arenaActor.state.character, run.id);
+        if (op === "dailyBoss.move") {
+          const direction = String(p.direction ?? "");
+          const delta = direction === "up" || direction === "w" ? { x: 0, y: -34 } : direction === "down" || direction === "s" ? { x: 0, y: 34 } : direction === "left" || direction === "a" ? { x: -34, y: 0 } : direction === "right" || direction === "d" ? { x: 34, y: 0 } : { x: 0, y: 0 };
+          if (!delta.x && !delta.y) throw Error("Dire\xE7\xE3o inv\xE1lida.");
+          const now = Date.now();
+          if (Number(battle.cooldowns?.move ?? 0) > now) throw Error("Movimento muito r\xE1pido.");
+          battle.position = { x: clamp(battle.position.x + delta.x, BOSS_ARENA_MARGIN, BOSS_ARENA_WIDTH - BOSS_ARENA_MARGIN), y: clamp(battle.position.y + delta.y, BOSS_ARENA_MARGIN, BOSS_ARENA_HEIGHT - BOSS_ARENA_MARGIN) };
+          battle.cooldowns.move = now + 90;
+          arenaActor.state.character.dailyBossBattle = battle;
+          await commitCharacter(db, arenaActor);
+          receipt.arena = { position: battle.position };
+        } else {
+          const enabled = Boolean(p.enabled);
+          battle.pvpEnabled = enabled;
+          arenaActor.state.character.dailyBossBattle = battle;
+          await commitCharacter(db, arenaActor);
+          receipt.arena = { pvpEnabled: enabled };
+        }
+      }
+      const latest = (await db.query("select * from public.world_daily_boss_participants where run_id=$1 and character_id=$2", [run.id, uuid(request.characterId)])).rows[0] ?? null;
+      receipt.dailyBoss = { run, participant: latest, combat: actor?.state.character.dailyBossBattle?.runId === run.id ? actor.state.character.dailyBossBattle : null };
     } else if (op === "dailyBoss.join" || op === "dailyBoss.attack" || op === "dailyBoss.claim") {
       actor = await own(db, owner, request.characterId);
       let run;
@@ -6234,12 +6481,13 @@ async function handleWorld(db, owner, request) {
       if (op !== "dailyBoss.claim" && p.runId && uuid(p.runId) !== run.id) throw Error("O ciclo do Boss mudou. Atualize o painel antes de participar.");
       if (op === "dailyBoss.join") {
         if (run.status !== "open") throw Error("A janela deste Boss Di\xE1rio j\xE1 foi encerrada.");
+        if (DAILY_BOSS_GUILD_REQUIRED && !actor.state.character.guildId) throw Error("Este Boss Di\xE1rio exige uma guild ativa.");
         const joined = await db.query("insert into public.world_daily_boss_participants(run_id,character_id,owner_id) values($1,$2,$3) on conflict(run_id,character_id) do nothing returning character_id", [run.id, actor.id, owner]);
         if (joined.rows.length) {
           const reinforcement = Math.max(1e3, Math.floor(Number(run.base_hp) * 0.1));
           await db.query("update public.world_daily_boss_runs set hp_total=least(base_hp*4,hp_total+$2),hp_remaining=least(base_hp*4,hp_remaining+$2) where id=$1", [run.id, reinforcement]);
         }
-        actor.state.character.dailyBossBattle = bossBattleFor(actor.state.character, run.id);
+        actor.state.character.dailyBossBattle = ensureArenaBattle(actor.state.character, run.id);
         await commitCharacter(db, actor);
       } else if (op === "dailyBoss.attack") {
         if (run.status !== "open") throw Error("O Boss Di\xE1rio n\xE3o est\xE1 mais em combate.");
@@ -6251,13 +6499,21 @@ async function handleWorld(db, owner, request) {
         const bossTemplate = DAILY_BOSS_TEMPLATES.find((template) => template.id === run.boss_template_id), enemy = bossTemplate ? findBossEnemy(bossTemplate) : void 0;
         if (!enemy) throw Error("Boss n\xE3o configurado para esta batalha.");
         const group = (await db.query("select count(*)::int as count from public.world_daily_boss_participants where run_id=$1", [run.id])).rows[0];
-        const battle = bossRetaliation(ch, run.id, enemy, Number(group.count), damage >= Number(run.hp_remaining), Date.now());
+        const finalHit = damage >= Number(run.hp_remaining);
+        const previousBattle = ensureArenaBattle(ch, run.id);
+        const battle = bossRetaliation(ch, run.id, enemy, Number(group.count), finalHit, Date.now());
+        battle.position = previousBattle.position;
+        battle.targetId = previousBattle.targetId;
+        battle.pvpEnabled = previousBattle.pvpEnabled;
+        battle.cooldowns = previousBattle.cooldowns;
+        battle.lastAttackKind = "attack";
         ch.dailyBossBattle = battle;
         await db.query("update public.world_daily_boss_participants set damage=damage+$3,last_action_at=now() where run_id=$1 and character_id=$2", [run.id, actor.id, damage]);
         await db.query("update public.world_daily_boss_runs set hp_remaining=greatest(0,hp_remaining-$2),status=case when hp_remaining-$2<=0 then 'defeated' else status end,resolved_at=case when hp_remaining-$2<=0 then coalesce(resolved_at,now()) else resolved_at end where id=$1", [run.id, damage]);
         await commitCharacter(db, actor);
         receipt.damage = damage;
         receipt.damageTaken = battle.lastDamage;
+        receipt.finalHit = finalHit;
       } else {
         const participant2 = (await db.query("select * from public.world_daily_boss_participants where run_id=$1 and character_id=$2 for update", [run.id, actor.id])).rows[0];
         if (!participant2) throw Error("Participe do Boss Di\xE1rio antes de resgatar.");
@@ -6265,7 +6521,9 @@ async function handleWorld(db, owner, request) {
         if (Number(participant2.damage ?? 0) <= 0) throw Error("Cause dano ao Boss para receber uma recompensa de participa\xE7\xE3o.");
         if (!["defeated", "expired"].includes(run.status)) throw Error("A recompensa s\xF3 fica dispon\xEDvel quando a janela terminar.");
         const ratio = Math.min(1, Number(participant2.damage || 0) / Math.max(1, Number(run.hp_total || 1))), defeated = run.status === "defeated";
-        const rewardGold = Math.max(50, Math.floor((Number(run.level) * 80 + ratio * Number(run.level) * 2e3) * (defeated ? 2 : 1))), rewardXp = Math.max(100, Math.floor(Number(run.level) * 35 + ratio * Number(run.level) * 500));
+        const finalHitRow = defeated ? (await db.query("select character_id from public.world_daily_boss_participants where run_id=$1 and damage>0 order by last_action_at desc nulls last,joined_at desc limit 1", [run.id])).rows[0] : null;
+        const finalHit = Boolean(finalHitRow?.character_id === actor.id);
+        const rewardGold = Math.max(50, Math.floor((Number(run.level) * 80 + ratio * Number(run.level) * 2e3) * (defeated ? 2 : 1) * (finalHit ? 1.5 : 1))), rewardXp = Math.max(100, Math.floor((Number(run.level) * 35 + ratio * Number(run.level) * 500) * (finalHit ? 1.25 : 1)));
         actor.state.character.gold += rewardGold;
         applyDailyBossXp(actor.state.character, rewardXp);
         if (defeated) actor.state.character.dailyBossXpUntil = Math.max(Number(actor.state.character.dailyBossXpUntil ?? 0), new Date(run.closes_at).getTime());
@@ -6274,7 +6532,7 @@ async function handleWorld(db, owner, request) {
         await db.query("insert into public.world_daily_boss_rewards(id,run_id,character_id,owner_id,damage,participation_ratio,defeated,gold,xp,shards,loot) values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)", [(0, import_node_crypto2.randomUUID)(), run.id, actor.id, owner, Number(participant2.damage || 0), ratio, defeated, rewardGold, rewardXp, bossLoot.shards, JSON.stringify(bossLoot.items)]);
         await db.query("update public.world_daily_boss_participants set claimed_at=now() where run_id=$1 and character_id=$2", [run.id, actor.id]);
         await commitCharacter(db, actor);
-        receipt.reward = { gold: rewardGold, xp: rewardXp, loot: bossLoot.items, shards: bossLoot.shards, bonusXpUntil: actor.state.character.dailyBossXpUntil ?? null };
+        receipt.reward = { gold: rewardGold, xp: rewardXp, loot: bossLoot.items, shards: bossLoot.shards, finalHit, bonusXpUntil: actor.state.character.dailyBossXpUntil ?? null };
       }
       run = (await db.query("select * from public.world_daily_boss_runs where id=$1", [run.id])).rows[0];
       const participant = (await db.query("select * from public.world_daily_boss_participants where run_id=$1 and character_id=$2", [run.id, actor.id])).rows[0] ?? null;

@@ -14,14 +14,18 @@ import { countByTemplate } from "../engine/inventory";
 import { MYTHREON_ECONOMY, MYTHREON_OFFERS, MYTHREON_DONATION_PACKS, MYTHREON_PREMIUM_PLANS, PREMIUM_BENEFITS } from "../data/mythreonEconomy";
 import { OnlineMarket } from "./OnlineMarket";
 import { AreaBackdrop } from "./AreaBackdrop";
+import { UNIQUE_ENCHANTMENTS, enchantmentRuneTemplateId } from "../data/enchantments";
+import { ZONES } from "../data/zones";
+import { getEnchantmentCost } from "../engine/forge";
 
 export function Shop({ storefront = false }: { storefront?: boolean }) {
-  const { character, sellItem, salvageAll, salvageSelected, updateSettings, useVial, upgradeItem, rerollItem, elevateItemTier, rerollSpecificAffix, forgeFragments, refineMythreonCoins, buyMythreonOffer, buyMythreonBoost, openMythreonRoulette } = useGameStore();
+  const { character, sellItem, salvageAll, salvageSelected, updateSettings, useVial, upgradeItem, rerollItem, elevateItemTier, rerollSpecificAffix, enchantItem, forgeFragments, refineMythreonCoins, buyMythreonOffer, buyMythreonBoost, openMythreonRoulette } = useGameStore();
   
   const [tab, setTab] = useState<"FORJA" | "VIALS" | "VENDER" | "DESMANCHAR" | "ESSENCIA" | "MERCADO">(storefront ? "VIALS" : "FORJA");
   const [actionRarity, setActionRarity] = useState<Rarity>("COMUM");
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [specificStat, setSpecificStat] = useState<keyof Item["stats"]>("atk");
+  const [enchantmentZone, setEnchantmentZone] = useState("PICO_DHOR");
   const [salvageSelection, setSalvageSelection] = useState<string[]>([]);
   const [shopNotice, setShopNotice] = useState("");
   const checkoutUrl = (import.meta.env.VITE_MYTHREON_CHECKOUT_URL as string | undefined)?.trim();
@@ -87,6 +91,13 @@ export function Shop({ storefront = false }: { storefront?: boolean }) {
   const handleSpecificReroll = async () => {
     if (!selectedItem) return;
     const res = await confirmedAction(rerollSpecificAffix(selectedItem.uid, specificStat));
+    if (!res.success) alert(res.error);
+    else setSelectedItem(useGameStore.getState().character?.inventory.items.find(i => i.uid === selectedItem.uid) ?? selectedItem);
+  };
+
+  const handleEnchantment = async () => {
+    if (!selectedItem) return;
+    const res = await confirmedAction(enchantItem(selectedItem.uid, enchantmentZone));
     if (!res.success) alert(res.error);
     else setSelectedItem(useGameStore.getState().character?.inventory.items.find(i => i.uid === selectedItem.uid) ?? selectedItem);
   };
@@ -323,6 +334,14 @@ export function Shop({ storefront = false }: { storefront?: boolean }) {
                   </button>
                   <div className="rounded border border-fuchsia-800/40 bg-fuchsia-950/20 p-2 text-[10px] text-fuchsia-200">🎯 Atributo específico: custa 1 Mythreon Coin + 100 Fragmentos Raros. A moeda é rara e serve como sumidouro de gold.</div>
                   <div className="flex gap-2"><select value={String(specificStat)} onChange={event => setSpecificStat(event.target.value as keyof Item["stats"])} className="min-w-0 flex-1 rounded border border-fuchsia-800/50 bg-arcane-panel px-2 py-2 text-xs text-white"><option value="atk">Ataque</option><option value="matk">Magia</option><option value="arm">Armadura</option><option value="def">Defesa</option><option value="hp">Vida</option><option value="mp">Mana</option><option value="crit">Crítico</option><option value="hit">Precisão</option></select><button onClick={handleSpecificReroll} disabled={selectedItem.rarity === "COMUM"} className="rounded bg-fuchsia-700 px-3 py-2 text-[10px] font-bold text-white hover:bg-fuchsia-600 disabled:bg-gray-800">Sortear atributo</button></div>
+                  <div className="mt-4 rounded-lg border border-amber-500/50 bg-gradient-to-br from-amber-950/40 to-orange-950/20 p-3">
+                    <div className="flex items-start justify-between gap-2"><div><h4 className="font-black text-amber-200">✨ Encantamento Único</h4><p className="mt-1 text-[10px] text-amber-100/70">Consome 100 runas do mapa escolhido. Um equipamento só pode receber um aspecto.</p></div><span className="text-xl">🔮</span></div>
+                    <select value={enchantmentZone} onChange={event => setEnchantmentZone(event.target.value)} className="mt-3 w-full rounded border border-amber-700/60 bg-arcane-panel px-2 py-2 text-xs text-white">
+                      {Object.entries(UNIQUE_ENCHANTMENTS).map(([zoneId, def]) => <option key={zoneId} value={zoneId}>{ZONES[zoneId]?.name ?? zoneId} · {def.name}</option>)}
+                    </select>
+                    {(() => { const def = UNIQUE_ENCHANTMENTS[enchantmentZone]; const runeId = enchantmentRuneTemplateId(enchantmentZone); const cost = getEnchantmentCost(selectedItem, enchantmentZone); return <><p className="mt-2 text-[10px] text-amber-100/80">{def?.description} · {def?.weaponLabel}; armadura: {def?.armorLabel}</p><div className="mt-2 flex items-center justify-between text-[10px] text-gray-300"><span>🔮 Runas: {countByTemplate(character.inventory, runeId)}/{cost.runes}</span><span>💰 {cost.gold.toLocaleString("pt-BR")} gold</span></div></>; })()}
+                    <button onClick={handleEnchantment} disabled={selectedItem.rarity === "COMUM" || !!selectedItem.enchantment} className="mt-3 w-full rounded bg-gradient-to-r from-amber-600 to-orange-600 px-3 py-2 text-xs font-black text-white shadow-[0_0_18px_rgba(245,158,11,.35)] hover:from-amber-500 hover:to-orange-500 disabled:cursor-not-allowed disabled:opacity-40">{selectedItem.enchantment ? `Já encantado · ${selectedItem.enchantment.name}` : "Imbuir aspecto no item"}</button>
+                  </div>
                 </div>
               </>
             ) : (

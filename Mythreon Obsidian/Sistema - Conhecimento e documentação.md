@@ -15,6 +15,7 @@
 - [[docs/conhecimento/Contas-Online-e-Social|Contas online, ranking e comunidade]]
 - [[docs/conhecimento/Conteudo do Pantano de Veyra|Conteúdo do Pântano de Veyra]]
 - [[docs/conhecimento/Correção-Flechas-Revisão-2026-11-03|Revisão de flechas e mapa de pendências — 2026-11-03]]
+- [[docs/conhecimento/Encantamentos-Unicos-2026-11-05|Encantamentos Únicos]]
 - [[docs/conhecimento/Fazenda-Sistema-Completo-2026-11-03|Fazenda de Lyss — sistema completo]]
 - [[docs/conhecimento/Jornada-Lore-Biomas|Jornada, lore e biomas]]
 - [[docs/conhecimento/Laboratorio-de-Builds-e-Windows|Laboratório de Builds e Windows]]
@@ -112,6 +113,7 @@
 - [docs/conhecimento/Contas-Online-e-Social.md](../docs/conhecimento/Contas-Online-e-Social.md)
 - [docs/conhecimento/Conteudo do Pantano de Veyra.md](../docs/conhecimento/Conteudo do Pantano de Veyra.md)
 - [docs/conhecimento/Correção-Flechas-Revisão-2026-11-03.md](../docs/conhecimento/Correção-Flechas-Revisão-2026-11-03.md)
+- [docs/conhecimento/Encantamentos-Unicos-2026-11-05.md](../docs/conhecimento/Encantamentos-Unicos-2026-11-05.md)
 - [docs/conhecimento/Fazenda-Sistema-Completo-2026-11-03.md](../docs/conhecimento/Fazenda-Sistema-Completo-2026-11-03.md)
 - [docs/conhecimento/Jornada-Lore-Biomas.md](../docs/conhecimento/Jornada-Lore-Biomas.md)
 - [docs/conhecimento/Laboratorio-de-Builds-e-Windows.md](../docs/conhecimento/Laboratorio-de-Builds-e-Windows.md)

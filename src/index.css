@@ -493,6 +493,16 @@ html { scroll-behavior: smooth; scroll-padding-top: 92px; }
 .rarity-art.rarity-lendario::before { inset:-8%; background:radial-gradient(ellipse,#ffe49b66,transparent 68%); animation:legendary-aura 3s ease-in-out infinite; }
 @keyframes legendary-aura { 0%,100% { opacity:.5; transform:scale(.92); } 50% { opacity:1; transform:scale(1.08); } }
 @media (prefers-reduced-motion:reduce) { .rarity-art.rarity-lendario::before { animation:none; } }
+.enchantment-aura::after{content:'';position:absolute;inset:-13%;border-radius:45%;pointer-events:none;z-index:0;opacity:.9;mix-blend-mode:screen;animation:enchantment-pulse 1.8s ease-in-out infinite}
+.enchantment-flamejante::after{background:radial-gradient(ellipse,#ff6b18aa 0%,#ef2d1b33 42%,transparent 72%)}
+.enchantment-congelado::after{background:radial-gradient(ellipse,#62d9ffff 0%,#45a5ff33 44%,transparent 74%)}
+.enchantment-eletrizante::after{background:radial-gradient(ellipse,#f7f36cff 0%,#7c6cff44 40%,transparent 72%)}
+.enchantment-envenenado::after{background:radial-gradient(ellipse,#73f35aaa 0%,#2dd4bf33 44%,transparent 74%)}
+.enchantment-sombrio::after{background:radial-gradient(ellipse,#b06cffaa 0%,#30145e55 46%,transparent 74%)}
+.enchantment-lyss::after{background:radial-gradient(ellipse,#e9f9a5aa 0%,#43e7bd33 44%,transparent 74%)}
+.enchantment-sorte::after{background:radial-gradient(ellipse,#ffe491bb 0%,#d08d2d44 44%,transparent 74%)}
+@keyframes enchantment-pulse{0%,100%{transform:scale(.9);opacity:.55}50%{transform:scale(1.08);opacity:1}}
+@media (prefers-reduced-motion:reduce){.enchantment-aura::after{animation:none}}
 
 .online-entry { min-height:100vh; display:flex; align-items:center; justify-content:center; background:#091013; color:#e7e9e7; padding:24px; }
 .online-card { border:1px solid #344548; border-radius:18px; background:linear-gradient(145deg,#142024,#0b1215); padding:clamp(18px,3vw,28px); color:#dce2df; }

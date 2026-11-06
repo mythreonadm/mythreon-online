@@ -21,13 +21,15 @@ export function ItemIcon({ item, className = "text-3xl mb-1", style }: Props) {
   const [imagePath, ...fallbackPaths] = itemAssetCandidates(item);
 
   const aura = rarityArtClass(item.rarity);
+  const enchantmentClass = item.enchantment ? ` enchantment-aura enchantment-${item.enchantment.visualKey}` : "";
+  const enchantmentTitle = item.enchantment ? ` · ${item.enchantment.name} T${item.enchantment.tier} · ${item.enchantment.statusEffect}` : "";
   if (hasError) {
     // Se a imagem não existir na pasta, mostra o emoji como fallback
-    return <span className={`${className} ${aura}`} style={style} data-rarity={item.rarity}><span className="rarity-image rarity-emoji">{item.icon}</span></span>;
+    return <span className={`${className} ${aura}${enchantmentClass}`} style={style} data-rarity={item.rarity} title={`${item.name}${enchantmentTitle}`}><span className="rarity-image rarity-emoji">{item.icon}</span></span>;
   }
 
   return (
-    <span className={`${className} ${aura}`} style={style} data-rarity={item.rarity}><AssetImage
+    <span className={`${className} ${aura}${enchantmentClass}`} style={style} data-rarity={item.rarity} title={`${item.name}${enchantmentTitle}`}><AssetImage
       src={imagePath}
       alt={item.name}
       className="rarity-image h-full w-full object-contain"

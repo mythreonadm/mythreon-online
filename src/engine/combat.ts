@@ -18,6 +18,7 @@ import { recalcStats as recalculate } from "./stats";
 import { attackElement, elementMultiplier } from "../data/elementalChart";
 import { applyTrainingDeathPenalty } from "./training";
 import { shardChance } from "../data/mythreonEconomy";
+import { ENCHANTMENT_RUNE_TEMPLATE } from "../data/enchantments";
 
 interface Profile { xpPct: number; goldPct: number; dropPct: number; rarePct: number; healPct: number; skillDmgPct: number; cdReduce: number; lifesteal: number; }
 
@@ -305,15 +306,22 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
     }
 
     const weapon = char.equipped.ARMA_PRINCIPAL;
-    if (weapon?.element && (weapon.elementalDamagePct ?? 0) > 0 && dealt > 0) {
-      const rawElementDamage = Math.round(dealt * (weapon.elementalDamagePct ?? 0));
-      const resistance = Math.max(0, Math.min(BALANCE.resistanceCap, enemy.elementalResistances?.[weapon.element] ?? 0));
-      const elementalDamage = Math.max(0, Math.round(rawElementDamage * elementMultiplier(weapon.element, enemy.element) * (1 - resistance)));
+    const arrow = char.equipped.MUNICAO;
+    const usingBow = weapon?.templateId.includes("ARCO") ?? false;
+    const weaponEnchant = weapon?.enchantment;
+    const arrowEnchant = usingBow ? arrow?.enchantment : undefined;
+    const weaponElement = weaponEnchant?.element ?? weapon?.element ?? arrowEnchant?.element;
+    const weaponElementPct = (weapon?.elementalDamagePct ?? 0) + (weaponEnchant?.weaponDamagePct ?? 0) + (arrowEnchant?.weaponDamagePct ?? 0);
+    if (weaponElement && weaponElementPct > 0 && dealt > 0) {
+      const rawElementDamage = Math.round(dealt * weaponElementPct);
+      const resistance = Math.max(0, Math.min(BALANCE.resistanceCap, enemy.elementalResistances?.[weaponElement] ?? 0));
+      const elementalDamage = Math.max(0, Math.round(rawElementDamage * elementMultiplier(weaponElement, enemy.element) * (1 - resistance)));
       dealt += elementalDamage;
       elementalThisTick += elementalDamage;
       result.lastDamage = (result.lastDamage ?? 0) + elementalDamage;
-      result.damageBreakdown!.elemental[weapon.element] = (result.damageBreakdown!.elemental[weapon.element] ?? 0) + elementalDamage;
-      encounterDamageBreakdown.elemental[weapon.element] = (encounterDamageBreakdown.elemental[weapon.element] ?? 0) + elementalDamage;
+      result.damageBreakdown!.elemental[weaponElement] = (result.damageBreakdown!.elemental[weaponElement] ?? 0) + elementalDamage;
+      encounterDamageBreakdown.elemental[weaponElement] = (encounterDamageBreakdown.elemental[weaponElement] ?? 0) + elementalDamage;
+      if (weaponEnchant || arrowEnchant) result.log.push(`🔥 Aspecto ${weaponEnchant?.statusEffect ?? arrowEnchant?.statusEffect} adicionou ${elementalDamage} de dano elemental.`);
     }
 
     const bond = getBeastCombat(char);
@@ -397,6 +405,15 @@ export function processTick(char: Character, zone: Zone, isOffline: boolean): Ti
       // ─── FIM DO DROP DE CARTA ───
       
       const drops = rollDrops(enemy, zone, char, { dropBonus: prof.dropPct, rareBonus: prof.rarePct + (char.baseStats.luck ?? 0), force: debug });
+      // Runas são deliberadamente raras: o jogador precisa conhecer e repetir
+      // o mapa para reunir 100 unidades antes de encantar uma peça.
+      const runeChance = enemy.isBoss ? 0.28 : enemy.isElite ? 0.06 : 0.006 + zone.tier * 0.001;
+      if (debug || Math.random() < runeChance) {
+        const rune = ENCHANTMENT_RUNE_TEMPLATE(zone.id);
+        rune.uid = `${Date.now()}-rune-${zone.id}-${Math.random().toString(36).slice(2, 7)}`;
+        drops.push(rune);
+        result.log.push(`🔮 Runa Encantada de ${zone.name} encontrada.`);
+      }
       // Ovos entram como recompensa rara dos guardiões. Encontros especiais
       // poderão usar a mesma tabela quando forem adicionados ao bestiário.
       if ((debug || enemy.isBoss || enemy.isElite) && (debug || Math.random() < (enemy.isElite ? 0.12 : 0.08))) {

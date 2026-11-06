@@ -47,7 +47,7 @@ export function executeGame(world:WorldState,action?:string,args:unknown[]=[]):{
  let result:unknown;
  if(action){
   const s=store.getState();
-  if(s.isTickRunning&&['sellItem','sellSelected','salvageAll','salvageSelected','upgradeItem','rerollItem'].includes(action))throw Error('Saia da caça para acessar o Ferreiro.');
+  if(s.isTickRunning&&['sellItem','sellSelected','salvageAll','salvageSelected','upgradeItem','rerollItem','elevateItemTier','rerollSpecificAffix','enchantItem'].includes(action))throw Error('Saia da caça para acessar o Ferreiro.');
   if(action==='activateBuff'&&(!s.isTickRunning||!s.character?.onlineBalloonUntil||s.character.onlineBalloonUntil<now))throw Error('Este eco de bônus expirou. Aguarde outro durante a caça.');
   const zero=['finishIntro','clearOfflineReport','clearDeathReport','startHealing','cancelHealing','stopHunting','stopTraining','unequipRace','unequipDivineBeast','activateBuff','buyTrainingBoost','buyBless','refreshCompendium'];
   const strings=['unlockZone','setActiveEnemy','setCurrentZone','acceptQuest','claimQuest','upgradeItem','rerollItem','depositItem','withdrawItem','discardItem','plantFarmSeed','waterFarmPlot','fertilizeFarmPlot','harvestFarmPlot','cookFarmRecipe','buyProfessionTool'];
@@ -91,6 +91,14 @@ export function executeGame(world:WorldState,action?:string,args:unknown[]=[]):{
   else if(action==='feedDivineBeast'){result=s.feedDivineBeast(uid(args[0]) as any, uid(args[1]));if(!(result as any)?.success)throw Error((result as any)?.error??'Não foi possível alimentar a Besta.');}
   else if(action==='elevateItemTier'){result=s.elevateItemTier(uid(args[0]));if(!(result as any)?.success)throw Error((result as any)?.error??'Não foi possível elevar o Tier.');}
   else if(action==='rerollSpecificAffix'){result=s.rerollSpecificAffix(uid(args[0]), uid(args[1]) as any);if(!(result as any)?.success)throw Error((result as any)?.error??'Não foi possível sortear o atributo.');}
+  else if(action==='enchantItem'){
+    if(args.length!==2)throw Error('Informe o equipamento e o mapa do encantamento.');
+    const itemId=uid(args[0]), zoneId=uid(args[1]);
+    if(!ZONES[zoneId])throw Error('Mapa de origem inválido.');
+    const item=s.character!.inventory.items.find(i=>i.uid===itemId);
+    if(!item||!['ARMA','ARMADURA','JOIA','PULSEIRA','ESCUDO','FLECHA'].includes(item.category))throw Error('Escolha um equipamento válido para o Ferreiro.');
+    result=s.enchantItem(itemId,zoneId);if(!(result as any)?.success)throw Error((result as any)?.error??'Não foi possível aplicar o encantamento.');
+  }
   else if(action==='buyCalendarCoupon'){if(args.length)throw Error('Parâmetros inesperados.');result=s.buyCalendarCoupon();if(!(result as any)?.success)throw Error((result as any)?.error??'Não foi possível comprar o cupom.');}
   else if(action==='claimDailyCalendar'){if(args.length)throw Error('Parâmetros inesperados.');result=s.claimDailyCalendar();if(!(result as any)?.success)throw Error((result as any)?.error??'Não foi possível resgatar a recompensa.');}
   else if(action==='recoverCalendarDay'){if(args.length!==1||typeof args[0]!=='string')throw Error('Dia inválido.');result=s.recoverCalendarDay(args[0]);if(!(result as any)?.success)throw Error((result as any)?.error??'Não foi possível recuperar o dia.');}
