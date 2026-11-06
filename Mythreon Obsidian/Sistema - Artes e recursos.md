@@ -59,6 +59,7 @@
 - [public/assets/backgrounds/desert.png](../public/assets/backgrounds/desert.png)
 - [public/assets/backgrounds/duel.png](../public/assets/backgrounds/duel.png)
 - [public/assets/backgrounds/farm.png](../public/assets/backgrounds/farm.png)
+- [public/assets/backgrounds/forest.gif](../public/assets/backgrounds/forest.gif)
 - [public/assets/backgrounds/forest.png](../public/assets/backgrounds/forest.png)
 - [public/assets/backgrounds/forge.png](../public/assets/backgrounds/forge.png)
 - [public/assets/backgrounds/montanha](../public/assets/backgrounds/montanha)

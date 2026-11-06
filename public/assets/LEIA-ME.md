@@ -22,3 +22,8 @@ Quando existir mais de uma extensão com o mesmo nome-base, o carregador usa est
 Exemplo: `mountain.gif` será usado automaticamente no lugar de `mountain.png`. Para
 desativar animações em acessibilidade/economia de desempenho, o componente pode
 solicitar explicitamente o modo estático.
+
+Sprites em `players/` e `players/skins/` usam PNG transparente primeiro quando há
+as duas versões. Os GIFs atuais dessas pastas possuem uma matte branca e seriam
+renderizados como um quadrado branco sobre o mapa; quando um GIF transparente for
+necessário, o componente pode solicitar explicitamente `preferAnimated`.

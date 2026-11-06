@@ -15,7 +15,7 @@ type Props = Omit<React.ImgHTMLAttributes<HTMLImageElement>, "src" | "onError"> 
  * static counterparts. This is intentionally shared by every visual asset:
  * maps, monsters, players, pets, items, UI art and profession scenes.
  */
-export function AssetImage({ src, fallbackSrc, pixelated = true, preferAnimated = true, removeWhite = false, style, onAllSourcesFail, onError, ...props }: Props) {
+export function AssetImage({ src, fallbackSrc, pixelated = true, preferAnimated = !/\/players(?:\/|$)/i.test(src), removeWhite = false, style, onAllSourcesFail, onError, ...props }: Props) {
   const candidates = React.useMemo(() => {
     const isRemote = /^(?:data:|blob:|https?:|mailto:)/i.test(src);
     const isSameOriginUrl = (() => {
