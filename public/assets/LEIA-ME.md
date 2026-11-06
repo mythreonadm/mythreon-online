@@ -27,3 +27,13 @@ Sprites em `players/` e `players/skins/` usam PNG transparente primeiro quando h
 as duas versões. Os GIFs atuais dessas pastas possuem uma matte branca e seriam
 renderizados como um quadrado branco sobre o mapa; quando um GIF transparente for
 necessário, o componente pode solicitar explicitamente `preferAnimated`.
+
+## Mochilas
+
+As artes das mochilas ficam em `items/` com estes nomes canônicos:
+`BACKPACK_NORMAL.png`, `BACKPACK_OLD.png`, `BACKPACK_COURO.png`,
+`BACKPACK_REFORCADA.png`, `BACKPACK_EXPLORADOR.png` e `BACKPACK_ARCANA.png`.
+Saves antigos que tenham apenas `OLD`, `COURO`, `REFORCADA`, `EXPLORADOR` ou
+`ARCANA` também são resolvidos automaticamente. Enquanto a arte dedicada de
+`BACKPACK_COURO` não for adicionada, o jogo usa `BACKPACK_NORMAL.png` como
+fallback visual, sem voltar para emoji.

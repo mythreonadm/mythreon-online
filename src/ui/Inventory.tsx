@@ -3,6 +3,7 @@ import { useGameStore } from "../store/gameStore";
 import { getUsedSlots } from "../engine/inventory";
 import { ItemModal } from "./ItemModal";
 import { Item } from "../types";
+import { ItemIcon } from "./ItemIcon";
 
 export function Inventory() {
   const { character, equip, discardItem, activateCosmetic } = useGameStore();
@@ -88,7 +89,7 @@ export function Inventory() {
               
               <button onClick={(e) => handleDiscard(e, item.uid)} className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 bg-red-600 hover:bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] transition-opacity z-10" title="Jogar Fora">🗑️</button>
               
-              <div className="text-3xl mb-1">{item.icon}</div>
+              <ItemIcon item={item} className="mb-1 h-24 w-24 md:h-28 md:w-28 drop-shadow-md" />
               <div className="text-xs text-center truncate w-full font-bold" title={item.name}>{item.name}</div>
               {item.upgradeLevel > 0 && <div className="text-[10px] text-orange-400 font-bold">+{item.upgradeLevel}</div>}
               {item.slot && <div className="text-[9px] text-arcane-cyan mt-1 bg-arcane-cyan/10 px-1 rounded uppercase">{item.slot.replace("_", " ")}</div>}

@@ -9,6 +9,16 @@ import type { Item } from "../types";
  * cada tela tenha uma regra diferente.
  */
 const ITEM_ALIASES: Record<string, string[]> = {
+  // Mochilas antigas chegaram a ser persistidas com o nome curto do drop
+  // (OLD/COURO/...). Os saves online continuam válidos, mas a arte precisa
+  // sempre apontar para o ID canônico da mochila.
+  NORMAL: ["BACKPACK_NORMAL"],
+  OLD: ["BACKPACK_OLD"],
+  COURO: ["BACKPACK_COURO", "BACKPACK_NORMAL"],
+  REFORCADA: ["BACKPACK_REFORCADA"],
+  EXPLORADOR: ["BACKPACK_EXPLORADOR"],
+  ARCANA: ["BACKPACK_ARCANA"],
+  BACKPACK_COURO: ["BACKPACK_NORMAL"],
   SKIN_CAPA_PRIMEIRO_CANTO: ["SKIN_PREMIUM_MES_01"],
   ISCA_CICATRIZ: ["ISCA_RARA"],
   PEIXE_RIO: ["PEIXE_RIO_LYSS"],
@@ -81,7 +91,8 @@ function toAssetPath(name: string, extension: string) {
 /** Retorna candidatos ordenados: animação primeiro, depois PNG e aliases. */
 export function itemAssetCandidates(itemOrTemplateId: Pick<Item, "templateId"> | string): string[] {
   const templateId = typeof itemOrTemplateId === "string" ? itemOrTemplateId : itemOrTemplateId.templateId;
-  const names = [templateId, ...(ITEM_ALIASES[templateId] ?? [])];
+  const normalized = templateId.trim().toUpperCase().replace(/[\s-]+/g, "_");
+  const names = [templateId, normalized, ...(ITEM_ALIASES[templateId] ?? []), ...(ITEM_ALIASES[normalized] ?? [])];
   const candidates = names.flatMap(name => [
     toAssetPath(name, "gif"),
     toAssetPath(name, "giff"),

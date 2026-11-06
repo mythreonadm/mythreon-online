@@ -373,3 +373,4 @@
 {"at":"2026-11-06T03:54:50.273Z","files":[{"path":"server/generated/online-runtime.cjs","status":"changed"},{"path":"src/ui/CosmeticsGuide.tsx","status":"changed"}]}
 {"at":"2026-11-06T04:06:21.483Z","files":[{"path":"public/assets/LEIA-ME.md","status":"added"},{"path":"public/assets/backgrounds/mountain.gif","status":"added"},{"path":"src/ui/AssetImage.tsx","status":"changed"}]}
 {"at":"2026-11-06T04:14:16.105Z","files":[{"path":"public/assets/LEIA-ME.md","status":"changed"},{"path":"public/assets/backgrounds/forest.gif","status":"added"},{"path":"src/ui/AssetImage.tsx","status":"changed"}]}
+{"at":"2026-11-06T04:25:46.429Z","files":[{"path":"public/assets/LEIA-ME.md","status":"changed"},{"path":"src/data/itemAssets.ts","status":"changed"},{"path":"src/ui/Inventory.tsx","status":"changed"}]}
