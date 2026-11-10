@@ -13,6 +13,6 @@
 
 ## Relações encontradas
 
-Sem dependências compartilhadas catalogadas.
+- [[Mythreon Obsidian/Sistema - Motor do jogo|Motor do jogo]]
 
 [[Mythreon Obsidian/Mapa de Sistemas|Mapa técnico]]

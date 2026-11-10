@@ -101,10 +101,11 @@ assert.equal(storageData.has(resumed.storageKey), false);resumed.dispose();
 
 const random = harness();await random.session.initialize();
 const buy = random.session.submit("world.command", { action: "buyMythreonOffer", args: ["PET_LUMINESCENCE"] });
-assert(!random.session.view.character!.inventory.items.some(item => item.templateId === "LUMINESCENCIA_PET"), "Não expor UID de item sorteado/gerado na prévia");
+assert(!random.session.view.character!.unlockedCosmetics?.includes("LUMINESCENCIA_PET"), "Não desbloquear o cosmético na prévia");
 await random.finish(0);await buy;
-const delivered = random.world.character.inventory.items.find(item => item.templateId === "LUMINESCENCIA_PET")!;
-assert.equal(random.session.view.character!.inventory.items.find(item => item.templateId === "LUMINESCENCIA_PET")!.uid, delivered.uid);
+assert(random.world.character.unlockedCosmetics?.includes("LUMINESCENCIA_PET"));
+assert.equal(random.session.view.character!.cosmeticLoadout?.petAuraTemplateId, "LUMINESCENCIA_PET");
+assert(!random.session.view.character!.inventory.items.some(item => item.templateId === "LUMINESCENCIA_PET"));
 random.session.dispose();
 
 const deniedStorage = harness(fixture(), { ...storage, setItem: () => { throw Error("quota"); } });

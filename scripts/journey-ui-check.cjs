@@ -15,7 +15,51 @@ app.whenReady().then(async()=>{try{
  await wait('!!document.getElementById("quest-card-TUT_WIKI")');assert.equal(await js('document.querySelector("[role=dialog]")===null'),true);assert.equal(await js('Array.from(document.querySelectorAll("nav button")).find(b=>b.textContent.includes("Matriz")).disabled'),true);
  await js('document.querySelector("#quest-card-TUT_WIKI button").click()');await pause(150);await click('Seguir objetivo →');await wait('JSON.parse(localStorage.getItem("mythreon_save_v1_account_journey-ui")).character.quests.active.TUT_WIKI.progress[0]===1');await click('Resgatar missão');await js('document.querySelector("#quest-card-TUT_WIKI button").click()');await wait('!!document.getElementById("quest-card-TUT_POTIONS")');assert.equal(await js('!!document.getElementById("quest-card-TUT_MATRIX")'),false);await fs.writeFile(path.join(cache,'missoes.png'),(await win.webContents.capturePage()).toPNG());
  // Test missing enemy artwork cannot hide the transparent matrix sprite.
- await js('const data=JSON.parse(localStorage.getItem("mythreon_save_v1_account_journey-ui"));const c=data.character;c.introSeen=true;c.tutorialCompleted=true;c.level=30;c.hp=5000;c.hpMax=5000;c.currentZoneId="PANTANO_VEYRA";c.unlockedZoneIds.push("PANTANO_VEYRA");c.activeEnemyId="SAPO_MIASMA";c.activeRace={id:"ui-lupino",name:"Lupino de teste",tier:"COMUM",ataqueId:"A1",suporteId:"S1",passivaId:"P1",bonus:{}};localStorage.setItem("mythreon_save_v1_account_journey-ui",JSON.stringify(data));');await win.loadURL(url);await wait('!!document.querySelector(".combat-sprite-player img")');await wait('document.querySelector(".combat-sprite-player img")?.complete && document.querySelector(".combat-sprite-player img")?.naturalWidth>0');await wait('!!document.querySelector(".combat-sprite-enemy img, .combat-sprite-enemy span")');assert((await js('document.querySelector(".combat-sprite-player img").src')).endsWith('/lupino.png'));await fs.writeFile(path.join(cache,'bioma.png'),(await win.webContents.capturePage()).toPNG());
+ await js('const data=JSON.parse(localStorage.getItem("mythreon_save_v1_account_journey-ui"));const c=data.character;c.introSeen=true;c.tutorialCompleted=true;c.level=30;c.hp=5000;c.hpMax=5000;c.currentZoneId="PANTANO_VEYRA";c.unlockedZoneIds.push("PANTANO_VEYRA");c.activeEnemyId="SAPO_MIASMA";c.activeRace={id:"ui-lupino",name:"Lupino de teste",tier:"COMUM",ataqueId:"A1",suporteId:"S1",passivaId:"P1",bonus:{}};localStorage.setItem("mythreon_save_v1_account_journey-ui",JSON.stringify(data));');await win.loadURL(url);await wait('!!document.querySelector(".combat-sprite-player img")');await wait('document.querySelector(".combat-sprite-player img")?.complete && document.querySelector(".combat-sprite-player img")?.naturalWidth>0');await wait('!!document.querySelector(".combat-sprite-enemy img, .combat-sprite-enemy span, [data-monster-atlas]")');assert((await js('document.querySelector(".combat-sprite-player img").src')).endsWith('/lupino.png'));await fs.writeFile(path.join(cache,'bioma.png'),(await win.webContents.capturePage()).toPNG());
+
+ if (process.argv.includes('--hunt')) {
+   await js(`const key="mythreon_save_v1_account_journey-ui"; const data=JSON.parse(localStorage.getItem(key)); const c=data.character;
+     Object.assign(c,{level:42,currentZoneId:"BOSQUE_LYSS",activeEnemyId:"LOBO",huntWaveProgress:{},enemyHpId:null,fightEnemyId:null,tickCount:0,lastTick:Date.now(),staminaOnline:120,hp:5000,mp:1000,comboCooldownUntil:0});
+     localStorage.setItem(key,JSON.stringify(data));`);
+   await win.loadURL(url);
+   await wait('!!document.querySelector("button[title=Falcão-Ruivo]")');
+   await js('document.querySelector("button[title=Falcão-Ruivo]").click()');
+   await js('document.querySelector(".combat-scene").scrollIntoView({block:"center"})');
+   for(const suffix of ['W1','W2','W3A','W3B','BOSS']) {
+     await wait(`!!document.querySelector('[data-monster-atlas="FALCAO_${suffix}"]')`);
+     if (suffix==='W3A'||suffix==='BOSS') await fs.writeFile(path.join(cache,`hunt-falcao-${suffix}.png`),(await win.webContents.capturePage()).toPNG());
+   }
+   await js('document.querySelector(\'button[title="Espectro de Brasa"]\').click()');
+   await wait('!!document.querySelector(\'[data-monster-atlas="ESPECTRO"]\')');
+   await fs.writeFile(path.join(cache,'hunt-espectro.png'),(await win.webContents.capturePage()).toPNG());
+   win.setContentSize(390,820);
+   await wait(`document.querySelector('[aria-label="Controles de toque do combo"] button')?.offsetWidth>0`);
+   assert.equal(await js('getComputedStyle(document.querySelector(".game-header")).position'),'relative');
+   await js('document.querySelector(".combat-scene").scrollIntoView({block:"start"})');
+   await js(`window.comboFrames=[];
+     new MutationObserver(() => {
+       const target=document.querySelector(".combat-sprite-enemy")?.dataset.encounter;
+       for(const node of document.querySelectorAll('[data-hunt-impact^="combo-"]')){
+         const id=node.dataset.huntImpact;
+         if(!window.comboFrames.some(entry=>entry.id===id))window.comboFrames.push({id,target});
+       }
+     }).observe(document.querySelector(".combat-scene"),{subtree:true,childList:true});`);
+   for(let i=0;i<3;i++) {
+     await js(`document.querySelectorAll('[aria-label="Controles de toque do combo"] button')[${i}].click()`);
+     await pause(45);
+   }
+   await wait('window.comboFrames.length === 2');
+   const combo=await js('window.comboFrames');
+   assert.deepEqual(combo.map(x=>x.id),['combo-1','combo-2']);
+   assert(combo[0].target && combo[0].target===combo[1].target);
+   await fs.writeFile(path.join(cache,'hunt-mobile.png'),(await win.webContents.capturePage()).toPNG());
+   await js('localStorage.setItem("mythreon_video_mode","reduced"); window.dispatchEvent(new Event("mythreon-settings-change"))');
+   await wait('!document.querySelector(".combat-sprite-enemy")?.dataset.pose');
+   assert.deepEqual(errors,[]);
+   console.log('PASS: cinco variantes do Falcão, Espectro, combo por toque no mesmo alvo e movimento reduzido.');
+   app.exit(0);
+   return;
+ }
 
  await js('const d=JSON.parse(localStorage.getItem("mythreon_save_v1_account_journey-ui"));const ch=d.character;ch.level=5;ch.introSeen=true;ch.tutorialCompleted=false;ch.journeyVersion=1;ch.hp=999999999;ch.hpMax=999999999;ch.mp=999999999;ch.mpMax=999999999;ch.activeRace=null;ch.activeDivineBeastId=null;ch.currentZoneId="BOSQUE_LYSS";ch.equipped={};ch.activeVials={};ch.quests={active:{},completed:["TUT_WIKI","TUT_1","TUT_2"]};ch.inventory.items=["COMUM","INCOMUM","RARO","EPICO","LENDARIO"].map((rarity,i)=>({uid:"rarity-"+i,templateId:"ESPADA_T1",name:"Espada "+rarity,category:"ARMA",slot:"ARMA_PRINCIPAL",tier:1,rarity,stats:{atk:10},quantity:1,maxStack:1,stackable:false,upgradeLevel:0,icon:"⚔️"}));localStorage.setItem("mythreon_save_v1_account_journey-ui",JSON.stringify(d));');
  await win.loadURL(url);await wait('Array.from(document.querySelectorAll("nav button")).some(b=>b.textContent.trim()==="Mochila")');

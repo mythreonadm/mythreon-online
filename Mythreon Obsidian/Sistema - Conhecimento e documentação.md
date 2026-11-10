@@ -22,6 +22,7 @@
 - [[docs/conhecimento/Linkar-Itens-no-Chat-2026-11-03|Linkar itens no chat]]
 - [[docs/conhecimento/Loja-Mythreon-Economia-Premium-2026-11-03|Loja Mythreon — economia, Premium e monetização segura]]
 - [[docs/conhecimento/Operacao do Cerebro e Obsidian|Operação do Cérebro e Obsidian]]
+- [[docs/conhecimento/Pack-01-Fundacao-Combate-Animacao|Pack 1 — Fundação de combate e animação]]
 - [[docs/conhecimento/Pack-01-Fundacao-Matriz-Pets-Online-2026-11-03|Pack 01 — Fundação de Evolução e Conteúdo]]
 - [[docs/conhecimento/Pack-02-Cativeiro-Personalizacao-2026-11-03|Objetivo]]
 - [[docs/conhecimento/Pack-03-Feedback-Ataque-Pet-2026-11-03|Objetivo]]
@@ -123,6 +124,7 @@
 - [docs/conhecimento/Linkar-Itens-no-Chat-2026-11-03.md](../docs/conhecimento/Linkar-Itens-no-Chat-2026-11-03.md)
 - [docs/conhecimento/Loja-Mythreon-Economia-Premium-2026-11-03.md](../docs/conhecimento/Loja-Mythreon-Economia-Premium-2026-11-03.md)
 - [docs/conhecimento/Operacao do Cerebro e Obsidian.md](../docs/conhecimento/Operacao do Cerebro e Obsidian.md)
+- [docs/conhecimento/Pack-01-Fundacao-Combate-Animacao.md](../docs/conhecimento/Pack-01-Fundacao-Combate-Animacao.md)
 - [docs/conhecimento/Pack-01-Fundacao-Matriz-Pets-Online-2026-11-03.md](../docs/conhecimento/Pack-01-Fundacao-Matriz-Pets-Online-2026-11-03.md)
 - [docs/conhecimento/Pack-02-Cativeiro-Personalizacao-2026-11-03.md](../docs/conhecimento/Pack-02-Cativeiro-Personalizacao-2026-11-03.md)
 - [docs/conhecimento/Pack-03-Feedback-Ataque-Pet-2026-11-03.md](../docs/conhecimento/Pack-03-Feedback-Ataque-Pet-2026-11-03.md)

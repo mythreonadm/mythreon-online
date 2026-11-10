@@ -449,7 +449,9 @@
 - [public/assets/vfx/LEIA-ME.txt](../public/assets/vfx/LEIA-ME.txt)
 - [scripts/crop-pantano-assets.py](../scripts/crop-pantano-assets.py)
 - [src/data/itemAssets.ts](../src/data/itemAssets.ts) — itemAssetCandidates
+- [src/data/monsterAtlases.ts](../src/data/monsterAtlases.ts) — WAVE_SPRITE_SUFFIXES, monsterMotion, MonsterAtlasCell, monsterAtlasCell
 - [src/ui/AssetImage.tsx](../src/ui/AssetImage.tsx) — AssetImage
+- [src/ui/MonsterSprite.tsx](../src/ui/MonsterSprite.tsx) — MonsterSprite
 
 ## Relações encontradas
 

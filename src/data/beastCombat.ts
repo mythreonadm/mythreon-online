@@ -1,5 +1,9 @@
 import { Character, DivineBeastId, Element, ItemStats } from "../types";
 import { DIVINE_BEASTS } from "./divineBeasts";
+import { TICK_MS } from "../config";
+
+const BEAST_ATTACK_TICKS = 2;
+export const BEAST_ATTACK_SECONDS = BEAST_ATTACK_TICKS * TICK_MS / 1000;
 
 const ATTACKS: Record<DivineBeastId, [string, Element]> = {
  LYSS_STAG: ["Lanças de Raiz", "TERRA"], DHOR_GRIFFIN: ["Queda de Basalto", "TERRA"],
@@ -16,7 +20,7 @@ export function getBeastCombat(char: Character) {
  if (!id || !(char.divineBeasts ?? []).some(b => b.id === id)) return null;
  const beast = DIVINE_BEASTS[id];
  const [name, element] = ATTACKS[id];
- return { beast, name, element, cooldown: 2, cooldownSeconds: 5, mana: 8 + Math.floor(char.level * 0.5), multiplier: 2.4 };
+ return { beast, name, element, cooldown: BEAST_ATTACK_TICKS, cooldownSeconds: BEAST_ATTACK_SECONDS, mana: 8 + Math.floor(char.level * 0.5), multiplier: 2.4 };
 }
 export function beastGrowth(level: number): ItemStats {
  return { hp: 60 + level * 6, mp: 30 + level * 3, atk: 6 + level, matk: 6 + level, arm: 3 + Math.floor(level * 0.6), hpRegen: 1 + Math.floor(level / 15), mpRegen: 2 + Math.floor(level / 15) };

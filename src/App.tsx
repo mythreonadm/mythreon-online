@@ -201,7 +201,7 @@ useEffect(() => {
       <OfflineModal />
       <DeathScreen />
 
-      <header className="game-header bg-arcane-panel border-b border-arcane-border px-3 py-2 sticky top-0 z-50 shadow-lg">
+      <header className={`game-header bg-arcane-panel border-b border-arcane-border px-3 py-2 top-0 z-50 shadow-lg ${tab === "zona" && isTickRunning ? "relative md:sticky" : "sticky"}`}>
         <div className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-2">
           <div className="brand-lockup game-brand-lockup">
             <a href="/?site=1" className="game-brand-link" aria-label="Voltar para o site Mythreon Online" title="Página inicial do Mythreon Online">

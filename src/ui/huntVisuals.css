@@ -1,0 +1,45 @@
+.hunt-visuals { position: absolute; inset: 0; z-index: 32; pointer-events: none; }
+.hunt-hits { position: absolute; bottom: 43%; display: grid; gap: .18rem; justify-items: center; transform: translateX(-50%); max-width: 46%; }
+.hunt-hits-hero { left: 22%; }
+.hunt-hits-enemy { left: 78%; }
+.hunt-hit { padding: .14rem .45rem; display: flex; flex-wrap: wrap; gap: .25rem; align-items: center; justify-content: center; border-radius: .4rem; background: #0b1015e8; border: 1px solid #ffffff35; color: #ffe0ae; line-height: 1.15; }
+.hunt-hit strong { font-size: clamp(.85rem, 2vw, 1.22rem); }
+.hunt-hit small { font-size: .61rem; font-weight: 700; }
+.hunt-hit-combo { color: #ffe480; border-color: #b38444; }
+.hunt-hit-spell { color: #edc9ff; }
+.hunt-hit-pet, .hunt-hit-heal { color: #b1ffdb; }
+.hunt-hit-counter { color: #ffaaa4; }
+.hunt-hit-miss, .hunt-hit-dodge { color: #d6e5f2; }
+.hunt-mark { position: absolute; left: 78%; bottom: 28%; color: #ffd19c; width: clamp(2.1rem, 9vw, 6.5rem); transform: translateX(-50%); opacity: .92; }
+.hunt-mark-hero { left: 22%; color: #ff8c80; }
+.hunt-mark-combo { color: #ffe480; }
+.hunt-mark-pet { color: #a8ffc4; }
+.hunt-mark-spell { color: #e3adff; }
+.hunt-trail { --origin: 23%; position: absolute; left: var(--origin); bottom: 32%; width: 1.35rem; height: .42rem; color: #edd19a; background: currentColor; box-shadow: -.55rem 0 .4rem currentColor; clip-path: polygon(0 30%, 64% 30%, 64% 0, 100% 50%, 64% 100%, 64% 70%, 0 70%); animation: hunt-trail-travel 135ms linear both; }
+.hunt-trail-pet { --origin: 38%; color: #adf18a; }
+@keyframes hunt-trail-travel { to { left: 77%; opacity: .52; } }
+.hunt-visuals:not(.hunt-visuals-static) .hunt-mark { animation: hunt-mark-impact 360ms ease-out both; }
+.hunt-enemy-motion { transform-origin: center bottom; }
+.hunt-enemy-motion[data-wave-stage="0"] :is(canvas, img) { width: 72%; height: 72%; align-self: end; }
+.hunt-enemy-motion[data-wave-stage="1"] :is(canvas, img) { width: 84%; height: 84%; align-self: end; }
+.hunt-enemy-motion[data-pose="idle"] { animation: hunt-enemy-idle 1.9s ease-in-out infinite; }
+.hunt-enemy-motion[data-pose="hit"] { animation: hunt-enemy-hit 270ms ease-out both; }
+.hunt-enemy-motion[data-pose="attack"] { animation: hunt-enemy-attack 390ms ease-out both; }
+.hunt-enemy-motion[data-pose="defeated"] { animation: hunt-enemy-defeat 400ms ease-out both; }
+.hunt-enemy-motion[data-monster-motion="flying"][data-pose="idle"] { animation: hunt-air-idle 1.45s ease-in-out infinite; }
+.hunt-enemy-motion[data-monster-motion="flying"][data-pose="attack"] { animation: hunt-air-dive 390ms ease-out both; }
+.hunt-enemy-motion[data-monster-motion="spectral"][data-pose="idle"] { animation: hunt-spectral-idle 2.6s ease-in-out infinite; }
+.hunt-enemy-motion[data-monster-motion="heavy"][data-pose="attack"] { animation: hunt-heavy-attack 440ms ease-out both; }
+@keyframes hunt-mark-impact { 0% { transform: translateX(-50%) scale(.6); opacity: .6; } 38% { transform: translateX(-50%) scale(1.15); opacity: 1; } 100% { transform: translateX(-50%) scale(.92); opacity: 0; } }
+@keyframes hunt-enemy-idle { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px) scale(1.015); } }
+@keyframes hunt-enemy-hit { 0%, 100% { transform: translateX(0); } 35% { transform: translateX(8px) skewX(-3deg); filter: brightness(1.3); } }
+@keyframes hunt-enemy-attack { 0%, 100% { transform: translateX(0); } 19% { transform: translateX(4px) scaleY(.95); } 48% { transform: translateX(-16px) skewX(3deg); } }
+@keyframes hunt-enemy-defeat { from { opacity: 1; } to { opacity: 0; transform: translateY(8px) scaleY(.88); } }
+@keyframes hunt-air-idle { 0%, 100% { transform: translateY(-3px) rotate(1deg); } 50% { transform: translateY(-12px) rotate(-2deg); } }
+@keyframes hunt-air-dive { 0%, 100% { transform: translateY(-4px); } 35% { transform: translate(6px, -14px) rotate(5deg); } 62% { transform: translate(-16px, 3px) rotate(-8deg); } }
+@keyframes hunt-spectral-idle { 0%, 100% { transform: translateY(-4px); opacity: .92; } 50% { transform: translateY(-10px); opacity: 1; } }
+@keyframes hunt-heavy-attack { 0%, 100% { transform: translateX(0); } 35% { transform: translateX(4px) scaleY(1.05); } 60% { transform: translateX(-10px) scaleY(.93); } }
+@media (prefers-reduced-motion: reduce) {
+  .hunt-visuals .hunt-mark, .hunt-enemy-motion[data-pose] { animation: none !important; }
+  .hunt-trail { display: none; }
+}

@@ -13,6 +13,7 @@ import { VIALS } from "../data/vials";
 import { BACKPACKS } from "../data/backpacks";
 import { ATTACK_SKILLS, SUPPORT_EFFECTS, PASSIVE_EFFECTS } from "../data/skills";
 import { DIVINE_BEASTS, DIVINE_BEAST_ORDER } from "../data/divineBeasts";
+import { BEAST_ATTACK_SECONDS } from "../data/beastCombat";
 import { HUMAN_LINEAGE, LINEAGES } from "../data/lineages";
 import { Item } from "../types";
 import { getPotionUsePrice } from "../data/potionEconomy";
@@ -689,7 +690,7 @@ function ChapterContent({ chapter }: { chapter: number }) {
           </ul>
           <H>O despertar dos Pets</H>
           <P>Uma Besta Divina não é capturada nem obrigada a obedecer. O viajante encontra um Ovo de Besta, aguarda a incubação e descobre qual memória viva aceitou acompanhá-lo. A raridade do ovo define as chances de eclosão.</P>
-          <P>A Matriz e o pet atuam juntos. A Matriz canaliza um padrão de Leis; o pet compartilha sua memória viva, desfere seu ataque a cada 5 segundos e aplica seus bônus. Alimentação e humor mantêm o companheiro em seu melhor estado.</P>
+          <P>A Matriz e o pet atuam juntos. A Matriz canaliza um padrão de Leis. O pet compartilha sua memória viva, aplica seus bônus e pode atacar a cada dois ciclos de caça (cerca de {BEAST_ATTACK_SECONDS} segundos), se tiver mana. Alimentação e humor mantêm o companheiro em seu melhor estado.</P>
           <Q>Não caminham atrás de nós. Caminham conosco. E, enquanto houver memória, nenhum vínculo desaparece por completo.</Q>
         </div>
       );

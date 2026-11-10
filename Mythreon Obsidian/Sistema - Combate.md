@@ -6,6 +6,7 @@
 
 - [[docs/conhecimento/Balanceamento-Combate-Economia|Balanceamento de combate e economia]]
 - [[docs/conhecimento/Comunidade-no-Registro-de-Combate-2026-11-03|Comunidade no Registro de Combate — 2026-11-03]]
+- [[docs/conhecimento/Pack-01-Fundacao-Combate-Animacao|Pack 1 — Fundação de combate e animação]]
 - [[docs/conhecimento/Pack-40-PvP-Combate-por-Turnos-2026-11-04|Pack 40 — PvP por turnos e combate autoritativo]]
 - [[docs/conhecimento/Pack-50-Arena-Visual-Boss-Cooperativo-2026-11-04|Pack 50 — Arena visual do Boss Diário]]
 - [[docs/conhecimento/PvP-Arena-Movel-e-Caca-2026-11-05|Arena móvel, registro PvP e recuperação de caça — 2026-11-05]]
@@ -14,12 +15,13 @@
 
 - [docs/conhecimento/Balanceamento-Combate-Economia.md](../docs/conhecimento/Balanceamento-Combate-Economia.md)
 - [docs/conhecimento/Comunidade-no-Registro-de-Combate-2026-11-03.md](../docs/conhecimento/Comunidade-no-Registro-de-Combate-2026-11-03.md)
+- [docs/conhecimento/Pack-01-Fundacao-Combate-Animacao.md](../docs/conhecimento/Pack-01-Fundacao-Combate-Animacao.md)
 - [docs/conhecimento/Pack-40-PvP-Combate-por-Turnos-2026-11-04.md](../docs/conhecimento/Pack-40-PvP-Combate-por-Turnos-2026-11-04.md)
 - [docs/conhecimento/Pack-50-Arena-Visual-Boss-Cooperativo-2026-11-04.md](../docs/conhecimento/Pack-50-Arena-Visual-Boss-Cooperativo-2026-11-04.md)
 - [docs/conhecimento/PvP-Arena-Movel-e-Caca-2026-11-05.md](../docs/conhecimento/PvP-Arena-Movel-e-Caca-2026-11-05.md)
 - [public/assets/backgrounds/duel.png](../public/assets/backgrounds/duel.png)
 - [scripts/daily-boss-arena-check.cjs](../scripts/daily-boss-arena-check.cjs)
-- [src/data/beastCombat.ts](../src/data/beastCombat.ts) — getBeastCombat, beastGrowth
+- [src/data/beastCombat.ts](../src/data/beastCombat.ts) — BEAST_ATTACK_SECONDS, getBeastCombat, beastGrowth
 - [src/engine/cardArena.ts](../src/engine/cardArena.ts) — ArenaSize, ArenaStrategy, ArenaFighter, ArenaLogEntry, ArenaBattleResult, toFighter, makeOpponentDeck, simulateArenaDuel
 - [src/engine/combat.ts](../src/engine/combat.ts) — buildProfile, processTick
 - [src/ui/ArenaDuelos.tsx](../src/ui/ArenaDuelos.tsx) — ArenaDuelos

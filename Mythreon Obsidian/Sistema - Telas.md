@@ -25,6 +25,7 @@
 - [src/ui/Equipment.tsx](../src/ui/Equipment.tsx) — Equipment
 - [src/ui/Farm.tsx](../src/ui/Farm.tsx) — Farm
 - [src/ui/HeroArt.tsx](../src/ui/HeroArt.tsx) — HeroArt
+- [src/ui/HuntVisuals.tsx](../src/ui/HuntVisuals.tsx) — useHuntTimeline, HuntVisuals
 - [src/ui/JourneyGuide.tsx](../src/ui/JourneyGuide.tsx) — JourneyGuide
 - [src/ui/LandingPage.tsx](../src/ui/LandingPage.tsx) — LandingPage
 - [src/ui/OfflineModal.tsx](../src/ui/OfflineModal.tsx) — OfflineModal
@@ -40,6 +41,7 @@
 - [src/ui/QuantityModal.tsx](../src/ui/QuantityModal.tsx) — QuantityModal
 - [src/ui/SettingsPanel.tsx](../src/ui/SettingsPanel.tsx) — SettingsPanel
 - [src/ui/WorldJourney.tsx](../src/ui/WorldJourney.tsx) — PassageContract, WorldJourney
+- [src/ui/huntVisuals.css](../src/ui/huntVisuals.css)
 - [src/ui/professionScene.css](../src/ui/professionScene.css)
 
 ## Relações encontradas

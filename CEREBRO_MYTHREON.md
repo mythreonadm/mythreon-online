@@ -524,3 +524,7 @@ Fonte detalhada: `docs/conhecimento/Pack-63-Profissoes-Bau-e-Caca-2026-11-05.md`
 A incubadora de Pets agora exibe uma ação explícita quando o tempo termina. `src/ui/DivineBeasts.tsx` mostra o cartão pronto com o botão **🥚 Abrir o Ovo**, em destaque dourado e pulsante, usando `hatchEgg` e `confirmedAction` para preservar o fluxo local/online. Enquanto o ovo está reservado, a área inferior explica que ele está no cartão da incubadora, evitando a impressão de que foi perdido.
 
 Fonte detalhada: `docs/conhecimento/Pack-64-Incubadora-Botao-de-Eclosao-2026-11-05.md`. Validação: `npm run typecheck` passou. Sem alteração de raridade, tempo, inventário, schema, commit, push ou deploy. Após publicar, testar um ovo pronto, confirmar o Pet criado e verificar a limpeza da incubadora.
+
+## Próxima sequência — Pack 1 de combate e animação
+
+Implementação da caça em [[docs/conhecimento/Pack-01-Fundacao-Combate-Animacao|Fundação de combate e animação]]. Os eventos confirmados separam golpes, magia, combo, pet e contra-ataque, com o alvo derrotado preservado durante a apresentação. Recarga e mana usam os ciclos e o cálculo do motor. Foram mapeadas 38 pranchas de famílias e 7 retratos de chefes em `imagens/monstros/`. Ordem esquerda → direita: W1, W2, W3A, W3B, BOSS. W3A e W3B continuam sequenciais; chefes de mapa mantêm seu próprio ID. Lobo usa os PNGs existentes; Gárgula e Golem de Obsidiana mantêm a arte de base. O novo movimento usa as poses originais, sem depender de novos desenhos.

@@ -36,7 +36,7 @@
 - [public/assets/pets/divine-beast-nyr.png](../public/assets/pets/divine-beast-nyr.png)
 - [public/assets/pets/divine-beast-veyra.png](../public/assets/pets/divine-beast-veyra.png)
 - [public/assets/pets/divine-beast-void.png](../public/assets/pets/divine-beast-void.png)
-- [src/data/beastCombat.ts](../src/data/beastCombat.ts) — getBeastCombat, beastGrowth
+- [src/data/beastCombat.ts](../src/data/beastCombat.ts) — BEAST_ATTACK_SECONDS, getBeastCombat, beastGrowth
 - [src/data/divineBeasts.ts](../src/data/divineBeasts.ts) — DIVINE_BEAST_SELL_VALUES, divineBeastSellValue, DIVINE_BEASTS, DIVINE_BEAST_ORDER
 - [src/ui/DivineBeasts.tsx](../src/ui/DivineBeasts.tsx) — DivineBeasts
 

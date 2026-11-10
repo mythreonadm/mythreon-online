@@ -1,4 +1,4 @@
-import { Enemy, Zone } from "../types";
+import type { Character, Enemy, Zone } from "../types";
 
 export const HUNT_WAVE_COUNT = 5;
 
@@ -39,6 +39,25 @@ function generatedNames(base: Enemy): [string, string, string, string, string] {
 }
 
 export function getWaveKey(zoneId: string, baseEnemyId: string) { return `${zoneId}:${baseEnemyId}`; }
+export function resolveHuntTarget(zone: Zone, character: Character) {
+  const selected = zone.enemies.find(enemy => enemy.id === character.activeEnemyId);
+  return selected && character.level >= (selected.minLevel ?? 1)
+    ? selected
+    : zone.enemies.find(enemy => character.level >= (enemy.minLevel ?? 1)) ?? zone.enemies[0];
+}
+
+export function prepareHuntTarget(character: Character, zone: Zone, enemy: Enemy) {
+  character.activeEnemyId = enemy.id;
+  character.huntWaveProgress ??= {};
+  const stage = enemy.isBoss ? undefined : getWaveStage(character.huntWaveProgress, zone.id, enemy.id);
+  const encounter = stage === undefined ? enemy : getWaveEncounter(zone, enemy, stage);
+  character.fightWaveKey = stage === undefined ? undefined : getWaveKey(zone.id, enemy.id);
+  character.fightWaveStage = stage;
+  character.fightEnemyId = undefined;
+  character.huntEncounterStartedAtTick = undefined;
+  character.enemyHp = encounter.hp * encounter.difficulty;
+  character.enemyHpId = encounter.id;
+}
 export function getWaveStage(progress: Record<string, number> | undefined, zoneId: string, baseEnemyId: string) {
   const raw = progress?.[getWaveKey(zoneId, baseEnemyId)];
   return Math.max(0, Math.min(HUNT_WAVE_COUNT - 1, Number.isFinite(raw) ? Number(raw) : 0));

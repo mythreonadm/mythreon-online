@@ -7,12 +7,11 @@ import React, { useEffect, useState } from "react";
 import { useGameStore } from "../store/gameStore";
 import { ZONES } from "../data/zones";
 import { getSpellEffect, getWeaponAnimation } from "../utils/combatVisuals";
-import { CharacterSkills, HuntEncounterRecord, DamageBreakdown, Element } from "../types";
+import { Character, CharacterSkills, HuntEncounterRecord, DamageBreakdown, Element } from "../types";
 import { skillXpToNextLevel } from "../engine/stats";
 import { buildProfile } from "../engine/combat";
 import { VIALS } from "../data/vials";
 import { ATTACK_SKILLS, ATTACK_SKILL_COOLDOWN } from "../data/skills";
-import { getLineageByAttack } from "../data/lineages"; // NOVO IMPORT
 import { AccessIcon } from "./AccessIcon";
 import { getHuntQuestSignal } from "../utils/questSignals";
 import { POTION_TEMPLATES } from "../data/items";
@@ -22,13 +21,16 @@ import { ItemIcon } from "./ItemIcon";
 import { getBeastCombat } from "../data/beastCombat";
 import { QUESTS } from "../data/quests";
 import { ALL_ITEM_TEMPLATES } from "../data/items";
-import { playAttackSfx, playCombatSfx } from "../utils/sfx";
 import { DailyCalendar } from "./DailyCalendar";
 import { OnlineChest } from "./OnlineChest";
 import { HeroArt } from "./HeroArt";
 import { ownedCosmeticLoadout } from "../engine/cosmeticOwnership";
 import { getCosmeticVisual } from "../utils/cosmetics";
-import { getWaveEncounter, getWaveStage, waveLabel } from "../engine/huntWaves";
+import { getWaveEncounter, getWaveStage, resolveHuntTarget, waveLabel } from "../engine/huntWaves";
+import { huntCooldown, skillManaCost } from "../engine/huntPresentation";
+import { HuntVisuals, useHuntTimeline } from "./HuntVisuals";
+import { MonsterSprite } from "./MonsterSprite";
+import { monsterMotion } from "../data/monsterAtlases";
 
 interface ZoneViewProps { onOpenQuest: (questId: string) => void; trackedQuestId?: string | null; }
 
@@ -59,30 +61,26 @@ function formatHuntDuration(ms: number) {
   return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${rest.toString().padStart(2, "0")}`;
 }
 
-export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
+export function ZoneView(props: ZoneViewProps) {
+  const character = useGameStore(state => state.character);
+  return character ? <ZoneContent key={character.id} {...props} character={character} /> : null;
+}
+
+function ZoneContent({ onOpenQuest, trackedQuestId, character }: ZoneViewProps & { character: Character }) {
   const online = useOnlineState(state=>state.active);
-  const { character, currentZoneId, startHunting, stopHunting, startTraining, stopTraining, isTickRunning, isTraining, lastTickResult, setActiveEnemy, activateBuff, updateSettings, healFull, startHealing, cancelHealing, healingUntil, armSpecialCombo } = useGameStore();
+  const comboPending = useOnlineState(state => state.commands.includes("armSpecialCombo"));
+  const { currentZoneId, startHunting, stopHunting, startTraining, stopTraining, isTickRunning, isTraining, lastTickResult, setActiveEnemy, activateBuff, updateSettings, healFull, startHealing, cancelHealing, healingUntil, armSpecialCombo } = useGameStore();
   
-  const [isHurt, setIsHurt] = useState(false);
-  const [floatingDamage, setFloatingDamage] = useState<number | null>(null);
-  const [petDamage, setPetDamage] = useState<number | null>(null);
-  const [petAttackPulse, setPetAttackPulse] = useState(false);
   const [petImageError, setPetImageError] = useState(false);
-  const [isAttacking, setIsAttacking] = useState(false);
-  const [showProjectile, setShowProjectile] = useState(false);
   const [balloon, setBalloon] = useState<{ x: number; y: number } | null>(null);
   const [buffTimeLeft, setBuffTimeLeft] = useState(0);
   const [houseTab, setHouseTab] = useState<"maps" | "train" | "calendar">("maps");
   const [healTimer, setHealTimer] = useState(0);
-  const [petCooldownStartedAt, setPetCooldownStartedAt] = useState<number | null>(null);
-  const [petCooldownClock, setPetCooldownClock] = useState(() => Date.now());
   const [mobilePanelOpen, setMobilePanelOpen] = useState(false);
-  const [enemyImageError, setEnemyImageError] = useState(false);
   const [comboKeys, setComboKeys] = useState(() => ["S", "D", "A"].sort(() => Math.random() - .5));
   const [comboProgress, setComboProgress] = useState(0);
   const [comboStartedAt, setComboStartedAt] = useState<number | null>(null);
   const [comboClock, setComboClock] = useState(() => Date.now());
-  const [comboBurst, setComboBurst] = useState(false);
   const [comboFeedback, setComboFeedback] = useState<"idle" | "good" | "bad">("idle");
   const [showLootConfig, setShowLootConfig] = useState<string | null>(null);
   const [mapPreviewZoneId, setMapPreviewZoneId] = useState<string | null>(null);
@@ -94,21 +92,13 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
   const [effectsEnabled, setEffectsEnabled] = useState(() => typeof window === "undefined" || localStorage.getItem("mythreon_effects_enabled") !== "false");
   
   const balloonTimeout = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-  const magicCooldownTicks = Math.max(4, Math.ceil(ATTACK_SKILL_COOLDOWN - (character ? buildProfile(character).cdReduce : 0)));
+  const magicCooldownTicks = Math.max(4, Math.ceil(ATTACK_SKILL_COOLDOWN - buildProfile(character).cdReduce));
 
   useEffect(() => {
+    if (!isTickRunning) return;
+    setComboClock(Date.now());
     const timer = window.setInterval(() => setComboClock(Date.now()), 250);
     return () => window.clearInterval(timer);
-  }, []);
-
-  useEffect(() => {
-    if (petCooldownStartedAt === null) return;
-    const timer = window.setInterval(() => setPetCooldownClock(Date.now()), 100);
-    return () => window.clearInterval(timer);
-  }, [petCooldownStartedAt]);
-
-  useEffect(() => {
-    if (!isTickRunning) setPetCooldownStartedAt(null);
   }, [isTickRunning]);
 
   useEffect(() => {
@@ -134,7 +124,7 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
   }, []);
 
   const handleComboKey = (key: string) => {
-    if (!isTickRunning || (character?.comboCooldownUntil ?? 0) > Date.now()) return;
+    if (!isTickRunning || useOnlineState.getState().commands.includes("armSpecialCombo") || (character.comboCooldownUntil ?? 0) > Date.now()) return;
     if (key !== comboKeys[comboProgress]) {
       setComboProgress(0); setComboStartedAt(null); setComboFeedback("bad");
       window.setTimeout(() => setComboFeedback("idle"), 450);
@@ -156,22 +146,25 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
   useEffect(() => {
     if (!isTickRunning) return;
     const onKey = (event: KeyboardEvent) => {
-      if (event.repeat) return;
+      if (event.repeat || (event.target instanceof HTMLElement && event.target.closest("input, textarea, select, [contenteditable]"))) return;
       handleComboKey(event.key.toUpperCase());
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [isTickRunning, comboKeys, comboProgress, comboStartedAt, armSpecialCombo]);
 
-  if (!character) return null;
   const currentZone = ZONES[currentZoneId];
-  const selectedMob = currentZone.enemies.find(e => e.id === character.activeEnemyId);
-  const selectedBaseMob = selectedMob && character.level >= (selectedMob.minLevel ?? 1)
-    ? selectedMob
-    : currentZone.enemies.find(e => character.level >= (e.minLevel ?? 1)) || currentZone.enemies[0];
+  const selectedBaseMob = resolveHuntTarget(currentZone, character);
   const selectedWaveStage = selectedBaseMob?.isBoss ? 4 : getWaveStage(character.huntWaveProgress, currentZone.id, selectedBaseMob?.id ?? "");
   const currentMob = selectedBaseMob?.isBoss ? selectedBaseMob : getWaveEncounter(currentZone, selectedBaseMob ?? currentZone.enemies[0], selectedWaveStage);
-  const currentWaveLabel = selectedBaseMob?.isBoss ? "Chefe da região" : waveLabel(selectedWaveStage);
+  const beat = lastTickResult?.huntBeat;
+  const scopedBeat = beat?.zoneId === currentZoneId && beat.baseEnemyId === selectedBaseMob.id ? beat : undefined;
+  const frame = useHuntTimeline(scopedBeat, `${currentZoneId}:${selectedBaseMob.id}`, isTickRunning);
+  const visualMob = frame?.beat.enemy ?? (scopedBeat?.enemy.isElite && scopedBeat.outcome !== "victory" ? scopedBeat.enemy : currentMob);
+  const currentWaveLabel = selectedBaseMob.isBoss ? "Chefe da região" : waveLabel(visualMob.waveStage ?? selectedWaveStage);
+  const motion = animationsEnabled && videoMode === "auto";
+  const impact = frame?.beat.impacts[(frame?.count ?? 0) - 1];
+  const enemyPose = frame?.defeated ? "defeated" : impact?.kind === "counter" || impact?.kind === "dodge" ? "attack" : impact?.hpRemoved ? "hit" : "idle";
   const questSignal = getHuntQuestSignal(character, currentZoneId || currentZone.id);
   const activeBond = getBeastCombat(character);
   const selectedHpPotion = POTION_TEMPLATES[character.autoHpPotionId || ""];
@@ -181,12 +174,9 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
   const backpackFull = backpackUsed >= backpackCapacity;
   const backpackAlmostFull = !backpackFull && backpackUsed >= Math.max(1, backpackCapacity - 3);
 
-  // Encontra a linhagem baseada na raça equipada (ou humano se não tiver)
-  const playerLineage = getLineageByAttack(character.activeRace?.ataqueId);
-
   useEffect(() => {
-    setEnemyImageError(false); setPetImageError(false);
-  }, [currentMob?.id, playerLineage.id]); // Reseta erro se o mob ou a raça mudar
+    setPetImageError(false);
+  }, [activeBond?.beast.id]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -232,32 +222,6 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
     if (balloonTimeout.current) clearTimeout(balloonTimeout.current);
     activateBuff();
   };
-
-  useEffect(() => {
-    if (isTickRunning && lastTickResult && (lastTickResult.attacked || lastTickResult.usedMp)) {
-      playCombatSfx(activeBond && (lastTickResult.beastDamage || lastTickResult.log?.some(line => line.includes(activeBond.name))) ? "beast" : "hit");
-      playAttackSfx(character.activeRace?.ataqueId, !!lastTickResult.comboHitDamage);
-      const canAnimate = animationsEnabled && effectsEnabled && videoMode !== "reduced";
-      setIsAttacking(canAnimate); setShowProjectile(canAnimate && videoMode !== "compat");
-      if (lastTickResult.lastDamage) {
-        setTimeout(() => { setIsHurt(true); setFloatingDamage(lastTickResult.lastDamage!); }, 250); 
-      }
-      if (lastTickResult.beastDamage) {
-        setPetDamage(lastTickResult.beastDamage);
-        setPetAttackPulse(canAnimate);
-        setPetCooldownStartedAt(Date.now());
-      }
-      const timer1 = setTimeout(() => { setIsAttacking(false); setShowProjectile(false); }, canAnimate ? 600 : 150);
-      const timer2 = setTimeout(() => { setIsHurt(false); setFloatingDamage(null); }, 1000);
-      const timerPet = setTimeout(() => { setPetDamage(null); setPetAttackPulse(false); }, canAnimate ? 900 : 650);
-      if (lastTickResult.comboHitDamage) {
-        setComboBurst(true);
-        const timer3 = setTimeout(() => setComboBurst(false), 900);
-        return () => { clearTimeout(timer1); clearTimeout(timer2); clearTimeout(timer3); clearTimeout(timerPet); };
-      }
-      return () => { clearTimeout(timer1); clearTimeout(timer2); clearTimeout(timerPet); };
-    }
-  }, [lastTickResult, isTickRunning, animationsEnabled, effectsEnabled, videoMode]);
 
   if (!isTickRunning && !isTraining) {
     const skillsList: { key: keyof CharacterSkills, name: string, icon: string, desc: string }[] = [
@@ -400,9 +364,12 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
     );
   }
 
-  const enemyHp = character.enemyHp || 0;
-  const enemyMaxHp = currentMob.hp * currentMob.difficulty;
-  const enemyHpPct = Math.max(0, (enemyHp / enemyMaxHp) * 100);
+  const resolvedEnemy = scopedBeat?.enemy.id === visualMob.id ? scopedBeat : undefined;
+  const enemyMaxHp = frame?.beat.enemyMaxHp ?? resolvedEnemy?.enemyMaxHp ?? currentMob.hp * currentMob.difficulty;
+  const enemyHp = frame
+    ? frame.beat.enemyHpBefore - frame.beat.impacts.slice(0, frame.count).reduce((sum, hit) => sum + (hit.target === "enemy" ? hit.hpRemoved : 0), 0)
+    : character.enemyHpId === visualMob.id ? character.enemyHp ?? enemyMaxHp : enemyMaxHp;
+  const enemyHpPct = vitalPercent(enemyHp, enemyMaxHp);
 
   const getBackgroundImage = (theme: string) => {
     switch (theme) {
@@ -418,24 +385,19 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
   };
 
   // A arma ainda dita a ANIMAÇÃO (espada = swing, arco = shoot)
-  const weaponAnimClass = isAttacking ? getWeaponAnimation(character.equipped.ARMA_PRINCIPAL?.templateId) : "animate-run";
+  const attacking = impact?.kind === "basic" || impact?.kind === "combo" || impact?.kind === "spell";
+  const weaponAnimClass = !motion ? "" : attacking ? (impact.kind === "spell" ? "animate-cast" : getWeaponAnimation(impact.sourceId)) : "animate-idle";
   const spellEmoji = getSpellEffect(character.activeRace?.ataqueId || "A1");
   
   const raceSkill = character.activeRace ? ATTACK_SKILLS[character.activeRace.ataqueId] : null;
-  // O motor dispara a magia nos múltiplos do cooldown. No tick 0 ela está
-  // pronta; depois de cada múltiplo o ciclo reinicia visualmente cheio para
-  // que a UI nunca mostre "PRONTA" antes do próximo disparo permitido.
   const currentTick = Math.max(0, Number(character.tickCount ?? 0));
-  const tickPhase = currentTick % magicCooldownTicks;
-  const magicCooldown = currentTick === 0 ? 0 : (tickPhase === 0 ? magicCooldownTicks : tickPhase);
-  const magicReady = magicCooldown === 0;
-  const magicPct = magicReady ? 100 : (magicCooldown / magicCooldownTicks) * 100;
-  const magicManaCost = raceSkill ? (raceSkill.manaCost + character.level * 2) : 0;
+  const elapsed = comboClock - (scopedBeat?.at ?? character.lastTick);
+  const magic = huntCooldown(currentTick, magicCooldownTicks, elapsed);
+  const pet = activeBond ? huntCooldown(currentTick, activeBond.cooldown, elapsed) : null;
+  const magicReady = magic.remaining === 0;
+  const magicManaCost = raceSkill ? skillManaCost(raceSkill.manaCost, character.level) : 0;
   const hasEnoughMana = character.mp >= magicManaCost;
-  const petCooldownDurationMs = Math.max(1, (activeBond?.cooldownSeconds ?? 5) * 1000);
-  const petElapsedMs = petCooldownStartedAt === null ? petCooldownDurationMs : Math.max(0, petCooldownClock - petCooldownStartedAt);
-  const petRemainingMs = Math.max(0, petCooldownDurationMs - petElapsedMs);
-  const petProgress = Math.max(0, Math.min(100, petElapsedMs / petCooldownDurationMs * 100));
+  const comboLocked = comboPending || (character.comboCooldownUntil ?? 0) > comboClock;
 
   const activeVialCount = Object.keys(character.activeVials).filter(id => character.activeVials[id] > Date.now()).length;
   const validCosmetics = ownedCosmeticLoadout(character);
@@ -487,7 +449,7 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-[1fr_320px] gap-3 md:gap-4">
-        <div className={`combat-scene relative rounded-xl border-2 border-arcane-border shadow-2xl overflow-hidden bg-${currentZone.theme} min-h-[300px] md:min-h-[500px]`}>
+        <div className={`combat-scene relative self-start rounded-xl border-2 border-arcane-border shadow-2xl overflow-hidden bg-${currentZone.theme} min-h-[300px] md:min-h-[500px]`}>
           
           <div className="absolute inset-0 z-0">
             <AssetImage
@@ -497,15 +459,6 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
             />
             <div className="scene-vignette absolute inset-0 pointer-events-none"></div>
           </div>
-
-          {comboBurst && (
-            <div className="absolute inset-0 z-40 pointer-events-none flex items-center justify-center" aria-live="polite">
-              <div className="combo-impact-burst rounded-full border-2 border-amber-300/80 bg-amber-400/15 px-6 py-3 text-center shadow-[0_0_45px_rgba(251,191,36,.8)]">
-                <div className="text-amber-200 text-2xl md:text-4xl font-black tracking-widest">⚡ COMBO!</div>
-                <div className="text-amber-100 text-[10px] md:text-xs font-bold">DOIS IMPACTOS · RITMO DA ESSÊNCIA</div>
-              </div>
-            </div>
-          )}
 
           {balloon && (
             <div onClick={handleBalloonClick} className="absolute z-50 cursor-pointer animate-idle hover:scale-125 transition-transform" style={{ left: `${balloon.x}%`, top: `${balloon.y}%` }}>
@@ -519,9 +472,27 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
           <div className="scene-ground absolute bottom-0 w-full h-12 md:h-16 z-10 pointer-events-none"></div>
 
           <div className="relative z-20 flex justify-between items-end px-4 md:px-20 pb-8 md:pb-12 h-[300px] md:h-[500px]">
+            {frame && <HuntVisuals key={frame.beat.tick} frame={frame} motion={motion} effects={effectsEnabled && videoMode !== "reduced"} />}
             <div className="flex flex-col items-center relative translate-y-2 md:translate-y-4">
               
-              {activeBond && <div className={`combat-pet-companion ${cosmeticVisual.petClassName} absolute bottom-16 left-full ml-1 flex w-24 md:ml-4 md:w-32 flex-col items-center ${petAttackPulse ? "animate-pulse drop-shadow-[0_0_22px_rgba(45,212,191,.95)]" : ""}`} title={`${activeBond.beast.name} · ${activeBond.element} · ataque a cada ${activeBond.cooldownSeconds}s`}><div className="relative grid h-24 w-24 place-items-center md:h-36 md:w-36">{!petImageError ? <AssetImage removeWhite src={activeBond.beast.sprite} alt={activeBond.beast.name} className="h-full w-full object-contain [image-rendering:pixelated]" onAllSourcesFail={() => setPetImageError(true)} /> : <span className="text-6xl leading-none drop-shadow-lg md:text-8xl" role="img" aria-label={activeBond.beast.name}>{activeBond.beast.emoji}</span>}</div><span className="rounded bg-black/75 px-2 text-center text-[10px] font-bold text-arcane-gold">{activeBond.beast.name}</span><div className="mt-1 w-full rounded border border-cyan-300/30 bg-black/70 px-1.5 py-1" aria-label={`Próximo ataque do pet em ${Math.ceil(petRemainingMs / 1000)} segundos`}><div className="flex items-center justify-between text-[8px] font-bold text-cyan-100"><span>✦ Ataque do pet</span><span>{petRemainingMs > 0 ? `${Math.ceil(petRemainingMs / 1000)}s` : "PRONTO"}</span></div><div className="mt-1 h-1 overflow-hidden rounded-full bg-black/80"><div className="h-full rounded-full bg-gradient-to-r from-cyan-400 via-emerald-300 to-arcane-gold transition-[width] duration-100" style={{ width: `${petProgress}%` }} /></div></div></div>}
+              {activeBond && pet && (
+                <div className={`combat-pet-companion ${cosmeticVisual.petClassName} absolute bottom-16 left-full ml-1 flex w-24 md:ml-4 md:w-32 flex-col items-center ${motion && impact?.kind === "pet" ? "animate-pulse" : ""}`}
+                  title={`${activeBond.beast.name} · ${activeBond.element} · ataque a cada ${activeBond.cooldown} ciclos`}>
+                  <div className="relative grid h-24 w-24 place-items-center md:h-36 md:w-36">
+                    {!petImageError ? <AssetImage removeWhite src={activeBond.beast.sprite} alt={activeBond.beast.name} preferAnimated={motion} className="h-full w-full object-contain [image-rendering:pixelated]" onAllSourcesFail={() => setPetImageError(true)} />
+                      : <span className="text-6xl leading-none drop-shadow-lg md:text-8xl" role="img" aria-label={activeBond.beast.name}>{activeBond.beast.emoji}</span>}
+                  </div>
+                  <span className="rounded bg-black/75 px-2 text-center text-[10px] font-bold text-arcane-gold">{activeBond.beast.name}</span>
+                  <div className="mt-1 w-full rounded border border-cyan-300/30 bg-black/70 px-1.5 py-1">
+                    <div className="flex items-center justify-between text-[8px] font-bold text-cyan-100">
+                      <span>✦ Pet</span><span>{character.mp < activeBond.mana ? "Sem mana" : pet.remaining > 0 ? `${Math.ceil(pet.remaining / 1000)}s` : "No próximo ciclo"}</span>
+                    </div>
+                    <div className="mt-1 h-1 overflow-hidden rounded-full bg-black/80">
+                      <div className="h-full rounded-full bg-gradient-to-r from-cyan-400 via-emerald-300 to-arcane-gold transition-[width] duration-100" style={{ width: `${pet.progress}%` }} />
+                    </div>
+                  </div>
+                </div>
+              )}
               {/* SPRITE DO JOGADOR (Agora baseado na Linhagem) */}
               <HeroArt name={character.name} attackId={character.activeRace?.ataqueId} appearance={character.appearance} cosmetics={validCosmetics} context="hunt" className={`combat-sprite combat-sprite-player w-24 h-24 md:w-40 md:h-40 transition-transform ${weaponAnimClass}`} imageClassName="drop-shadow-[0_10px_10px_rgba(0,0,0,0.8)]" />
 
@@ -534,53 +505,31 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
               <button
                 type="button"
                 onClick={() => handleComboKey(comboKeys[comboProgress] ?? comboKeys[0])}
-                disabled={(character.comboCooldownUntil ?? 0) > comboClock}
+                disabled={comboLocked}
                 className={`mt-2 w-full rounded-md border px-2 py-1 text-[9px] md:text-xs font-black transition ${comboFeedback === "bad" ? "border-red-400 bg-red-950 text-red-100" : ((character.comboCooldownUntil ?? 0) > comboClock) ? "border-gray-700 bg-gray-900 text-gray-500" : "border-purple-300 bg-purple-900/90 text-purple-100 shadow-[0_0_18px_rgba(168,85,247,.8)] animate-pulse hover:bg-purple-700"}`}
                 title="No celular, toque nos botões na ordem. No PC, use o teclado."
               >
-                {((character.comboCooldownUntil ?? 0) > comboClock) ? `⏳ ${Math.ceil((character.comboCooldownUntil! - comboClock) / 1000)}s` : comboFeedback === "bad" ? "↺ Sequência reiniciada" : `⚡ Toque: ${comboKeys[comboProgress] ?? comboKeys[0]}`}
+                {comboPending ? "Confirmando combo…" : comboLocked ? `⏳ ${Math.ceil((character.comboCooldownUntil! - comboClock) / 1000)}s` : comboFeedback === "bad" ? "↺ Sequência reiniciada" : `⚡ Toque: ${comboKeys[comboProgress] ?? comboKeys[0]}`}
               </button>
               <div className="mt-1.5 grid grid-cols-3 gap-1.5 md:hidden" aria-label="Controles de toque do combo">
-                {comboKeys.map((key, index) => <button key={`${key}-${index}`} type="button" disabled={(character.comboCooldownUntil ?? 0) > comboClock} onClick={() => handleComboKey(key)} className={`min-h-10 rounded-lg border text-sm font-black transition active:scale-95 ${index < comboProgress ? "border-emerald-300 bg-emerald-900/80 text-emerald-100" : index === comboProgress ? "border-purple-300 bg-purple-900 text-purple-100 shadow-[0_0_12px_rgba(168,85,247,.65)]" : "border-white/15 bg-black/50 text-gray-300"}`} aria-label={`Etapa ${index + 1}: tecla ${key}`}>{index < comboProgress ? "✓" : key}</button>)}
+                {comboKeys.map((key, index) => <button key={`${key}-${index}`} type="button" disabled={comboLocked} onClick={() => handleComboKey(key)} className={`min-h-10 rounded-lg border text-sm font-black transition active:scale-95 ${index < comboProgress ? "border-emerald-300 bg-emerald-900/80 text-emerald-100" : index === comboProgress ? "border-purple-300 bg-purple-900 text-purple-100 shadow-[0_0_12px_rgba(168,85,247,.65)]" : "border-white/15 bg-black/50 text-gray-300"}`} aria-label={`Etapa ${index + 1}: tecla ${key}`}>{index < comboProgress ? "✓" : key}</button>)}
               </div>
               {comboProgress > 0 && comboStartedAt && <div className="mt-1.5 rounded border border-purple-300/30 bg-black/50 px-2 py-1" aria-live="polite"><div className="flex items-center justify-between text-[8px] font-bold uppercase tracking-wider text-purple-200"><span>Janela de ritmo</span><span>{(Math.max(0, COMBO_WINDOW_MS - (comboClock - comboStartedAt)) / 1000).toFixed(1)}s</span></div><div className="mt-1 h-1 overflow-hidden rounded bg-black/70"><div className="h-full rounded bg-gradient-to-r from-emerald-300 via-amber-300 to-red-400 transition-[width] duration-200" style={{ width: `${Math.max(0, Math.min(100, ((COMBO_WINDOW_MS - (comboClock - comboStartedAt)) / COMBO_WINDOW_MS) * 100))}%` }} /></div></div>}
               <div className="mt-1 hidden text-[8px] text-purple-200/80 md:block">PC: pressione {comboKeys.join(" + ")} · Celular: toque nos botões</div>
               </div>
             </div>
 
-            {(showProjectile || (effectsEnabled && videoMode === "compat" && (lastTickResult?.lastDamage || lastTickResult?.comboHitDamage))) && (
-              <div className={videoMode === "compat" ? "absolute left-[54%] top-[48%] -translate-y-1/2 z-30 rounded-full border-2 border-amber-300 bg-amber-500/20 px-3 py-1 text-sm font-black text-amber-100 shadow-[0_0_22px_rgba(251,191,36,.9)]" : "absolute left-[30%] top-1/2 -translate-y-1/2 text-4xl md:text-6xl projectile z-30"} aria-label="Impacto do ataque">
-                {videoMode === "compat" ? "✦ HIT" : spellEmoji}
-              </div>
-            )}
-            {petAttackPulse && activeBond && (
-              <div className="absolute left-[49%] top-[42%] -translate-y-1/2 text-3xl md:text-5xl z-30 animate-ping drop-shadow-[0_0_18px_rgba(45,212,191,.95)]" aria-label={`Ataque de ${activeBond.beast.name}`}>✦</div>
-            )}
-
-            {currentMob && (
+            {visualMob && (
               <div className="flex flex-col items-center relative translate-y-2 md:translate-y-4">
-                {lastTickResult?.comboHitDamage ? <div className="absolute -top-16 z-50 flex items-end gap-3 font-black drop-shadow-[0_2px_2px_rgba(0,0,0,1)]" aria-label="Dois impactos do combo"><span className="damage-number text-red-500 text-3xl md:text-5xl">-{lastTickResult.comboHitDamage[0]}<small className="ml-1 block text-[9px] md:text-xs text-red-200">HIT 1</small></span><span className="damage-number text-amber-300 text-3xl md:text-5xl">-{lastTickResult.comboHitDamage[1]}<small className="ml-1 block text-[9px] md:text-xs text-amber-100">HIT 2</small></span></div> : floatingDamage !== null && <div className="damage-number text-red-500 text-3xl md:text-5xl z-50 font-black drop-shadow-[0_2px_2px_rgba(0,0,0,1)]">-{floatingDamage}</div>}
-                {petDamage !== null && <div className="absolute -top-5 left-1/2 z-50 -translate-x-1/2 whitespace-nowrap text-lg font-black text-teal-200 drop-shadow-[0_2px_3px_rgba(0,0,0,1)]" aria-label={`Dano do Pet: ${petDamage}`}>-{petDamage}<small className="ml-1 text-[9px] text-cyan-100">PET</small></div>}
-                
-              <div className={`combat-sprite combat-sprite-enemy w-24 h-24 md:w-40 md:h-40 flex items-center justify-center relative transition-transform ${isHurt ? 'animate-shake filter drop-shadow-[0_0_20px_rgba(220,38,38,1)]' : 'animate-idle'}`}>
-                  {currentMob?.sprite && !enemyImageError ? (
-                    <AssetImage
-                      key={currentMob.id}
-                      src={currentMob.sprite} 
-                      alt={currentMob.name} 
-                      className="w-full h-full object-contain drop-shadow-[0_10px_10px_rgba(0,0,0,0.8)]" 
-                      style={{ imageRendering: "pixelated" }} 
-                      onAllSourcesFail={() => setEnemyImageError(true)}
-                    />
-                  ) : (
-                    <span className="text-[80px] md:text-[120px] leading-none select-none drop-shadow-lg">{currentMob?.emoji || "👾"}</span>
-                  )}
+                <div className="combat-sprite combat-sprite-enemy hunt-enemy-motion w-24 h-24 md:w-40 md:h-40 flex items-center justify-center relative"
+                  data-pose={motion ? enemyPose : undefined} data-monster-motion={monsterMotion(selectedBaseMob.id)} data-wave-stage={visualMob.waveStage} data-encounter={frame?.beat.encounterId}>
+                  <MonsterSprite key={visualMob.id} enemy={visualMob} baseSprite={selectedBaseMob.sprite} preferAnimated={motion} />
                 </div>
                 
                 <div className="mt-1 md:mt-2 text-center w-40 md:w-64 bg-black/80 p-1.5 md:p-2 rounded-lg border-2 border-red-900 shadow-[0_0_10px_rgba(220,38,38,0.5)]">
                   <div className="flex justify-between items-center mb-1 px-1">
-                    <h3 className="text-xs md:text-lg font-bold text-white truncate">{currentMob.name}</h3>
-                    <span className="text-yellow-400 text-[10px] md:text-sm">{'⭐'.repeat(currentMob.difficulty)}</span>
+                    <h3 className="text-xs md:text-lg font-bold text-white truncate">{visualMob.name}</h3>
+                    <span className="text-yellow-400 text-[10px] md:text-sm">{'⭐'.repeat(visualMob.difficulty)}</span>
                   </div>
                   <div className="h-2 md:h-3 bg-gray-900 rounded-full overflow-hidden border border-gray-700 relative">
                     <div className="h-full bg-gradient-to-r from-red-700 to-red-500 rounded-full transition-all duration-300" style={{ width: `${enemyHpPct}%` }} />
@@ -625,12 +574,12 @@ export function ZoneView({ onOpenQuest, trackedQuestId }: ZoneViewProps) {
                     <div className="flex-1 min-w-0">
                       <div className="text-[10px] md:text-xs font-bold text-white truncate">{raceSkill.desc.split(":")[0]}</div>
                       <div className={`text-[8px] md:text-[9px] font-bold ${magicReady && hasEnoughMana ? "text-green-400" : "text-red-400"}`}>
-                        {hasEnoughMana ? (magicReady ? "✓ PRONTA" : `Recarregando · ${Math.max(0, magicCooldownTicks - magicCooldown) * 3}s`) : "Sem Mana"}
+                        {hasEnoughMana ? (magicReady ? "Aguardando ciclo" : `Recarregando · ${Math.ceil(magic.remaining / 1000)}s`) : "Sem mana"}
                       </div>
                     </div>
                   </div>
                   <div className="h-1.5 md:h-2 bg-gray-900 rounded-full overflow-hidden">
-                    <div className={`h-full transition-all duration-1000 ${magicReady ? "bg-green-500" : "bg-gradient-to-r from-purple-600 to-purple-400"}`} style={{ width: `${magicPct}%` }} />
+                    <div className={`h-full transition-[width] duration-200 ${magicReady ? "bg-green-500" : "bg-gradient-to-r from-purple-600 to-purple-400"}`} style={{ width: `${magic.progress}%` }} />
                   </div>
                 </div>
               </div>

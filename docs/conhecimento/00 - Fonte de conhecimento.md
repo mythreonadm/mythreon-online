@@ -15,6 +15,7 @@ As notas abaixo são as fontes preservadas para decisões, explicações e proce
 | Cadastro real, ranking, chat, VIP, correio e trocas | [[docs/conhecimento/Contas-Online-e-Social|Contas online e comunidade]] |
 | Tutorial, história e acessos aos biomas | [[docs/conhecimento/Jornada-Lore-Biomas|Jornada, lore e biomas]] |
 | Combate, drops, resistências e progressão | [[docs/conhecimento/Balanceamento-Combate-Economia|Balanceamento de combate e economia]] |
+| Pack 1 da caça, do combo e das pranchas de monstros | [[docs/conhecimento/Pack-01-Fundacao-Combate-Animacao|Fundação de combate e animação]] |
 | Shop, premium e os ataques das Beasts | [[docs/conhecimento/Shop-Premium-Beasts|Shop, premium e Divine Beasts]] |
 | Treino, maestria, conquistas e novas propostas | [[docs/conhecimento/Treino-e-Diferenciais-Mythreon|Treino e diferenciais]] |
 | Cards, formação, bônus, evolução e novos biomas | [[docs/conhecimento/Pack-60-Cards-Veyra-Kaelor-e-Temporada-2026-11-04|Cards: catálogo e temporada]] |

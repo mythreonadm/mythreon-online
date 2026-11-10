@@ -21,6 +21,7 @@
     "balance:check": "node scripts/balance-audit.cjs --check",
     "journey:check": "node scripts/journey-check.cjs",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.server.json",
+    "hunt:check": "node scripts/run-ts-check.cjs scripts/hunt-check.ts",
     "online:check": "node scripts/run-ts-check.cjs scripts/online-check.ts",
     "professions:check": "node scripts/run-ts-check.cjs scripts/professions-check.ts",
     "professions:pulse-check": "node scripts/run-ts-check.cjs scripts/profession-challenge-check.ts",

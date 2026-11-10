@@ -797,7 +797,22 @@ var DIVINE_BEASTS = {
   }
 };
 
+// src/config.ts
+var KEY = "mythreon_debug";
+var debug = false;
+try {
+  debug = location.hostname === "localhost" && localStorage.getItem(KEY) === "1";
+} catch {
+}
+function isDebug() {
+  return debug;
+}
+var TICK_MS = 3e3;
+var OFFLINE_MAX_HOURS = 8;
+
 // src/data/beastCombat.ts
+var BEAST_ATTACK_TICKS = 2;
+var BEAST_ATTACK_SECONDS = BEAST_ATTACK_TICKS * TICK_MS / 1e3;
 var ATTACKS = {
   LYSS_STAG: ["Lan\xE7as de Raiz", "TERRA"],
   DHOR_GRIFFIN: ["Queda de Basalto", "TERRA"],
@@ -817,7 +832,7 @@ function getBeastCombat(char) {
   if (!id || !(char.divineBeasts ?? []).some((b) => b.id === id)) return null;
   const beast = DIVINE_BEASTS[id];
   const [name, element] = ATTACKS[id];
-  return { beast, name, element, cooldown: 2, cooldownSeconds: 5, mana: 8 + Math.floor(char.level * 0.5), multiplier: 2.4 };
+  return { beast, name, element, cooldown: BEAST_ATTACK_TICKS, cooldownSeconds: BEAST_ATTACK_SECONDS, mana: 8 + Math.floor(char.level * 0.5), multiplier: 2.4 };
 }
 function beastGrowth(level) {
   return { hp: 60 + level * 6, mp: 30 + level * 3, atk: 6 + level, matk: 6 + level, arm: 3 + Math.floor(level * 0.6), hpRegen: 1 + Math.floor(level / 15), mpRegen: 2 + Math.floor(level / 15) };
@@ -3032,19 +3047,6 @@ function salvageSelectedEquipment(char, uids) {
   return { items, frags };
 }
 
-// src/config.ts
-var KEY = "mythreon_debug";
-var debug = false;
-try {
-  debug = location.hostname === "localhost" && localStorage.getItem(KEY) === "1";
-} catch {
-}
-function isDebug() {
-  return debug;
-}
-var TICK_MS = 3e3;
-var OFFLINE_MAX_HOURS = 8;
-
 // src/data/mythreonEconomy.ts
 var MYTHREON_ECONOMY = {
   shardsPerCoin: 100,
@@ -3196,6 +3198,22 @@ function generatedNames(base) {
 function getWaveKey(zoneId, baseEnemyId) {
   return `${zoneId}:${baseEnemyId}`;
 }
+function resolveHuntTarget(zone, character) {
+  const selected = zone.enemies.find((enemy) => enemy.id === character.activeEnemyId);
+  return selected && character.level >= (selected.minLevel ?? 1) ? selected : zone.enemies.find((enemy) => character.level >= (enemy.minLevel ?? 1)) ?? zone.enemies[0];
+}
+function prepareHuntTarget(character, zone, enemy) {
+  character.activeEnemyId = enemy.id;
+  character.huntWaveProgress ??= {};
+  const stage = enemy.isBoss ? void 0 : getWaveStage(character.huntWaveProgress, zone.id, enemy.id);
+  const encounter = stage === void 0 ? enemy : getWaveEncounter(zone, enemy, stage);
+  character.fightWaveKey = stage === void 0 ? void 0 : getWaveKey(zone.id, enemy.id);
+  character.fightWaveStage = stage;
+  character.fightEnemyId = void 0;
+  character.huntEncounterStartedAtTick = void 0;
+  character.enemyHp = encounter.hp * encounter.difficulty;
+  character.enemyHpId = encounter.id;
+}
 function getWaveStage(progress, zoneId, baseEnemyId) {
   const raw = progress?.[getWaveKey(zoneId, baseEnemyId)];
   return Math.max(0, Math.min(HUNT_WAVE_COUNT - 1, Number.isFinite(raw) ? Number(raw) : 0));
@@ -3225,6 +3243,18 @@ function getWaveEncounter(_zone, baseEnemy, stage) {
     sprite: `/assets/monsters/${baseEnemy.id}_${suffix}.png`,
     difficulty: baseEnemy.difficulty
   };
+}
+
+// src/engine/huntPresentation.ts
+function skillManaCost(base, level) {
+  return base + Math.floor(level * 0.5);
+}
+function recordHuntImpact(beat, impact, heroHp = 0) {
+  if (!beat) return;
+  const target = impact.kind === "counter" || impact.kind === "dodge" || impact.kind === "heal" ? "hero" : "enemy";
+  const hpRemoved = target === "enemy" ? Math.min(beat.enemyHpAfter, impact.amount) : impact.kind === "counter" ? Math.min(Math.max(0, heroHp), impact.amount) : 0;
+  if (target === "enemy") beat.enemyHpAfter -= hpRemoved;
+  beat.impacts.push({ ...impact, target, hpRemoved });
 }
 
 // src/engine/combat.ts
@@ -3309,8 +3339,7 @@ function processTick(char, zone, isOffline) {
     char.lastTick = Date.now();
     return result;
   }
-  const savedTarget = zone.enemies.find((e) => e.id === char.activeEnemyId);
-  const baseEnemy = savedTarget && char.level >= (savedTarget.minLevel ?? 1) ? savedTarget : zone.enemies.find((e) => char.level >= (e.minLevel ?? 1)) || zone.enemies[0];
+  const baseEnemy = resolveHuntTarget(zone, char);
   if (!baseEnemy) return result;
   const waveEnabled = !baseEnemy.isBoss;
   char.huntWaveProgress ??= {};
@@ -3322,6 +3351,7 @@ function processTick(char, zone, isOffline) {
   const fightId = `${zone.id}:${baseEnemy.id}${isEliteEncounter ? ":ELITE" : ""}${waveEnabled ? `:W${waveStage}` : ""}`;
   if (char.fightEnemyId !== fightId) {
     char.fightEnemyId = fightId;
+    char.huntEncounterStartedAtTick = (char.tickCount ?? 0) + 1;
     char.fightWaveKey = waveEnabled ? waveKey : void 0;
     char.fightWaveStage = waveEnabled ? waveStage : void 0;
     char.fightDamageDealt = 0;
@@ -3408,6 +3438,21 @@ function processTick(char, zone, isOffline) {
     const s = char.baseStats;
     const hpMax = char.hpMax;
     const mpMax = char.mpMax;
+    const beat = isOffline ? void 0 : {
+      tick: t,
+      at: Date.now(),
+      characterId: char.id,
+      zoneId: zone.id,
+      baseEnemyId: baseEnemy.id,
+      encounterId: `${fightId}:${char.huntEncounterStartedAtTick ?? t}`,
+      enemy: { id: enemy.id, name: enemy.name, sprite: enemy.sprite, emoji: enemy.emoji, difficulty: enemy.difficulty, isBoss: enemy.isBoss, isElite: enemy.isElite, waveStage: enemy.waveStage },
+      enemyHpBefore: enemyHp,
+      enemyHpAfter: enemyHp,
+      enemyMaxHp: enemy.hp,
+      impacts: []
+    };
+    result.huntBeat = beat;
+    const impact = (entry, heroHp = playerHp) => recordHuntImpact(beat, entry, heroHp);
     result.attacked = false;
     result.lastDamage = 0;
     result.lastCrit = false;
@@ -3416,6 +3461,7 @@ function processTick(char, zone, isOffline) {
     if (playerHp > 0) playerHp = Math.min(hpMax, playerHp + Math.max(0, s.hpRegen ?? 0));
     playerMp = Math.min(mpMax, playerMp + Math.max(0, s.mpRegen ?? 0));
     if (playerHp <= 0) {
+      if (beat) beat.outcome = "death";
       recordDeathEncounter();
       result.death = true;
       const skillPenalty = applyTrainingDeathPenalty(char);
@@ -3436,7 +3482,8 @@ function processTick(char, zone, isOffline) {
         result.goldSpentPotions += cost;
         encounterPotionGoldSpent += cost;
         char.fightPotionGoldSpent = encounterPotionGoldSpent;
-        heal(potion.stats.hp ?? 0);
+        const recovered = heal(potion.stats.hp ?? 0);
+        if (recovered > 0) impact({ kind: "heal", amount: recovered, sourceId: hpPotId });
         result.potionsUsed++;
         result.log.push(`\u{1F9EA} ${potion.name}: -${cost.toLocaleString("pt-BR")}g.`);
       } else if (potion) warnInsufficientPotionGold(cost);
@@ -3457,33 +3504,40 @@ function processTick(char, zone, isOffline) {
     const triggered = !!support && t % support.cd === 0;
     const buffOn = !!support?.dur && t % support.cd < support.dur;
     if (triggered && support?.healPct) {
-      heal(hpMax * support.healPct);
+      const recovered = heal(hpMax * support.healPct);
+      if (recovered > 0) impact({ kind: "heal", amount: recovered, sourceId: race?.suporteId });
       result.log.push(`\u{1F49A} Suporte curou voc\xEA.`);
     }
     const atkMult = 1 + (buffOn ? support?.atkPct ?? 0 : 0);
     const armMult = 1 + (buffOn ? support?.armPct ?? 0 : 0);
     const ignoreArmor = buffOn ? support?.ignoreArmor ?? 0 : 0;
     const comboReady = (char.comboReadyUntil ?? 0) > Date.now() && (char.comboCooldownUntil ?? 0) <= Date.now();
-    const strike = (multiplier = 1, guaranteed = false) => {
+    const strike = (multiplier = 1, comboHit) => {
       result.attacked = true;
+      const sourceId = char.equipped.ARMA_PRINCIPAL?.templateId;
+      const kind = comboHit ? "combo" : "basic";
       if (debug2) {
         result.lastDamage = 99999;
+        impact({ kind, comboHit, sourceId, amount: 99999 });
         return 99999;
       }
-      if (!guaranteed && Math.random() > (s.hit ?? 1)) {
+      if (!comboHit && Math.random() > (s.hit ?? 1)) {
         result.lastMiss = true;
+        impact({ kind: "miss", sourceId, amount: 0 });
         return 0;
       }
       const magicWeapon = ["CAJADO", "VARINHA"].some((key) => char.equipped.ARMA_PRINCIPAL?.templateId.includes(key));
       const base = (magicWeapon ? s.matk ?? 0 : s.atk ?? 0) * atkMult * multiplier * earlyDamageScale;
       let dmg = mitigatedDamage(base, enemy.arm * (1 - ignoreArmor));
-      if (Math.random() < (s.crit ?? 0)) {
+      const critical = Math.random() < (s.crit ?? 0);
+      if (critical) {
         dmg *= 1 + clamp(s.critDmg ?? 0.5, 0, 1.5);
         result.lastCrit = true;
       }
       if (support?.executeBonus && enemyHp < enemy.hp * 0.4) dmg *= 1 + support.executeBonus;
       dmg = Math.max(1, Math.round(dmg));
       result.lastDamage = (result.lastDamage ?? 0) + dmg;
+      impact({ kind, amount: dmg, comboHit, critical, sourceId, element: "BASE" });
       return dmg;
     };
     let dealt = comboReady ? 0 : strike();
@@ -3491,8 +3545,8 @@ function processTick(char, zone, isOffline) {
       const power = char.comboPower ?? 1.5;
       const primaryFactor = power === 1.5 ? 1 : power === 1 ? 0.75 : 0.35;
       const secondaryFactor = power === 1.5 ? 0.5 : power === 1 ? 0.25 : 0.15;
-      const primaryDamage = strike(primaryFactor, true);
-      const secondaryDamage = strike(secondaryFactor, true);
+      const primaryDamage = strike(primaryFactor, 1);
+      const secondaryDamage = strike(secondaryFactor, 2);
       dealt = primaryDamage + secondaryDamage;
       result.comboHitDamage = [Math.max(0, Math.round(primaryDamage)), Math.max(0, Math.round(secondaryDamage))];
       result.comboRank = power === 1.5 ? "ouro" : power === 1 ? "prata" : "bronze";
@@ -3500,7 +3554,7 @@ function processTick(char, zone, isOffline) {
       char.comboCooldownUntil = Date.now() + 15e3;
       char.comboPower = void 0;
       const quality = power === 1.5 ? "perfeito" : power === 1 ? "preciso" : "atrasado";
-      result.log.push(`\u26A1 Combo Especial ${quality}! ${dealt} de dano.`);
+      result.log.push(`\u26A1 Combo Especial ${quality}! ${primaryDamage} + ${secondaryDamage} de dano em ${enemy.name}.`);
     }
     let elementalThisTick = 0;
     if (hasDoubleAtkBuff) {
@@ -3510,7 +3564,7 @@ function processTick(char, zone, isOffline) {
     if (triggered && support?.doubleStrike) dealt += strike();
     if (Math.random() < (s.spd ?? 0)) dealt += strike();
     if (skill && t % skillCd === 0 && !debug2) {
-      const manaCost = skill.manaCost + Math.floor(char.level * 0.5);
+      const manaCost = skillManaCost(skill.manaCost, char.level);
       if (playerMp >= manaCost) {
         playerMp -= manaCost;
         result.usedMp = true;
@@ -3522,6 +3576,7 @@ function processTick(char, zone, isOffline) {
         const sd = Math.round(baseSkillDamage * elementMultiplier(skillElement, enemy.element) * (1 - skillResistance));
         dealt += sd;
         result.lastDamage = (result.lastDamage ?? 0) + sd;
+        impact({ kind: "spell", amount: sd, sourceId: race?.ataqueId, element: skillElement });
         if (skillElement !== "BASE") {
           elementalThisTick += sd;
           result.damageBreakdown.elemental[skillElement] = (result.damageBreakdown.elemental[skillElement] ?? 0) + sd;
@@ -3529,6 +3584,7 @@ function processTick(char, zone, isOffline) {
         }
         if (skill.lifesteal) {
           const recovered = heal(sd * skill.lifesteal);
+          if (recovered > 0) impact({ kind: "heal", amount: recovered, sourceId: race?.ataqueId });
           result.damageBreakdown.lifestealHealing += recovered;
           encounterDamageBreakdown.lifestealHealing += recovered;
         }
@@ -3549,6 +3605,7 @@ function processTick(char, zone, isOffline) {
       const resistance = Math.max(0, Math.min(BALANCE.resistanceCap, enemy.elementalResistances?.[weaponElement] ?? 0));
       const elementalDamage = Math.max(0, Math.round(rawElementDamage * elementMultiplier(weaponElement, enemy.element) * (1 - resistance)));
       dealt += elementalDamage;
+      if (elementalDamage > 0) impact({ kind: "elemental", amount: elementalDamage, element: weaponElement, sourceId: weapon?.templateId });
       elementalThisTick += elementalDamage;
       result.lastDamage = (result.lastDamage ?? 0) + elementalDamage;
       result.damageBreakdown.elemental[weaponElement] = (result.damageBreakdown.elemental[weaponElement] ?? 0) + elementalDamage;
@@ -3568,6 +3625,7 @@ function processTick(char, zone, isOffline) {
       result.beastDamage = damage;
       result.beastElement = bond.element;
       result.beastName = bond.beast.name;
+      impact({ kind: "pet", amount: damage, element: bond.element, sourceId: bond.beast.id });
       result.damageBreakdown.elemental[bond.element] = (result.damageBreakdown.elemental[bond.element] ?? 0) + damage;
       encounterDamageBreakdown.elemental[bond.element] = (encounterDamageBreakdown.elemental[bond.element] ?? 0) + damage;
       result.log.push(bond.beast.name + " usa " + bond.name + ": " + damage + " de dano " + bond.element.toLowerCase() + ".");
@@ -3577,18 +3635,20 @@ function processTick(char, zone, isOffline) {
     encounterDamageBreakdown.physical += physicalThisTick;
     char.fightDamageBreakdown = structuredClone(encounterDamageBreakdown);
     if (debug2) result.log.push(`[TESTE] Voc\xEA obliterou o ${enemy.name} (${diff}\u2B50).`);
-    else if (dealt > 0) result.log.push(`Voc\xEA causou ${dealt} de dano f\xEDsico no ${enemy.name}.${result.lastCrit ? " \u{1F4A5} CR\xCDTICO!" : ""}`);
+    else if (dealt > 0) result.log.push(`Voc\xEA causou ${dealt} de dano total no ${enemy.name}.${result.lastCrit ? " \u{1F4A5} CR\xCDTICO!" : ""}`);
     result.damageDealt += dealt;
     encounterDamageDealt += dealt;
     char.fightDamageDealt = encounterDamageDealt;
     enemyHp -= dealt;
     if (prof.lifesteal > 0 && !debug2) {
       const recovered = heal(dealt * prof.lifesteal);
+      if (recovered > 0) impact({ kind: "heal", amount: recovered });
       result.damageBreakdown.lifestealHealing += recovered;
       encounterDamageBreakdown.lifestealHealing += recovered;
       char.fightDamageBreakdown = structuredClone(encounterDamageBreakdown);
     }
     if (enemyHp <= 0) {
+      if (beat) beat.outcome = "victory";
       result.kills++;
       char.killsInZone++;
       char.totalKills = (char.totalKills ?? 0) + 1;
@@ -3741,6 +3801,7 @@ function processTick(char, zone, isOffline) {
       const e = support;
       const dodgedBySkill = !!e?.dodgeEvery && t % e.dodgeEvery === 0;
       if (dodgedBySkill || Math.random() < (s.dge ?? 0)) {
+        impact({ kind: "dodge", amount: 0, sourceId: enemy.id });
         result.log.push(`Voc\xEA esquivou do ataque de ${enemy.name}.`);
       } else {
         const armor = (s.arm ?? 0) * armMult;
@@ -3755,6 +3816,8 @@ function processTick(char, zone, isOffline) {
         const elementalResistance = Math.max(0, Math.min(BALANCE.resistanceCap, enemy.element ? char.elementalResistances?.[enemy.element] ?? 0 : 0));
         const eElemental = debug2 || !enemy.element ? 0 : Math.max(0, Math.round(elementalRaw * clamp(mult, 0.1, 1) * (1 - elementalResistance)));
         const eDmg = ePhysical + eElemental;
+        if (ePhysical > 0) impact({ kind: "counter", amount: ePhysical, sourceId: enemy.id, element: "BASE" });
+        if (eElemental > 0) impact({ kind: "counter", amount: eElemental, sourceId: enemy.id, element: enemy.element }, playerHp - ePhysical);
         playerHp -= eDmg;
         result.damageTaken += eDmg;
         encounterDamageTaken += eDmg;
@@ -3769,6 +3832,7 @@ function processTick(char, zone, isOffline) {
         if (eDmg > 0) result.log.push(`${enemy.name} causou ${eDmg} de dano em voc\xEA.`);
       }
       if (playerHp <= 0) {
+        if (beat) beat.outcome = "death";
         recordDeathEncounter();
         result.death = true;
         const blessed = (char.blesses ?? 0) > 0;
@@ -4677,19 +4741,10 @@ function createGameStore(runtime = {}) {
       if (tickInterval) clearInterval(tickInterval);
       character.currentZoneId = zoneId;
       character.trainingSkill = null;
-      if (!character.activeEnemyId || !zone.enemies.find((e) => e.id === character.activeEnemyId)) {
-        character.activeEnemyId = zone.enemies[0].id;
-      }
-      const selected = zone.enemies.find((e) => e.id === character.activeEnemyId) ?? zone.enemies[0];
-      character.huntWaveProgress ??= {};
-      const stage = selected.isBoss ? 4 : getWaveStage(character.huntWaveProgress, zone.id, selected.id);
-      const encounter = selected.isBoss ? selected : getWaveEncounter(zone, selected, stage);
-      character.fightWaveKey = selected.isBoss ? void 0 : getWaveKey(zone.id, selected.id);
-      character.fightWaveStage = selected.isBoss ? void 0 : stage;
-      character.fightEnemyId = void 0;
-      character.enemyHp = encounter.hp * encounter.difficulty;
-      character.enemyHpId = encounter.id;
-      set({ isTickRunning: true, isTraining: false, currentZoneId: zoneId, character: { ...character } });
+      const selected = resolveHuntTarget(zone, character);
+      if (!selected) return;
+      prepareHuntTarget(character, zone, selected);
+      set({ isTickRunning: true, isTraining: false, currentZoneId: zoneId, lastTickResult: null, character: { ...character } });
       if (repairedJourney) get().save();
       if (!runtime.server) {
         get().tick();
@@ -4705,7 +4760,7 @@ function createGameStore(runtime = {}) {
       character.trainingSkill = skill;
       character.trainingLastTick = runtimeNow();
       character.lastTick = runtimeNow();
-      set({ isTickRunning: false, isTraining: true, character: { ...character } });
+      set({ isTickRunning: false, isTraining: true, lastTickResult: null, character: { ...character } });
       if (!runtime.server) {
         get().tick();
         tickInterval = setInterval(() => get().tick(), 3e3);
@@ -4747,23 +4802,15 @@ function createGameStore(runtime = {}) {
       const { character, currentZoneId } = get();
       if (!character) return;
       const zone = ZONES[currentZoneId];
-      const enemy = zone.enemies.find((e) => e.id === enemyId);
+      const enemy = zone?.enemies.find((e) => e.id === enemyId);
       if (!enemy || character.level < (enemy.minLevel ?? 1)) return;
-      character.activeEnemyId = enemyId;
-      character.huntWaveProgress ??= {};
-      const stage = enemy.isBoss ? 4 : getWaveStage(character.huntWaveProgress, zone.id, enemy.id);
-      const encounter = enemy.isBoss ? enemy : getWaveEncounter(zone, enemy, stage);
-      character.fightWaveKey = enemy.isBoss ? void 0 : getWaveKey(zone.id, enemy.id);
-      character.fightWaveStage = enemy.isBoss ? void 0 : stage;
-      character.fightEnemyId = void 0;
-      character.enemyHp = encounter.hp * encounter.difficulty;
-      character.enemyHpId = encounter.id;
-      set({ character: { ...character } });
+      prepareHuntTarget(character, zone, enemy);
+      set({ character: { ...character }, lastTickResult: null });
       get().save();
     },
     setCurrentZone: (zoneId) => {
       if (!ZONES[zoneId] || get().character && !canEnterZone(get().character, zoneId)) return;
-      set({ currentZoneId: zoneId });
+      set({ currentZoneId: zoneId, lastTickResult: null });
       const { character } = get();
       if (character) {
         character.currentZoneId = zoneId;

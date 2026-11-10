@@ -17,6 +17,7 @@
 - [scripts/cosmetics-ui-check.cjs](../scripts/cosmetics-ui-check.cjs)
 - [scripts/create-story-ambient.ps1](../scripts/create-story-ambient.ps1)
 - [scripts/create-story-narration.ps1](../scripts/create-story-narration.ps1)
+- [scripts/hunt-check.ts](../scripts/hunt-check.ts)
 - [scripts/journal-check.mjs](../scripts/journal-check.mjs)
 - [scripts/journal-sync.mjs](../scripts/journal-sync.mjs)
 - [scripts/journey-check.cjs](../scripts/journey-check.cjs)
@@ -41,6 +42,7 @@
 
 ## Relações encontradas
 
+- [[Mythreon Obsidian/Sistema - Combate|Combate]]
 - [[Mythreon Obsidian/Sistema - Motor do jogo|Motor do jogo]]
 - [[Mythreon Obsidian/Sistema - Dados do jogo|Dados do jogo]]
 - [[Mythreon Obsidian/Sistema - Itens e Ferreiro|Itens e Ferreiro]]
@@ -48,6 +50,7 @@
 - [[Mythreon Obsidian/Sistema - Estado|Estado]]
 - [[Mythreon Obsidian/Sistema - Atributos e progressão|Atributos e progressão]]
 - [[Mythreon Obsidian/Sistema - Utilitários|Utilitários]]
+- [[Mythreon Obsidian/Sistema - Artes e recursos|Artes e recursos]]
 - [[Mythreon Obsidian/Sistema - Mundo e História|Mundo e História]]
 
 [[Mythreon Obsidian/Mapa de Sistemas|Mapa técnico]]

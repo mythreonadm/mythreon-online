@@ -1,3 +1,5 @@
+import type { HuntBeat } from "../engine/huntPresentation";
+
 export type Rarity = "COMUM" | "INCOMUM" | "RARO" | "EPICO" | "LENDARIO";
 export type SlotType = "CAPACETE" | "ARMADURA" | "LUVAS" | "CALCAS" | "BOTAS" | "COLAR" | "ANEL_I" | "ANEL_II" | "PULSEIRA" | "ARMA_PRINCIPAL" | "OFF_HAND" | "MUNICAO" | "BACKPACK";
 export type ItemCategory = "ARMA" | "ARMADURA" | "JOIA" | "PULSEIRA" | "ESCUDO" | "BACKPACK" | "FLECHA" | "FERRAMENTA" | "COMPONENTE" | "POCAO" | "MATERIAL" | "FRAGMENTO";
@@ -325,6 +327,7 @@ export interface Character {
   bestiaryKills?: Record<string, number>;
   
   tickCount?: number;
+  huntEncounterStartedAtTick?: number;
   totalKills?: number;
   totalSalvaged?: number;
   enemyHp?: number; enemyHpId?: string;
@@ -443,6 +446,7 @@ export interface SaveFile {
 }
 
 export interface TickResult {
+  huntBeat?: HuntBeat;
   kills: number; gold: number; xp: number; drops: Item[];
   levelsGained: number; death: boolean; log: string[];
   enemyHp: number; enemyMaxHp: number;
